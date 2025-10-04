@@ -76,12 +76,20 @@ const Player: React.FC = () => {
           />
         </div>
 
-        {/* Botão Expandir - Mobile (Canto Superior Direito) */}
+        {/* Botão Fechar - Mobile (Canto Superior Direito) */}
         <button 
           className="lg:hidden absolute top-2 right-2 p-2 rounded-full hover:bg-white/10 transition-colors z-10"
+          onClick={handleClose}
+        >
+          <X className="w-5 h-5 text-text-muted" />
+        </button>
+        
+        {/* Botão Expandir - Mobile (Embaixo, com borda) */}
+        <button 
+          className="lg:hidden absolute bottom-2 right-2 p-2 rounded-full border-2 border-primary-500 hover:bg-primary-500/10 transition-colors z-10"
           onClick={openFullScreen}
         >
-          <ChevronUp className="w-5 h-5 text-primary-500" />
+          <ChevronUp className="w-4 h-4 text-primary-500" />
         </button>
 
         <div className="flex items-center justify-between px-4 py-3 gap-3">
@@ -102,28 +110,17 @@ const Player: React.FC = () => {
             </div>
           </div>
           
-          {/* Controles Mobile - Direita */}
-          <div className="lg:hidden flex items-center gap-2 flex-shrink-0">
-            {/* Play Button */}
-            <button
-              onClick={handlePlayPause}
-              className="w-10 h-10 bg-primary-500 text-black rounded-full flex items-center justify-center hover:bg-primary-400 transition-colors"
-            >
-              {isPlaying ? (
-                <Pause className="w-5 h-5" />
-              ) : (
-                <Play className="w-5 h-5 ml-0.5" />
-              )}
-            </button>
-            
-            {/* Botão Fechar */}
-            <button
-              onClick={handleClose}
-              className="w-10 h-10 rounded-full flex items-center justify-center hover:bg-white/10 transition-colors"
-            >
-              <X className="w-5 h-5 text-text-muted" />
-            </button>
-          </div>
+          {/* Play Button - Mobile (Direita) */}
+          <button
+            onClick={handlePlayPause}
+            className="lg:hidden w-10 h-10 bg-primary-500 text-black rounded-full flex items-center justify-center hover:bg-primary-400 transition-colors flex-shrink-0"
+          >
+            {isPlaying ? (
+              <Pause className="w-5 h-5" />
+            ) : (
+              <Play className="w-5 h-5 ml-0.5" />
+            )}
+          </button>
           
           {/* Desktop Heart */}
           <button className="icon-button hidden lg:flex">
