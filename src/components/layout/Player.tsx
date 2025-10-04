@@ -1,5 +1,5 @@
 import React from 'react';
-import { Play, Pause, SkipBack, SkipForward, Volume2, Heart, MoreHorizontal, Shuffle, Repeat, Repeat1 } from 'lucide-react';
+import { Play, Pause, SkipBack, SkipForward, Volume2, Heart, MoreHorizontal, Shuffle, Repeat, Repeat1, ChevronUp } from 'lucide-react';
 import { usePlayerStore } from '@/stores/playerStore';
 import { usePlayerContext } from '@/contexts/PlayerContext';
 import FullScreenPlayer from '@/components/FullScreenPlayer';
@@ -51,9 +51,6 @@ const Player: React.FC = () => {
 
   const progressPercentage = duration > 0 ? (currentTime / duration) * 100 : 0;
 
-  // Debug
-  console.log('Player - isFullScreenOpen:', isFullScreenOpen);
-
   return (
     <>
       <FullScreenPlayer 
@@ -61,8 +58,7 @@ const Player: React.FC = () => {
         onClose={closeFullScreen} 
       />
       
-      {/* Esconde a barra quando fullscreen está aberto */}
-      {!isFullScreenOpen && (
+      {/* Barra sempre visível, fullscreen sobrepõe */}
       <div className="fixed bottom-16 lg:bottom-0 left-0 right-0 bg-background-tertiary border-t border-gray-700 z-30 lg:z-40">
         {/* Progress Bar */}
         <div 
@@ -75,10 +71,7 @@ const Player: React.FC = () => {
           />
         </div>
 
-        <div 
-          className="flex items-center justify-between px-4 py-3 cursor-pointer md:cursor-default"
-          onClick={openFullScreen}
-        >
+        <div className="flex items-center justify-between px-4 py-3">
           {/* Track Info */}
           <div className="flex items-center space-x-3 flex-1 min-w-0">
             <img
@@ -94,7 +87,16 @@ const Player: React.FC = () => {
                 {currentTrack.artist}
               </p>
             </div>
-            <button className="icon-button" onClick={(e) => e.stopPropagation()}>
+            
+            {/* Botão Expandir - Mobile */}
+            <button 
+              className="lg:hidden p-2 rounded-full hover:bg-white/10 transition-colors"
+              onClick={openFullScreen}
+            >
+              <ChevronUp className="w-5 h-5 text-primary-500" />
+            </button>
+            
+            <button className="icon-button hidden lg:flex">
               <Heart className="w-4 h-4" />
             </button>
           </div>
@@ -164,13 +166,12 @@ const Player: React.FC = () => {
             {formatTime(currentTime)} / {formatTime(duration || 180)}
           </span>
           
-          <button className="icon-button" onClick={(e) => e.stopPropagation()}>
+          <button className="icon-button">
             <MoreHorizontal className="w-4 h-4" />
           </button>
         </div>
       </div>
     </div>
-      )}
     </>
   );
 };
