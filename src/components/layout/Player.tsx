@@ -78,18 +78,18 @@ const Player: React.FC = () => {
 
         {/* Botão Fechar - Mobile (Canto Superior Direito) */}
         <button 
-          className="lg:hidden absolute top-2 right-2 p-2 rounded-full hover:bg-white/10 transition-colors z-10"
+          className="lg:hidden absolute top-3 right-3 p-1.5 rounded-full hover:bg-white/10 transition-colors z-10"
           onClick={handleClose}
         >
-          <X className="w-5 h-5 text-text-muted" />
+          <X className="w-4 h-4 text-text-muted" />
         </button>
         
-        {/* Botão Expandir - Mobile (Embaixo, com borda) */}
+        {/* Botão Expandir - Mobile (Canto Inferior Direito, com borda) */}
         <button 
-          className="lg:hidden absolute bottom-2 right-2 p-2 rounded-full border-2 border-primary-500 hover:bg-primary-500/10 transition-colors z-10"
+          className="lg:hidden absolute bottom-20 right-3 p-1.5 rounded-full border-2 border-primary-500 hover:bg-primary-500/10 transition-colors z-10"
           onClick={openFullScreen}
         >
-          <ChevronUp className="w-4 h-4 text-primary-500" />
+          <ChevronUp className="w-3.5 h-3.5 text-primary-500" />
         </button>
 
         <div className="flex items-center justify-between px-4 py-3 gap-3">
