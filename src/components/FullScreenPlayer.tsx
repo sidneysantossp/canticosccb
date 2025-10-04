@@ -57,7 +57,7 @@ export default function FullScreenPlayer({ isOpen, onClose }: FullScreenPlayerPr
           animate={{ y: 0 }}
           exit={{ y: '100%' }}
           transition={{ type: 'spring', damping: 30, stiffness: 300 }}
-          className="fixed inset-0 z-50 bg-gradient-to-b from-red-900 via-red-800 to-black"
+          className="fixed inset-0 z-50 bg-gradient-to-b from-green-900 via-green-800 to-black"
         >
           {/* Header */}
           <div className="flex items-center justify-between p-4">
