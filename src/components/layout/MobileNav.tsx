@@ -11,9 +11,9 @@ const MobileNav: React.FC = () => {
 
   const navItems = [
     { path: '/', icon: Home, label: 'Home' },
-    { path: '/search', icon: Search, label: 'Search' },
-    { path: '/library', icon: Library, label: 'Library' },
-    { path: '/profile', icon: User, label: 'Profile' }
+    { path: '/search', icon: Search, label: 'Pesquisar' },
+    { path: '/library', icon: Library, label: 'Biblioteca' },
+    { path: '/profile', icon: User, label: 'Perfil' }
   ];
 
   return (

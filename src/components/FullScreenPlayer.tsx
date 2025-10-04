@@ -272,7 +272,7 @@ export default function FullScreenPlayer({ isOpen, onClose }: FullScreenPlayerPr
             >
               <div className="flex items-center gap-2">
                 <FileText className="w-5 h-5 text-white" />
-                <span className="text-sm text-white font-medium">Letra do Hino</span>
+                <span className="text-sm text-white font-medium">Letra</span>
               </div>
               <ChevronUp className="w-5 h-5 text-white" />
             </button>
@@ -302,7 +302,7 @@ export default function FullScreenPlayer({ isOpen, onClose }: FullScreenPlayerPr
             >
               {/* Header */}
               <div className="flex items-center justify-between p-4 border-b border-white/10">
-                <h2 className="text-xl font-bold text-white">Letra do Hino</h2>
+                <h2 className="text-xl font-bold text-white">Letra</h2>
                 <button
                   onClick={() => setShowLyrics(false)}
                   className="p-2 rounded-full hover:bg-white/10 transition-colors"

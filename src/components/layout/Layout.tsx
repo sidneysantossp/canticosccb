@@ -20,14 +20,14 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
       
       
       {/* Main Content Area */}
-      <div className="flex-1 grid grid-cols-1 lg:grid-cols-[240px_1fr_280px] gap-4 p-6">
+      <div className="flex-1 grid grid-cols-1 lg:grid-cols-[240px_1fr_280px] gap-0 pt-0 px-0 pb-0 lg:gap-4 lg:p-6">
         {/* Sidebar - Desktop Only */}
         <aside className="hidden lg:block">
           <Sidebar />
         </aside>
         
         {/* Main Content */}
-        <main className="min-h-0 bg-background-primary rounded-lg overflow-hidden px-0">
+        <main className="min-h-0 bg-background-primary rounded-none lg:rounded-lg overflow-visible lg:overflow-hidden px-0">
           {children || <Outlet />}
         </main>
         

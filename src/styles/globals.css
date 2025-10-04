@@ -7,13 +7,14 @@
   box-sizing: border-box;
 }
 
-body {
+html, body, #root {
   background-color: #121212;
   color: #ffffff;
   font-family: 'Montserrat', system-ui, sans-serif;
   margin: 0;
   padding: 0;
   min-height: 100vh;
+  width: 100%;
 }
 
 html {
@@ -171,25 +172,17 @@ html {
 
 /* Responsive Grid */
 @media (min-width: 1024px) {
-  .lg\\:grid-cols-\\[240px_1fr_280px\\] {
+  .lg-grid-custom {
     grid-template-columns: 240px 1fr 280px;
-  }
-  
-  .lg\\:block {
-    display: block;
-  }
-  
-  .lg\\:hidden {
-    display: none;
   }
 }
 
-@media (max-width: 1023px) {
-  .lg\\:hidden {
-    display: block;
-  }
-  
-  .lg\\:block {
-    display: none;
-  }
+/* Scrollbar Hide */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
 }

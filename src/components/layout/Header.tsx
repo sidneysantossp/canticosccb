@@ -41,18 +41,18 @@ const Header: React.FC = () => {
 
   return (
     <header className="sticky top-0 z-50 bg-background-primary shadow-lg" style={{ boxShadow: '0 6px 25px -2px rgba(0, 0, 0, 0.6)' }}>
-      <div className="flex items-center justify-between px-6 py-4">
+      <div className="flex items-center justify-between lg:justify-start px-6 lg:pl-6 py-4">
         {/* Logo */}
-        <Link to="/" className="flex items-center space-x-2">
+        <Link to="/" className="flex items-center space-x-2 lg:w-[240px] lg:shrink-0">
           <img 
             src="https://canticosccb.com.br/logo-canticos-ccb.png" 
             alt="Cânticos CCB" 
-            className="h-8 w-auto"
+            className="h-12 md:h-10 w-auto"
           />
         </Link>
 
         {/* Search Bar - Desktop */}
-        <div className="hidden md:block flex-1 max-w-md mx-8 relative">
+        <div className="hidden md:block flex-1 max-w-xl ml-0 lg:ml-4 relative">
           <form onSubmit={handleSearchSubmit}>
             <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-text-muted w-4 h-4" />
@@ -109,7 +109,7 @@ const Header: React.FC = () => {
         </div>
 
         {/* Right Side */}
-        <div className="flex items-center space-x-4">
+        <div className="flex items-center space-x-4 lg:ml-auto">
           {/* Register Button */}
           {!user && (
             <Link
@@ -120,10 +120,10 @@ const Header: React.FC = () => {
             </Link>
           )}
 
-          {/* User Menu */}
+          {/* User Menu - Desktop Only */}
           {user ? (
             <div
-              className="relative flex items-center gap-3"
+              className="relative hidden md:flex items-center gap-3"
             >
               {/* Registrar button (outlined green) - left side */}
               <Link
@@ -183,7 +183,7 @@ const Header: React.FC = () => {
           ) : (
             <Link
               to="/login"
-              className="btn btn-ghost btn-sm"
+              className="hidden md:block btn btn-ghost btn-sm"
             >
               Entrar
             </Link>
@@ -192,12 +192,89 @@ const Header: React.FC = () => {
           {/* Mobile Menu Button */}
           <button
             onClick={() => setShowMobileMenu(!showMobileMenu)}
-            className="md:hidden p-2 rounded-full hover:bg-background-hover transition-colors"
+            className="md:hidden p-3 rounded-full hover:bg-background-hover transition-colors"
+            aria-label="Abrir menu"
           >
-            <Menu className="w-5 h-5 text-text-primary" />
+            <Menu className="w-6 h-6 text-text-primary" />
           </button>
         </div>
       </div>
+
+      {/* Mobile Fullscreen Menu */}
+      {showMobileMenu && (
+        <>
+          <div
+            className="fixed inset-x-0 top-0 bottom-16 bg-black/30 backdrop-blur-sm z-50 md:hidden flex items-end"
+            onClick={() => setShowMobileMenu(false)}
+          >
+            <div 
+              className="w-full bg-gradient-to-b from-green-900 to-black rounded-t-3xl h-[50vh] overflow-hidden"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* Header do Menu */}
+              <div className="p-4 border-b border-white/10">
+              {user ? (
+                <div className="flex items-center gap-3">
+                  <img
+                    src={user.avatar || 'https://i.pravatar.cc/40'}
+                    alt={user.name}
+                    className="w-12 h-12 rounded-full object-cover"
+                  />
+                  <div className="flex-1">
+                    <p className="text-white font-semibold">{user.name}</p>
+                    <p className="text-gray-300 text-sm">{user.email}</p>
+                  </div>
+                </div>
+              ) : (
+                <div className="text-center">
+                  <p className="text-gray-300 mb-3">Faça login para continuar</p>
+                  <Link
+                    to="/login"
+                    className="btn btn-primary w-full"
+                    onClick={() => setShowMobileMenu(false)}
+                  >
+                    Entrar
+                  </Link>
+                </div>
+              )}
+            </div>
+
+            {/* Menu Items */}
+            {user && (
+              <div className="p-2">
+                <Link
+                  to="/profile"
+                  className="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-background-hover transition-colors"
+                  onClick={() => setShowMobileMenu(false)}
+                >
+                  <User className="w-5 h-5 text-primary-500" />
+                  <span className="text-text-primary">Meu Perfil</span>
+                </Link>
+                <Link
+                  to="/liked"
+                  className="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-background-hover transition-colors"
+                  onClick={() => setShowMobileMenu(false)}
+                >
+                  <Heart className="w-5 h-5 text-primary-500" />
+                  <span className="text-text-primary">Meus Favoritos</span>
+                </Link>
+                <hr className="my-2 border-gray-700" />
+                <button
+                  onClick={() => {
+                    handleLogout();
+                    setShowMobileMenu(false);
+                  }}
+                  className="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-background-hover transition-colors w-full text-left"
+                >
+                  <LogOut className="w-5 h-5 text-red-400" />
+                  <span className="text-red-400">Sair</span>
+                </button>
+              </div>
+            )}
+            </div>
+          </div>
+        </>
+      )}
 
       {/* Click outside to close dropdowns */}
       {(showResults || showUserMenu) && (
