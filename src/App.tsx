@@ -13,6 +13,7 @@ import SettingsPage from '@/pages/SettingsPage';
 import PremiumPage from '@/pages/PremiumPage';
 import LikedSongsPage from '@/pages/LikedSongsPage';
 import AboutPage from '@/pages/AboutPage';
+import { PlayerProvider } from '@/contexts/PlayerContext';
 import '@/styles/globals.css';
 
 // Placeholder components
@@ -20,7 +21,8 @@ const ProfilePage = () => <div className="p-6"><h1 className="text-2xl font-bold
 
 function App() {
   return (
-    <Router>
+    <PlayerProvider>
+      <Router>
       <Routes>
         {/* Auth Routes (without Layout) */}
         <Route path="/login" element={<LoginPage />} />
@@ -44,6 +46,7 @@ function App() {
         </Route>
       </Routes>
     </Router>
+    </PlayerProvider>
   );
 }
 

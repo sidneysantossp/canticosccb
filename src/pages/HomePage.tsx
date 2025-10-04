@@ -3,9 +3,11 @@ import { Link } from 'react-router-dom';
 import { Heart, MoreHorizontal, Play, Pause, Plus, Download } from 'lucide-react';
 import { getPopularHinos } from '@/data/mockData';
 import { usePlayerStore } from '@/stores/playerStore';
+import { usePlayerContext } from '@/contexts/PlayerContext';
 
 const HomePage: React.FC = () => {
   const { play, currentTrack, isPlaying } = usePlayerStore();
+  const { openFullScreen } = usePlayerContext();
   const [currentSlide, setCurrentSlide] = useState(0);
   
   const popularHinos = getPopularHinos(6);
@@ -42,6 +44,8 @@ const HomePage: React.FC = () => {
 
   const handlePlayTrack = (hino: any) => {
     play(hino);
+    // Abre fullscreen automaticamente no mobile
+    openFullScreen();
   };
 
   const nextSlide = () => {

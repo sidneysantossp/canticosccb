@@ -1,6 +1,7 @@
 import React from 'react';
 import { Play, Pause, SkipBack, SkipForward, Volume2, Heart, MoreHorizontal, Shuffle, Repeat, Repeat1 } from 'lucide-react';
 import { usePlayerStore } from '@/stores/playerStore';
+import { usePlayerContext } from '@/contexts/PlayerContext';
 import FullScreenPlayer from '@/components/FullScreenPlayer';
 
 const Player: React.FC = () => {
@@ -18,9 +19,10 @@ const Player: React.FC = () => {
     setVolume
   } = usePlayerStore();
 
+  const { isFullScreenOpen, openFullScreen, closeFullScreen } = usePlayerContext();
+
   const [shuffle, setShuffle] = React.useState(false);
   const [repeat, setRepeat] = React.useState<'off' | 'all' | 'one'>('off');
-  const [isFullScreenOpen, setIsFullScreenOpen] = React.useState(false);
 
   if (!currentTrack) return null;
 
@@ -53,7 +55,7 @@ const Player: React.FC = () => {
     <>
       <FullScreenPlayer 
         isOpen={isFullScreenOpen} 
-        onClose={() => setIsFullScreenOpen(false)} 
+        onClose={closeFullScreen} 
       />
       
       <div className="fixed bottom-16 lg:bottom-0 left-0 right-0 bg-background-tertiary border-t border-gray-700 z-30 lg:z-40">
@@ -70,12 +72,7 @@ const Player: React.FC = () => {
 
         <div 
           className="flex items-center justify-between px-4 py-3 cursor-pointer md:cursor-default"
-          onClick={() => {
-            // Abre fullscreen apenas no mobile
-            if (window.innerWidth < 768) {
-              setIsFullScreenOpen(true);
-            }
-          }}
+          onClick={openFullScreen}
         >
           {/* Track Info */}
           <div className="flex items-center space-x-3 flex-1 min-w-0">
