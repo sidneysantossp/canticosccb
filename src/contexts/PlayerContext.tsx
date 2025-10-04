@@ -13,12 +13,14 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
   const openFullScreen = () => {
     // Só abre no mobile
-    if (window.innerWidth < 768) {
+    if (typeof window !== 'undefined' && window.innerWidth < 768) {
+      console.log('Opening fullscreen');
       setIsFullScreenOpen(true);
     }
   };
 
   const closeFullScreen = () => {
+    console.log('Closing fullscreen');
     setIsFullScreenOpen(false);
   };
 

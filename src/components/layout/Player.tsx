@@ -51,6 +51,9 @@ const Player: React.FC = () => {
 
   const progressPercentage = duration > 0 ? (currentTime / duration) * 100 : 0;
 
+  // Debug
+  console.log('Player - isFullScreenOpen:', isFullScreenOpen);
+
   return (
     <>
       <FullScreenPlayer 
