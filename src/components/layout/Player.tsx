@@ -1,5 +1,5 @@
 import React from 'react';
-import { Play, Pause, SkipBack, SkipForward, Volume2, Heart, MoreHorizontal, Shuffle, Repeat, Repeat1, ChevronUp } from 'lucide-react';
+import { Play, Pause, SkipBack, SkipForward, Volume2, Heart, MoreHorizontal, Shuffle, Repeat, Repeat1, ChevronUp, X } from 'lucide-react';
 import { usePlayerStore } from '@/stores/playerStore';
 import { usePlayerContext } from '@/contexts/PlayerContext';
 import FullScreenPlayer from '@/components/FullScreenPlayer';
@@ -25,6 +25,11 @@ const Player: React.FC = () => {
   const [repeat, setRepeat] = React.useState<'off' | 'all' | 'one'>('off');
 
   if (!currentTrack) return null;
+
+  const handleClose = () => {
+    pause();
+    // Aqui você pode adicionar lógica para limpar o currentTrack se necessário
+  };
 
   const handlePlayPause = () => {
     if (isPlaying) {
@@ -97,17 +102,28 @@ const Player: React.FC = () => {
             </div>
           </div>
           
-          {/* Play Button - Mobile (Alinhado à direita) */}
-          <button
-            onClick={handlePlayPause}
-            className="lg:hidden w-10 h-10 bg-primary-500 text-black rounded-full flex items-center justify-center hover:bg-primary-400 transition-colors flex-shrink-0"
-          >
-            {isPlaying ? (
-              <Pause className="w-5 h-5" />
-            ) : (
-              <Play className="w-5 h-5 ml-0.5" />
-            )}
-          </button>
+          {/* Controles Mobile - Direita */}
+          <div className="lg:hidden flex items-center gap-2 flex-shrink-0">
+            {/* Play Button */}
+            <button
+              onClick={handlePlayPause}
+              className="w-10 h-10 bg-primary-500 text-black rounded-full flex items-center justify-center hover:bg-primary-400 transition-colors"
+            >
+              {isPlaying ? (
+                <Pause className="w-5 h-5" />
+              ) : (
+                <Play className="w-5 h-5 ml-0.5" />
+              )}
+            </button>
+            
+            {/* Botão Fechar */}
+            <button
+              onClick={handleClose}
+              className="w-10 h-10 rounded-full flex items-center justify-center hover:bg-white/10 transition-colors"
+            >
+              <X className="w-5 h-5 text-text-muted" />
+            </button>
+          </div>
           
           {/* Desktop Heart */}
           <button className="icon-button hidden lg:flex">
