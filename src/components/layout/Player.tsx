@@ -1,6 +1,7 @@
 import React from 'react';
 import { Play, Pause, SkipBack, SkipForward, Volume2, Heart, MoreHorizontal, Shuffle, Repeat, Repeat1 } from 'lucide-react';
 import { usePlayerStore } from '@/stores/playerStore';
+import FullScreenPlayer from '@/components/FullScreenPlayer';
 
 const Player: React.FC = () => {
   const {
@@ -19,6 +20,7 @@ const Player: React.FC = () => {
 
   const [shuffle, setShuffle] = React.useState(false);
   const [repeat, setRepeat] = React.useState<'off' | 'all' | 'one'>('off');
+  const [isFullScreenOpen, setIsFullScreenOpen] = React.useState(false);
 
   if (!currentTrack) return null;
 
@@ -48,38 +50,52 @@ const Player: React.FC = () => {
   const progressPercentage = duration > 0 ? (currentTime / duration) * 100 : 0;
 
   return (
-    <div className="fixed bottom-0 lg:bottom-0 left-0 right-0 bg-background-tertiary border-t border-gray-700 z-50">
-      {/* Progress Bar */}
-      <div 
-        className="w-full h-1 bg-gray-700 cursor-pointer hover:h-2 transition-all duration-200"
-        onClick={handleProgressClick}
-      >
+    <>
+      <FullScreenPlayer 
+        isOpen={isFullScreenOpen} 
+        onClose={() => setIsFullScreenOpen(false)} 
+      />
+      
+      <div className="fixed bottom-0 lg:bottom-0 left-0 right-0 bg-background-tertiary border-t border-gray-700 z-40">
+        {/* Progress Bar */}
         <div 
-          className="h-full bg-primary-500 transition-all duration-300"
-          style={{ width: `${progressPercentage}%` }}
-        />
-      </div>
-
-      <div className="flex items-center justify-between px-4 py-3">
-        {/* Track Info */}
-        <div className="flex items-center space-x-3 flex-1 min-w-0">
-          <img
-            src={currentTrack.coverUrl}
-            alt={currentTrack.title}
-            className="w-12 h-12 rounded object-cover"
+          className="w-full h-1 bg-gray-700 cursor-pointer hover:h-2 transition-all duration-200"
+          onClick={handleProgressClick}
+        >
+          <div 
+            className="h-full bg-primary-500 transition-all duration-300"
+            style={{ width: `${progressPercentage}%` }}
           />
-          <div className="min-w-0 flex-1">
-            <h4 className="text-text-primary font-medium text-sm truncate">
-              {currentTrack.title}
-            </h4>
-            <p className="text-text-muted text-xs truncate">
-              {currentTrack.artist}
-            </p>
-          </div>
-          <button className="icon-button">
-            <Heart className="w-4 h-4" />
-          </button>
         </div>
+
+        <div 
+          className="flex items-center justify-between px-4 py-3 cursor-pointer md:cursor-default"
+          onClick={() => {
+            // Abre fullscreen apenas no mobile
+            if (window.innerWidth < 768) {
+              setIsFullScreenOpen(true);
+            }
+          }}
+        >
+          {/* Track Info */}
+          <div className="flex items-center space-x-3 flex-1 min-w-0">
+            <img
+              src={currentTrack.coverUrl}
+              alt={currentTrack.title}
+              className="w-12 h-12 rounded object-cover"
+            />
+            <div className="min-w-0 flex-1">
+              <h4 className="text-text-primary font-medium text-sm truncate">
+                {currentTrack.title}
+              </h4>
+              <p className="text-text-muted text-xs truncate">
+                {currentTrack.artist}
+              </p>
+            </div>
+            <button className="icon-button" onClick={(e) => e.stopPropagation()}>
+              <Heart className="w-4 h-4" />
+            </button>
+          </div>
 
         {/* Controls */}
         <div className="flex items-center space-x-2 md:space-x-4">
@@ -146,12 +162,13 @@ const Player: React.FC = () => {
             {formatTime(currentTime)} / {formatTime(duration || 180)}
           </span>
           
-          <button className="icon-button">
+          <button className="icon-button" onClick={(e) => e.stopPropagation()}>
             <MoreHorizontal className="w-4 h-4" />
           </button>
         </div>
       </div>
     </div>
+    </>
   );
 };
 
