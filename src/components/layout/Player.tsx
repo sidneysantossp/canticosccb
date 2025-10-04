@@ -58,6 +58,8 @@ const Player: React.FC = () => {
         onClose={closeFullScreen} 
       />
       
+      {/* Esconde a barra quando fullscreen está aberto */}
+      {!isFullScreenOpen && (
       <div className="fixed bottom-16 lg:bottom-0 left-0 right-0 bg-background-tertiary border-t border-gray-700 z-30 lg:z-40">
         {/* Progress Bar */}
         <div 
@@ -165,6 +167,7 @@ const Player: React.FC = () => {
         </div>
       </div>
     </div>
+      )}
     </>
   );
 };
