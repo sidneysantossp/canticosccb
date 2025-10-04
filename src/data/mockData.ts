@@ -65,27 +65,26 @@ export const mockHinos: Hino[] = [
     duration: '4:10',
     audioUrl: '/audio/hino-50.mp3',
     coverUrl: 'https://picsum.photos/seed/hino50/300/300',
-    lyrics: 'Saudosa lembrança me vem ao coração...',
+    lyrics: `Primeira estrofe do hino de louvor
+Com melodia suave e harmoniosa
+Palavras de fé e esperança
+Cantadas em adoração
+
+Segunda estrofe traz reflexão
+Sobre a graça divina
+E o amor que nos alcança
+A cada novo dia
+
+Terceira estrofe finaliza
+Com gratidão e louvor
+Pela bondade eterna
+Do nosso Criador`,
     plays: 18750,
     isLiked: true,
     createdAt: '2024-01-01T00:00:00Z'
   },
   {
     id: '5',
-    title: 'Hino 100 - Vencendo Vem Jesus',
-    number: 100,
-    category: 'Vitória',
-    artist: 'Coral CCB',
-    duration: '3:30',
-    audioUrl: '/audio/hino-100.mp3',
-    coverUrl: 'https://picsum.photos/seed/hino100/300/300',
-    lyrics: 'Vencendo vem Jesus, o Rei dos reis...',
-    plays: 22100,
-    isLiked: false,
-    createdAt: '2024-01-01T00:00:00Z'
-  },
-  {
-    id: '6',
     title: 'Hino 200 - Jerusalém Celeste',
     number: 200,
     category: 'Esperança',

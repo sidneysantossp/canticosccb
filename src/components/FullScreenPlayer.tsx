@@ -1,5 +1,5 @@
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Heart, MoreVertical, Shuffle, SkipBack, Play, Pause, SkipForward, Repeat, Volume2, Share2, Plus } from 'lucide-react';
+import { X, Heart, MoreVertical, Shuffle, SkipBack, Play, Pause, SkipForward, Repeat, Volume2, Share2, Plus, FileText, ChevronDown, ChevronUp } from 'lucide-react';
 import { usePlayerStore } from '@/stores/playerStore';
 import { useState } from 'react';
 
@@ -25,6 +25,7 @@ export default function FullScreenPlayer({ isOpen, onClose }: FullScreenPlayerPr
   const [isLiked, setIsLiked] = useState(false);
   const [shuffle, setShuffle] = useState(false);
   const [repeat, setRepeat] = useState<'off' | 'all' | 'one'>('off');
+  const [showLyrics, setShowLyrics] = useState(false);
 
   if (!currentTrack) return null;
 
@@ -50,14 +51,15 @@ export default function FullScreenPlayer({ isOpen, onClose }: FullScreenPlayerPr
   };
 
   return (
-    <AnimatePresence>
-      {isOpen && (
-        <motion.div
+    <>
+      <AnimatePresence>
+        {isOpen && (
+          <motion.div
           initial={{ y: '100%' }}
           animate={{ y: 0 }}
           exit={{ y: '100%' }}
           transition={{ type: 'spring', damping: 30, stiffness: 300 }}
-          className="fixed inset-0 z-50 bg-gradient-to-b from-green-900 via-green-800 to-black"
+          className="fixed inset-0 z-50 bg-gradient-to-b from-green-900 via-green-800 to-black overflow-y-auto pb-20"
         >
           {/* Header */}
           <div className="flex items-center justify-between p-4">
@@ -83,7 +85,7 @@ export default function FullScreenPlayer({ isOpen, onClose }: FullScreenPlayerPr
           </div>
 
           {/* Album Art - Centralizado e Grande */}
-          <div className="flex items-center justify-center px-8 py-12">
+          <div className="flex items-center justify-center px-8 py-4">
             <motion.div
               initial={{ scale: 0.8, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
@@ -93,16 +95,32 @@ export default function FullScreenPlayer({ isOpen, onClose }: FullScreenPlayerPr
               <img
                 src={currentTrack.coverUrl}
                 alt={currentTrack.title}
-                className="w-80 h-80 rounded-3xl shadow-2xl object-cover"
+                className="w-56 h-56 rounded-3xl shadow-2xl object-cover"
               />
               
               {/* Glow effect */}
               <div className="absolute inset-0 rounded-3xl bg-gradient-to-t from-black/50 to-transparent" />
+              
+              {/* Ícone Pause Flutuante - Só quando está tocando */}
+              {isPlaying && (
+                <motion.button
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  exit={{ scale: 0 }}
+                  whileTap={{ scale: 0.9 }}
+                  onClick={handlePlayPause}
+                  className="absolute inset-0 flex items-center justify-center"
+                >
+                  <div className="p-4 bg-black/60 rounded-full backdrop-blur-sm hover:bg-black/80 transition-colors">
+                    <Pause className="w-8 h-8 text-white" />
+                  </div>
+                </motion.button>
+              )}
             </motion.div>
           </div>
 
           {/* Track Info */}
-          <div className="px-8 py-4">
+          <div className="px-8 py-2">
             <div className="flex items-start justify-between">
               <div className="flex-1">
                 <motion.h1
@@ -140,7 +158,7 @@ export default function FullScreenPlayer({ isOpen, onClose }: FullScreenPlayerPr
           </div>
 
           {/* Progress Bar */}
-          <div className="px-8 py-6">
+          <div className="px-8 py-4">
             <div className="relative">
               <input
                 type="range"
@@ -176,8 +194,8 @@ export default function FullScreenPlayer({ isOpen, onClose }: FullScreenPlayerPr
           </div>
 
           {/* Controls */}
-          <div className="px-8 py-4">
-            <div className="flex items-center justify-between mb-8">
+          <div className="px-8 py-0">
+            <div className="flex items-center justify-between mb-2">
               {/* Shuffle */}
               <button
                 onClick={() => setShuffle(!shuffle)}
@@ -235,33 +253,6 @@ export default function FullScreenPlayer({ isOpen, onClose }: FullScreenPlayerPr
               </button>
             </div>
 
-            {/* Volume Control */}
-            <div className="flex items-center gap-3 mb-4">
-              <Volume2 className="w-5 h-5 text-gray-400" />
-              <input
-                type="range"
-                min="0"
-                max="100"
-                value={volume}
-                onChange={(e) => setVolume(Number(e.target.value))}
-                className="flex-1 h-1 bg-white/20 rounded-full appearance-none cursor-pointer
-                  [&::-webkit-slider-thumb]:appearance-none
-                  [&::-webkit-slider-thumb]:w-3
-                  [&::-webkit-slider-thumb]:h-3
-                  [&::-webkit-slider-thumb]:rounded-full
-                  [&::-webkit-slider-thumb]:bg-white
-                  [&::-webkit-slider-thumb]:cursor-pointer
-                  [&::-moz-range-thumb]:w-3
-                  [&::-moz-range-thumb]:h-3
-                  [&::-moz-range-thumb]:rounded-full
-                  [&::-moz-range-thumb]:bg-white
-                  [&::-moz-range-thumb]:border-0"
-                style={{
-                  background: `linear-gradient(to right, white ${volume}%, rgba(255,255,255,0.2) ${volume}%)`,
-                }}
-              />
-            </div>
-
             {/* Action Buttons */}
             <div className="flex items-center justify-between pt-4 border-t border-white/10">
               <button className="flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 hover:bg-white/20 transition-colors">
@@ -273,9 +264,63 @@ export default function FullScreenPlayer({ isOpen, onClose }: FullScreenPlayerPr
                 <Share2 className="w-5 h-5 text-white" />
               </button>
             </div>
+
+            {/* Lyrics Button */}
+            <button
+              onClick={() => setShowLyrics(true)}
+              className="w-full flex items-center justify-between px-4 py-3 mt-4 rounded-lg bg-white/10 hover:bg-white/20 transition-colors"
+            >
+              <div className="flex items-center gap-2">
+                <FileText className="w-5 h-5 text-white" />
+                <span className="text-sm text-white font-medium">Letra do Hino</span>
+              </div>
+              <ChevronUp className="w-5 h-5 text-white" />
+            </button>
           </div>
-        </motion.div>
-      )}
-    </AnimatePresence>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Lyrics Overlay - Abre por cima com fundo desfocado */}
+      <AnimatePresence>
+        {showLyrics && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.3 }}
+            className="fixed inset-0 z-[60] bg-black/50 backdrop-blur-md flex items-end"
+            onClick={() => setShowLyrics(false)}
+          >
+            <motion.div
+              initial={{ y: '100%' }}
+              animate={{ y: 0 }}
+              exit={{ y: '100%' }}
+              transition={{ type: 'spring', damping: 30, stiffness: 300 }}
+              className="w-full bg-gradient-to-b from-green-900 to-black rounded-t-3xl max-h-[80vh] overflow-hidden"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* Header */}
+              <div className="flex items-center justify-between p-4 border-b border-white/10">
+                <h2 className="text-xl font-bold text-white">Letra do Hino</h2>
+                <button
+                  onClick={() => setShowLyrics(false)}
+                  className="p-2 rounded-full hover:bg-white/10 transition-colors"
+                >
+                  <ChevronDown className="w-6 h-6 text-white" />
+                </button>
+              </div>
+
+              {/* Lyrics Content */}
+              <div className="p-6 overflow-y-auto max-h-[calc(80vh-80px)]">
+                <p className="text-white text-base leading-relaxed whitespace-pre-line">
+                  {currentTrack.lyrics || 'Letra não disponível para este hino.'}
+                </p>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </>
   );
 }
