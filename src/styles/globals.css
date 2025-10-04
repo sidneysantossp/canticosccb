@@ -1,0 +1,195 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Global Styles */
+* {
+  box-sizing: border-box;
+}
+
+body {
+  background-color: #121212;
+  color: #ffffff;
+  font-family: 'Montserrat', system-ui, sans-serif;
+  margin: 0;
+  padding: 0;
+  min-height: 100vh;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+/* Basic Button Styles */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 9999px;
+  font-weight: 600;
+  transition: all 0.2s;
+  border: none;
+  cursor: pointer;
+}
+
+.btn-primary {
+  background-color: #1db954;
+  color: #000000;
+  padding: 0.5rem 1rem;
+}
+
+.btn-primary:hover {
+  background-color: #1ed760;
+  transform: scale(1.05);
+}
+
+.btn-secondary {
+  background-color: #282828;
+  color: #ffffff;
+  padding: 0.5rem 1rem;
+}
+
+.btn-secondary:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+/* Layout */
+.min-h-screen {
+  min-height: 100vh;
+}
+
+.flex {
+  display: flex;
+}
+
+.flex-col {
+  flex-direction: column;
+}
+
+.flex-1 {
+  flex: 1;
+}
+
+.grid {
+  display: grid;
+}
+
+.hidden {
+  display: none;
+}
+
+/* Spacing */
+.p-6 {
+  padding: 1.5rem;
+}
+
+.p-4 {
+  padding: 1rem;
+}
+
+.px-6 {
+  padding-left: 1.5rem;
+  padding-right: 1.5rem;
+}
+
+.py-4 {
+  padding-top: 1rem;
+  padding-bottom: 1rem;
+}
+
+.mb-6 {
+  margin-bottom: 1.5rem;
+}
+
+.mb-4 {
+  margin-bottom: 1rem;
+}
+
+/* Background Colors */
+.bg-background-primary {
+  background-color: #121212;
+}
+
+.bg-background-secondary {
+  background-color: #181818;
+}
+
+.bg-background-tertiary {
+  background-color: #282828;
+}
+
+/* Text Colors */
+.text-text-primary {
+  color: #ffffff;
+}
+
+.text-text-secondary {
+  color: #b3b3b3;
+}
+
+.text-text-muted {
+  color: #6b7280;
+}
+
+/* Border Radius */
+.rounded-lg {
+  border-radius: 0.5rem;
+}
+
+.rounded-full {
+  border-radius: 9999px;
+}
+
+/* Font Weights */
+.font-bold {
+  font-weight: 700;
+}
+
+.font-semibold {
+  font-weight: 600;
+}
+
+.font-medium {
+  font-weight: 500;
+}
+
+/* Text Sizes */
+.text-2xl {
+  font-size: 1.5rem;
+  line-height: 2rem;
+}
+
+.text-lg {
+  font-size: 1.125rem;
+  line-height: 1.75rem;
+}
+
+.text-sm {
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+}
+
+/* Responsive Grid */
+@media (min-width: 1024px) {
+  .lg\\:grid-cols-\\[240px_1fr_280px\\] {
+    grid-template-columns: 240px 1fr 280px;
+  }
+  
+  .lg\\:block {
+    display: block;
+  }
+  
+  .lg\\:hidden {
+    display: none;
+  }
+}
+
+@media (max-width: 1023px) {
+  .lg\\:hidden {
+    display: block;
+  }
+  
+  .lg\\:block {
+    display: none;
+  }
+}

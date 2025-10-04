@@ -1,0 +1,93 @@
+@media (max-width: 1280px) {
+    .top-nav {
+        display: flex;
+        flex-direction: row;
+        flex-wrap: wrap;
+        gap: 12px;
+    }
+
+    .logo {
+        flex: 0 0 auto;
+    }
+
+    .profile {
+        flex: 1;
+        justify-content: flex-end;
+        display: flex;
+    }
+
+    .header-search {
+        flex-basis: 100%;
+        max-width: none;
+        order: 3;
+        margin: 0;
+    }
+}
+
+@media (max-width: 900px) {
+    .content-wrapper {
+        grid-template-columns: 1fr;
+        gap: 12px;
+    }
+
+    .sidebar {
+        display: none;
+    }
+
+    .main-content {
+        max-height: none;
+    }
+
+    .player {
+        grid-template-columns: 1fr;
+        gap: 16px;
+        text-align: center;
+    }
+
+    .player-now,
+    .player-controls,
+    .player-extra {
+        justify-content: center;
+    }
+}
+
+@media (max-width: 600px) {
+    .top-nav {
+        flex-wrap: wrap;
+        gap: 16px;
+    }
+
+    .main-tabs {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .profile {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .greeting h1 {
+        font-size: 24px;
+    }
+
+    .grid {
+        grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    }
+
+    .carousel {
+        grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    }
+
+    .header-search {
+        order: 3;
+        width: 100%;
+        max-width: none;
+        min-width: 0;
+        margin-top: 8px;
+    }
+
+    .mic-button {
+        display: none;
+    }
+}

@@ -1,0 +1,46 @@
+:root {
+    --bg-primary: #121212;
+    --bg-secondary: #181818;
+    --bg-tertiary: #242424;
+    --bg-hover: #282828;
+    --accent: #1DB954;
+    --text-primary: #FFFFFF;
+    --text-muted: #B3B3B3;
+    --text-subdued: #818181;
+    --border-color: rgba(255, 255, 255, 0.1);
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+html,
+body {
+    height: 100%;
+}
+
+body {
+    font-family: 'Montserrat', sans-serif;
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    -webkit-font-smoothing: antialiased;
+}
+
+a {
+    color: inherit;
+    text-decoration: none;
+}
+
+a:hover {
+    color: var(--accent);
+}
+
+button {
+    font-family: inherit;
+    border: none;
+    cursor: pointer;
+    background: none;
+    color: inherit;
+}
