@@ -47,7 +47,7 @@ export default function FullScreenPlayer({ isOpen, onClose }: FullScreenPlayerPr
 
   const handleSeek = (value: number) => {
     // TODO: Implementar seek no store
-    console.log('Seek to:', value);
+    // console.log('Seek to:', value);
   };
 
   return (

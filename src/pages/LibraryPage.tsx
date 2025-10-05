@@ -72,7 +72,7 @@ const LibraryPage: React.FC = () => {
 
   const handlePlayPlaylist = (playlist: any) => {
     // TODO: Implement playlist play functionality
-    console.log('Playing playlist:', playlist.name);
+    // console.log('Playing playlist:', playlist.name);
   };
 
   return (

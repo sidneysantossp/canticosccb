@@ -84,17 +84,17 @@ const Queue: React.FC<QueueProps> = ({ isOpen, onClose }) => {
 
   const handleRemoveFromQueue = (id: number) => {
     // TODO: Implement remove from queue
-    console.log('Remove from queue:', id);
+    // console.log('Remove from queue:', id);
   };
 
   const handleClearQueue = () => {
     // TODO: Implement clear queue
-    console.log('Clear queue');
+    // console.log('Clear queue');
   };
 
   const handleShuffleQueue = () => {
     // TODO: Implement shuffle queue
-    console.log('Shuffle queue');
+    // console.log('Shuffle queue');
   };
 
   if (!isOpen) return null;

@@ -45,7 +45,7 @@ const Player: React.FC = () => {
     const percentage = clickX / rect.width;
     const newTime = percentage * (duration || 0);
     // TODO: Implement seek functionality in store
-    console.log('Seek to:', newTime);
+    // console.log('Seek to:', newTime);
   };
 
   const formatTime = (seconds: number) => {

@@ -85,7 +85,7 @@ const LikedSongsPage: React.FC = () => {
 
   const handleRemoveLike = (id: number) => {
     // TODO: Implement unlike functionality
-    console.log('Unlike song:', id);
+    // console.log('Unlike song:', id);
   };
 
   return (
