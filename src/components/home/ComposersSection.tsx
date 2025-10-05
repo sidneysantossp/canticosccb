@@ -170,7 +170,8 @@ const ComposersSection: React.FC = () => {
               key={compositor.id}
               className="group bg-background-secondary rounded-lg overflow-hidden hover:bg-background-tertiary transition-all duration-300 hover:scale-105 flex-shrink-0 w-64"
             >
-            <div className="aspect-[4/3] relative overflow-hidden">
+              <div className="p-4">
+                <div className="aspect-square relative overflow-hidden rounded-full mb-4">
               <img 
                 src={compositor.image}
                 alt={compositor.name}
@@ -187,22 +188,18 @@ const ComposersSection: React.FC = () => {
               >
                 <Play className="w-5 h-5 fill-current" />
               </button>
-            </div>
-            
-            <div className="p-4">
-              <h3 className="text-lg font-bold text-white mb-2 line-clamp-1">
-                {compositor.name}
-              </h3>
-              <p className="text-gray-400 text-sm mb-3 line-clamp-2">
-                {compositor.description}
-              </p>
-              <div className="text-xs text-gray-500">
-                <span>{compositor.totalHinos} hinos</span>
-                <span className="mx-2">•</span>
-                <span className="text-primary-400">{compositor.popularHino}</span>
+                </div>
+                
+                <div className="text-center">
+                  <h3 className="text-lg font-bold text-white mb-1">
+                    {compositor.name}
+                  </h3>
+                  <p className="text-gray-400 text-sm">
+                    Artista
+                  </p>
+                </div>
               </div>
             </div>
-          </div>
           ))}
         </div>
       </div>

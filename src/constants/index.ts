@@ -1,8 +1,8 @@
 // API URLs
 export const API_URLS = {
-  BASE_URL: process.env.VITE_API_BASE_URL || 'http://localhost:3000',
-  SUPABASE_URL: process.env.VITE_SUPABASE_URL || '',
-  SUPABASE_ANON_KEY: process.env.VITE_SUPABASE_ANON_KEY || '',
+  BASE_URL: 'http://localhost:3000',
+  SUPABASE_URL: '',
+  SUPABASE_ANON_KEY: '',
 } as const;
 
 // Asset URLs

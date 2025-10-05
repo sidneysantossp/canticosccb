@@ -29,69 +29,67 @@ const HomePage: React.FC = () => {
     {
       id: 2,
       title: 'Hinos de Santa Ceia',
-      subtitle: 'Congregação Cristã no Brasil',
       cover: 'https://picsum.photos/seed/album2/200/200'
     },
     {
       id: 3,
       title: 'Hinos Instrumentais',
-      subtitle: 'Congregação Cristã no Brasil',
+      subtitle: 'Orquestra CCB',
       cover: 'https://picsum.photos/seed/album3/200/200'
     },
-    {
       id: 4,
-      title: 'Hinos de Batismo',
+      title: 'Hinário Jovens',
       subtitle: 'Congregação Cristã no Brasil',
       cover: 'https://picsum.photos/seed/album4/200/200'
     }
-  ];
+  );
+};
+
+export default HomePage;
+
+  const handleTogglePlay = (hino: any) => {
+    if (currentTrack?.id === hino.id && isPlaying) {
+      // Pause current track
+      // This would be handled by the player store
+      pause();
+    } else {
+      play(hino);
+{{ ... }}
+      // Small delay to allow state to update before opening full screen
+      setTimeout(() => {
+        if (window.innerWidth < 768) { // Only on mobile
+          openFullScreen();
+        }
+      }, 300);
+    }
+  };
 
   const handlePlayTrack = (track: any) => {
     play(track);
+    // Small delay to allow state to update before opening full screen
+    setTimeout(() => {
+      if (window.innerWidth < 768) { // Only on mobile
+        openFullScreen();
+      }
+    }, 300);
   };
 
-  const handleTogglePlay = (track: any) => {
-    if (currentTrack?.id === track.id && isPlaying) {
-      // Pause current track
-      return;
-    }
-    play(track);
-  };
-
+  // Scroll functions for albums carousel
   const scrollLeft = () => {
     if (scrollContainerRef.current) {
-      const container = scrollContainerRef.current;
-      const scrollAmount = 300;
-      
-      container.scrollBy({ left: -scrollAmount, behavior: 'smooth' });
-      
-      // Infinite scroll - reset to end when reaching beginning
-      setTimeout(() => {
-        if (container.scrollLeft <= 10) {
-          const maxScroll = container.scrollWidth - container.clientWidth;
-          container.scrollTo({ left: maxScroll, behavior: 'auto' });
-          setTimeout(() => {
-            container.scrollBy({ left: -scrollAmount, behavior: 'smooth' });
-          }, 50);
-        }
-      }, 300);
+      scrollContainerRef.current.scrollBy({
+        left: -200,
+        behavior: 'smooth'
+      });
     }
   };
 
   const scrollRight = () => {
     if (scrollContainerRef.current) {
-      const container = scrollContainerRef.current;
-      const scrollAmount = 300;
-      
-      container.scrollBy({ left: scrollAmount, behavior: 'smooth' });
-      
-      // Infinite scroll - reset to beginning when reaching end
-      setTimeout(() => {
-        const maxScroll = container.scrollWidth - container.clientWidth;
-        if (container.scrollLeft >= maxScroll - 10) {
-          container.scrollTo({ left: 0, behavior: 'auto' });
-        }
-      }, 300);
+      scrollContainerRef.current.scrollBy({
+        left: 200,
+        behavior: 'smooth'
+      });
     }
   };
 
@@ -99,11 +97,6 @@ const HomePage: React.FC = () => {
     <div className="space-y-8">
       {/* Hero Section */}
       <HeroSection />
-
-      {/* Category Grid */}
-      <div className="px-6">
-        <CategoryGrid />
-      </div>
 
       {/* Popular Hinos Section */}
       <section className="px-6">
@@ -156,7 +149,7 @@ const HomePage: React.FC = () => {
                   {hino.title}
                 </h3>
                 <p className="text-sm text-gray-400 truncate">
-                  {hino.artist}
+                  {hino.artist} • {hino.category}
                 </p>
               </div>
 
@@ -179,7 +172,12 @@ const HomePage: React.FC = () => {
         </div>
       </section>
 
-      {/* Albums Carousel */}
+      {/* Category Grid */}
+      <div className="px-6">
+        <CategoryGrid />
+      </div>
+
+      {/* Albums Section */}
       <section className="px-6">
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-2xl md:text-3xl font-bold text-white">
@@ -255,10 +253,6 @@ const HomePage: React.FC = () => {
         <BibleSection />
       </div>
 
-      {/* Footer */}
       <Footer />
     </div>
   );
-};
-
-export default HomePage;

@@ -102,9 +102,9 @@ const BibleSection: React.FC = () => {
               key={chapter.id}
               className="group bg-background-secondary rounded-lg overflow-hidden hover:bg-background-tertiary transition-all duration-300 flex-shrink-0 w-80"
             >
-              <div className="flex">
+              <div className="flex h-32">
                 {/* Cover Image */}
-                <div className="w-32 h-32 relative overflow-hidden flex-shrink-0">
+                <div className="w-32 h-full relative overflow-hidden flex-shrink-0">
                   <img 
                     src={chapter.coverUrl}
                     alt={`${chapter.book} ${chapter.chapter}`}
