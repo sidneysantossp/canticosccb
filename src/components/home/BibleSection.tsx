@@ -94,7 +94,73 @@ const BibleSection: React.FC = () => {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      {/* Mobile: Horizontal Scroll */}
+      <div className="md:hidden">
+        <div className="flex gap-4 overflow-x-auto scrollbar-hide pb-4 px-6 -mx-6">
+          {bibleChapters.map((chapter) => (
+            <div
+              key={chapter.id}
+              className="group bg-background-secondary rounded-lg overflow-hidden hover:bg-background-tertiary transition-all duration-300 flex-shrink-0 w-80"
+            >
+              <div className="flex">
+                {/* Cover Image */}
+                <div className="w-32 h-32 relative overflow-hidden flex-shrink-0">
+                  <img 
+                    src={chapter.coverUrl}
+                    alt={`${chapter.book} ${chapter.chapter}`}
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                    loading="lazy"
+                  />
+                  
+                  {/* Play Button Overlay */}
+                  <button
+                    onClick={() => handlePlayBible(chapter)}
+                    className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300"
+                    aria-label={`Reproduzir ${chapter.book} ${chapter.chapter}`}
+                  >
+                    <Play className="w-6 h-6 text-white fill-current" />
+                  </button>
+
+                  {/* Duration Badge */}
+                  <div className="absolute top-2 right-2 bg-black/70 text-white text-xs px-2 py-1 rounded flex items-center gap-1">
+                    <Clock className="w-3 h-3" />
+                    {chapter.duration}
+                  </div>
+                </div>
+
+                {/* Content */}
+                <div className="flex-1 p-4">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Book className="w-4 h-4 text-primary-400" />
+                    <span className="text-primary-400 text-sm font-medium">
+                      {chapter.book} {chapter.chapter}
+                    </span>
+                  </div>
+                  
+                  <h3 className="text-lg font-bold text-white mb-2 line-clamp-1">
+                    {chapter.title}
+                  </h3>
+                  
+                  <p className="text-gray-400 text-sm line-clamp-2 mb-3">
+                    {chapter.description}
+                  </p>
+
+                  <button
+                    onClick={() => handlePlayBible(chapter)}
+                    className="w-full bg-background-tertiary hover:bg-primary-500/20 text-white hover:text-primary-400 py-2 px-3 rounded-lg transition-colors flex items-center justify-center gap-2 group/btn text-sm"
+                  >
+                    <Play className="w-3 h-3 group-hover/btn:fill-current" />
+                    Reproduzir
+                  </button>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Desktop: Grid Layout */}
+      <div className="hidden md:grid md:grid-cols-2 lg:grid-cols-4 gap-6">
         {bibleChapters.map((chapter) => (
           <div
             key={chapter.id}

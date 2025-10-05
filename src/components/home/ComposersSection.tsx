@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { ChevronLeft, ChevronRight, Play } from 'lucide-react';
 import { usePlayerStore } from '@/stores/playerStore';
+import { useTouchScroll } from '@/hooks/useTouchScroll';
 
 interface Compositor {
   id: number;
@@ -49,6 +50,7 @@ const compositores: Compositor[] = [
 const ComposersSection: React.FC = () => {
   const [currentCompositorIndex, setCurrentCompositorIndex] = useState(0);
   const { play } = usePlayerStore();
+  const touchScrollRef = useTouchScroll<HTMLDivElement>();
 
   // Auto-rotate compositores
   useEffect(() => {
@@ -157,13 +159,17 @@ const ComposersSection: React.FC = () => {
         </div>
       </div>
 
-      {/* Desktop: Grid Layout */}
-      <div className="hidden md:grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {compositores.map((compositor) => (
-          <div
-            key={compositor.id}
-            className="group bg-background-secondary rounded-lg overflow-hidden hover:bg-background-tertiary transition-all duration-300 hover:scale-105"
-          >
+      {/* Desktop: Horizontal Scroll */}
+      <div className="hidden md:block">
+        <div 
+          ref={touchScrollRef}
+          className="flex gap-6 overflow-x-auto scrollbar-hide pb-4"
+        >
+          {compositores.map((compositor) => (
+            <div
+              key={compositor.id}
+              className="group bg-background-secondary rounded-lg overflow-hidden hover:bg-background-tertiary transition-all duration-300 hover:scale-105 flex-shrink-0 w-64"
+            >
             <div className="aspect-[4/3] relative overflow-hidden">
               <img 
                 src={compositor.image}
@@ -197,7 +203,8 @@ const ComposersSection: React.FC = () => {
               </div>
             </div>
           </div>
-        ))}
+          ))}
+        </div>
       </div>
     </section>
   );

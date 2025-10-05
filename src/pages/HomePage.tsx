@@ -10,11 +10,12 @@ import BibleSection from '@/components/home/BibleSection';
 import { getPopularHinos } from '@/data/mockData';
 import { usePlayerStore } from '@/stores/playerStore';
 import { usePlayerContext } from '@/contexts/PlayerContext';
+import { useTouchScroll } from '@/hooks/useTouchScroll';
 
 const HomePage: React.FC = () => {
   const { play, currentTrack, isPlaying } = usePlayerStore();
   const { openFullScreen } = usePlayerContext();
-  const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const scrollContainerRef = useTouchScroll<HTMLDivElement>();
   
   const popularHinos = getPopularHinos(6);
 
