@@ -1,0 +1,15 @@
+<svg width="180" height="180" viewBox="0 0 180 180" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#10b981;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#059669;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  <rect width="180" height="180" rx="22.5" fill="url(#bg)"/>
+  <g transform="translate(36, 36)">
+    <rect x="62.99999999999999" y="18" width="3.6" height="72" fill="white"/>
+    <ellipse cx="54" cy="81" rx="7.2" ry="4.5" fill="white"/>
+    <line x1="18" y1="45" x2="90" y2="45" stroke="white" stroke-width="0.54" opacity="0.7"/><line x1="18" y1="54" x2="90" y2="54" stroke="white" stroke-width="0.54" opacity="0.7"/><line x1="18" y1="63" x2="90" y2="63" stroke="white" stroke-width="0.54" opacity="0.7"/><line x1="18" y1="72" x2="90" y2="72" stroke="white" stroke-width="0.54" opacity="0.7"/><line x1="18" y1="81" x2="90" y2="81" stroke="white" stroke-width="0.54" opacity="0.7"/>
+  </g>
+  <text x="90" y="144" text-anchor="middle" fill="white" font-family="Arial, sans-serif" font-size="21.599999999999998" font-weight="bold">CCB</text>
+</svg>

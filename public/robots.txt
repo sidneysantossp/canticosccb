@@ -1,0 +1,38 @@
+# robots.txt - Cânticos CCB
+# https://canticosccb.com.br/robots.txt
+
+User-agent: *
+Allow: /
+
+# Sitemap
+Sitemap: https://canticosccb.com.br/sitemap.xml
+
+# Disallow private areas
+Disallow: /composer/dashboard
+Disallow: /composer/analytics
+Disallow: /composer/songs/upload
+Disallow: /composer/albums/create
+Disallow: /settings
+Disallow: /edit-profile
+Disallow: /subscription
+
+# Disallow auth pages
+Disallow: /login
+Disallow: /register
+Disallow: /onboarding
+Disallow: /composer/onboarding
+
+# Allow public pages
+Allow: /
+Allow: /search
+Allow: /library
+Allow: /premium
+Allow: /about
+Allow: /terms
+Allow: /artist/*
+Allow: /album/*
+Allow: /song/*
+Allow: /playlist/*
+
+# Crawl delay (optional, adjust if needed)
+# Crawl-delay: 1

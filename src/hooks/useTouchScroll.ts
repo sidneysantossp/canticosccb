@@ -23,6 +23,12 @@ export const useTouchScroll = <T extends HTMLElement>(
     let lastTime = 0;
 
     const handleTouchStart = (e: TouchEvent) => {
+      // Don't interfere with links/buttons - only handle scroll container touches
+      const target = e.target as HTMLElement;
+      if (target.tagName === 'A' || target.tagName === 'BUTTON' || target.closest('a') || target.closest('button')) {
+        return;
+      }
+
       isScrolling = true;
       startX = e.touches[0].pageX - element.offsetLeft;
       scrollLeft = element.scrollLeft;
@@ -38,6 +44,12 @@ export const useTouchScroll = <T extends HTMLElement>(
 
     const handleTouchMove = (e: TouchEvent) => {
       if (!isScrolling) return;
+
+      // Don't interfere with links/buttons
+      const target = e.target as HTMLElement;
+      if (target.tagName === 'A' || target.tagName === 'BUTTON' || target.closest('a') || target.closest('button')) {
+        return;
+      }
 
       const x = e.touches[0].pageX - element.offsetLeft;
       const walk = (x - startX) * sensitivity;

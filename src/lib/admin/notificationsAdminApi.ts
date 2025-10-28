@@ -1,0 +1,26 @@
+// STUB temporário
+export const getAll = async (...args: any[]) => [];
+export const getById = async (...args: any[]) => null;
+export const create = async (...args: any[]) => ({ success: true });
+export const update = async (...args: any[]) => ({ success: true });
+export const deleteItem = async (...args: any[]) => ({ success: true });
+export const getSiteSettings = async (...args: any[]) => ({});
+export const updateSiteSettings = async (...args: any[]) => ({ success: true });
+export const getComments = async (...args: any[]) => [];
+export const deleteComment = async (...args: any[]) => ({ success: true });
+export const approveComment = async (...args: any[]) => ({ success: true });
+export const getClaims = async (...args: any[]) => [];
+export const getCopyrightClaims = async (...args: any[]) => [];
+export const updateClaim = async (...args: any[]) => ({ success: true });
+export const getRoyalties = async (...args: any[]) => [];
+export const processPayment = async (...args: any[]) => ({ success: true });
+export const getAllPlaylists = async (...args: any[]) => [];
+export const createPlaylist = async (...args: any[]) => ({ success: true });
+export const updatePlaylist = async (...args: any[]) => ({ success: true });
+export const deletePlaylist = async (...args: any[]) => ({ success: true });
+export type SiteSettings = any;
+export type Comment = any;
+export type Claim = any;
+export type CopyrightClaim = any;
+export type Royalty = any;
+export type Playlist = any;

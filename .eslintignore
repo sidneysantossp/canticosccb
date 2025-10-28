@@ -1,0 +1,2 @@
+# Ignore generated Supabase types
+src/types/appDatabase.generated.ts

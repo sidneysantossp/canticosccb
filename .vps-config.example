@@ -1,0 +1,35 @@
+# ⚠️ EXEMPLO DE CONFIGURAÇÃO VPS
+# Copie este arquivo para .vps-config.local e preencha com seus dados
+
+# Configuração VPS - Cânticos CCB
+VPS_IP=203.161.46.119
+VPS_USER=root
+VPS_SSH_PORT=22
+VPS_PANEL_PORT=2087
+VPS_DOMAIN=canticosccb.com.br
+
+# URLs de Mídia
+MEDIA_BASE_URL=https://canticosccb.com.br/media
+# Para desenvolvimento local, use:
+# MEDIA_BASE_URL=http://203.161.46.119/media
+
+# Diretórios no VPS (cPanel)
+VPS_MEDIA_DIR=/home/canticosccb/public_html/media
+VPS_HINOS_DIR=/home/canticosccb/public_html/media/hinos
+VPS_ALBUNS_DIR=/home/canticosccb/public_html/media/albuns
+VPS_AVATARS_DIR=/home/canticosccb/public_html/media/avatars
+VPS_COVERS_DIR=/home/canticosccb/public_html/media/covers
+
+# Backup
+VPS_BACKUP_DIR=/home/canticosccb/backups
+
+# FTP (opcional - para FileZilla)
+FTP_HOST=ftp.canticosccb.com.br
+FTP_USER=canticosccb
+FTP_PORT=21
+
+# Notas de Acesso
+# - cPanel: https://canticosccb.com.br:2083/ ou https://203.161.46.119:2087/
+# - SSH: ssh root@203.161.46.119
+# - FTP: usar FileZilla com credenciais acima
+# - Upload via cPanel: File Manager → /public_html/media/

@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teste de Áudio Mobile</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        button {
+            padding: 15px 30px;
+            font-size: 18px;
+            margin: 10px;
+            cursor: pointer;
+        }
+        #log {
+            background: #f0f0f0;
+            padding: 10px;
+            margin-top: 20px;
+            border-radius: 5px;
+            max-height: 400px;
+            overflow-y: auto;
+            font-family: monospace;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Teste de Áudio Mobile</h1>
+    <p>Clique no botão para testar o áudio:</p>
+    
+    <button onclick="testAudio()">▶️ Tocar Áudio de Teste</button>
+    <button onclick="testLocalAudio()">▶️ Tocar Áudio Local</button>
+    <button onclick="clearLog()">🗑️ Limpar Log</button>
+    
+    <div id="log"></div>
+    
+    <script>
+        let audio = null;
+        
+        function log(msg) {
+            const logDiv = document.getElementById('log');
+            const time = new Date().toLocaleTimeString();
+            logDiv.innerHTML += `[${time}] ${msg}<br>`;
+            logDiv.scrollTop = logDiv.scrollHeight;
+            console.log(msg);
+        }
+        
+        function clearLog() {
+            document.getElementById('log').innerHTML = '';
+        }
+        
+        function testAudio() {
+            log('🎵 Iniciando teste de áudio externo...');
+            
+            if (!audio) {
+                audio = new Audio();
+                audio.playsInline = true;
+                audio.preload = 'auto';
+                log('✅ Elemento Audio criado');
+            }
+            
+            // URL de teste pública
+            audio.src = 'https://commondatastorage.googleapis.com/codeskulptor-demos/DDR_assets/Sevish_-__nbsp_.mp3';
+            audio.muted = false;
+            audio.volume = 1.0;
+            
+            log(`🔊 Volume: ${audio.volume}, Muted: ${audio.muted}`);
+            log(`📡 Carregando: ${audio.src}`);
+            
+            audio.load();
+            
+            audio.addEventListener('loadeddata', () => {
+                log(`✅ Áudio carregado! Duration: ${audio.duration}s`);
+            }, { once: true });
+            
+            audio.addEventListener('error', (e) => {
+                log(`❌ Erro ao carregar: ${e.type}`);
+            }, { once: true });
+            
+            audio.play()
+                .then(() => {
+                    log('✅ Play() bem-sucedido!');
+                    log(`🔊 Tocando... Volume: ${audio.volume}, Muted: ${audio.muted}`);
+                })
+                .catch(err => {
+                    log(`❌ Erro no play(): ${err.name} - ${err.message}`);
+                });
+        }
+        
+        function testLocalAudio() {
+            log('🎵 Iniciando teste de áudio local...');
+            
+            if (!audio) {
+                audio = new Audio();
+                audio.playsInline = true;
+                audio.preload = 'auto';
+                log('✅ Elemento Audio criado');
+            }
+            
+            // URL local
+            const ip = window.location.hostname;
+            audio.src = `http://${ip}/1canticosccb/api/stream.php?type=hinos&file=hino-001.mp3`;
+            audio.muted = false;
+            audio.volume = 1.0;
+            
+            log(`🔊 Volume: ${audio.volume}, Muted: ${audio.muted}`);
+            log(`📡 Carregando: ${audio.src}`);
+            
+            audio.load();
+            
+            audio.addEventListener('loadeddata', () => {
+                log(`✅ Áudio carregado! Duration: ${audio.duration}s`);
+            }, { once: true });
+            
+            audio.addEventListener('error', (e) => {
+                log(`❌ Erro ao carregar: ${e.type}`);
+            }, { once: true });
+            
+            audio.play()
+                .then(() => {
+                    log('✅ Play() bem-sucedido!');
+                    log(`🔊 Tocando... Volume: ${audio.volume}, Muted: ${audio.muted}`);
+                })
+                .catch(err => {
+                    log(`❌ Erro no play(): ${err.name} - ${err.message}`);
+                });
+        }
+        
+        log('📱 Página carregada. Pronta para testes.');
+        log(`🌐 Hostname: ${window.location.hostname}`);
+        log(`📱 User Agent: ${navigator.userAgent}`);
+    </script>
+</body>
+</html>

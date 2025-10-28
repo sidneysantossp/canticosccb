@@ -1,0 +1,15 @@
+<svg width="72" height="72" viewBox="0 0 72 72" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#10b981;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#059669;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  <rect width="72" height="72" rx="9" fill="url(#bg)"/>
+  <g transform="translate(14.4, 14.4)">
+    <rect x="25.2" y="7.2" width="1.44" height="28.8" fill="white"/>
+    <ellipse cx="21.599999999999998" cy="32.4" rx="2.88" ry="1.8" fill="white"/>
+    <line x1="7.2" y1="18" x2="36" y2="18" stroke="white" stroke-width="0.216" opacity="0.7"/><line x1="7.2" y1="21.6" x2="36" y2="21.6" stroke="white" stroke-width="0.216" opacity="0.7"/><line x1="7.2" y1="25.2" x2="36" y2="25.2" stroke="white" stroke-width="0.216" opacity="0.7"/><line x1="7.2" y1="28.8" x2="36" y2="28.8" stroke="white" stroke-width="0.216" opacity="0.7"/><line x1="7.2" y1="32.4" x2="36" y2="32.4" stroke="white" stroke-width="0.216" opacity="0.7"/>
+  </g>
+  <text x="36" y="57.6" text-anchor="middle" fill="white" font-family="Arial, sans-serif" font-size="8.64" font-weight="bold">CCB</text>
+</svg>

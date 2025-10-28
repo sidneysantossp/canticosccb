@@ -4,6 +4,7 @@ export interface User {
   email: string;
   name: string;
   avatar?: string;
+  role?: 'admin' | 'composer' | 'user';
   isPremium: boolean;
   createdAt: string;
 }

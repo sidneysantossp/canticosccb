@@ -1,0 +1,19 @@
+PROBLEMA IDENTIFICADO:
+- Vite está lendo variáveis do .env ao invés de .env.local
+- VAPID precisa estar no arquivo .env também
+
+SOLUÇÃO:
+1. Abra o arquivo: c:\xampp\htdocs\1canticosccb\.env
+2. Adicione esta linha no final do arquivo:
+
+VITE_FIREBASE_VAPID_KEY=BIn-57edhDMvNo9gZABIVuPVrFdUdKBza17UI69Z_7MKnqd1M_z-tUdd9a7oaaldSdyO0a-9b7XJWa69Vpp54Lo
+
+3. Salve o arquivo
+4. Reinicie o Vite (Ctrl+C e npm run dev)
+5. Teste em http://localhost:5173/test-env.html
+
+OBSERVAÇÃO:
+- .env é para valores padrão (commitado no Git)
+- .env.local é para sobrescrever localmente (gitignored)
+- Se ambos tiverem a mesma variável, .env.local tem prioridade
+- Mas o Vite precisa que a variável exista em pelo menos um dos dois

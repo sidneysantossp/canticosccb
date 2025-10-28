@@ -1,0 +1,93 @@
+═══════════════════════════════════════════════════════════════════
+   CORRIGIR IMAGENS DOS DOCUMENTOS - PASSO A PASSO
+═══════════════════════════════════════════════════════════════════
+
+PROBLEMA: Imagem do documento não carrega (erro 404)
+CAUSA: Pasta "media_protegida/documents" não existe ou está vazia
+
+═══════════════════════════════════════════════════════════════════
+SOLUÇÃO - 3 PASSOS SIMPLES
+═══════════════════════════════════════════════════════════════════
+
+┌─────────────────────────────────────────────────────────────────┐
+│ PASSO 1: Criar pasta e imagem de teste                         │
+└─────────────────────────────────────────────────────────────────┘
+
+Abra o PowerShell e execute:
+
+   cd c:\xampp\htdocs\1canticosccb
+   .\create-docs-folder.ps1
+
+   OU clique com botão direito no arquivo:
+   "create-docs-folder.ps1" → Executar com PowerShell
+
+Você verá:
+   ✅ Pasta criada: media_protegida\documents
+   ✅ Imagem de teste criada: test-rg.jpg
+
+┌─────────────────────────────────────────────────────────────────┐
+│ PASSO 2: Atualizar banco de dados                              │
+└─────────────────────────────────────────────────────────────────┘
+
+Abra phpMyAdmin:
+   http://localhost/phpmyadmin
+
+Selecione database: canticosccb_plataforma
+
+Vá em SQL e cole:
+
+   INSERT INTO document_reviews (
+       compositor_id, document_type, expected_name, 
+       extracted_name, similarity, status, image_path, created_at
+   ) VALUES (
+       2, 'rg', 'Acervo Cânticos CCB', 'Acervo Canticos CCB',
+       0.95, 'pending', '/media_protegida/documents/test-rg.jpg', NOW()
+   );
+
+Click "Executar"
+
+┌─────────────────────────────────────────────────────────────────┐
+│ PASSO 3: Testar                                                 │
+└─────────────────────────────────────────────────────────────────┘
+
+1. Teste a API diretamente no navegador:
+   http://localhost/1canticosccb/api/stream.php?type=documents&file=test-rg.jpg
+   
+   → Deve mostrar uma imagem de RG fictício
+
+2. Abra o formulário do compositor:
+   http://localhost:5173/admin/composers/edit/2
+   
+   → Role até "Documentos para Verificação"
+   → A imagem do RG deve aparecer
+   → Botões "Aprovar" e "Rejeitar" devem estar visíveis
+
+═══════════════════════════════════════════════════════════════════
+VERIFICAÇÃO
+═══════════════════════════════════════════════════════════════════
+
+Se ainda não funcionar, verifique:
+
+1. Pasta existe?
+   c:\xampp\htdocs\1canticosccb\media_protegida\documents\
+
+2. Arquivo existe?
+   c:\xampp\htdocs\1canticosccb\media_protegida\documents\test-rg.jpg
+
+3. Console do navegador (F12):
+   Procure por erros 404 ou logs de [Documentos]
+
+4. Banco de dados:
+   SELECT * FROM document_reviews WHERE compositor_id = 2;
+   
+   → image_path deve ser: /media_protegida/documents/test-rg.jpg
+
+═══════════════════════════════════════════════════════════════════
+ARQUIVOS CRIADOS
+═══════════════════════════════════════════════════════════════════
+
+✅ create-docs-folder.ps1 - Script PowerShell
+✅ database/SOLUCAO-DOCUMENTOS.sql - SQL completo
+✅ database/fix-document-paths.sql - Corrigir caminhos
+
+═══════════════════════════════════════════════════════════════════

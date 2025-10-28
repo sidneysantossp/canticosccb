@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Teste POST Álbum</title>
+</head>
+<body>
+    <h1>Teste de Criação de Álbum</h1>
+    <button onclick="criarAlbum()">Criar Álbum com compositor_id=5</button>
+    <pre id="resultado"></pre>
+
+    <script>
+        async function criarAlbum() {
+            const dados = {
+                titulo: "Teste POST Direto",
+                descricao: "Teste",
+                compositor_id: 5,
+                ativo: 1
+            };
+
+            console.log('Enviando:', dados);
+            document.getElementById('resultado').textContent = 'Enviando...\n' + JSON.stringify(dados, null, 2);
+
+            try {
+                const response = await fetch('http://localhost/1canticosccb/api/albuns/index.php', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(dados)
+                });
+
+                const resultado = await response.json();
+                console.log('Resposta:', resultado);
+                document.getElementById('resultado').textContent = 
+                    'RESPOSTA:\n' + JSON.stringify(resultado, null, 2) +
+                    '\n\ncompositor_id salvo: ' + resultado.compositor_id;
+            } catch (error) {
+                document.getElementById('resultado').textContent = 'ERRO: ' + error.message;
+            }
+        }
+    </script>
+</body>
+</html>

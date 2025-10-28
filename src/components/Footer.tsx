@@ -9,35 +9,27 @@ const Footer: React.FC = () => {
         <div className="grid grid-cols-2 lg:grid-cols-5 gap-6 lg:gap-8">
           {/* Logo e Versículo */}
           <div className="col-span-2 lg:col-span-1">
-            <div className="mb-6">
-              <Link to="/" className="flex flex-col items-start lg:flex-row lg:items-center gap-3">
+            <div className="mb-6 -ml-2">
+              <Link to="/" className="inline-block">
                 <img 
                   src="https://canticosccb.com.br/logo-canticos-ccb.png" 
-                  alt="Cânticos CCB" 
-                  className="w-[200px] h-auto rounded-lg"
+                  alt="Cânticos CCB - Congregação Cristã no Brasil" 
+                  className="h-10 w-auto object-contain"
                   onError={(e) => {
-                    // Fallback para ícone SVG se a imagem não carregar
+                    // Fallback para logo local se o link externo falhar
                     const target = e.currentTarget as HTMLImageElement;
-                    const fallback = target.nextElementSibling as HTMLElement;
-                    target.style.display = 'none';
-                    if (fallback) fallback.style.display = 'flex';
+                    target.src = '/logo-canticos-ccb.png';
                   }}
                 />
-                <div className="w-12 h-12 bg-primary-500 rounded-lg items-center justify-center hidden">
-                  <svg className="w-8 h-8 text-black" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/>
-                  </svg>
-                </div>
               </Link>
             </div>
 
             <div className="text-sm text-text-muted leading-relaxed">
               <p className="mb-2 italic">
-                "Louvai ao SENHOR, todas as nações; louvai-o, todos os povos. 
-                Porque a sua benignidade é grande."
+                ¹ "Louvai ao Senhor todas as nações, louvai-o                 todos os povos".
               </p>
               <p className="text-xs text-primary-400 font-medium">
-                Salmos 117
+                Salmos 117:1
               </p>
               {/* Social icons */}
               <div className="flex items-center gap-3 mt-4">
@@ -135,6 +127,11 @@ const Footer: React.FC = () => {
             <h4 className="text-white font-semibold mb-4">Institucional</h4>
             <ul className="space-y-3">
               <li>
+                <Link to="/disclaimer" className="text-text-muted hover:text-white transition-colors text-sm">
+                  Disclaimer Jurídico
+                </Link>
+              </li>
+              <li>
                 <Link to="/sobre" className="text-text-muted hover:text-white transition-colors text-sm">
                   Sobre
                 </Link>
@@ -147,6 +144,16 @@ const Footer: React.FC = () => {
               <li>
                 <Link to="/privacidade" className="text-text-muted hover:text-white transition-colors text-sm">
                   Políticas de Privacidade
+                </Link>
+              </li>
+              <li>
+                <Link to="/cookies" className="text-text-muted hover:text-white transition-colors text-sm">
+                  Política de Cookies
+                </Link>
+              </li>
+              <li>
+                <Link to="/reivindicacao-de-conteudo" className="text-text-muted hover:text-white transition-colors text-sm">
+                  Reivindicação de Conteúdo
                 </Link>
               </li>
               <li>
@@ -172,6 +179,14 @@ const Footer: React.FC = () => {
                 Contato
               </Link>
             </div>
+          </div>
+
+          {/* Disclaimer curto */}
+          <div className="mt-6 text-[13px] leading-relaxed text-text-muted">
+            <p>
+              O Cânticos CCB é uma plataforma independente, sem vínculo institucional com a Congregação Cristã no Brasil. Não publicamos conteúdos que violem direitos autorais ou marcários. Conteúdos são enviados pela comunidade e passam por verificação quando aplicável. Se você é titular de direitos, utilize os canais informados para solicitar avaliação e retirada.
+              Leia o <Link to="/disclaimer" className="text-primary-400 hover:underline">Disclaimer Jurídico</Link>, os <Link to="/termos" className="text-primary-400 hover:underline">Termos de Uso</Link> e a <Link to="/privacidade" className="text-primary-400 hover:underline">Política de Privacidade</Link>.
+            </p>
           </div>
         </div>
       </div>

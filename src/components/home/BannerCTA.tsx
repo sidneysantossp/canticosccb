@@ -1,11 +1,11 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Music, ArrowRight } from 'lucide-react';
+import { Music, UserPlus, Upload } from 'lucide-react';
 
 const BannerCTA: React.FC = () => {
   return (
     <section className="mb-12">
-      <div className="relative bg-gradient-to-r from-green-600 via-green-500 to-emerald-500 rounded-lg overflow-hidden">
+      <div className="relative bg-gradient-to-r from-green-600/70 via-green-500/60 to-emerald-500/70 rounded-lg overflow-hidden">
         {/* Background Pattern */}
         <div className="absolute inset-0 opacity-10">
           <div className="absolute inset-0" style={{
@@ -15,16 +15,16 @@ const BannerCTA: React.FC = () => {
         </div>
 
         {/* Background Image */}
-        <div className="absolute right-0 top-0 bottom-0 w-1/2 opacity-20">
+        <div className="absolute inset-0 opacity-25">
           <img 
-            src="https://picsum.photos/seed/composer-bg/600/300"
-            alt="Compositor background"
+            src="https://images.unsplash.com/photo-1510915361894-db8b60106cb1?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2070&q=80"
+            alt="Violão - Compositor background"
             className="w-full h-full object-cover"
             loading="lazy"
           />
         </div>
 
-        <div className="relative z-10 p-8 md:p-12">
+        <div className="relative z-10 py-12 px-8 md:p-12">
           <div className="max-w-2xl">
             <div className="flex items-center gap-3 mb-4">
               <div className="bg-white/20 p-3 rounded-full">
@@ -38,7 +38,7 @@ const BannerCTA: React.FC = () => {
             </h2>
             
             <p className="text-lg text-white/90 mb-8 leading-relaxed">
-              Faça parte da nossa comunidade de compositores. Envie seus hinos e 
+              Faça parte da nossa irmandade de compositores. Envie seus hinos e 
               alcance milhares de irmãos em todo o Brasil.
             </p>
             
@@ -47,15 +47,16 @@ const BannerCTA: React.FC = () => {
                 to="/compositor/cadastro"
                 className="inline-flex items-center justify-center gap-2 bg-white text-green-600 font-semibold px-6 py-3 rounded-full hover:bg-gray-100 transition-colors group"
               >
-                Cadastrar Hino
-                <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                <UserPlus className="w-4 h-4" />
+                Cadastrar como Compositor
               </Link>
               
               <Link
-                to="/compositores"
+                to="/compositor/publicar"
                 className="inline-flex items-center justify-center gap-2 border-2 border-white/30 text-white font-semibold px-6 py-3 rounded-full hover:bg-white/10 transition-colors"
               >
-                Ver Compositores
+                <Upload className="w-4 h-4" />
+                Publicar minhas Composições
               </Link>
             </div>
           </div>

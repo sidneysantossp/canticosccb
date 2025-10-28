@@ -1,0 +1,137 @@
+/* Solução definitiva para telas pretas - Classes CSS customizadas forçadas */
+
+/* Background Colors */
+.bg-background-primary {
+  background-color: #121212 !important;
+}
+
+.bg-background-secondary {
+  background-color: #181818 !important;
+}
+
+.bg-background-tertiary {
+  background-color: #282828 !important;
+}
+
+.bg-background-hover {
+  background-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+/* Text Colors */
+.text-text-primary {
+  color: #ffffff !important;
+}
+
+.text-text-secondary {
+  color: #b3b3b3 !important;
+}
+
+.text-text-muted {
+  color: #6b7280 !important;
+}
+
+/* Primary Colors */
+.bg-primary-50 { background-color: #f0fdf4 !important; }
+.bg-primary-100 { background-color: #dcfce7 !important; }
+.bg-primary-200 { background-color: #bbf7d0 !important; }
+.bg-primary-300 { background-color: #86efac !important; }
+.bg-primary-400 { background-color: #4ade80 !important; }
+.bg-primary-500 { background-color: #1db954 !important; }
+.bg-primary-600 { background-color: #16a34a !important; }
+.bg-primary-700 { background-color: #15803d !important; }
+.bg-primary-800 { background-color: #166534 !important; }
+.bg-primary-900 { background-color: #14532d !important; }
+
+.text-primary-50 { color: #f0fdf4 !important; }
+.text-primary-100 { color: #dcfce7 !important; }
+.text-primary-200 { color: #bbf7d0 !important; }
+.text-primary-300 { color: #86efac !important; }
+.text-primary-400 { color: #4ade80 !important; }
+.text-primary-500 { color: #1db954 !important; }
+.text-primary-600 { color: #16a34a !important; }
+.text-primary-700 { color: #15803d !important; }
+.text-primary-800 { color: #166534 !important; }
+.text-primary-900 { color: #14532d !important; }
+
+.border-primary-50 { border-color: #f0fdf4 !important; }
+.border-primary-100 { border-color: #dcfce7 !important; }
+.border-primary-200 { border-color: #bbf7d0 !important; }
+.border-primary-300 { border-color: #86efac !important; }
+.border-primary-400 { border-color: #4ade80 !important; }
+.border-primary-500 { border-color: #1db954 !important; }
+.border-primary-600 { border-color: #16a34a !important; }
+.border-primary-700 { border-color: #15803d !important; }
+.border-primary-800 { border-color: #166534 !important; }
+.border-primary-900 { border-color: #14532d !important; }
+
+/* Hover states */
+.hover\:bg-primary-500:hover { background-color: #1db954 !important; }
+.hover\:bg-primary-600:hover { background-color: #16a34a !important; }
+.hover\:bg-primary-700:hover { background-color: #15803d !important; }
+
+.hover\:text-primary-400:hover { color: #4ade80 !important; }
+.hover\:text-primary-500:hover { color: #1db954 !important; }
+.border-primary-500:hover { border-color: #1db954 !important; }
+
+.hover\:bg-background-hover:hover { background-color: rgba(255, 255, 255, 0.1) !important; }
+.hover\:bg-background-secondary:hover { background-color: #181818 !important; }
+
+/* Gradients */
+.bg-gradient-to-b.from-background-primary.to-background-tertiary {
+  background: linear-gradient(to bottom, #121212, #282828) !important;
+}
+
+.bg-gradient-to-b.from-background-primary.to-background-secondary {
+  background: linear-gradient(to bottom, #121212, #181818) !important;
+}
+
+/* Opacity variants */
+.bg-background-secondary\/50 {
+  background-color: rgba(24, 24, 24, 0.5) !important;
+}
+
+.bg-background-tertiary\/50 {
+  background-color: rgba(40, 40, 40, 0.5) !important;
+}
+
+.bg-primary-500\/10 {
+  background-color: rgba(29, 185, 84, 0.1) !important;
+}
+
+.bg-primary-500\/20 {
+  background-color: rgba(29, 185, 84, 0.2) !important;
+}
+
+/* Ensure body has dark background */
+body {
+  background-color: #121212 !important;
+  color: #ffffff !important;
+}
+
+/* Ensure all pages have minimum dark background */
+.min-h-screen {
+  background-color: #121212 !important;
+}
+
+/* Force dark theme on all containers */
+[class*="bg-background"] {
+  color: #ffffff !important;
+}
+
+/* Admin specific fixes */
+.admin-container {
+  background-color: #121212 !important;
+  color: #ffffff !important;
+}
+
+/* Composer specific fixes */
+.composer-container {
+  background-color: #121212 !important;
+  color: #ffffff !important;
+}
+
+/* User specific fixes */
+.user-container {
+  background-color: #121212 !important;
+  color: #ffffff !important;
+}

@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Teste de Busca - Navbar</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+      background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
+      color: #fff;
+      min-height: 100vh;
+      padding: 2rem;
+    }
+    
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+    }
+    
+    h1 {
+      text-align: center;
+      margin-bottom: 2rem;
+      font-size: 2rem;
+    }
+    
+    .search-box {
+      background: #2d2d2d;
+      border-radius: 12px;
+      padding: 1.5rem;
+      margin-bottom: 2rem;
+    }
+    
+    input {
+      width: 100%;
+      padding: 1rem;
+      font-size: 1rem;
+      border: 2px solid #444;
+      border-radius: 8px;
+      background: #1a1a1a;
+      color: #fff;
+      transition: border-color 0.3s;
+    }
+    
+    input:focus {
+      outline: none;
+      border-color: #1db954;
+    }
+    
+    .status {
+      margin-top: 1rem;
+      padding: 0.75rem;
+      border-radius: 8px;
+      font-size: 0.9rem;
+    }
+    
+    .status.loading {
+      background: #3b82f6;
+    }
+    
+    .status.success {
+      background: #10b981;
+    }
+    
+    .status.error {
+      background: #ef4444;
+    }
+    
+    .results {
+      background: #2d2d2d;
+      border-radius: 12px;
+      padding: 1.5rem;
+    }
+    
+    .result-item {
+      display: flex;
+      gap: 1rem;
+      padding: 1rem;
+      background: #1a1a1a;
+      border-radius: 8px;
+      margin-bottom: 0.75rem;
+      transition: background 0.2s;
+    }
+    
+    .result-item:hover {
+      background: #333;
+    }
+    
+    .result-image {
+      width: 50px;
+      height: 50px;
+      border-radius: 8px;
+      object-fit: cover;
+      background: #444;
+    }
+    
+    .result-info {
+      flex: 1;
+    }
+    
+    .result-title {
+      font-weight: 600;
+      margin-bottom: 0.25rem;
+    }
+    
+    .result-subtitle {
+      color: #999;
+      font-size: 0.9rem;
+    }
+    
+    .result-type {
+      display: inline-block;
+      padding: 0.25rem 0.5rem;
+      border-radius: 4px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      margin-left: 0.5rem;
+    }
+    
+    .result-type.hymn {
+      background: #1db954;
+    }
+    
+    .result-type.composer {
+      background: #3b82f6;
+    }
+    
+    .empty {
+      text-align: center;
+      color: #999;
+      padding: 2rem;
+    }
+    
+    .instructions {
+      background: #2d2d2d;
+      border-radius: 12px;
+      padding: 1.5rem;
+      margin-bottom: 2rem;
+    }
+    
+    .instructions h3 {
+      margin-bottom: 1rem;
+      color: #1db954;
+    }
+    
+    .instructions ul {
+      list-style-position: inside;
+      line-height: 1.8;
+    }
+    
+    .instructions code {
+      background: #1a1a1a;
+      padding: 0.2rem 0.5rem;
+      border-radius: 4px;
+      font-family: monospace;
+      color: #1db954;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🔍 Teste de Busca - Navbar</h1>
+    
+    <div class="instructions">
+      <h3>📋 Instruções de Teste:</h3>
+      <ul>
+        <li>Digite um número de hino (ex: <code>1</code>)</li>
+        <li>Digite parte de um título (ex: <code>amor</code>)</li>
+        <li>Digite nome de compositor (ex: <code>silva</code>)</li>
+        <li>Aguarde 300ms para ver resultados</li>
+      </ul>
+    </div>
+    
+    <div class="search-box">
+      <input 
+        type="text" 
+        id="searchInput" 
+        placeholder="Buscar hinos, compositores..."
+        autocomplete="off"
+      />
+      <div id="status"></div>
+    </div>
+    
+    <div class="results">
+      <h3 style="margin-bottom: 1rem;">Resultados:</h3>
+      <div id="resultsContainer">
+        <div class="empty">Digite algo para buscar...</div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Configurar Supabase (substitua pelas suas credenciais)
+    const SUPABASE_URL = 'SUA_URL_AQUI';
+    const SUPABASE_KEY = 'SUA_KEY_AQUI';
+    
+    let searchTimeout;
+    const searchInput = document.getElementById('searchInput');
+    const statusDiv = document.getElementById('status');
+    const resultsContainer = document.getElementById('resultsContainer');
+    
+    // Função de busca
+    async function quickSearch(query) {
+      if (!query.trim()) return [];
+      
+      try {
+        // Buscar hinos
+        const hymnsResponse = await fetch(
+          `${SUPABASE_URL}/rest/v1/hymns?or=(title.ilike.*${query}*,number.eq.${parseInt(query) || 0})&status=eq.published&limit=6`,
+          {
+            headers: {
+              'apikey': SUPABASE_KEY,
+              'Authorization': `Bearer ${SUPABASE_KEY}`
+            }
+          }
+        );
+        
+        const hymns = await hymnsResponse.json();
+        
+        // Buscar compositores
+        const composersResponse = await fetch(
+          `${SUPABASE_URL}/rest/v1/composers?name=ilike.*${query}*&status=eq.verified&limit=5`,
+          {
+            headers: {
+              'apikey': SUPABASE_KEY,
+              'Authorization': `Bearer ${SUPABASE_KEY}`
+            }
+          }
+        );
+        
+        const composers = await composersResponse.json();
+        
+        // Combinar resultados
+        const results = [];
+        
+        hymns.forEach(hymn => {
+          results.push({
+            id: hymn.id,
+            type: 'hymn',
+            title: `${hymn.number} - ${hymn.title}`,
+            subtitle: hymn.composer_name || hymn.category,
+            imageUrl: hymn.cover_url || 'https://via.placeholder.com/50'
+          });
+        });
+        
+        composers.forEach(composer => {
+          results.push({
+            id: composer.id,
+            type: 'composer',
+            title: composer.name,
+            subtitle: 'Compositor',
+            imageUrl: composer.photo_url || 'https://via.placeholder.com/50'
+          });
+        });
+        
+        return results;
+      } catch (error) {
+        console.error('Erro na busca:', error);
+        return [];
+      }
+    }
+    
+    // Handler do input
+    searchInput.addEventListener('input', (e) => {
+      const query = e.target.value;
+      
+      // Limpar timeout anterior
+      clearTimeout(searchTimeout);
+      
+      if (!query.trim()) {
+        statusDiv.innerHTML = '';
+        resultsContainer.innerHTML = '<div class="empty">Digite algo para buscar...</div>';
+        return;
+      }
+      
+      // Mostrar loading
+      statusDiv.className = 'status loading';
+      statusDiv.textContent = '🔄 Buscando...';
+      
+      // Debounce de 300ms
+      searchTimeout = setTimeout(async () => {
+        try {
+          const results = await quickSearch(query);
+          
+          if (results.length > 0) {
+            statusDiv.className = 'status success';
+            statusDiv.textContent = `✅ ${results.length} resultado(s) encontrado(s)`;
+            
+            resultsContainer.innerHTML = results.map(result => `
+              <div class="result-item">
+                <img src="${result.imageUrl}" alt="${result.title}" class="result-image" />
+                <div class="result-info">
+                  <div class="result-title">
+                    ${result.title}
+                    <span class="result-type ${result.type}">${result.type === 'hymn' ? '🎵 Hino' : '👤 Compositor'}</span>
+                  </div>
+                  <div class="result-subtitle">${result.subtitle}</div>
+                </div>
+              </div>
+            `).join('');
+          } else {
+            statusDiv.className = 'status error';
+            statusDiv.textContent = '❌ Nenhum resultado encontrado';
+            resultsContainer.innerHTML = '<div class="empty">Nenhum resultado para esta busca</div>';
+          }
+        } catch (error) {
+          statusDiv.className = 'status error';
+          statusDiv.textContent = '❌ Erro ao buscar. Verifique as credenciais.';
+          resultsContainer.innerHTML = '<div class="empty">Erro na busca</div>';
+        }
+      }, 300);
+    });
+    
+    // Mensagem inicial
+    if (!SUPABASE_URL.includes('supabase') || SUPABASE_KEY === 'SUA_KEY_AQUI') {
+      statusDiv.className = 'status error';
+      statusDiv.innerHTML = '⚠️ Configure as credenciais do Supabase no código!';
+    }
+  </script>
+</body>
+</html>

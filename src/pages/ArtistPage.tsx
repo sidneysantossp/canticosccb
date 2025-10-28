@@ -246,7 +246,7 @@ const ArtistPage: React.FC = () => {
                 </div>
                 <h3 className="text-white font-medium mb-1 truncate">{album.title}</h3>
                 <p className="text-text-muted text-sm">
-                  {album.year} • {album.tracks} músicas
+                  {album.year} • {album.tracks} hinos
                 </p>
               </div>
             ))}

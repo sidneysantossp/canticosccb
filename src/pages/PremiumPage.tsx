@@ -1,10 +1,14 @@
 import React, { useState } from 'react';
 import { Check, X, Crown, Zap, Music, Download, Users, Headphones } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import SEOHead from '@/components/SEO/SEOHead';
 
 const PremiumPage: React.FC = () => {
   const navigate = useNavigate();
   const [billingPeriod, setBillingPeriod] = useState<'monthly' | 'yearly'>('monthly');
+
+  const seoTitle = 'Premium - Ouça Sem Limites';
+  const seoDescription = 'Assine o Premium e desfrute de hinos sem anúncios, downloads ilimitados, qualidade superior e acesso offline. A partir de R$ 19,90/mês.';
 
   const plans = [
     {
@@ -14,9 +18,9 @@ const PremiumPage: React.FC = () => {
       icon: Music,
       color: 'gray',
       features: [
-        { text: 'Anúncios entre músicas', included: true },
+        { text: 'Anúncios entre hinos', included: true },
         { text: 'Qualidade padrão (160kbps)', included: true },
-        { text: 'Pular até 6 músicas por hora', included: true },
+        { text: 'Pular até 6 hinos por hora', included: true },
         { text: 'Download offline', included: false },
         { text: 'Sem anúncios', included: false },
         { text: 'Qualidade premium', included: false }
@@ -34,7 +38,7 @@ const PremiumPage: React.FC = () => {
       features: [
         { text: 'Sem anúncios', included: true },
         { text: 'Qualidade alta (320kbps)', included: true },
-        { text: 'Pular músicas ilimitado', included: true },
+        { text: 'Pular hinos ilimitado', included: true },
         { text: 'Download offline', included: true },
         { text: 'Letra sincronizada', included: true },
         { text: 'Modo offline completo', included: true }
@@ -65,7 +69,7 @@ const PremiumPage: React.FC = () => {
     {
       icon: Zap,
       title: 'Sem interrupções',
-      description: 'Ouça suas músicas favoritas sem anúncios'
+      description: 'Ouça suas hinos favoritas sem anúncios'
     },
     {
       icon: Download,
@@ -80,7 +84,7 @@ const PremiumPage: React.FC = () => {
     {
       icon: Music,
       title: 'Pular ilimitado',
-      description: 'Pule quantas músicas quiser'
+      description: 'Pule quantas hinos quiser'
     }
   ];
 
@@ -91,9 +95,18 @@ const PremiumPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-background-primary via-primary-900/10 to-background-primary pb-32">
-      {/* Hero Section */}
-      <div className="relative overflow-hidden">
+    <>
+      <SEOHead
+        title={seoTitle}
+        description={seoDescription}
+        keywords="premium ccb, assinatura hinos, música sem anúncios, download offline, qualidade premium"
+        canonical="/premium"
+        ogImage="/images/og-premium.jpg"
+      />
+      
+      <div className="min-h-screen bg-gradient-to-b from-background-primary via-primary-900/10 to-background-primary pb-32">
+        {/* Hero Section */}
+        <div className="relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-r from-primary-600/20 to-purple-600/20" />
         
         <div className="relative max-w-7xl mx-auto px-6 py-16 text-center">
@@ -303,7 +316,8 @@ const PremiumPage: React.FC = () => {
           </p>
         </div>
       </div>
-    </div>
+      </div>
+    </>
   );
 };
 

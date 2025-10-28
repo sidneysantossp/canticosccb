@@ -1,0 +1,72 @@
+/* Customização do React-Quill para melhorar a visualização no tema escuro */
+
+/* Ajustes para o editor ter altura mínima adequada */
+.quill-editor-wrapper .ql-container {
+  min-height: 300px;
+}
+
+/* Garantir que o editor ocupe a altura definida */
+.quill-editor-wrapper .ql-editor {
+  min-height: 300px;
+}
+
+/* Melhorar o contraste do placeholder */
+.ql-editor.ql-blank::before {
+  color: #9ca3af !important;
+  font-style: italic;
+}
+
+/* Espaçamento interno do editor */
+.ql-editor {
+  padding: 16px !important;
+  font-size: 16px;
+  line-height: 1.75;
+  color: #111827; /* text-black */
+  font-family: "Courier New", Consolas, "Liberation Mono", Menlo, Monaco, monospace;
+  white-space: pre-wrap;
+}
+
+/* Estilo para listas */
+.ql-editor ul,
+.ql-editor ol {
+  padding-left: 1.5em;
+}
+
+/* Estilo para links */
+.ql-editor a {
+  color: #3b82f6;
+  text-decoration: underline;
+}
+
+/* Toolbar do Quill com melhor visual */
+.ql-toolbar {
+  border-top-left-radius: 8px;
+  border-top-right-radius: 8px;
+  background-color: #f9fafb !important;
+}
+
+/* Container do editor */
+.ql-container {
+  border-bottom-left-radius: 8px;
+  border-bottom-right-radius: 8px;
+  background-color: #ffffff !important;
+}
+
+/* Botões da toolbar */
+.ql-toolbar button {
+  width: 28px !important;
+  height: 28px !important;
+}
+
+.ql-toolbar button:hover {
+  color: #3b82f6 !important;
+}
+
+.ql-toolbar button.ql-active {
+  color: #3b82f6 !important;
+}
+
+/* Melhorar espaçamento dos dropdown */
+.ql-toolbar .ql-picker {
+  height: 28px !important;
+}

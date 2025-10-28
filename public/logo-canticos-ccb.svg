@@ -1,0 +1,29 @@
+<svg width="200" height="60" viewBox="0 0 200 60" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="logoGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#10b981;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#059669;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Background -->
+  <rect width="200" height="60" rx="8" fill="url(#logoGradient)"/>
+  
+  <!-- Musical Note Icon -->
+  <g transform="translate(15, 15)">
+    <!-- Note stem -->
+    <rect x="20" y="5" width="2" height="20" fill="white"/>
+    <!-- Note head -->
+    <ellipse cx="18" cy="25" rx="3" ry="2" fill="white"/>
+    <!-- Staff lines -->
+    <line x1="5" y1="18" x2="25" y2="18" stroke="white" stroke-width="0.5" opacity="0.7"/>
+    <line x1="5" y1="20" x2="25" y2="20" stroke="white" stroke-width="0.5" opacity="0.7"/>
+    <line x1="5" y1="22" x2="25" y2="22" stroke="white" stroke-width="0.5" opacity="0.7"/>
+    <line x1="5" y1="24" x2="25" y2="24" stroke="white" stroke-width="0.5" opacity="0.7"/>
+    <line x1="5" y1="26" x2="25" y2="26" stroke="white" stroke-width="0.5" opacity="0.7"/>
+  </g>
+  
+  <!-- Text -->
+  <text x="55" y="25" fill="white" font-family="Arial, sans-serif" font-size="14" font-weight="bold">Cânticos CCB</text>
+  <text x="55" y="40" fill="rgba(255,255,255,0.8)" font-family="Arial, sans-serif" font-size="10">Plataforma de Hinos</text>
+</svg>

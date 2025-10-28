@@ -2,19 +2,116 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Toast Animation */
+@keyframes slide-in {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+.animate-slide-in {
+  animation: slide-in 0.3s ease-out;
+}
+
+/* PWA Prompt Animation */
+@keyframes slide-up {
+  from {
+    transform: translateY(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.animate-slide-up {
+  animation: slide-up 0.4s ease-out;
+}
+
+/* PWA Modal Animation */
+@keyframes modal-appear {
+  from {
+    transform: scale(0.9);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.animate-modal-appear {
+  animation: modal-appear 0.3s ease-out;
+}
+
+@keyframes modal-disappear {
+  from {
+    transform: scale(1);
+    opacity: 1;
+  }
+  to {
+    transform: scale(0.9);
+    opacity: 0;
+  }
+}
+
+.animate-modal-disappear {
+  animation: modal-disappear 0.3s ease-in;
+}
+
+@keyframes fade-out {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+.animate-fade-out {
+  animation: fade-out 0.3s ease-in;
+}
+
 /* Global Styles */
 * {
   box-sizing: border-box;
 }
 
 html, body, #root {
-  background-color: #121212;
-  color: #ffffff;
+  background-color: #121212 !important;
+  color: #ffffff !important;
   font-family: 'Montserrat', system-ui, sans-serif;
   margin: 0;
   padding: 0;
   min-height: 100vh;
   width: 100%;
+}
+
+/* Force dark theme on all main containers */
+.min-h-screen,
+[class*="min-h-screen"],
+main,
+.admin-container,
+.composer-container,
+.user-container {
+  background-color: #121212 !important;
+  color: #ffffff !important;
+}
+
+/* Ensure all text is visible */
+h1, h2, h3, h4, h5, h6, p, span, div, button, a {
+  color: inherit;
+}
+
+/* Force visibility of white text */
+.text-white {
+  color: #ffffff !important;
 }
 
 html {
@@ -53,4 +150,29 @@ html {
   .lg-grid-custom {
     grid-template-columns: 240px 1fr 280px;
   }
+}
+
+/* Ocultar sidebar para compositores não verificados */
+body.hide-sidebar aside,
+body.hide-sidebar nav,
+body.hide-sidebar .sidebar,
+body.hide-sidebar [data-sidebar],
+body.hide-sidebar [class*="sidebar"],
+body.hide-sidebar [class*="Sidebar"] {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
+
+body.hide-sidebar main,
+body.hide-sidebar .main-content,
+body.hide-sidebar > div > div {
+  margin-left: 0 !important;
+  padding-left: 0 !important;
+  width: 100% !important;
+}
+
+body.hide-sidebar .lg\:pl-64 {
+  padding-left: 0 !important;
 }

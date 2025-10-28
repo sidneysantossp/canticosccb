@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teste Simples de Áudio</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        button {
+            padding: 20px 40px;
+            font-size: 20px;
+            margin: 10px;
+            cursor: pointer;
+            background: #1db954;
+            color: white;
+            border: none;
+            border-radius: 8px;
+        }
+        button:active {
+            background: #1ed760;
+        }
+        #status {
+            margin-top: 20px;
+            padding: 15px;
+            background: #f0f0f0;
+            border-radius: 5px;
+            font-family: monospace;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Teste de Áudio Mobile</h1>
+    
+    <button onclick="testPublicAudio()">🔊 Testar Áudio Público</button>
+    <button onclick="testLocalAudio()">🎵 Testar Áudio Local</button>
+    <button onclick="stopAudio()">⏹️ Parar</button>
+    
+    <div id="status">Aguardando teste...</div>
+    
+    <audio id="audio" style="display: none;"></audio>
+    
+    <script>
+        const audio = document.getElementById('audio');
+        const status = document.getElementById('status');
+        
+        function log(msg) {
+            status.innerHTML += `<br>${new Date().toLocaleTimeString()}: ${msg}`;
+            console.log(msg);
+        }
+        
+        function testPublicAudio() {
+            status.innerHTML = 'Testando áudio público...';
+            
+            audio.src = 'https://commondatastorage.googleapis.com/codeskulptor-demos/DDR_assets/Sevish_-__nbsp_.mp3';
+            audio.muted = false;
+            audio.volume = 1.0;
+            
+            log(`Volume: ${audio.volume}`);
+            log(`Muted: ${audio.muted}`);
+            log(`Src: ${audio.src}`);
+            
+            audio.play()
+                .then(() => {
+                    log('✅ Play bem-sucedido!');
+                    log(`Tocando... Duration: ${audio.duration}s`);
+                })
+                .catch(err => {
+                    log(`❌ Erro: ${err.name} - ${err.message}`);
+                });
+        }
+        
+        function testLocalAudio() {
+            status.innerHTML = 'Testando áudio local...';
+            
+            const hostname = window.location.hostname;
+            // Testar com test-stream.php que funcionou
+            audio.src = `http://${hostname}/1canticosccb/api/test-stream.php?file=a-capelacantados-o-deus-bendito-www-canticosccb-com-br-1761280811.mp3`;
+            audio.muted = false;
+            audio.volume = 1.0;
+            
+            log(`Hostname: ${hostname}`);
+            log(`Volume: ${audio.volume}`);
+            log(`Muted: ${audio.muted}`);
+            log(`Src: ${audio.src}`);
+            
+            audio.play()
+                .then(() => {
+                    log('✅ Play bem-sucedido!');
+                    log(`Tocando... Duration: ${audio.duration}s`);
+                })
+                .catch(err => {
+                    log(`❌ Erro: ${err.name} - ${err.message}`);
+                });
+        }
+        
+        function stopAudio() {
+            audio.pause();
+            audio.currentTime = 0;
+            log('⏹️ Áudio parado');
+        }
+        
+        // Eventos do áudio
+        audio.addEventListener('loadeddata', () => {
+            log(`📥 Áudio carregado! Duration: ${audio.duration}s`);
+        });
+        
+        audio.addEventListener('error', (e) => {
+            log(`❌ Erro ao carregar: ${audio.error?.message || 'Unknown'}`);
+        });
+        
+        audio.addEventListener('playing', () => {
+            log('▶️ Áudio está tocando!');
+        });
+        
+        audio.addEventListener('pause', () => {
+            log('⏸️ Áudio pausado');
+        });
+        
+        log('📱 Página carregada');
+        log(`User Agent: ${navigator.userAgent.substring(0, 50)}...`);
+    </script>
+</body>
+</html>

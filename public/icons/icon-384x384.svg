@@ -1,0 +1,15 @@
+<svg width="384" height="384" viewBox="0 0 384 384" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#10b981;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#059669;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  <rect width="384" height="384" rx="48" fill="url(#bg)"/>
+  <g transform="translate(76.80000000000001, 76.80000000000001)">
+    <rect x="134.39999999999998" y="38.400000000000006" width="7.68" height="153.60000000000002" fill="white"/>
+    <ellipse cx="115.19999999999999" cy="172.8" rx="15.36" ry="9.600000000000001" fill="white"/>
+    <line x1="38.400000000000006" y1="96" x2="192" y2="96" stroke="white" stroke-width="1.1520000000000001" opacity="0.7"/><line x1="38.400000000000006" y1="115.2" x2="192" y2="115.2" stroke="white" stroke-width="1.1520000000000001" opacity="0.7"/><line x1="38.400000000000006" y1="134.4" x2="192" y2="134.4" stroke="white" stroke-width="1.1520000000000001" opacity="0.7"/><line x1="38.400000000000006" y1="153.6" x2="192" y2="153.6" stroke="white" stroke-width="1.1520000000000001" opacity="0.7"/><line x1="38.400000000000006" y1="172.8" x2="192" y2="172.8" stroke="white" stroke-width="1.1520000000000001" opacity="0.7"/>
+  </g>
+  <text x="192" y="307.20000000000005" text-anchor="middle" fill="white" font-family="Arial, sans-serif" font-size="46.08" font-weight="bold">CCB</text>
+</svg>

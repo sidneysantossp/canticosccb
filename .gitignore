@@ -62,3 +62,18 @@ Thumbs.db
 
 # Supabase local
 .supabase/
+
+# VPS Configuration (SENSITIVE)
+.vps-config.local
+**/credentials.*
+**/secrets.*
+
+# Backend/PHP and media (do not push to Vercel)
+api/
+vendor/
+media/
+media_protegida/
+uploads/
+tmp/
+public/media/
+public/uploads/

@@ -1,6 +1,9 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { X, Upload, Lock, Globe, Users, Image as ImageIcon } from 'lucide-react';
+import usePlaylistsStore from '@/stores/playlistsStore';
+import { useAuth } from '@/contexts/AuthContext';
+import * as playlistsApi from '@/lib/playlistsApi';
 
 const CreatePlaylistPage: React.FC = () => {
   const navigate = useNavigate();
@@ -14,6 +17,8 @@ const CreatePlaylistPage: React.FC = () => {
   
   const [previewImage, setPreviewImage] = useState<string>('');
   const [isLoading, setIsLoading] = useState(false);
+  const { upsertPlaylist, updatePlaylist } = usePlaylistsStore();
+  const { user } = useAuth();
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -32,12 +37,38 @@ const CreatePlaylistPage: React.FC = () => {
     setIsLoading(true);
 
     try {
-      // TODO: Implementar criação real da playlist
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // Mock playlist ID
-      const newPlaylistId = Math.floor(Math.random() * 1000);
-      navigate(`/playlist/${newPlaylistId}`);
+      if (!user?.id) throw new Error('Usuário não autenticado');
+      const created = await playlistsApi.create({
+        userId: Number(user.id),
+        name: formData.name,
+        description: formData.description,
+        coverUrl: '',
+        isPublic: formData.privacy !== 'private'
+      });
+
+      // Mapear DTO -> store Playlist
+      const playlistStore = {
+        id: created.id,
+        name: created.name,
+        description: created.description || undefined,
+        coverUrl: created.cover_url || `https://picsum.photos/seed/${created.id}/300/300`,
+        tracks: (created.tracks || []).map(t => ({
+          id: isNaN(parseInt(String(t.id))) ? Date.now() : parseInt(String(t.id)),
+          title: t.title,
+          artist: t.artist,
+          coverUrl: t.cover_url || '',
+          duration: t.duration || '0:00'
+        })),
+        createdAt: created.created_at,
+        updatedAt: created.updated_at
+      };
+      upsertPlaylist(playlistStore);
+
+      if (previewImage) {
+        updatePlaylist(created.id, { coverUrl: previewImage });
+      }
+
+      navigate(`/playlist/${created.id}`);
     } catch (error) {
       console.error('Error creating playlist:', error);
     } finally {

@@ -1,11 +1,13 @@
-import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { Eye, EyeOff, Music2 } from 'lucide-react';
-import { useAuthStore } from '@/stores/authStore';
+import React, { useState, useEffect, useRef } from 'react';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
+import { Eye, EyeOff, Mail, Lock, ArrowLeft } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContextMock';
+import { googleLogin } from '@/lib/auth-client';
 
 const LoginPage: React.FC = () => {
   const navigate = useNavigate();
-  const { login } = useAuthStore();
+  const location = useLocation();
+  const { signIn, profile } = useAuth();
   
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -13,6 +15,93 @@ const LoginPage: React.FC = () => {
   const [rememberMe, setRememberMe] = useState(false);
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const logoSrc = 'https://canticosccb.com.br/logo-canticos-ccb.png';
+  const [isGoogleLoading, setIsGoogleLoading] = useState(false);
+  const [isGsiReady, setIsGsiReady] = useState(false);
+  const googleBtnRef = useRef<HTMLDivElement | null>(null);
+
+  // Redirecionar quando o perfil carregar após login
+  useEffect(() => {
+    if (profile) {
+      console.log('✅ LoginPage - Profile loaded, redirecting...', profile);
+      
+      // Redirecionamento imediato para rotas corretas
+      if (profile.is_composer) {
+        navigate('/composer');
+      } else if (profile.is_admin) {
+        navigate('/admin');
+      } else {
+        navigate('/profile'); // Redireciona usuário comum para o perfil
+      }
+      
+      // Resetar loading após redirecionamento
+      setIsLoading(false);
+    }
+  }, [profile, navigate, location.state]);
+
+  useEffect(() => {
+    const id = 'google-identity-services';
+    const initGsi = () => {
+      const g = (window as any).google;
+      if (!g?.accounts?.id) return;
+      try {
+        g.accounts.id.initialize({
+          client_id: '183469535157-5dlvid5od5i2ogq6g4e6bqq25rsj3mo3.apps.googleusercontent.com',
+          callback: async (response: any) => {
+            try {
+              const idToken = response?.credential;
+              if (!idToken) throw new Error('Credencial inválida');
+              await googleLogin(idToken);
+              window.location.href = '/onboarding';
+            } catch (err) {
+              setError('Falha no login com Google. Tente novamente.');
+            } finally {
+              setIsGoogleLoading(false);
+            }
+          },
+          auto_select: false,
+          cancel_on_tap_outside: true,
+          context: 'signin',
+          itp_support: true,
+          ux_mode: 'popup',
+        });
+
+        if (googleBtnRef.current) {
+          const container = googleBtnRef.current;
+          const targetWidth = Math.min(container.offsetWidth || 360, 400);
+          container.innerHTML = '';
+          g.accounts.id.renderButton(container, {
+            theme: 'outline',
+            size: 'large',
+            text: 'continue_with',
+            shape: 'pill',
+            logo_alignment: 'left',
+            locale: 'pt-BR',
+            width: targetWidth,
+          });
+        }
+
+        setIsGsiReady(true);
+      } catch (e) {}
+    };
+
+    const existing = document.getElementById(id) as HTMLScriptElement | null;
+    if (existing) {
+      if ((window as any).google?.accounts?.id) {
+        initGsi();
+      } else {
+        existing.addEventListener('load', initGsi as any, { once: true } as any);
+      }
+      return;
+    }
+    const s = document.createElement('script');
+    s.id = id;
+    s.src = 'https://accounts.google.com/gsi/client';
+    s.async = true;
+    s.defer = true;
+    s.onload = initGsi;
+    document.head.appendChild(s);
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -20,36 +109,60 @@ const LoginPage: React.FC = () => {
     setIsLoading(true);
 
     try {
-      // Mock login - substituir com chamada real ao Supabase
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      console.log('🔑 LoginPage - Chamando signIn...');
       
-      if (email && password) {
-        login({
-          id: '1',
-          email,
-          name: email.split('@')[0],
-          avatar: 'https://i.pravatar.cc/150?img=1'
-        });
-        navigate('/');
+      // Removido timeout temporariamente para debug
+      await signIn(email, password);
+      
+      console.log('✅ LoginPage - Login bem-sucedido!');
+      // O redirecionamento acontecerá automaticamente via useEffect quando profile carregar
+    } catch (err: any) {
+      console.error('❌ Login error:', err);
+      const msg = String(err?.message || '');
+      const isSchema500 = msg.includes('Database error querying schema') || msg.includes('500');
+      if (msg.includes('timeout')) {
+        setError('Tempo esgotado. Verifique sua conexão e tente novamente.');
+      } else if (msg.toLowerCase().includes('credentials')) {
+        setError('Email ou senha incorretos.');
+      } else if (isSchema500) {
+        setError('Estamos com instabilidade. Tente novamente em instantes.');
       } else {
-        setError('Por favor, preencha todos os campos');
+        setError('Erro ao fazer login. Tente novamente.');
       }
-    } catch (err) {
-      setError('Erro ao fazer login. Tente novamente.');
-    } finally {
+      
       setIsLoading(false);
     }
+  };
+
+  const clearSession = () => {
+    console.log('🧹 Limpando sessão...');
+    localStorage.clear();
+    sessionStorage.clear();
+    window.location.reload();
   };
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-background-primary to-background-tertiary flex items-center justify-center p-4">
       <div className="w-full max-w-md">
+        {/* Botão Voltar */}
+        <Link
+          to="/"
+          className="inline-flex items-center gap-2 text-gray-400 hover:text-white transition-colors mb-6"
+        >
+          <ArrowLeft className="w-5 h-5" />
+          <span>Voltar para início</span>
+        </Link>
+
         {/* Logo */}
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-primary-500 rounded-full mb-4">
-            <Music2 className="w-8 h-8 text-black" />
-          </div>
-          <h1 className="text-3xl font-bold text-white mb-2">Cânticos CCB</h1>
+          <Link to="/">
+            <img 
+              src={logoSrc} 
+              alt="Cânticos CCB" 
+              className="w-[250px] mx-auto object-contain mb-2"
+              referrerPolicy="no-referrer"
+            />
+          </Link>
           <p className="text-text-muted">Entre para continuar ouvindo</p>
         </div>
 
@@ -131,38 +244,13 @@ const LoginPage: React.FC = () => {
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full bg-primary-500 text-black font-semibold py-3 rounded-full hover:bg-primary-400 transition-all transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+              className="w-full bg-green-600 text-white font-semibold py-3 rounded-full hover:bg-green-500 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isLoading ? 'Entrando...' : 'Entrar'}
             </button>
           </form>
 
-          {/* Divider */}
-          <div className="flex items-center my-6">
-            <div className="flex-1 border-t border-gray-700"></div>
-            <span className="px-4 text-text-muted text-sm">ou</span>
-            <div className="flex-1 border-t border-gray-700"></div>
-          </div>
-
-          {/* Social Login */}
-          <div className="space-y-3">
-            <button className="w-full bg-white text-black font-semibold py-3 rounded-full hover:bg-gray-100 transition-all flex items-center justify-center gap-2">
-              <svg className="w-5 h-5" viewBox="0 0 24 24">
-                <path fill="currentColor" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
-                <path fill="currentColor" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
-                <path fill="currentColor" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
-                <path fill="currentColor" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
-              </svg>
-              Continuar com Google
-            </button>
-
-            <button className="w-full bg-[#1877F2] text-white font-semibold py-3 rounded-full hover:bg-[#166FE5] transition-all flex items-center justify-center gap-2">
-              <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
-              </svg>
-              Continuar com Facebook
-            </button>
-          </div>
+          <div ref={googleBtnRef} className="w-full mt-2 flex justify-center" />
 
           {/* Sign Up Link */}
           <div className="mt-6 text-center">
@@ -176,6 +264,16 @@ const LoginPage: React.FC = () => {
               </Link>
             </p>
           </div>
+        </div>
+
+        {/* Botão Limpar Sessão */}
+        <div className="mt-6 text-center">
+          <button
+            onClick={clearSession}
+            className="text-xs text-red-400 hover:text-red-300 transition-colors underline"
+          >
+            🧹 Limpar Sessão (Debug)
+          </button>
         </div>
 
         {/* Footer */}

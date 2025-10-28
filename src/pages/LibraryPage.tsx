@@ -1,78 +1,79 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Play, Heart, Plus, Search, Grid, List, MoreHorizontal } from 'lucide-react';
 import { usePlayerStore } from '@/stores/playerStore';
+import { usePlayerContext } from '@/contexts/PlayerContext';
+import { Hino } from '@/types';
+import SEOHead from '@/components/SEO/SEOHead';
+import usePlaylistsStore from '@/stores/playlistsStore';
+import { useAuth } from '@/contexts/AuthContext';
+import * as playlistsApi from '@/lib/playlistsApi';
 
 const LibraryPage: React.FC = () => {
-  const { play } = usePlayerStore();
+  const { play, setPlaybackContext } = usePlayerStore();
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [searchQuery, setSearchQuery] = useState('');
+  const { playlists, setPlaylists } = usePlaylistsStore();
+  const { openFullScreen } = usePlayerContext();
+  const { user } = useAuth();
 
-  // Mock data for playlists and liked songs
-  const playlists = [
-    {
-      id: 1,
-      name: 'Meus Favoritos',
-      description: 'Suas músicas curtidas',
-      coverUrl: 'https://picsum.photos/seed/liked/300/300',
-      songCount: 47,
-      type: 'liked',
-      isOwner: true
-    },
-    {
-      id: 2,
-      name: 'Hinos de Louvor',
-      description: 'Criada por você • 23 músicas',
-      coverUrl: 'https://picsum.photos/seed/louvor/300/300',
-      songCount: 23,
-      type: 'playlist',
-      isOwner: true
-    },
-    {
-      id: 3,
-      name: 'Hinos Clássicos',
-      description: 'Criada por você • 31 músicas',
-      coverUrl: 'https://picsum.photos/seed/classicos/300/300',
-      songCount: 31,
-      type: 'playlist',
-      isOwner: true
-    },
-    {
-      id: 4,
-      name: 'Coral CCB - Essenciais',
-      description: 'Por Coral CCB • 45 músicas',
-      coverUrl: 'https://picsum.photos/seed/essenciais/300/300',
-      songCount: 45,
-      type: 'playlist',
-      isOwner: false
-    },
-    {
-      id: 5,
-      name: 'Reflexão e Oração',
-      description: 'Criada por você • 18 músicas',
-      coverUrl: 'https://picsum.photos/seed/reflexao/300/300',
-      songCount: 18,
-      type: 'playlist',
-      isOwner: true
-    },
-    {
-      id: 6,
-      name: 'Hinos Instrumentais',
-      description: 'Criada por você • 26 músicas',
-      coverUrl: 'https://picsum.photos/seed/instrumental/300/300',
-      songCount: 26,
-      type: 'playlist',
-      isOwner: true
-    }
-  ];
+  // Carregar playlists do backend ao abrir a Biblioteca
+  useEffect(() => {
+    const fetchPlaylists = async () => {
+      try {
+        if (!user?.id) return;
+        const dtos = await playlistsApi.list(Number(user.id));
+        const mapped = dtos.map((p) => ({
+          id: String(p.id),
+          name: p.name,
+          description: p.description || undefined,
+          coverUrl: p.cover_url || `https://picsum.photos/seed/${p.id}/300/300`,
+          tracks: (p.tracks || []).map((t) => ({
+            id: isNaN(parseInt(String(t.id))) ? Date.now() : parseInt(String(t.id)),
+            title: t.title,
+            artist: t.artist,
+            coverUrl: t.cover_url || '',
+            duration: t.duration || '0:00',
+            backendTrackId: String(t.id),
+          })),
+          createdAt: p.created_at,
+          updatedAt: p.updated_at,
+        }));
+        // Manter playlists locais não persistidas (ids não numéricos)
+        const locals = playlists.filter((pl) => !/^\d+$/.test(pl.id));
+        setPlaylists([...mapped, ...locals]);
+      } catch (e) {
+        console.error('Erro ao carregar playlists do backend:', e);
+      }
+    };
+    fetchPlaylists();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id]);
 
   const filteredPlaylists = playlists.filter(playlist =>
     playlist.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   const handlePlayPlaylist = (playlist: any) => {
-    // TODO: Implement playlist play functionality
-    // console.log('Playing playlist:', playlist.name);
+    if (!playlist || !playlist.tracks || playlist.tracks.length === 0) return;
+    const t = playlist.tracks[0];
+    const track: Hino = {
+      id: String(t.id),
+      title: t.title,
+      number: 0,
+      category: 'playlist',
+      artist: t.artist,
+      duration: t.duration,
+      audioUrl: undefined,
+      coverUrl: t.coverUrl,
+      lyrics: undefined,
+      plays: 0,
+      isLiked: false,
+      createdAt: new Date().toISOString(),
+    };
+    setPlaybackContext({ type: 'playlist', id: String(playlist.id) });
+    play(track);
+    openFullScreen();
   };
 
   return (
@@ -123,7 +124,7 @@ const LibraryPage: React.FC = () => {
 
       {/* Create Playlist Button */}
       <div className="mb-8">
-        <button className="flex items-center gap-3 p-4 bg-background-secondary hover:bg-background-hover rounded-lg transition-colors group">
+        <Link to="/playlist/criar" className="flex items-center gap-3 p-4 bg-background-secondary hover:bg-background-hover rounded-lg transition-colors group">
           <div className="w-12 h-12 bg-background-tertiary rounded-lg flex items-center justify-center group-hover:bg-background-hover">
             <Plus className="w-6 h-6 text-text-muted group-hover:text-white" />
           </div>
@@ -131,7 +132,7 @@ const LibraryPage: React.FC = () => {
             <h3 className="text-white font-medium">Criar playlist</h3>
             <p className="text-text-muted text-sm">É fácil, vamos te ajudar</p>
           </div>
-        </button>
+        </Link>
       </div>
 
       {/* Playlists Grid/List */}
@@ -157,7 +158,7 @@ const LibraryPage: React.FC = () => {
                   {playlist.name}
                 </h3>
                 <p className="text-text-muted text-sm truncate">
-                  {playlist.description}
+                  {playlist.description || `${playlist.tracks.length} ${playlist.tracks.length === 1 ? 'hino' : 'hinos'}`}
                 </p>
               </Link>
             </div>
@@ -193,7 +194,7 @@ const LibraryPage: React.FC = () => {
                   </h3>
                 </Link>
                 <p className="text-text-muted text-sm truncate">
-                  {playlist.description}
+                  {playlist.description || `${playlist.tracks.length} ${playlist.tracks.length === 1 ? 'hino' : 'hinos'}`}
                 </p>
               </div>
 

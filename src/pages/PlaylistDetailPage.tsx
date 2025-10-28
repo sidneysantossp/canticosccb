@@ -1,94 +1,124 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
-import { Play, Pause, Heart, Download, MoreHorizontal, Plus, Clock } from 'lucide-react';
+import { Play, Pause, Heart, Download, MoreHorizontal, Plus, Clock, Trash2 } from 'lucide-react';
 import { usePlayerStore } from '@/stores/playerStore';
+import usePlaylistsStore, { PlaylistTrack } from '@/stores/playlistsStore';
+import { Hino } from '@/types';
+import AddToPlaylistModal from '@/components/modals/AddToPlaylistModal';
+import * as playlistsApi from '@/lib/playlistsApi';
+import { useToast } from '@/contexts/ToastContext';
 
 const PlaylistDetailPage: React.FC = () => {
   const { id } = useParams();
-  const { currentTrack, isPlaying, play, pause } = usePlayerStore();
+  const { currentTrack, isPlaying, play, pause, setPlaybackContext } = usePlayerStore();
+  const { getPlaylistById, upsertPlaylist, removeTrackFromPlaylist } = usePlaylistsStore();
 
-  // Mock playlist data
-  const playlist = {
-    id: parseInt(id || '1'),
-    name: 'Hinos de Louvor',
-    description: 'Os melhores hinos para momentos de louvor e adoração',
-    coverUrl: 'https://picsum.photos/seed/playlist-detail/400/400',
-    creator: 'Você',
-    isPublic: true,
-    followers: 1234,
-    totalDuration: '2h 15min',
-    songCount: 23
+  const playlist = getPlaylistById(String(id || ''));
+  const tracks = playlist?.tracks || [];
+
+  const [showPlaylistModal, setShowPlaylistModal] = useState(false);
+  const [selectedTrack, setSelectedTrack] = useState<{
+    id: string | number;
+    title: string;
+    artist: string;
+    duration: string;
+    coverUrl?: string;
+  } | null>(null);
+  const { showToast } = useToast();
+
+  const toHino = (t: PlaylistTrack): Hino => ({
+    id: String(t.id),
+    title: t.title,
+    number: 0,
+    category: 'playlist',
+    artist: t.artist,
+    duration: t.duration,
+    audioUrl: undefined,
+    coverUrl: t.coverUrl,
+    lyrics: undefined,
+    plays: 0,
+    isLiked: false,
+    createdAt: new Date().toISOString(),
+  });
+
+  const parseDuration = (d: string) => {
+    const [m, s] = d.split(':').map((x) => parseInt(x || '0', 10));
+    return (isNaN(m) ? 0 : m) * 60 + (isNaN(s) ? 0 : s);
   };
-
-  // Mock songs data
-  const songs = [
-    {
-      id: 1,
-      title: 'Hino 100 - Vencendo Vem Jesus',
-      artist: 'Coral CCB',
-      album: 'Hinos de Louvor Vol. 1',
-      duration: '3:45',
-      coverUrl: 'https://picsum.photos/seed/song1/100/100',
-      plays: 45678,
-      addedAt: '5 dias atrás'
-    },
-    {
-      id: 2,
-      title: 'Hino 50 - Saudosa Lembrança',
-      artist: 'Coral CCB',
-      album: 'Hinos Clássicos',
-      duration: '4:12',
-      coverUrl: 'https://picsum.photos/seed/song2/100/100',
-      plays: 38945,
-      addedAt: '1 semana atrás'
-    },
-    {
-      id: 3,
-      title: 'Hino 200 - Jerusalém Celeste',
-      artist: 'Coral CCB',
-      album: 'Hinos de Esperança',
-      duration: '3:58',
-      coverUrl: 'https://picsum.photos/seed/song3/100/100',
-      plays: 52341,
-      addedAt: '2 semanas atrás'
-    },
-    {
-      id: 4,
-      title: 'Hino 1 - Deus Eterno',
-      artist: 'Coral CCB',
-      album: 'Hinário Vol. 1',
-      duration: '3:30',
-      coverUrl: 'https://picsum.photos/seed/song4/100/100',
-      plays: 67890,
-      addedAt: '3 semanas atrás'
-    },
-    {
-      id: 5,
-      title: 'Hino 5 - Vem Pecador',
-      artist: 'Coral CCB',
-      album: 'Hinário Vol. 1',
-      duration: '4:05',
-      coverUrl: 'https://picsum.photos/seed/song5/100/100',
-      plays: 43210,
-      addedAt: '1 mês atrás'
-    }
-  ];
+  const totalSeconds = tracks.reduce((acc, t) => acc + parseDuration(t.duration || '0:00'), 0);
+  const totalDuration = totalSeconds > 0
+    ? `${Math.floor(totalSeconds / 3600)}h ${Math.floor((totalSeconds % 3600) / 60)}min`.
+        replace(/^0h\s/, '')
+    : '—';
 
   const handlePlayPlaylist = () => {
-    if (songs.length > 0) {
-      play(songs[0]);
+    if (tracks.length > 0) {
+      setPlaybackContext({ type: 'playlist', id: String(id) });
+      play(toHino(tracks[0]));
     }
   };
 
-  const handlePlaySong = (song: any) => {
-    play(song);
+  const handlePlaySong = (track: PlaylistTrack) => {
+    setPlaybackContext({ type: 'playlist', id: String(id) });
+    play(toHino(track));
   };
 
-  const formatNumber = (num: number) => {
-    return new Intl.NumberFormat('pt-BR').format(num);
+  const formatNumber = (num: number) => new Intl.NumberFormat('pt-BR').format(num);
+
+  // Buscar playlist no backend se não estiver no store (apenas ids numéricos)
+  useEffect(() => {
+    const fetchIfNeeded = async () => {
+      if (!id) return;
+      if (playlist) return;
+      const isNumeric = /^\d+$/.test(String(id));
+      if (!isNumeric) return;
+      try {
+        const dto = await playlistsApi.get(id);
+        const mapped = {
+          id: String(dto.id),
+          name: dto.name,
+          description: dto.description || undefined,
+          coverUrl: dto.cover_url || `https://picsum.photos/seed/${dto.id}/300/300`,
+          tracks: (dto.tracks || []).map((t) => ({
+            id: isNaN(parseInt(String(t.id))) ? Date.now() : parseInt(String(t.id)),
+            title: t.title,
+            artist: t.artist,
+            coverUrl: t.cover_url || '',
+            duration: t.duration || '0:00',
+            backendTrackId: String(t.id),
+          })),
+          createdAt: dto.created_at,
+          updatedAt: dto.updated_at,
+        };
+        upsertPlaylist(mapped);
+      } catch (e) {
+        console.error('Erro ao carregar playlist do backend:', e);
+      }
+    };
+    fetchIfNeeded();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [id, !!playlist]);
+
+  const handleRemoveTrack = async (track: PlaylistTrack) => {
+    if (!playlist) return;
+    const ok = window.confirm(`Remover "${track.title}" desta playlist?`);
+    if (!ok) return;
+    try {
+      const isNumeric = /^\d+$/.test(String(playlist.id));
+      const trackId = track.backendTrackId || String(track.id);
+      if (isNumeric) {
+        await playlistsApi.removeTrack({ playlistId: playlist.id, trackId });
+      }
+      removeTrackFromPlaylist(playlist.id, track.id);
+      showToast('success', 'Removido da playlist', `"${track.title}" foi removida de "${playlist.name}".`);
+    } catch (e) {
+      console.error('Erro ao remover faixa:', e);
+      showToast('error', 'Erro ao remover', 'Não foi possível remover a faixa. Tente novamente.');
+    }
   };
 
   return (
+    <>
     <div className="min-h-screen">
       {/* Header with Gradient Background */}
       <div className="relative bg-gradient-to-b from-primary-900 to-background-primary pt-16 pb-6 px-6">
@@ -96,9 +126,9 @@ const PlaylistDetailPage: React.FC = () => {
           {/* Playlist Cover */}
           <div className="flex-shrink-0">
             <img
-              src={playlist.coverUrl}
-              alt={playlist.name}
-              className="w-48 h-48 md:w-56 md:h-56 rounded-lg shadow-2xl"
+              src={playlist?.coverUrl || 'https://placehold.co/400x400/1a1a1a/green?text=Playlist'}
+              alt={playlist?.name || 'Playlist'}
+              className="w-48 h-48 md:w-56 md:h-56 rounded-lg shadow-2xl object-cover"
             />
           </div>
 
@@ -106,17 +136,19 @@ const PlaylistDetailPage: React.FC = () => {
           <div className="flex-1 pb-4">
             <p className="text-sm font-semibold uppercase tracking-wider mb-2">Playlist</p>
             <h1 className="text-4xl md:text-6xl lg:text-7xl font-black text-white mb-6 leading-tight">
-              {playlist.name}
+              {playlist?.name || 'Playlist'}
             </h1>
-            <p className="text-white/80 text-base mb-4">{playlist.description}</p>
+            <p className="text-white/80 text-base mb-4">{playlist?.description}</p>
             <div className="flex items-center gap-2 text-sm text-white/90">
-              <span className="font-semibold">{playlist.creator}</span>
+              <span className="font-semibold">Você</span>
               <span>•</span>
-              <span>{formatNumber(playlist.followers)} curtidas</span>
-              <span>•</span>
-              <span>{playlist.songCount} músicas</span>
-              <span className="hidden md:inline">•</span>
-              <span className="hidden md:inline text-white/70">{playlist.totalDuration}</span>
+              <span>{tracks.length} {tracks.length === 1 ? 'hino' : 'hinos'}</span>
+              {totalDuration !== '—' && (
+                <>
+                  <span className="hidden md:inline">•</span>
+                  <span className="hidden md:inline text-white/70">{totalDuration}</span>
+                </>
+              )}
             </div>
           </div>
         </div>
@@ -149,7 +181,7 @@ const PlaylistDetailPage: React.FC = () => {
       {/* Songs Table */}
       <div className="px-6 pb-24 max-w-7xl mx-auto">
         {/* Table Header */}
-        <div className="grid grid-cols-[16px_4fr_2fr_1fr_80px] md:grid-cols-[16px_6px_4fr_2fr_2fr_1fr_80px] gap-4 px-4 py-2 border-b border-white/10 text-text-muted text-sm mb-2">
+        <div className="grid grid-cols-[16px_4fr_2fr_1fr_80px] md:grid-cols-[16px_48px_4fr_2fr_2fr_1fr_80px] gap-4 px-4 py-2 border-b border-white/10 text-text-muted text-sm mb-2">
           <div className="text-center">#</div>
           <div className="hidden md:block"></div>
           <div>Título</div>
@@ -163,15 +195,15 @@ const PlaylistDetailPage: React.FC = () => {
 
         {/* Songs List */}
         <div className="space-y-1">
-          {songs.map((song, index) => {
-            const isCurrentTrack = currentTrack?.id === song.id;
+          {tracks.map((track, index) => {
+            const isCurrentTrack = String(currentTrack?.id || '') === String(track.id);
             const isCurrentPlaying = isCurrentTrack && isPlaying;
 
             return (
               <div
-                key={song.id}
-                className="grid grid-cols-[16px_4fr_2fr_1fr_80px] md:grid-cols-[16px_6px_4fr_2fr_2fr_1fr_80px] gap-4 px-4 py-3 rounded-md hover:bg-white/5 group transition-colors"
-                onDoubleClick={() => handlePlaySong(song)}
+                key={track.id}
+                className="grid grid-cols-[16px_4fr_2fr_1fr_80px] md:grid-cols-[16px_48px_4fr_2fr_2fr_1fr_80px] gap-4 px-4 py-3 rounded-md hover:bg-white/5 group transition-colors"
+                onDoubleClick={() => handlePlaySong(track)}
               >
                 {/* Track Number / Play Icon */}
                 <div className="flex items-center justify-center text-text-muted group-hover:text-white">
@@ -185,7 +217,7 @@ const PlaylistDetailPage: React.FC = () => {
                       <span className="group-hover:hidden">{index + 1}</span>
                       <Play
                         className="hidden group-hover:block w-4 h-4 cursor-pointer"
-                        onClick={() => handlePlaySong(song)}
+                        onClick={() => handlePlaySong(track)}
                       />
                     </>
                   )}
@@ -194,40 +226,64 @@ const PlaylistDetailPage: React.FC = () => {
                 {/* Album Cover - Desktop */}
                 <div className="hidden md:flex items-center">
                   <img
-                    src={song.coverUrl}
-                    alt={song.title}
-                    className="w-10 h-10 rounded"
+                    src={track.coverUrl}
+                    alt={track.title}
+                    className="w-10 h-10 rounded object-cover"
                   />
                 </div>
 
                 {/* Title & Artist */}
                 <div className="flex flex-col justify-center min-w-0">
                   <p className={`font-medium truncate ${isCurrentTrack ? 'text-primary-500' : 'text-white'}`}>
-                    {song.title}
+                    {track.title}
                   </p>
-                  <p className="text-text-muted text-sm truncate">{song.artist}</p>
+                  <p className="text-text-muted text-sm truncate">{track.artist}</p>
                 </div>
 
                 {/* Album - Desktop */}
                 <div className="hidden md:flex items-center">
                   <p className="text-text-muted text-sm truncate hover:text-white hover:underline cursor-pointer">
-                    {song.album}
+                    —
                   </p>
                 </div>
 
                 {/* Added At - Desktop */}
                 <div className="hidden md:flex items-center">
-                  <p className="text-text-muted text-sm">{song.addedAt}</p>
+                  <p className="text-text-muted text-sm">—</p>
                 </div>
 
                 {/* Duration */}
                 <div className="flex items-center justify-end">
-                  <p className="text-text-muted text-sm">{song.duration}</p>
+                  <p className="text-text-muted text-sm">{track.duration}</p>
                 </div>
 
                 {/* Actions */}
                 <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                  <button className="p-1 hover:bg-white/10 rounded">
+                  <button
+                    className="p-1 hover:bg-white/10 rounded"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleRemoveTrack(track);
+                    }}
+                    title="Remover da playlist"
+                  >
+                    <Trash2 className="w-4 h-4 text-text-muted hover:text-white" />
+                  </button>
+                  <button
+                    className="p-1 hover:bg-white/10 rounded"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setSelectedTrack({
+                        id: track.id,
+                        title: track.title,
+                        artist: track.artist,
+                        duration: track.duration,
+                        coverUrl: track.coverUrl,
+                      });
+                      setShowPlaylistModal(true);
+                    }}
+                    title="Adicionar à playlist"
+                  >
                     <Plus className="w-4 h-4 text-text-muted hover:text-white" />
                   </button>
                   <button className="p-1 hover:bg-white/10 rounded">
@@ -247,7 +303,18 @@ const PlaylistDetailPage: React.FC = () => {
         </div>
       </div>
     </div>
+    <AddToPlaylistModal
+      isOpen={showPlaylistModal}
+      onClose={() => {
+        setShowPlaylistModal(false);
+        setSelectedTrack(null);
+      }}
+      track={selectedTrack}
+    />
+    </>
   );
+
+  
 };
 
 export default PlaylistDetailPage;

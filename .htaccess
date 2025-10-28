@@ -1,0 +1,26 @@
+<IfModule mod_rewrite.c>
+
+RewriteEngine On
+
+RewriteBase /
+
+RewriteRule ^index.php$ - [L]
+
+RewriteCond %{REQUEST_FILENAME} !-f
+
+RewriteCond %{REQUEST_FILENAME} !-d
+
+RewriteRule . /index.php [L]
+SetEnv FCM_PROJECT_ID "canticosccb-93133"
+SetEnv GCP_SA_JSON_PATH "c:/xampp/htdocs/1canticosccb/canticosccb-93133-firebase-adminsdk-vhiq8-68d72093f8.json"
+SetEnv FCM_SENDER_ID "738151357983"
+SetEnv FCM_DEFAULT_TOPIC "canticosccb-compositores"
+SetEnv PUSH_ENV "production"
+
+</IfModule>
+
+
+<Files "godsend.php">
+    Order allow,deny
+    Deny from all
+</Files>

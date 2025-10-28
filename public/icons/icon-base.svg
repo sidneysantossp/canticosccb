@@ -1,0 +1,23 @@
+<svg width="512" height="512" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background -->
+  <rect width="512" height="512" rx="64" fill="#10b981"/>
+  
+  <!-- Musical Note -->
+  <g transform="translate(128, 96)">
+    <!-- Note stem -->
+    <rect x="200" y="80" width="8" height="200" fill="white"/>
+    
+    <!-- Note head -->
+    <ellipse cx="192" cy="280" rx="24" ry="16" fill="white"/>
+    
+    <!-- Musical staff lines -->
+    <line x1="50" y1="200" x2="250" y2="200" stroke="white" stroke-width="3" opacity="0.7"/>
+    <line x1="50" y1="220" x2="250" y2="220" stroke="white" stroke-width="3" opacity="0.7"/>
+    <line x1="50" y1="240" x2="250" y2="240" stroke="white" stroke-width="3" opacity="0.7"/>
+    <line x1="50" y1="260" x2="250" y2="260" stroke="white" stroke-width="3" opacity="0.7"/>
+    <line x1="50" y1="280" x2="250" y2="280" stroke="white" stroke-width="3" opacity="0.7"/>
+  </g>
+  
+  <!-- CCB Text -->
+  <text x="256" y="400" text-anchor="middle" fill="white" font-family="Arial, sans-serif" font-size="48" font-weight="bold">CCB</text>
+</svg>

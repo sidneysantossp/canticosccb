@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Teste Completo Push Notifications</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 20px; background: #1a1a1a; color: white; }
+    .container { max-width: 800px; margin: 0 auto; }
+    .step { background: #2a2a2a; padding: 20px; margin: 10px 0; border-radius: 8px; }
+    .step h3 { color: #4CAF50; margin-top: 0; }
+    button { background: #4CAF50; color: white; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer; margin: 5px; }
+    button:hover { background: #45a049; }
+    .result { background: #333; padding: 10px; margin: 10px 0; border-radius: 4px; font-family: monospace; white-space: pre-wrap; }
+    .error { background: #d32f2f; }
+    .success { background: #388e3c; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🔔 Teste Completo de Push Notifications</h1>
+    
+    <div class="step">
+      <h3>Passo 1: Registrar Token de Teste</h3>
+      <p>Registra um token válido para o usuário ID 8</p>
+      <button onclick="registrarToken()">Registrar Token</button>
+      <div id="result1" class="result"></div>
+    </div>
+
+    <div class="step">
+      <h3>Passo 2: Verificar Tokens no Banco</h3>
+      <p>Lista tokens salvos na tabela push_tokens</p>
+      <button onclick="verificarTokens()">Verificar Tokens</button>
+      <div id="result2" class="result"></div>
+    </div>
+
+    <div class="step">
+      <h3>Passo 3: Enviar Campanha</h3>
+      <p>Envia campanha para usuário específico (ID 8)</p>
+      <button onclick="enviarCampanha()">Enviar Campanha</button>
+      <div id="result3" class="result"></div>
+    </div>
+
+    <div class="step">
+      <h3>Passo 4: Testar Outros Públicos</h3>
+      <p>Testa envio para diferentes segmentações</p>
+      <button onclick="testarTodos()">Todos os Membros</button>
+      <button onclick="testarUsuarios()">Apenas Usuários</button>
+      <button onclick="testarCompositores()">Apenas Compositores</button>
+      <div id="result4" class="result"></div>
+    </div>
+  </div>
+
+  <script>
+    async function registrarToken() {
+      const result = document.getElementById('result1');
+      result.textContent = 'Registrando token...';
+      
+      try {
+        const res = await fetch('/api/push/simple-test.php');
+        const text = await res.text();
+        
+        // Tentar fazer parse do JSON
+        try {
+          const data = JSON.parse(text);
+          result.textContent = JSON.stringify(data, null, 2);
+          result.className = data.success ? 'result success' : 'result error';
+        } catch (parseError) {
+          result.textContent = 'Resposta não é JSON válido:\n' + text;
+          result.className = 'result error';
+        }
+      } catch (e) {
+        result.textContent = 'Erro de rede: ' + e.message;
+        result.className = 'result error';
+      }
+    }
+
+    async function verificarTokens() {
+      const result = document.getElementById('result2');
+      result.textContent = 'Verificando tokens...';
+      
+      try {
+        // Simula verificação (você pode criar um endpoint para isso)
+        result.textContent = 'Verifique no phpMyAdmin:\nSELECT * FROM push_tokens WHERE usuario_id = 8 ORDER BY id DESC LIMIT 5;';
+        result.className = 'result';
+      } catch (e) {
+        result.textContent = 'Erro: ' + e.message;
+        result.className = 'result error';
+      }
+    }
+
+    async function enviarCampanha() {
+      const result = document.getElementById('result3');
+      result.textContent = 'Enviando campanha...';
+      
+      try {
+        const res = await fetch('/api/push/send.php', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            title: 'Teste de Campanha',
+            message: 'Esta é uma mensagem de teste para validar o sistema de push notifications.',
+            targetType: 'user',
+            targetId: 8
+          })
+        });
+        
+        const data = await res.json();
+        result.textContent = JSON.stringify(data, null, 2);
+        result.className = data.success ? 'result success' : 'result error';
+      } catch (e) {
+        result.textContent = 'Erro: ' + e.message;
+        result.className = 'result error';
+      }
+    }
+
+    async function testarTodos() {
+      await testarPublico('all', null, 'Todos os membros');
+    }
+
+    async function testarUsuarios() {
+      await testarPublico('users', null, 'Apenas usuários');
+    }
+
+    async function testarCompositores() {
+      await testarPublico('composers', null, 'Apenas compositores');
+    }
+
+    async function testarPublico(targetType, targetId, nome) {
+      const result = document.getElementById('result4');
+      result.textContent = `Testando: ${nome}...`;
+      
+      try {
+        const payload = {
+          title: `Teste ${nome}`,
+          message: `Mensagem para ${nome.toLowerCase()}`,
+          targetType
+        };
+        
+        if (targetId) payload.targetId = targetId;
+        
+        const res = await fetch('/api/push/send.php', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        
+        const data = await res.json();
+        result.textContent = `${nome}:\n` + JSON.stringify(data, null, 2);
+        result.className = data.success ? 'result success' : 'result error';
+      } catch (e) {
+        result.textContent = `Erro em ${nome}: ` + e.message;
+        result.className = 'result error';
+      }
+    }
+  </script>
+</body>
+</html>

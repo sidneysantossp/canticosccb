@@ -1,7 +1,13 @@
 import { create } from 'zustand';
 import { PlayerState, Hino } from '@/types';
 
+interface PlaybackContext {
+  type: 'playlist' | 'album' | 'category' | 'unknown';
+  id?: string;
+}
+
 interface PlayerStore extends PlayerState {
+  playbackContext: PlaybackContext | null;
   play: (track: Hino) => void;
   pause: () => void;
   resume: () => void;
@@ -14,6 +20,11 @@ interface PlayerStore extends PlayerState {
   addToQueue: (track: Hino) => void;
   removeFromQueue: (trackId: string) => void;
   clearQueue: () => void;
+  stop: () => void;
+  playNext: () => void;
+  onTrackEnd: (() => void) | null;
+  setOnTrackEnd: (callback: (() => void) | null) => void;
+  setPlaybackContext: (ctx: PlaybackContext | null) => void;
 }
 
 export const usePlayerStore = create<PlayerStore>((set, get) => ({
@@ -27,6 +38,8 @@ export const usePlayerStore = create<PlayerStore>((set, get) => ({
   history: [],
   repeat: 'none',
   shuffle: false,
+  onTrackEnd: null,
+  playbackContext: null,
 
   // Actions
   play: (track: Hino) => {
@@ -35,6 +48,7 @@ export const usePlayerStore = create<PlayerStore>((set, get) => ({
       currentTrack: track,
       isPlaying: true,
       currentTime: 0,
+      duration: 225, // Mock duration - 3:45
       history: [track, ...history.slice(0, 49)] // Keep last 50 tracks
     });
   },
@@ -101,5 +115,63 @@ export const usePlayerStore = create<PlayerStore>((set, get) => ({
 
   clearQueue: () => {
     set({ queue: [] });
+  },
+
+  stop: () => {
+    set({ 
+      currentTrack: null,
+      isPlaying: false,
+      currentTime: 0,
+      duration: 0,
+      playbackContext: null
+    });
+  },
+
+  playNext: () => {
+    const { queue, repeat, currentTrack, onTrackEnd } = get();
+    
+    // Se tem callback personalizado (para álbuns), usa ele
+    if (onTrackEnd) {
+      console.log('PlayerStore: Executando callback personalizado de fim de faixa');
+      onTrackEnd();
+      return;
+    }
+    
+    if (queue.length > 0) {
+      // Se tem fila, toca próxima da fila
+      const nextTrack = queue[0];
+      set({
+        currentTrack: nextTrack,
+        queue: queue.slice(1),
+        currentTime: 0,
+        isPlaying: true
+      });
+    } else if (repeat === 'one' && currentTrack) {
+      // Se repeat one, toca a mesma música
+      set({
+        currentTime: 0,
+        isPlaying: true
+      });
+    } else if (repeat === 'all' && currentTrack) {
+      // Se repeat all e não tem fila, volta ao início da mesma música
+      set({
+        currentTime: 0,
+        isPlaying: true
+      });
+    } else {
+      // Para a reprodução
+      set({
+        isPlaying: false,
+        currentTime: 0
+      });
+    }
+  },
+
+  setOnTrackEnd: (callback: (() => void) | null) => {
+    set({ onTrackEnd: callback });
+  },
+
+  setPlaybackContext: (ctx) => {
+    set({ playbackContext: ctx });
   }
 }));

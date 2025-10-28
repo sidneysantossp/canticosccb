@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Gerador de Ícones PWA Temporários</title>
+    <style>
+        body { font-family: Arial; padding: 20px; background: #1a1a1a; color: white; }
+        canvas { border: 1px solid #333; margin: 10px; }
+        .icon-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 20px; }
+        .icon-item { text-align: center; }
+        button { background: #10b981; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; }
+        button:hover { background: #059669; }
+    </style>
+</head>
+<body>
+    <h1>🎨 Gerador de Ícones PWA - Cânticos CCB</h1>
+    <p>Clique em "Gerar Ícones" para criar ícones temporários para teste do PWA.</p>
+    
+    <button onclick="generateIcons()">Gerar Ícones</button>
+    <button onclick="downloadAll()">Baixar Todos</button>
+    
+    <div id="icons" class="icon-grid"></div>
+
+    <script>
+        const sizes = [72, 96, 128, 144, 152, 192, 384, 512];
+        const canvases = {};
+
+        function generateIcons() {
+            const container = document.getElementById('icons');
+            container.innerHTML = '';
+
+            sizes.forEach(size => {
+                const canvas = document.createElement('canvas');
+                canvas.width = size;
+                canvas.height = size;
+                const ctx = canvas.getContext('2d');
+
+                // Background gradient
+                const gradient = ctx.createLinearGradient(0, 0, size, size);
+                gradient.addColorStop(0, '#10b981');
+                gradient.addColorStop(1, '#059669');
+                ctx.fillStyle = gradient;
+                ctx.fillRect(0, 0, size, size);
+
+                // Rounded corners
+                ctx.globalCompositeOperation = 'destination-in';
+                ctx.beginPath();
+                ctx.roundRect(0, 0, size, size, size * 0.125);
+                ctx.fill();
+                ctx.globalCompositeOperation = 'source-over';
+
+                // Musical note
+                ctx.fillStyle = 'white';
+                const noteSize = size * 0.6;
+                const centerX = size / 2;
+                const centerY = size / 2;
+
+                // Note stem
+                const stemWidth = size * 0.02;
+                const stemHeight = noteSize * 0.7;
+                ctx.fillRect(centerX + noteSize * 0.15, centerY - stemHeight/2, stemWidth, stemHeight);
+
+                // Note head
+                ctx.beginPath();
+                ctx.ellipse(centerX, centerY + stemHeight/4, noteSize * 0.08, noteSize * 0.05, 0, 0, 2 * Math.PI);
+                ctx.fill();
+
+                // Staff lines
+                ctx.strokeStyle = 'rgba(255, 255, 255, 0.7)';
+                ctx.lineWidth = size * 0.006;
+                for (let i = 0; i < 5; i++) {
+                    const y = centerY - noteSize * 0.2 + (i * noteSize * 0.1);
+                    ctx.beginPath();
+                    ctx.moveTo(centerX - noteSize * 0.3, y);
+                    ctx.lineTo(centerX + noteSize * 0.3, y);
+                    ctx.stroke();
+                }
+
+                // CCB text
+                ctx.fillStyle = 'white';
+                ctx.font = `bold ${size * 0.12}px Arial`;
+                ctx.textAlign = 'center';
+                ctx.fillText('CCB', centerX, centerY + noteSize * 0.4);
+
+                canvases[size] = canvas;
+
+                // Add to page
+                const item = document.createElement('div');
+                item.className = 'icon-item';
+                item.innerHTML = `
+                    <h3>${size}x${size}</h3>
+                    <div>${canvas.outerHTML}</div>
+                    <button onclick="downloadIcon(${size})">Baixar</button>
+                `;
+                container.appendChild(item);
+            });
+        }
+
+        function downloadIcon(size) {
+            const canvas = canvases[size];
+            const link = document.createElement('a');
+            link.download = `icon-${size}x${size}.png`;
+            link.href = canvas.toDataURL();
+            link.click();
+        }
+
+        function downloadAll() {
+            sizes.forEach(size => {
+                setTimeout(() => downloadIcon(size), size * 10);
+            });
+        }
+
+        // Auto-generate on load
+        window.onload = generateIcons;
+    </script>
+</body>
+</html>

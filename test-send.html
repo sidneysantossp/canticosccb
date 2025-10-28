@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Teste Send.php</title>
+</head>
+<body>
+  <h1>Teste de Envio de Campanha</h1>
+  <button onclick="testar()">Testar send.php</button>
+  <pre id="resultado"></pre>
+
+  <script>
+    async function testar() {
+      const resultado = document.getElementById('resultado');
+      resultado.textContent = 'Enviando...';
+      
+      try {
+        const res = await fetch('http://localhost/1canticosccb/api/push/send.php', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            title: 'Teste',
+            message: 'Mensagem de teste',
+            includeNewFollowers: true,
+            includeMilestones: false
+          })
+        });
+        
+        const text = await res.text();
+        resultado.textContent = `Status: ${res.status}\n\n${text}`;
+      } catch (e) {
+        resultado.textContent = 'Erro: ' + e.message;
+      }
+    }
+  </script>
+</body>
+</html>

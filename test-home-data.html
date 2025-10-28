@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Home Data</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 20px auto;
+            padding: 20px;
+            background: #1a1a1a;
+            color: #fff;
+        }
+        .section {
+            background: #2a2a2a;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+        }
+        .success { color: #4ade80; }
+        .error { color: #f87171; }
+        .warning { color: #fbbf24; }
+        pre {
+            background: #1a1a1a;
+            padding: 15px;
+            border-radius: 4px;
+            overflow-x: auto;
+        }
+        button {
+            background: #3b82f6;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        button:hover {
+            background: #2563eb;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔍 Test Home Data API</h1>
+    
+    <div class="section">
+        <h2>Configuração</h2>
+        <p>SUPABASE_URL: <span id="supabase-url" class="warning">Carregando...</span></p>
+        <p>SUPABASE_KEY: <span id="supabase-key" class="warning">Configurado</span></p>
+    </div>
+
+    <div class="section">
+        <button onclick="testHomeData()">🧪 Testar API Home</button>
+        <button onclick="testSupabaseDirect()">🔗 Testar Supabase Direto</button>
+    </div>
+
+    <div class="section">
+        <h2>Resultados</h2>
+        <div id="results"></div>
+    </div>
+
+    <script>
+        // Mostrar config do .env
+        document.getElementById('supabase-url').textContent = 'Verifique o console do navegador na home';
+        document.getElementById('supabase-url').className = 'warning';
+
+        window.testHomeData = function() {
+            const results = document.getElementById('results');
+            results.innerHTML = `
+                <h3 class="warning">⚠️ Use o console do navegador</h3>
+                <p>Este teste precisa ser feito diretamente na aplicação React.</p>
+                <ol>
+                    <li>Abra <a href="http://localhost:5173" style="color: #3b82f6;">http://localhost:5173</a></li>
+                    <li>Pressione F12 para abrir DevTools</li>
+                    <li>Vá para a aba Console</li>
+                    <li>Procure pelos logs:
+                        <pre>💿 homeData.albums: ...
+🎵 homeData.hymnsCantados: ...
+🎹 homeData.hymnsTocados: ...
+🎼 homeData.hymnsAvulsos: ...</pre>
+                    </li>
+                    <li>Me envie uma screenshot dos logs</li>
+                </ol>
+            `;
+        };
+
+        window.testSupabaseDirect = function() {
+            const results = document.getElementById('results');
+            results.innerHTML = `
+                <h3 class="warning">📋 Checklist de Debug</h3>
+                <ol>
+                    <li><strong>Arquivo .env existe?</strong>
+                        <ul>
+                            <li>Deve estar em: <code>c:\\xampp\\htdocs\\1canticosccb\\.env</code></li>
+                            <li>Deve conter:
+                                <pre>VITE_SUPABASE_URL=https://seu-projeto.supabase.co
+VITE_SUPABASE_ANON_KEY=sua-chave-aqui</pre>
+                            </li>
+                        </ul>
+                    </li>
+                    <li><strong>Servidor reiniciado após criar .env?</strong>
+                        <ul>
+                            <li>Pare o servidor (Ctrl+C)</li>
+                            <li>Execute: <code>npm run dev</code></li>
+                        </ul>
+                    </li>
+                    <li><strong>Banco de dados tem registros?</strong>
+                        <ul>
+                            <li>Abra o Supabase Dashboard</li>
+                            <li>Vá em Table Editor</li>
+                            <li>Verifique se existem registros em: albums, songs, categories</li>
+                        </ul>
+                    </li>
+                    <li><strong>RLS (Row Level Security) configurado?</strong>
+                        <ul>
+                            <li>Execute os scripts SQL que enviei antes</li>
+                            <li>Policies para leitura pública de dados published</li>
+                        </ul>
+                    </li>
+                </ol>
+                
+                <h3 class="success">✅ Próximos passos</h3>
+                <p>1. Verifique cada item acima</p>
+                <p>2. Abra a home e veja o console</p>
+                <p>3. Me envie os logs que aparecem</p>
+            `;
+        };
+        
+        // Auto-run checklist
+        window.testSupabaseDirect();
+    </script>
+</body>
+</html>

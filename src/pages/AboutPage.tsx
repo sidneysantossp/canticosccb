@@ -1,7 +1,10 @@
 import React from 'react';
 import { Music, Heart, Users, Globe, Award, Target } from 'lucide-react';
-
+import SEOHead from '@/components/SEO/SEOHead';
+import { generateOrganizationSchema } from '@/utils/schemaGenerator';
 const AboutPage: React.FC = () => {
+  const schema = generateOrganizationSchema();
+
   const stats = [
     { icon: Users, label: 'Usuários Ativos', value: '2.5M+' },
     { icon: Music, label: 'Hinos Disponíveis', value: '1.200+' },
@@ -12,7 +15,6 @@ const AboutPage: React.FC = () => {
   const values = [
     {
       icon: Target,
-      title: 'Nossa Missão',
       description: 'Levar a mensagem dos hinos sagrados a todos os corações, preservando a tradição e facilitando o acesso à adoração musical.'
     },
     {
@@ -23,7 +25,7 @@ const AboutPage: React.FC = () => {
     {
       icon: Award,
       title: 'Nossos Valores',
-      description: 'Excelência, respeito à tradição, inovação tecnológica, acessibilidade e compromisso com a comunidade.'
+      description: 'Excelência, respeito à tradição, inovação tecnológica, acessibilidade e compromisso com a irmandade.'
     }
   ];
 
@@ -36,9 +38,18 @@ const AboutPage: React.FC = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-background-primary pb-32">
-      {/* Hero Section */}
-      <div className="relative overflow-hidden bg-gradient-to-b from-primary-900/20 to-background-primary py-20 px-6">
+    <>
+      <SEOHead
+        title="Sobre Nós"
+        description="Conheça a história da plataforma Cânticos CCB. Mais de 2.5 milhões de usuários ouvindo 1.200+ hinos em 50 países ao redor do mundo."
+        keywords="sobre ccb, história ccb, missão ccb, valores ccb, plataforma religiosa"
+        canonical="/about"
+        schemaData={schema}
+      />
+      
+      <div className="min-h-screen bg-background-primary pb-32">
+        {/* Hero Section */}
+        <div className="relative overflow-hidden bg-gradient-to-b from-primary-900/20 to-background-primary py-20 px-6">
         <div className="max-w-4xl mx-auto text-center">
           <h1 className="text-5xl md:text-6xl font-black text-white mb-6">
             Sobre Nós
@@ -77,7 +88,7 @@ const AboutPage: React.FC = () => {
               Ao longo dos anos, evoluímos de uma simples coleção digital para uma plataforma completa de streaming, oferecendo recursos como playlists personalizadas, modo offline, letras sincronizadas e muito mais. Hoje, servimos milhões de usuários ao redor do mundo.
             </p>
             <p>
-              Nossa missão vai além da tecnologia. Buscamos criar uma comunidade unida pela fé e pela música, onde cada hino conta uma história e toca corações. Continuamos inovando, mas sempre com respeito à tradição que nos inspira.
+              Nossa missão vai além da tecnologia. Buscamos criar uma irmandade unida pela fé e pela música, onde cada hino conta uma história e toca corações. Continuamos inovando, mas sempre com respeito à tradição que nos inspira.
             </p>
           </div>
         </div>
@@ -139,7 +150,8 @@ const AboutPage: React.FC = () => {
           </button>
         </div>
       </div>
-    </div>
+      </div>
+    </>
   );
 };
 

@@ -232,7 +232,7 @@ const Queue: React.FC<QueueProps> = ({ isOpen, onClose }) => {
                 </div>
                 <h3 className="text-white font-semibold mb-2">Fila vazia</h3>
                 <p className="text-text-muted text-sm mb-4">
-                  Adicione músicas à fila para ouvi-las depois
+                  Adicione hinos à fila para ouvi-las depois
                 </p>
               </div>
             )
@@ -283,7 +283,7 @@ const Queue: React.FC<QueueProps> = ({ isOpen, onClose }) => {
                 </div>
                 <h3 className="text-white font-semibold mb-2">Sem histórico</h3>
                 <p className="text-text-muted text-sm">
-                  Suas músicas recentes aparecerão aqui
+                  Suas hinos recentes aparecerão aqui
                 </p>
               </div>
             )

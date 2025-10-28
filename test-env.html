@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Teste Variáveis de Ambiente</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 20px; background: #1a1a1a; color: white; }
+    .container { max-width: 800px; margin: 0 auto; }
+    .result { background: #333; padding: 15px; margin: 10px 0; border-radius: 4px; font-family: monospace; }
+    .success { background: #388e3c; }
+    .error { background: #d32f2f; }
+    button { background: #4CAF50; color: white; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer; margin: 5px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🔍 Debug Variáveis de Ambiente</h1>
+    
+    <button onclick="checkEnvVars()">Verificar Variáveis</button>
+    <button onclick="testVapid()">Testar VAPID</button>
+    <button onclick="forceRegister()">Forçar Registro Token</button>
+    
+    <div id="result" class="result">Clique nos botões para testar...</div>
+  </div>
+
+  <script type="module">
+    window.checkEnvVars = function() {
+      const result = document.getElementById('result');
+      
+      const vars = {
+        'VITE_API_BASE_URL': import.meta.env.VITE_API_BASE_URL,
+        'VITE_FIREBASE_API_KEY': import.meta.env.VITE_FIREBASE_API_KEY,
+        'VITE_FIREBASE_AUTH_DOMAIN': import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+        'VITE_FIREBASE_PROJECT_ID': import.meta.env.VITE_FIREBASE_PROJECT_ID,
+        'VITE_FIREBASE_MESSAGING_SENDER_ID': import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+        'VITE_FIREBASE_APP_ID': import.meta.env.VITE_FIREBASE_APP_ID,
+        'VITE_FIREBASE_VAPID_KEY': import.meta.env.VITE_FIREBASE_VAPID_KEY,
+        'MODE': import.meta.env.MODE,
+        'DEV': import.meta.env.DEV,
+        'PROD': import.meta.env.PROD
+      };
+      
+      let output = '=== VARIÁVEIS DE AMBIENTE ===\n';
+      let hasVapid = false;
+      
+      for (const [key, value] of Object.entries(vars)) {
+        const status = value ? '✅' : '❌';
+        output += `${status} ${key}: ${value || 'undefined'}\n`;
+        if (key === 'VITE_FIREBASE_VAPID_KEY' && value) hasVapid = true;
+      }
+      
+      output += '\n=== DIAGNÓSTICO ===\n';
+      if (hasVapid) {
+        output += '✅ VAPID configurado - registro de token deve funcionar\n';
+        result.className = 'result success';
+      } else {
+        output += '❌ VAPID não encontrado - verifique .env.local\n';
+        output += '💡 Dica: Arquivo deve estar na RAIZ do projeto\n';
+        result.className = 'result error';
+      }
+      
+      result.textContent = output;
+    };
+    
+    window.testVapid = async function() {
+      const result = document.getElementById('result');
+      const vapid = import.meta.env.VITE_FIREBASE_VAPID_KEY;
+      
+      if (!vapid) {
+        result.textContent = '❌ VITE_FIREBASE_VAPID_KEY não encontrado!\n\nVerifique se:\n1. Arquivo .env.local está na raiz\n2. Vite foi reiniciado\n3. Variável está definida corretamente';
+        result.className = 'result error';
+        return;
+      }
+      
+      result.textContent = `✅ VAPID encontrado!\n\nChave: ${vapid.substring(0, 20)}...\nTamanho: ${vapid.length} caracteres\n\nAgora o registro de token deve funcionar.`;
+      result.className = 'result success';
+    };
+    
+    window.forceRegister = async function() {
+      const result = document.getElementById('result');
+      result.textContent = 'Tentando registrar token...';
+      
+      try {
+        // Importar e chamar a função de registro
+        const { registerWebPushToken } = await import('/src/lib/push/registerWebPush.ts');
+        const token = await registerWebPushToken(8, 'web');
+        
+        if (token) {
+          result.textContent = `✅ Token registrado com sucesso!\n\nToken: ${token.substring(0, 50)}...\n\nVerifique no banco: SELECT * FROM push_tokens WHERE usuario_id = 8;`;
+          result.className = 'result success';
+        } else {
+          result.textContent = '❌ Falha ao registrar token\n\nVerifique o console para mais detalhes.';
+          result.className = 'result error';
+        }
+      } catch (e) {
+        result.textContent = `❌ Erro: ${e.message}\n\nVerifique o console para mais detalhes.`;
+        result.className = 'result error';
+      }
+    };
+  </script>
+</body>
+</html>
