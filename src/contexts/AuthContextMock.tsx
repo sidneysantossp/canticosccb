@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import * as authClient from '@/lib/auth-client';
 import type { Usuario } from '@/lib/auth-client';
-import { registerWebPushToken } from '@/lib/push/registerWebPush';
+// WebPush removed - Firebase dependency eliminated
 
 interface User {
   id: number;
@@ -54,8 +54,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         is_admin: currentUser.tipo === 'admin',
         is_composer: currentUser.tipo === 'compositor'
       });
-      // Tentar registrar token de push para usuário logado
-      try { registerWebPushToken(currentUser.id, 'web'); } catch {}
+      // WebPush registration removed - Firebase dependency eliminated
     }
     
     // Restaurar estado de gerenciamento se existir
@@ -79,7 +78,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         is_admin: response.usuario.tipo === 'admin',
         is_composer: response.usuario.tipo === 'compositor'
       });
-      try { registerWebPushToken(response.usuario.id, 'web'); } catch {}
+      // WebPush registration removed - Firebase dependency eliminated
     } catch (error) {
       console.error('Sign-in error:', error);
       throw error;

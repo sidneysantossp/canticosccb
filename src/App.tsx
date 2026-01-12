@@ -131,8 +131,7 @@ import AdminImport from '@/pages/admin/AdminImport';
 import AdminImportForm from '@/pages/admin/AdminImportForm';
 import AdminExport from '@/pages/admin/AdminExport';
 import AdminExportForm from '@/pages/admin/AdminExportForm';
-import AdminAPI from '@/pages/admin/AdminAPI';
-import AdminAPIForm from '@/pages/admin/AdminAPIForm';
+// AdminAPI imports removed due to secrets
 import AdminBibleNarrated from '@/pages/admin/AdminBibleNarrated';
 import AdminBibleNarratedForm from '@/pages/admin/AdminBibleNarratedForm';
 import GlobalAudioPlayer from '@/components/GlobalAudioPlayer';
@@ -406,9 +405,7 @@ const AppContent: React.FC = () => {
           <Route path="admin/export" element={<ProtectedRoute requireAdmin><AdminExport /></ProtectedRoute>} />
           <Route path="admin/export/criar" element={<ProtectedRoute requireAdmin><AdminExportForm /></ProtectedRoute>} />
           <Route path="admin/export/create" element={<ProtectedRoute requireAdmin><AdminExportForm /></ProtectedRoute>} />
-          <Route path="admin/api" element={<ProtectedRoute requireAdmin><AdminAPI /></ProtectedRoute>} />
-          <Route path="admin/api/criar" element={<ProtectedRoute requireAdmin><AdminAPIForm /></ProtectedRoute>} />
-          <Route path="admin/api/create" element={<ProtectedRoute requireAdmin><AdminAPIForm /></ProtectedRoute>} />
+          {/* AdminAPI routes removed due to secrets */}
           <Route path="admin/biblia-narrada" element={<ProtectedRoute requireAdmin><AdminBibleNarrated /></ProtectedRoute>} />
           <Route path="admin/bible-narrated" element={<ProtectedRoute requireAdmin><AdminBibleNarrated /></ProtectedRoute>} />
           <Route path="admin/bible-narrated/criar" element={<ProtectedRoute requireAdmin><AdminBibleNarratedForm /></ProtectedRoute>} />
