@@ -77,3 +77,4 @@ uploads/
 tmp/
 public/media/
 public/uploads/
+!src/lib/api/
