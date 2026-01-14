@@ -1,0 +1,37 @@
+# ========================================
+# VARIÁVEIS DE AMBIENTE PARA VERCEL
+# Copie e cole estas variáveis no dashboard da Vercel
+# ========================================
+
+# Application Configuration
+VITE_APP_NAME=Cânticos CCB
+VITE_APP_URL=https://seu-dominio-vercel.vercel.app
+
+# Media Storage (VPS)
+VITE_MEDIA_BASE_URL=https://canticosccb.com.br/media
+
+# API Backend (PHP)
+VITE_API_BASE_URL=https://canticosccb.com.br/api
+
+# Supabase Configuration (NOVA CONTA)
+VITE_SUPABASE_URL=https://SEU-PROJETO-NOVO.supabase.co
+VITE_SUPABASE_ANON_KEY=SUA-NOVA-ANON-KEY
+
+# Feature Flags
+VITE_ENABLE_PREMIUM=true
+VITE_ENABLE_SOCIAL=true
+VITE_ENABLE_OFFLINE=true
+
+# Admin Configuration
+VITE_ADMIN_EMAILS=admin@canticosccb.com.br
+VITE_EMERGENCY_ADMIN_BYPASS=false
+
+# Upload Configuration
+VITE_VPS_UPLOAD_KEY=ccb2024_upload_secretkey_xyz
+
+# ========================================
+# INSTRUÇÕES:
+# 1. Substitua SEU-PROJETO-NOVO pelo seu ID do projeto Supabase
+# 2. Substitua SUA-NOVA-ANON-KEY pela sua chave anônima do Supabase
+# 3. Substitua https://seu-dominio-vercel.vercel.app pelo seu domínio real
+# ========================================

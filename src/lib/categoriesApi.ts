@@ -10,6 +10,15 @@ export type CategoryRecord = {
   ativo?: number;
 };
 
+// Mock data for fallback
+const mockCategories: CategoryRecord[] = [
+  { id: '1', name: 'Adoração', slug: 'adoracao', background_color: '#6366f1', description: 'Cânticos de adoração' },
+  { id: '2', name: 'Louvor', slug: 'louvor', background_color: '#10b981', description: 'Cânticos de louvor' },
+  { id: '3', name: 'Comunhão', slug: 'comunhao', background_color: '#f59e0b', description: 'Cânticos de comunhão' },
+  { id: '4', name: 'Evangelização', slug: 'evangelizacao', background_color: '#ef4444', description: 'Cânticos para evangelização' },
+  { id: '5', name: 'Especial', slug: 'especial', background_color: '#8b5cf6', description: 'Cânticos especiais' }
+];
+
 function mapCategory(raw: any): CategoryRecord {
   return {
     id: String(raw.id),
@@ -27,17 +36,32 @@ export const getAll = async (params?: { search?: string; page?: number; limit?: 
   if (params?.search) query.append('search', params.search);
   if (params?.page) query.append('page', String(params.page));
   if (params?.limit) query.append('limit', String(params.limit));
-  const res = await apiFetch(`/api/categorias/index.php?${query.toString()}`);
-  if (!res.ok) return [] as CategoryRecord[];
-  const json = await res.json().catch(() => ({}));
-  const list = Array.isArray(json)
-    ? json
-    : Array.isArray(json?.categorias)
-      ? json.categorias
-      : Array.isArray(json?.data)
-        ? json.data
-        : [];
-  return (list as any[]).map(mapCategory);
+  
+  try {
+    const res = await apiFetch(`/api/categorias/index.php?${query.toString()}`);
+    if (!res.ok) {
+      console.warn('API failed, using mock data for categories');
+      return mockCategories;
+    }
+    const json = await res.json().catch(() => ({}));
+    const list = Array.isArray(json)
+      ? json
+      : Array.isArray(json?.categorias)
+        ? json.categorias
+        : Array.isArray(json?.data)
+          ? json.data
+          : [];
+    
+    if (list.length === 0) {
+      console.warn('API returned empty data, using mock data for categories');
+      return mockCategories;
+    }
+    
+    return (list as any[]).map(mapCategory);
+  } catch (error) {
+    console.warn('API error, using mock data for categories:', error);
+    return mockCategories;
+  }
 };
 
 export const fetchActiveCategories = async () => {
