@@ -134,13 +134,6 @@ const LoginPage: React.FC = () => {
     }
   };
 
-  const clearSession = () => {
-    console.log('🧹 Limpando sessão...');
-    localStorage.clear();
-    sessionStorage.clear();
-    window.location.reload();
-  };
-
   return (
     <div className="min-h-screen bg-gradient-to-b from-background-primary to-background-tertiary flex items-center justify-center p-4">
       <div className="w-full max-w-md">
@@ -264,16 +257,6 @@ const LoginPage: React.FC = () => {
               </Link>
             </p>
           </div>
-        </div>
-
-        {/* Botão Limpar Sessão */}
-        <div className="mt-6 text-center">
-          <button
-            onClick={clearSession}
-            className="text-xs text-red-400 hover:text-red-300 transition-colors underline"
-          >
-            🧹 Limpar Sessão (Debug)
-          </button>
         </div>
 
         {/* Footer */}
