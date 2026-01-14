@@ -5,6 +5,7 @@ import { buildAvatarUrl } from '@/lib/media-helper';
 import { ComposerCardSkeleton } from '@/components/ui/SkeletonLoader';
 import { useCachedData } from '@/hooks/usePreloadData';
 import { apiFetch } from '@/lib/api-helper';
+import { isSupabaseConfigured, supabaseFetch } from '@/lib/supabaseRest';
 
 interface Compositor {
   id: string;
@@ -31,6 +32,45 @@ type Composer = Compositor & {
   popularHino?: string;
   verificado?: number;
   verified?: boolean;
+};
+
+type SupabaseComposerRow = {
+  id?: number | string;
+  nome?: string;
+  name?: string;
+  nome_artistico?: string;
+  artistic_name?: string;
+  biografia?: string;
+  bio?: string;
+  avatar_url?: string;
+  photo_url?: string;
+  verificado?: boolean | number;
+  verified?: boolean;
+  is_trending?: boolean;
+  followers_count?: number;
+};
+
+const normalizeComposerRow = (row: any): Composer => {
+  const id = String(row.id ?? row.compositor_id ?? row.uuid ?? Math.random());
+  const name = row.artistic_name ?? row.nome_artistico ?? row.name ?? row.nome ?? 'Compositor CCB';
+  const avatarUrl = row.photo_url ?? row.avatar_url ?? row.image ?? '';
+
+  return {
+    id,
+    name,
+    description: row.biografia ?? row.description ?? 'Compositor da CCB',
+    image: avatarUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&size=400&background=1a1a1a&color=00D1FF`,
+    avatar_url: avatarUrl,
+    photo_url: avatarUrl,
+    imageUrl: avatarUrl,
+    followers_count: row.followers_count ?? row.followers ?? 0,
+    followers: row.followers ?? row.followers_count ?? 0,
+    is_trending: Boolean(row.is_trending ?? row.trending ?? row.em_alta ?? row.verificado),
+    popularHino: row.popularHino ?? 'Hinos populares',
+    total_hymns: row.total_hymns ?? row.totalHinos ?? 0,
+    verificado: row.verificado ?? (row.verified ? 1 : 0),
+    verified: Boolean(row.verified ?? row.verificado),
+  };
 };
 
 const ComposersSection: React.FC = () => {
@@ -85,34 +125,25 @@ const ComposersSection: React.FC = () => {
         setTimeout(() => reject(new Error('Timeout loading composers')), 6000)
       );
 
-      const fetchPromise = apiFetch('api/compositores/index.php?limit=100')
+      const supabaseQuery = supabaseFetch<SupabaseComposerRow>('compositores', {
+        select: 'id,name,artistic_name,bio,photo_url,verified,is_trending,followers_count',
+        is_approved: 'eq.true',
+        order: 'name.asc',
+        limit: '100',
+      }).then(rows => rows.map(normalizeComposerRow));
+
+      const apiQuery = apiFetch('api/compositores/index.php?limit=100')
         .then(res => {
           if (!res.ok) throw new Error('Erro ao carregar compositores');
           return res.json();
         })
         .then(data => {
           console.log('🎵 Compositores do banco:', data);
-          
-          // O endpoint retorna { compositores: [...] }
           const compositoresArray = data.compositores || data || [];
-          
-          return compositoresArray.map((comp: any) => ({
-            id: String(comp.id),
-            name: comp.nome || 'Compositor',
-            description: comp.biografia || 'Compositor da CCB',
-            image: comp.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(comp.nome || 'C')}&size=400&background=1a1a1a&color=00D1FF`,
-            avatar_url: comp.avatar_url,
-            photo_url: comp.avatar_url,
-            imageUrl: comp.avatar_url,
-            followers_count: 0, // TODO: implementar sistema de seguidores
-            followers: 0,
-            is_trending: false, // TODO: implementar sistema de trending
-            popularHino: 'Hinos populares',
-            total_hymns: 0, // TODO: contar hinos do compositor
-            verificado: comp.verificado ?? 0,
-            verified: Boolean(comp.verificado),
-          }));
+          return compositoresArray.map((comp: any) => normalizeComposerRow(comp));
         });
+
+      const fetchPromise = isSupabaseConfigured ? supabaseQuery : apiQuery;
 
       const fresh = await Promise.race([
         fetchPromise,

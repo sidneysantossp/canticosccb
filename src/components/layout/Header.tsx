@@ -235,7 +235,7 @@ const Header: React.FC = () => {
           {!user && (
             <Link
               to="/register"
-              className="hidden sm:inline-flex items-center rounded-full border-2 border-green-500 text-green-500 px-6 py-2 font-semibold hover:bg-green-500/10 transition-colors"
+              className="hidden lg:inline-flex items-center rounded-full border-2 border-green-500 text-green-500 px-6 py-2 font-semibold hover:bg-green-500/10 transition-colors"
             >
               Registrar
             </Link>
