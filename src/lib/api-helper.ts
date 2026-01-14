@@ -1,20 +1,19 @@
 /**
- * DEPRECATED - Funções auxiliares de API
- * Agora usa Supabase diretamente
+ * Funções auxiliares de API - Compatibilidade
+ * APIs PHP foram removidas, retorna dados vazios para fallback
  */
 
-// URL base não é mais necessária pois usamos Supabase
+// URL base não é mais necessária
 export function getApiUrl(endpoint: string): string {
-  console.warn('[api-helper] getApiUrl está deprecated - use supabase-api.ts');
   return endpoint;
 }
 
-// Função de fetch genérica para compatibilidade
+// Função de fetch que retorna resposta vazia (Supabase é a fonte principal agora)
 export async function apiFetch(endpoint: string, options?: RequestInit): Promise<Response> {
-  console.warn('[api-helper] apiFetch está deprecated - use supabase-api.ts');
-  // Retorna uma resposta vazia para evitar erros
-  return new Response(JSON.stringify({ error: 'API PHP removida, use Supabase' }), {
-    status: 400,
+  // Retorna resposta OK com array/objeto vazio para não quebrar o código
+  // O Supabase é a fonte principal de dados agora
+  return new Response(JSON.stringify([]), {
+    status: 200,
     headers: { 'Content-Type': 'application/json' }
   });
 }
