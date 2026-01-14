@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { Eye, EyeOff, Mail, Lock, ArrowLeft } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContextMock';
-import { googleLogin } from '@/lib/auth-client';
+import { googleLogin } from '@/lib/supabase-auth';
 
 const LoginPage: React.FC = () => {
   const navigate = useNavigate();

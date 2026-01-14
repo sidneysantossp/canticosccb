@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import * as authClient from '@/lib/auth-client';
-import type { Usuario } from '@/lib/auth-client';
+import * as authClient from '@/lib/supabase-auth';
+import type { Usuario } from '@/lib/supabase-auth';
 // WebPush removed - Firebase dependency eliminated
 
 interface User {
@@ -96,7 +96,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const signOut = async () => {
     try {
-      authClient.logout();
+      await authClient.logout();
       setUser(null);
       setProfile(null);
       // Limpar estado de gerenciamento
