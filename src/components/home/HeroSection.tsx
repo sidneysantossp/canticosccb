@@ -1,13 +1,7 @@
-import React, { useState, useEffect, useRef, useMemo } from 'react';
+import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { ChevronLeft, ChevronRight, Play } from 'lucide-react';
- 
-import { ASSETS, UI_CONFIG } from '@/constants';
-import AnimatedButton from '@/components/ui/AnimatedButton';
-import FadeIn from '@/components/ui/FadeIn';
 import { useNavigate } from 'react-router-dom';
 import type { HomeBanner } from '@/lib/homeApi';
-import { motion, AnimatePresence } from 'framer-motion';
-import { useAutoplayVideo } from '@/hooks/useAutoplayVideo';
 import { buildBannerUrl } from '@/lib/media-helper';
 
 interface Slide {
@@ -65,26 +59,26 @@ const HeroSection: React.FC<HeroSectionProps> = ({ banners = [] }) => {
       });
   }, [banners]);
 
-  const hasSlides = displaySlides.length > 0;
-  const safeIndex = hasSlides ? Math.min(Math.max(0, currentSlide), Math.max(0, displaySlides.length - 1)) : 0;
+  const slidesCount = displaySlides.length;
+  const hasSlides = slidesCount > 0;
+  const safeIndex = hasSlides ? Math.min(Math.max(0, currentSlide), Math.max(0, slidesCount - 1)) : 0;
   const slide = hasSlides ? displaySlides[safeIndex] : undefined;
 
-  // Hook para autoplay de vídeo (reativa quando o src do slide muda)
-  const videoRef = useAutoplayVideo(true, slide?.image);
+  const nextSlide = useCallback(() => {
+    if (slidesCount <= 1) return;
+    setCurrentSlide((prev) => (prev + 1) % slidesCount);
+  }, [slidesCount]);
 
-  const nextSlide = () => {
-    setCurrentSlide((prev) => (prev + 1) % displaySlides.length);
-  };
-
-  const prevSlide = () => {
-    setCurrentSlide((prev) => (prev - 1 + displaySlides.length) % displaySlides.length);
-  };
+  const prevSlide = useCallback(() => {
+    if (slidesCount <= 1) return;
+    setCurrentSlide((prev) => (prev - 1 + slidesCount) % slidesCount);
+  }, [slidesCount]);
 
   // Garante que o índice atual sempre seja válido quando a lista mudar
   useEffect(() => {
-    if (!displaySlides.length) return;
-    if (currentSlide >= displaySlides.length) setCurrentSlide(0);
-  }, [displaySlides.length]);
+    if (!slidesCount) return;
+    if (currentSlide >= slidesCount) setCurrentSlide(0);
+  }, [slidesCount, currentSlide]);
 
   const handleTouchStart = (event: React.TouchEvent<HTMLDivElement>) => {
     touchStartX.current = event.changedTouches[0].screenX;
@@ -98,7 +92,7 @@ const HeroSection: React.FC<HeroSectionProps> = ({ banners = [] }) => {
   const handleTouchEnd = () => {
     if (touchStartX.current !== null && touchEndX.current !== null) {
       const distance = touchStartX.current - touchEndX.current;
-      const swipeThreshold = 50; // pixels
+      const swipeThreshold = 50;
 
       if (distance > swipeThreshold) {
         nextSlide();
@@ -110,16 +104,27 @@ const HeroSection: React.FC<HeroSectionProps> = ({ banners = [] }) => {
     touchEndX.current = null;
   };
 
-  // Auto-play dos slides
+  // Auto-play dos slides com ref para evitar re-criação do interval
+  const intervalRef = useRef<NodeJS.Timeout | null>(null);
+  
   useEffect(() => {
-    if (displaySlides.length <= 1) return;
+    if (slidesCount <= 1) return;
 
-    const interval = setInterval(() => {
-      nextSlide();
-    }, 8000); // Troca a cada 8 segundos (mais lento)
+    // Limpar interval anterior
+    if (intervalRef.current) {
+      clearInterval(intervalRef.current);
+    }
 
-    return () => clearInterval(interval);
-  }, [displaySlides.length]);
+    intervalRef.current = setInterval(() => {
+      setCurrentSlide((prev) => (prev + 1) % slidesCount);
+    }, 8000);
+
+    return () => {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+      }
+    };
+  }, [slidesCount]);
 
   const handleBannerAction = () => {
     if (!slide) return;
@@ -161,6 +166,21 @@ const HeroSection: React.FC<HeroSectionProps> = ({ banners = [] }) => {
 
   if (!slide) return null;
 
+  // Função para gerar background gradient inline
+  const getGradientStyle = (color: string) => {
+    try {
+      const c = String(color);
+      if (!c.includes('from-[')) return undefined;
+      return c.replace(/bg-gradient-to-br from-\[([^\]]+)\]\/(\d+) to-\[([^\]]+)\]\/(\d+)/, (_, color1, opacity1, color2, opacity2) => {
+        const alpha1 = parseInt(opacity1) / 100;
+        const alpha2 = parseInt(opacity2) / 100;
+        return `linear-gradient(to bottom right, ${color1}${Math.round(alpha1 * 255).toString(16).padStart(2, '0')}, ${color2}${Math.round(alpha2 * 255).toString(16).padStart(2, '0')})`;
+      });
+    } catch {
+      return undefined;
+    }
+  };
+
   return (
     <div
       className="relative h-[360px] md:h-[350px] rounded-lg overflow-hidden mb-8 mt-0 md:mx-6 md:mt-6"
@@ -168,102 +188,66 @@ const HeroSection: React.FC<HeroSectionProps> = ({ banners = [] }) => {
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
     >
-      {/* Background Image with Overlay */}
-      <AnimatePresence mode="wait">
-        <motion.div
-          key={`slide-${safeIndex}`}
-          className="absolute inset-0"
-          initial={{ opacity: 0, scale: 1.05 }}
-          animate={{ opacity: 1, scale: 1 }}
-          exit={{ opacity: 0, scale: 0.95 }}
-          transition={{ duration: 1.2, ease: "easeInOut" }}
+      {/* Slides Container - Usando CSS transitions */}
+      {displaySlides.map((s, index) => (
+        <div
+          key={s.id}
+          className={`absolute inset-0 transition-opacity duration-1000 ease-in-out ${
+            index === safeIndex ? 'opacity-100 z-10' : 'opacity-0 z-0'
+          }`}
         >
-          {isVideoUrl(slide.image) ? (
+          {/* Background Image */}
+          {isVideoUrl(s.image) ? (
             <video
-              ref={videoRef}
-              key={`video-${slide.id ?? safeIndex}`}
-              src={slide.image}
+              src={s.image}
               className="w-full h-full object-cover"
               autoPlay
               muted
               loop
               playsInline
               preload="auto"
-              poster=""
-              onLoadedMetadata={(e) => { try { (e.currentTarget as HTMLVideoElement).play().catch(() => {}); } catch {} }}
-              onCanPlay={(e) => { try { (e.currentTarget as HTMLVideoElement).play().catch(() => {}); } catch {} }}
               controls={false}
             />
           ) : (
             <img 
-              src={slide.image}
-              alt={slide.title}
+              src={s.image}
+              alt={s.title}
               className="w-full h-full object-cover"
-              loading="lazy"
+              loading={index === 0 ? "eager" : "lazy"}
             />
           )}
+          {/* Gradient Overlay */}
           <div 
-            className={`absolute inset-0 ${String(slide.color)}`}
-            style={{
-              // Fallback CSS inline caso Tailwind não reconheça as classes dinâmicas
-              background: (() => {
-                try {
-                  const c = String(slide.color);
-                  if (!c.includes('from-[')) return undefined;
-                  return c.replace(/bg-gradient-to-br from-\[([^\]]+)\]\/(\d+) to-\[([^\]]+)\]\/(\d+)/, (match, color1, opacity1, color2, opacity2) => {
-                    const alpha1 = parseInt(opacity1) / 100;
-                    const alpha2 = parseInt(opacity2) / 100;
-                    return `linear-gradient(to bottom right, ${color1}${Math.round(alpha1 * 255).toString(16).padStart(2, '0')}, ${color2}${Math.round(alpha2 * 255).toString(16).padStart(2, '0')})`;
-                  });
-                } catch {
-                  return undefined;
-                }
-              })()
-            }}
-          ></div>
-        </motion.div>
-      </AnimatePresence>
+            className={`absolute inset-0 ${String(s.color)}`}
+            style={{ background: getGradientStyle(s.color) }}
+          />
+        </div>
+      ))}
 
-      {/* Content */}
-      <AnimatePresence mode="wait">
-        <motion.div
-          key={`content-${safeIndex}`}
-          className="relative z-10 flex items-center h-full px-6 md:px-12"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          transition={{ duration: 1.0, delay: 0.3, ease: 'easeInOut' }}
-        >
-          <div className="max-w-2xl">
-            <motion.h1 
-              className="text-4xl md:text-6xl font-bold text-white mb-4"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8, delay: 0.4 }}
-            >
-              {slide.title}
-            </motion.h1>
-            <motion.p 
-              className="text-lg md:text-xl text-gray-200 mb-8"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8, delay: 0.6 }}
-            >
-              {slide.subtitle}
-            </motion.p>
-            <motion.button 
-              onClick={handleBannerAction}
-              className="bg-primary-500 hover:bg-primary-600 text-black font-semibold px-8 py-3 rounded-full flex items-center gap-2 transition-all hover:scale-105"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8, delay: 0.8 }}
-            >
-              <Play className="w-5 h-5 fill-current" />
-              {slide.buttonText || 'Reproduzir'}
-            </motion.button>
-          </div>
-        </motion.div>
-      </AnimatePresence>
+      {/* Content - Transição suave */}
+      <div className="relative z-10 flex items-center h-full px-6 md:px-12">
+        <div className="max-w-2xl">
+          <h1 
+            className="text-4xl md:text-6xl font-bold text-white mb-4 transition-all duration-500"
+            key={`title-${safeIndex}`}
+          >
+            {slide.title}
+          </h1>
+          <p 
+            className="text-lg md:text-xl text-gray-200 mb-8 transition-all duration-500"
+            key={`subtitle-${safeIndex}`}
+          >
+            {slide.subtitle}
+          </p>
+          <button 
+            onClick={handleBannerAction}
+            className="bg-primary-500 hover:bg-primary-600 text-black font-semibold px-8 py-3 rounded-full flex items-center gap-2 transition-all hover:scale-105"
+          >
+            <Play className="w-5 h-5 fill-current" />
+            {slide.buttonText || 'Reproduzir'}
+          </button>
+        </div>
+      </div>
 
       {/* Navigation Arrows - Hidden on mobile */}
       <button 
@@ -289,7 +273,7 @@ const HeroSection: React.FC<HeroSectionProps> = ({ banners = [] }) => {
             key={index}
             onClick={() => setCurrentSlide(index)}
             className={`w-3 h-3 rounded-full transition-colors ${
-              index === currentSlide ? 'bg-white' : 'bg-white/50'
+              index === safeIndex ? 'bg-white' : 'bg-white/50'
             }`}
             aria-label={`Ir para slide ${index + 1}`}
           />
