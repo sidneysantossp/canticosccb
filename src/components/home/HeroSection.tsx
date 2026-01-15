@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { ChevronLeft, ChevronRight, Play } from 'lucide-react';
  
 import { ASSETS, UI_CONFIG } from '@/constants';
@@ -42,33 +42,28 @@ const HeroSection: React.FC<HeroSectionProps> = ({ banners = [] }) => {
     return false;
   };
 
-  console.log('🎪 HeroSection - Banners received:', banners);
-  console.log('🎪 HeroSection - Banners length:', banners?.length || 0);
-  console.log('🎪 HeroSection - Banners array:', JSON.stringify(banners, null, 2));
-
-  // Converter banners do backend em slides (sem fallback mock)
-  const displaySlides: Slide[] = (banners || [])
-    .filter((b) => typeof (b as any)?.image_url === 'string' && ((b as any)?.image_url || '').trim() !== '')
-    .map((banner, index) => {
-    console.log(`🎯 Banner ${index + 1}:`, banner);
-    console.log(`🎨 Gradient overlay:`, banner.gradient_overlay);
-    console.log(`🖼️ Image URL:`, banner.image_url);
-    const gradientColor = (typeof banner.gradient_overlay === 'string' && banner.gradient_overlay.trim() !== '')
-      ? banner.gradient_overlay
-      : 'bg-gradient-to-br from-blue-500/80 to-purple-600/80';
-    const normalized = buildBannerUrl(banner);
-    return {
-      id: index + 1,
-      title: banner.title,
-      subtitle: banner.description || '',
-      image: normalized,
-      color: gradientColor,
-      buttonText: banner.button_text || 'Reproduzir',
-      linkUrl: banner.link_url,
-      linkType: banner.link_type,
-      linkId: banner.link_id
-    };
-  });
+  // Converter banners do backend em slides (memoizado para evitar re-render)
+  const displaySlides: Slide[] = useMemo(() => {
+    return (banners || [])
+      .filter((b) => typeof (b as any)?.image_url === 'string' && ((b as any)?.image_url || '').trim() !== '')
+      .map((banner, index) => {
+        const gradientColor = (typeof banner.gradient_overlay === 'string' && banner.gradient_overlay.trim() !== '')
+          ? banner.gradient_overlay
+          : 'bg-gradient-to-br from-blue-500/80 to-purple-600/80';
+        const normalized = buildBannerUrl(banner);
+        return {
+          id: index + 1,
+          title: banner.title,
+          subtitle: banner.description || '',
+          image: normalized,
+          color: gradientColor,
+          buttonText: banner.button_text || 'Reproduzir',
+          linkUrl: banner.link_url,
+          linkType: banner.link_type,
+          linkId: banner.link_id
+        };
+      });
+  }, [banners]);
 
   const hasSlides = displaySlides.length > 0;
   const safeIndex = hasSlides ? Math.min(Math.max(0, currentSlide), Math.max(0, displaySlides.length - 1)) : 0;
@@ -174,9 +169,9 @@ const HeroSection: React.FC<HeroSectionProps> = ({ banners = [] }) => {
       onTouchEnd={handleTouchEnd}
     >
       {/* Background Image with Overlay */}
-      <AnimatePresence>
+      <AnimatePresence mode="wait">
         <motion.div
-          key={`image-${slide.id ?? safeIndex}`}
+          key={`slide-${safeIndex}`}
           className="absolute inset-0"
           initial={{ opacity: 0, scale: 1.05 }}
           animate={{ opacity: 1, scale: 1 }}
@@ -230,9 +225,9 @@ const HeroSection: React.FC<HeroSectionProps> = ({ banners = [] }) => {
       </AnimatePresence>
 
       {/* Content */}
-      <AnimatePresence>
+      <AnimatePresence mode="wait">
         <motion.div
-          key={`content-${slide.id ?? safeIndex}`}
+          key={`content-${safeIndex}`}
           className="relative z-10 flex items-center h-full px-6 md:px-12"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
