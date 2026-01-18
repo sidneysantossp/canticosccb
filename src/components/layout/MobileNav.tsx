@@ -1,12 +1,21 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Home, Search, BookOpen, User, Music } from 'lucide-react';
+import { usePlayerContext } from '@/contexts/PlayerContext';
 
 const MobileNav: React.FC = () => {
   const location = useLocation();
+  const { closeFullScreen } = usePlayerContext();
 
   const isActive = (path: string) => {
     return location.pathname === path;
+  };
+
+  const handleNavClick = () => {
+    // Fechar o player fullscreen ao navegar no mobile
+    if (typeof window !== 'undefined' && window.innerWidth < 768) {
+      closeFullScreen();
+    }
   };
 
   const navItems = [
@@ -29,6 +38,7 @@ const MobileNav: React.FC = () => {
           <Link
             key={path}
             to={path}
+            onClick={handleNavClick}
             className={`flex flex-col items-center justify-center space-y-1 transition-colors ${
               isActive(path)
                 ? 'text-primary-500'
