@@ -219,7 +219,17 @@ export default function FullScreenPlayer({ isOpen, onClose }: FullScreenPlayerPr
   const [showDownloadNotAvailableAlert, setShowDownloadNotAvailableAlert] = useState(false);
   const [playlistSuccessMessage, setPlaylistSuccessMessage] = useState('');
 
-  const isLiked = isFavorite(parseInt(currentTrack?.id || '0'));
+  const isLiked = currentTrack ? isFavorite(parseInt(currentTrack.id)) : false;
+
+  // Debug: Monitorar favoritos
+  useEffect(() => {
+    if (currentTrack) {
+      console.log('💚 Estado de Favoritos:');
+      console.log('  - currentTrack.id:', currentTrack.id);
+      console.log('  - isLiked:', isLiked);
+      console.log('  - user:', user?.id);
+    }
+  }, [currentTrack?.id, isLiked, user?.id]);
 
   // Debug: Monitorar estado de autenticação
   useEffect(() => {
