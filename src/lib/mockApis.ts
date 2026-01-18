@@ -107,11 +107,10 @@ export const advancedSearch = async (params: { query: string; type?: string; lim
     if (type === 'all' || type === 'hymns') {
       console.log('🔍 Buscando hinos com termo:', searchTerm);
       
-      // Tentar busca simples primeiro
       const { data: hymns, error: hymnsError } = await supabase
         .from('hinos')
         .select('id, numero, titulo, compositor_nome, categoria, capa, audio_url')
-        .ilike('titulo', searchTerm)
+        .or(`titulo.ilike.${searchTerm},compositor_nome.ilike.${searchTerm}`)
         .limit(limit);
 
       if (hymnsError) {
