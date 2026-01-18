@@ -92,10 +92,10 @@ const TrendsSection: React.FC<Props> = ({
 
             {/* Track Info */}
             <div className="flex-1 min-w-0">
-              <h3 className="font-semibold text-white truncate group-hover:text-primary-400 transition-colors">
+              <h3 className="font-semibold text-white group-hover:text-primary-400 transition-colors leading-tight">
                 {hino.title}
               </h3>
-              <p className="text-sm text-gray-400 truncate">
+              <p className="text-sm text-gray-400 leading-tight mt-0.5">
                 {hino.artist} • {hino.category}
               </p>
             </div>
