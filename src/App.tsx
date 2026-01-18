@@ -31,6 +31,7 @@ import TrendsPage from '@/pages/TrendsPage';
 import TermsOfUsePage from '@/pages/TermsOfUsePage';
 import PrivacyPolicyPage from '@/pages/PrivacyPolicyPage';
 import DisclaimerPage from '@/pages/DisclaimerPage';
+import HymnDetailPage from '@/pages/HymnDetailPage';
 
 // User Pages
 import ProfilePage from '@/pages/ProfilePage';
@@ -160,6 +161,8 @@ const AppContent: React.FC = () => {
           {/* Browse */}
           <Route path="buscar" element={<SearchPage />} />
           <Route path="search" element={<SearchPage />} />
+          <Route path="hino/:id" element={<HymnDetailPage />} />
+          <Route path="hymn/:id" element={<HymnDetailPage />} />
           <Route path="albuns" element={<AlbumsPage />} />
           <Route path="album/:id" element={<AlbumDetailPage />} />
           <Route path="compositores" element={<CompositoresPage />} />
