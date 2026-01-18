@@ -21,17 +21,9 @@ const SearchPage: React.FC = () => {
   const [albums, setAlbums] = useState<AlbumSearchResult[]>([]);
   const [playlists, setPlaylists] = useState<PlaylistSearchResult[]>([]);
   const [recentSearches, setRecentSearches] = useState<string[]>([]);
+  const [categories, setCategories] = useState<Array<{ id: string; nome: string; slug: string }>>([]);
 
   const schema = generateWebsiteSchema();
-
-  const popularSearches = [
-    { term: 'Hinos Clássicos', icon: BookOpen },
-    { term: 'Louvor', icon: Sparkles },
-    { term: 'Adoração', icon: Heart },
-    { term: 'Instrumental', icon: Music2 },
-    { term: 'Coral', icon: Mic2 },
-    { term: 'Oração', icon: Heart }
-  ];
 
   const filters = [
     { id: 'all', label: 'Tudo', icon: List },
@@ -40,6 +32,29 @@ const SearchPage: React.FC = () => {
     { id: 'albums', label: 'Álbuns', icon: Disc },
     { id: 'playlists', label: 'Playlists', icon: Disc }
   ];
+
+  // Carregar categorias do banco de dados
+  useEffect(() => {
+    const loadCategories = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('categorias')
+          .select('id, nome, slug')
+          .eq('ativo', true)
+          .order('nome', { ascending: true })
+          .limit(6);
+
+        if (error) throw error;
+        if (data) {
+          setCategories(data);
+        }
+      } catch (error) {
+        console.error('Erro ao carregar categorias:', error);
+      }
+    };
+
+    loadCategories();
+  }, []);
 
   // Carregar buscas recentes do histórico do usuário
   useEffect(() => {
@@ -309,27 +324,26 @@ const SearchPage: React.FC = () => {
               </div>
             </section>
 
-            {/* Popular Searches */}
-            <section>
-              <h2 className="text-2xl font-bold text-white mb-6">Busque por categoria</h2>
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                {popularSearches.map((item, index) => {
-                  const Icon = item.icon;
-                  return (
-                    <button
-                      key={index}
-                      onClick={() => handleSearch(item.term)}
+            {/* Categories */}
+            {categories.length > 0 && (
+              <section>
+                <h2 className="text-2xl font-bold text-white mb-6">Busque por categoria</h2>
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                  {categories.map((category) => (
+                    <Link
+                      key={category.id}
+                      to={`/categoria/${category.slug}`}
                       className="p-6 bg-gradient-to-br from-primary-900/40 to-background-secondary rounded-xl hover:from-primary-900/60 hover:to-background-hover transition-all group"
                     >
                       <div className="mb-3 flex justify-center">
-                        <Icon className="w-12 h-12 text-primary-400" />
+                        <BookOpen className="w-12 h-12 text-primary-400" />
                       </div>
-                      <h3 className="text-white font-semibold text-lg">{item.term}</h3>
-                    </button>
-                  );
-                })}
-              </div>
-            </section>
+                      <h3 className="text-white font-semibold text-lg text-center">{category.nome}</h3>
+                    </Link>
+                  ))}
+                </div>
+              </section>
+            )}
           </div>
         )}
       </div>
