@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { ArrowLeft, Play, Pause, Heart, Music, ListPlus, Share2, Plus } from 'lucide-react';
 import { buildAlbumCoverUrl } from '@/lib/media-helper';
-import { apiFetch } from '@/lib/api-helper';
+import { supabase } from '@/lib/supabase-auth';
 import { getAll as getAllCategories } from '@/lib/categoriesApi';
 import { usePlayerStore } from '@/stores/playerStore';
 import useFavoritesStore from '@/stores/favoritesStore';
@@ -72,11 +72,16 @@ const CategoryPage: React.FC = () => {
         image_url: found?.image_url,
       });
 
-      // 2) Buscar hinos dessa categoria no backend PHP
-      const res = await apiFetch(`/api/hinos/index.php?categoria=${encodeURIComponent(resolvedName)}&ativo=1&limit=50`);
-      if (!res.ok) throw new Error('Falha ao carregar hinos da categoria');
-      const json = await res.json();
-      const list = Array.isArray(json?.hinos) ? json.hinos : (Array.isArray(json) ? json : []);
+      // 2) Buscar hinos dessa categoria no Supabase
+      const { data, error } = await supabase
+        .from('hinos')
+        .select('*')
+        .eq('categoria', resolvedName)
+        .eq('ativo', 1)
+        .limit(50);
+
+      if (error) throw new Error('Falha ao carregar hinos da categoria');
+      const list = data || [];
 
       const formattedSongs: Song[] = list.map((h: any) => ({
         id: String(h.id),

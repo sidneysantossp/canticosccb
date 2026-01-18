@@ -1,4 +1,4 @@
-import { apiFetch } from '@/lib/api-helper';
+import { supabase } from '@/lib/supabase-auth';
 
 export interface RecTrack {
   id: string;
@@ -28,13 +28,16 @@ const toRecTrack = (h: any, reason?: string): RecTrack => ({
 
 export async function getPersonalizedHomeData(_userId: string): Promise<PersonalizedData> {
   try {
-    // Tentar usar hinos reais publicados recentemente como base para "mix"
-    const res = await apiFetch('/api/hinos/index.php?sort=recent&limit=12&ativo=1');
-    if (res.ok) {
-      const json = await res.json();
-      const list: any[] = Array.isArray(json?.hinos) ? json.hinos : (Array.isArray(json) ? json : []);
-      const mix = list.slice(0, 8).map((h) => toRecTrack(h));
-      // Sem dados reais de "seguidos", manter vazios para ocultar seÃ§Ãµes personalizadas
+    // Usar hinos reais publicados recentemente como base para "mix"
+    const { data, error } = await supabase
+      .from('hinos')
+      .select('*')
+      .eq('ativo', 1)
+      .order('created_at', { ascending: false })
+      .limit(12);
+
+    if (!error && data) {
+      const mix = data.slice(0, 8).map((h) => toRecTrack(h));
       return { mix, byCategories: [], byFollowedComposers: [] };
     }
   } catch {}

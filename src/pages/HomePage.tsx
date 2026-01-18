@@ -187,36 +187,13 @@ const HomePage: React.FC = () => {
     const loadRecentPublished = async () => {
       try {
         let normalized: PopularHino[] = [];
-        if (isSupabaseConfigured) {
-          normalized = await supabaseFetch<SupabaseHymnRow>('hinos', {
-            select: 'id,numero,titulo,compositor_nome,categoria,cover_url,audio_url,duracao,created_at',
-            ativo: 'eq.true',
-            status: 'eq.published',
-            order: 'created_at.desc',
-            limit: '12',
-          }).then(rows => rows.map(mapSupabasePopularHino));
-        } else {
-          const res = await apiFetch('/api/hinos/index.php?sort=recent&limit=9&ativo=1');
-          if (!res.ok) throw new Error('Falha ao carregar hinos');
-          const json = await res.json();
-          const list = Array.isArray(json?.hinos) ? json.hinos : Array.isArray(json) ? json : [];
-          normalized = list.map((h: any, index: number) => ({
-            id: String(h.id),
-            number: Number(h.numero ?? index + 1),
-            title: String(h.titulo || h.title || 'Hino'),
-            artist: String(h.compositor || h.composer_name || 'Artista Desconhecido'),
-            category: String(h.categoria || 'Cantados'),
-            duration: String(h.duracao || '—'),
-            plays: 0,
-            isLiked: false,
-            coverUrl: String(h.cover_url || ''),
-            audioUrl: String(h.audio_url || ''),
-            createdAt: String(h.created_at || new Date().toISOString()),
-            rank: index + 1,
-            previousRank: index + 1,
-            trending: 'stable',
-          }));
-        }
+        normalized = await supabaseFetch<SupabaseHymnRow>('hinos', {
+          select: 'id,numero,titulo,compositor_nome,categoria,cover_url,audio_url,duracao,created_at',
+          ativo: 'eq.true',
+          status: 'eq.published',
+          order: 'created_at.desc',
+          limit: '12',
+        }).then(rows => rows.map(mapSupabasePopularHino));
         setHomepageTrends(normalized);
       } catch (error) {
         console.error('❌ Error loading recent hymns:', error);

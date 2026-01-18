@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { removeFavorite as apiRemoveFavorite } from '@/lib/favoritesApi';
+import { supabase } from '@/lib/supabase-auth';
 
 export interface FavoriteHino {
   id: number;
@@ -73,20 +74,34 @@ const useFavoritesStore = create<FavoritesState>()(
             set({ isLoading: false });
             return;
           }
-          const isLocalhost = typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
-          const API_BASE_URL = isLocalhost ? '/api' : ((import.meta as any)?.env?.VITE_API_BASE_URL || 'https://canticosccb.com.br/api');
-          const res = await fetch(`${API_BASE_URL}/favorites/list-detailed.php?usuario_id=${encodeURIComponent(String(userId))}`);
-          if (!res.ok) throw new Error('Falha ao carregar favoritos');
-          const data = await res.json();
-          const items = Array.isArray(data?.favorites) ? data.favorites : [];
+          
+          const { data, error } = await supabase
+            .from('favoritos')
+            .select(`
+              id,
+              created_at,
+              hinos (
+                id,
+                titulo,
+                compositor_nome,
+                duracao,
+                capa
+              )
+            `)
+            .eq('usuario_id', userId)
+            .order('created_at', { ascending: false });
+
+          if (error) throw new Error('Falha ao carregar favoritos');
+          
+          const items = data || [];
           const mapped = items.map((it: any) => ({
-            id: Number(it.id),
-            title: String(it.title || ''),
-            artist: String(it.artist || ''),
-            album: String(it.album || ''),
-            duration: String(it.duration || '00:00'),
-            coverUrl: String(it.coverUrl || ''),
-            likedAt: String(it.likedAt || new Date().toISOString()),
+            id: Number(it.hinos?.id || it.id),
+            title: String(it.hinos?.titulo || ''),
+            artist: String(it.hinos?.compositor_nome || ''),
+            album: 'Hinos CCB',
+            duration: String(it.hinos?.duracao || '00:00'),
+            coverUrl: String(it.hinos?.capa || ''),
+            likedAt: String(it.created_at || new Date().toISOString()),
             addedDaysAgo: 0,
           }));
           set({ favorites: mapped, isLoading: false });
