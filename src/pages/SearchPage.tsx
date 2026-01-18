@@ -73,8 +73,8 @@ const SearchPage: React.FC = () => {
         if (isMounted) setIsLoading(false);
       }
     };
-    // Debounce leve
-    const t = setTimeout(run, 250);
+    // Debounce rápido para busca instantânea
+    const t = setTimeout(run, 150);
     return () => {
       isMounted = false;
       clearTimeout(t);

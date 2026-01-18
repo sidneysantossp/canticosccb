@@ -43,7 +43,7 @@ export interface SearchResult {
 export const quickSearch = async (query: string): Promise<SearchResult> => {
   console.log('🔍 quickSearch:', query);
   
-  if (!query || query.trim().length < 2) {
+  if (!query || query.trim().length < 1) {
     return { hymns: [], composers: [], albums: [], playlists: [] };
   }
 
@@ -95,7 +95,7 @@ export const advancedSearch = async (params: { query: string; type?: string; lim
   
   const { query, type = 'all', limit = 50 } = params;
   
-  if (!query || query.trim().length < 2) {
+  if (!query || query.trim().length < 1) {
     return { hymns: [], composers: [], albums: [], playlists: [] };
   }
 
