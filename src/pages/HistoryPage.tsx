@@ -1,61 +1,52 @@
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '@/contexts/AuthContextMock';
 import { Clock, History as HistoryIcon, Trash2 } from 'lucide-react';
-import { apiFetch } from '@/lib/api-helper';
-
-type HistoryItem = {
-  id: number;
-  hino_id: number;
-  title?: string | null;
-  composer_name?: string | null;
-  cover_url?: string | null;
-  started_at: string;
-  ended_at?: string | null;
-  duration_sec: number;
-};
+import * as historyApi from '@/lib/historyApi';
 
 const HistoryPage: React.FC = () => {
   const { user } = useAuth();
-  const [items, setItems] = useState<HistoryItem[]>([]);
+  const [items, setItems] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const load = async () => {
-      if (!user?.id) { setIsLoading(false); return; }
+    const loadHistory = async () => {
+      if (!user?.id) {
+        setIsLoading(false);
+        return;
+      }
+
       setIsLoading(true);
       setError(null);
       try {
-        const res = await apiFetch(`api/history/list.php?usuario_id=${encodeURIComponent(String(user.id))}&limit=100`);
-        if (!res.ok) throw new Error('Falha ao carregar histórico');
-        const data = await res.json().catch(() => ({}));
-        setItems(Array.isArray(data?.history) ? data.history : []);
-      } catch (e: any) {
-        setError(e?.message || 'Erro ao carregar histórico');
+        const history = await historyApi.listHistory(Number(user.id), 100);
+        setItems(history);
+      } catch (err) {
+        console.error('Erro ao carregar histórico:', err);
+        setError('Não foi possível carregar seu histórico');
       } finally {
         setIsLoading(false);
       }
     };
-    load();
+
+    loadHistory();
   }, [user?.id]);
+
+  const clearHistory = async () => {
+    if (!user?.id) return;
+    try {
+      await historyApi.clearHistory(Number(user.id));
+      setItems([]);
+    } catch (err) {
+      console.error('Erro ao limpar histórico:', err);
+    }
+  };
 
   const formatDuration = (sec: number) => {
     const s = Math.max(0, Math.floor(sec));
     const m = Math.floor(s / 60);
     const r = s % 60;
     return `${m}:${r.toString().padStart(2, '0')}`;
-  };
-
-  const clearHistory = async () => {
-    if (!user?.id) return;
-    try {
-      await apiFetch('api/history/clear.php', {
-        method: 'DELETE',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ usuario_id: Number(user.id) })
-      });
-      setItems([]);
-    } catch {}
   };
 
   return (
