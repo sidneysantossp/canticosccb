@@ -45,17 +45,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   useEffect(() => {
     // Verificar se há usuário logado no localStorage
-    const currentUser = authClient.getCurrentUser();
-    if (currentUser) {
-      setUser(currentUser);
-      setProfile({
-        ...currentUser,
-        plan: 'free',
-        is_admin: currentUser.tipo === 'admin',
-        is_composer: currentUser.tipo === 'compositor'
-      });
-      // WebPush registration removed - Firebase dependency eliminated
-    }
+    const loadUser = () => {
+      const currentUser = authClient.getCurrentUser();
+      if (currentUser) {
+        setUser(currentUser);
+        setProfile({
+          ...currentUser,
+          plan: 'free',
+          is_admin: currentUser.tipo === 'admin',
+          is_composer: currentUser.tipo === 'compositor'
+        });
+      }
+    };
+
+    loadUser();
     
     // Restaurar estado de gerenciamento se existir
     const storedComposerId = sessionStorage.getItem('managingComposerId');
@@ -65,7 +68,27 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setManagingComposerName(storedComposerName);
     }
     
+    // Listener para mudanças de autenticação do Supabase
+    const { data: { subscription } } = authClient.supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        console.log('🔐 Auth state changed:', event);
+        
+        if (event === 'SIGNED_IN' && session?.user) {
+          // Recarregar usuário do localStorage (já foi salvo pelo callback)
+          loadUser();
+        } else if (event === 'SIGNED_OUT') {
+          setUser(null);
+          setProfile(null);
+        }
+      }
+    );
+    
     setLoading(false);
+
+    // Cleanup
+    return () => {
+      subscription.unsubscribe();
+    };
   }, []);
 
   const signIn = async (email: string, password: string) => {
