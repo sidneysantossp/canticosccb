@@ -12,13 +12,19 @@ const AuthCallbackPage: React.FC = () => {
         const result = await handleOAuthCallback();
         
         if (result.success) {
+          console.log('✅ OAuth callback processado com sucesso:', result.usuario);
+          
+          // Aguardar um pouco para garantir que o AuthContext foi atualizado
+          // Especialmente importante no mobile
+          await new Promise(resolve => setTimeout(resolve, 500));
+          
           // Redirecionar baseado no tipo de usuário
           if (result.usuario.tipo === 'compositor') {
-            navigate('/composer');
+            navigate('/composer', { replace: true });
           } else if (result.usuario.tipo === 'admin') {
-            navigate('/admin');
+            navigate('/admin', { replace: true });
           } else {
-            navigate('/onboarding');
+            navigate('/onboarding', { replace: true });
           }
         }
       } catch (err: any) {

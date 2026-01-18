@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { Music2, Check, Music, Download, Heart } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContextMock';
@@ -6,8 +6,21 @@ import { useAuth } from '@/contexts/AuthContextMock';
 const OnboardingPage: React.FC = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const [isReady, setIsReady] = useState(false);
 
-  
+  useEffect(() => {
+    // Aguardar um pouco para garantir que o contexto está atualizado
+    const timer = setTimeout(() => {
+      setIsReady(true);
+    }, 300);
+
+    return () => clearTimeout(timer);
+  }, []);
+
+  const handleContinue = () => {
+    console.log('🎵 Navegando para /profile, usuário:', user);
+    navigate('/profile', { replace: true });
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-950 to-gray-800 flex items-center justify-center p-4">
@@ -18,7 +31,7 @@ const OnboardingPage: React.FC = () => {
         </div>
         
         <h1 className="text-5xl font-bold text-white mb-4">
-          Bem-vindo, {user?.nome}!
+          Bem-vindo, {user?.nome || 'Usuário'}!
         </h1>
         
         <p className="text-gray-400 text-xl mb-8">
@@ -41,10 +54,11 @@ const OnboardingPage: React.FC = () => {
         </div>
         
         <button
-          onClick={() => navigate('/profile')}
-          className="px-8 py-4 bg-primary-500 text-black font-bold rounded-full hover:bg-primary-400 transition-all transform hover:scale-105 text-lg"
+          onClick={handleContinue}
+          disabled={!isReady}
+          className="px-8 py-4 bg-primary-500 text-black font-bold rounded-full hover:bg-primary-400 transition-all transform hover:scale-105 text-lg disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          Começar a ouvir →
+          {isReady ? 'Começar a ouvir →' : 'Carregando...'}
         </button>
         
         
