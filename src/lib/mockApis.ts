@@ -53,7 +53,7 @@ export const quickSearch = async (query: string): Promise<SearchResult> => {
     const [hymnsRes, composersRes] = await Promise.all([
       supabase
         .from('hinos')
-        .select('id, numero, titulo, compositor_nome, categoria, capa, audio_url')
+        .select('id, numero, titulo, compositor_nome, categoria, cover_url, audio_url')
         .or(`titulo.ilike.${searchTerm},compositor_nome.ilike.${searchTerm}`)
         .eq('ativo', 1)
         .limit(10),
@@ -71,7 +71,7 @@ export const quickSearch = async (query: string): Promise<SearchResult> => {
         title: h.titulo || 'Hino',
         composer_name: h.compositor_nome,
         category_name: h.categoria,
-        cover_url: h.capa,
+        cover_url: h.cover_url,
         audio_url: h.audio_url
       })),
       composers: (composersRes.data || []).map((c: any) => ({
@@ -109,7 +109,7 @@ export const advancedSearch = async (params: { query: string; type?: string; lim
       
       const { data: hymns, error: hymnsError } = await supabase
         .from('hinos')
-        .select('id, numero, titulo, compositor_nome, categoria, capa, audio_url')
+        .select('id, numero, titulo, compositor_nome, categoria, cover_url, audio_url')
         .or(`titulo.ilike.${searchTerm},compositor_nome.ilike.${searchTerm}`)
         .limit(limit);
 
@@ -126,7 +126,7 @@ export const advancedSearch = async (params: { query: string; type?: string; lim
           title: h.titulo || 'Hino',
           composer_name: h.compositor_nome,
           category_name: h.categoria,
-          cover_url: h.capa,
+          cover_url: h.cover_url,
           audio_url: h.audio_url
         }));
       }
@@ -159,8 +159,8 @@ export const advancedSearch = async (params: { query: string; type?: string; lim
       console.log('🔍 Buscando álbuns com termo:', searchTerm);
       const { data: albums, error: albumsError } = await supabase
         .from('albums')
-        .select('id, titulo, compositor_nome, capa')
-        .ilike('titulo', searchTerm)
+        .select('id, title, composer_name, cover_url')
+        .ilike('title', searchTerm)
         .limit(limit);
 
       if (albumsError) {
@@ -169,9 +169,9 @@ export const advancedSearch = async (params: { query: string; type?: string; lim
         console.log('✅ Álbuns encontrados:', albums?.length || 0);
         results.albums = (albums || []).map((a: any) => ({
           id: String(a.id),
-          title: a.titulo || 'Álbum',
-          composer_name: a.compositor_nome,
-          cover_url: a.capa
+          title: a.title || 'Álbum',
+          composer_name: a.composer_name,
+          cover_url: a.cover_url
         }));
       }
     }
