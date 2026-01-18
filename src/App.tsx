@@ -18,6 +18,7 @@ import LoginPage from '@/pages/LoginPage';
 import RegisterPage from '@/pages/RegisterPage';
 import OnboardingPage from '@/pages/OnboardingPage';
 import ForgotPasswordPage from '@/pages/ForgotPasswordPage';
+import AuthCallbackPage from '@/pages/AuthCallbackPage';
 import AlbumsPage from '@/pages/AlbumsPage';
 import AlbumDetailPage from '@/pages/AlbumDetailPage';
 import CompositoresPage from '@/pages/CompositoresPage';
@@ -147,6 +148,7 @@ const AppContent: React.FC = () => {
         <Route path="/register" element={<RegisterPage />} />
         <Route path="/cadastro" element={<RegisterPage />} />
         <Route path="/onboarding" element={<OnboardingPage />} />
+        <Route path="/auth/callback" element={<AuthCallbackPage />} />
         
         <Route path="/forgot-password" element={<ForgotPasswordPage />} />
         

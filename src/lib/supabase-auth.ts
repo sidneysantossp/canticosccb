@@ -132,74 +132,78 @@ export async function register(data: { nome: string; email: string; senha: strin
 }
 
 /**
- * Login com Google
+ * Login com Google usando OAuth do Supabase
  */
-export async function googleLogin(idToken?: string): Promise<LoginResponse> {
+export async function googleLogin(): Promise<void> {
   try {
-    // Se tiver idToken, usar signInWithIdToken
-    if (idToken) {
-      const { data: authData, error: authError } = await supabase.auth.signInWithIdToken({
-        provider: 'google',
-        token: idToken,
-      });
-
-      if (authError) throw authError;
-      if (!authData.user) throw new Error('Usuário não encontrado');
-
-      // Buscar ou criar usuário
-      let { data: usuario } = await supabase
-        .from('usuarios')
-        .select('*')
-        .eq('auth_id', authData.user.id)
-        .single();
-
-      if (!usuario) {
-        // Criar novo usuário
-        const { data: newUser, error: insertError } = await supabase
-          .from('usuarios')
-          .insert({
-            auth_id: authData.user.id,
-            nome: authData.user.user_metadata?.full_name || authData.user.email?.split('@')[0] || 'Usuário',
-            email: authData.user.email!,
-            avatar_url: authData.user.user_metadata?.avatar_url,
-            tipo: 'usuario',
-            ativo: 1,
-            plano: 'free',
-          })
-          .select()
-          .single();
-
-        if (insertError) throw insertError;
-        usuario = newUser;
-      }
-
-      localStorage.setItem('user', JSON.stringify(usuario));
-
-      return {
-        success: true,
-        message: 'Login realizado com sucesso',
-        usuario,
-      };
-    }
-
-    // Fallback: OAuth popup
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: `${window.location.origin}/onboarding`,
+        redirectTo: `${window.location.origin}/auth/callback`,
+        queryParams: {
+          access_type: 'offline',
+          prompt: 'consent',
+        },
       },
     });
 
-    if (error) throw error;
-
-    // O redirecionamento será feito automaticamente
-    return {
-      success: true,
-      message: 'Redirecionando...',
-      usuario: {} as Usuario,
-    };
+    if (error) {
+      console.error('Erro no Google OAuth:', error);
+      throw error;
+    }
   } catch (error: any) {
     console.error('Erro no Google Login:', error);
+    throw error;
+  }
+}
+
+/**
+ * Processar callback do OAuth (chamar após redirecionamento)
+ */
+export async function handleOAuthCallback(): Promise<LoginResponse> {
+  try {
+    const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+    
+    if (sessionError || !session?.user) {
+      throw new Error('Sessão não encontrada');
+    }
+
+    // Buscar ou criar usuário
+    let { data: usuario } = await supabase
+      .from('usuarios')
+      .select('*')
+      .eq('auth_id', session.user.id)
+      .single();
+
+    if (!usuario) {
+      // Criar novo usuário
+      const { data: newUser, error: insertError } = await supabase
+        .from('usuarios')
+        .insert({
+          auth_id: session.user.id,
+          nome: session.user.user_metadata?.full_name || session.user.email?.split('@')[0] || 'Usuário',
+          email: session.user.email!,
+          avatar_url: session.user.user_metadata?.avatar_url,
+          tipo: 'usuario',
+          ativo: 1,
+          plano: 'free',
+        })
+        .select()
+        .single();
+
+      if (insertError) throw insertError;
+      usuario = newUser;
+    }
+
+    localStorage.setItem('user', JSON.stringify(usuario));
+
+    return {
+      success: true,
+      message: 'Login realizado com sucesso',
+      usuario,
+    };
+  } catch (error: any) {
+    console.error('Erro ao processar callback OAuth:', error);
     throw error;
   }
 }
@@ -302,6 +306,7 @@ export const authClient = {
   login,
   register,
   googleLogin,
+  handleOAuthCallback,
   logout,
   isAuthenticated,
   getCurrentUser,
