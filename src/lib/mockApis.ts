@@ -106,17 +106,21 @@ export const advancedSearch = async (params: { query: string; type?: string; lim
     // Buscar hinos
     if (type === 'all' || type === 'hymns') {
       console.log('🔍 Buscando hinos com termo:', searchTerm);
+      
+      // Tentar busca simples primeiro
       const { data: hymns, error: hymnsError } = await supabase
         .from('hinos')
         .select('id, numero, titulo, compositor_nome, categoria, capa, audio_url')
-        .or(`titulo.ilike.${searchTerm},compositor_nome.ilike.${searchTerm}`)
-        .eq('ativo', 1)
+        .ilike('titulo', searchTerm)
         .limit(limit);
 
       if (hymnsError) {
         console.error('❌ Erro ao buscar hinos:', hymnsError);
       } else {
         console.log('✅ Hinos encontrados:', hymns?.length || 0);
+        if (hymns && hymns.length > 0) {
+          console.log('📋 Primeiro hino:', hymns[0]);
+        }
         results.hymns = (hymns || []).map((h: any) => ({
           id: String(h.id),
           number: h.numero || 0,
