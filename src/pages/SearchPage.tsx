@@ -21,7 +21,7 @@ const SearchPage: React.FC = () => {
   const [albums, setAlbums] = useState<AlbumSearchResult[]>([]);
   const [playlists, setPlaylists] = useState<PlaylistSearchResult[]>([]);
   const [recentSearches, setRecentSearches] = useState<string[]>([]);
-  const [categories, setCategories] = useState<Array<{ id: string; nome: string; slug: string }>>([]);
+  const [categories, setCategories] = useState<Array<{ id: string; nome: string; slug: string; descricao?: string; imagem_url?: string }>>([]);
 
   const schema = generateWebsiteSchema();
 
@@ -39,10 +39,10 @@ const SearchPage: React.FC = () => {
       try {
         const { data, error } = await supabase
           .from('categorias')
-          .select('id, nome, slug')
+          .select('id, nome, slug, descricao, imagem_url')
           .eq('ativo', true)
           .order('nome', { ascending: true })
-          .limit(6);
+          .limit(8);
 
         if (error) throw error;
         if (data) {
@@ -327,18 +327,34 @@ const SearchPage: React.FC = () => {
             {/* Categories */}
             {categories.length > 0 && (
               <section>
-                <h2 className="text-2xl font-bold text-white mb-6">Busque por categoria</h2>
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                <div className="mb-6">
+                  <h2 className="text-2xl md:text-3xl font-bold text-white">Explore por Categoria</h2>
+                  <p className="text-gray-400 text-sm mt-1">Navegue por diferentes estilos e tipos de hino</p>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   {categories.map((category) => (
                     <Link
                       key={category.id}
                       to={`/categoria/${category.slug}`}
-                      className="p-6 bg-gradient-to-br from-primary-900/40 to-background-secondary rounded-xl hover:from-primary-900/60 hover:to-background-hover transition-all group"
+                      className="group flex items-center gap-4 bg-background-secondary hover:bg-background-tertiary p-4 rounded-lg transition-all duration-300 hover:scale-[1.02]"
                     >
-                      <div className="mb-3 flex justify-center">
-                        <BookOpen className="w-12 h-12 text-primary-400" />
+                      <div className="relative flex-shrink-0">
+                        <img
+                          src={category.imagem_url || `https://picsum.photos/seed/category-${category.id}/200/200`}
+                          alt={category.nome}
+                          className="w-12 h-12 rounded object-cover"
+                          loading="lazy"
+                          onError={(e) => { (e.currentTarget as HTMLImageElement).src = `https://picsum.photos/seed/category-fallback-${category.id}/200/200`; }}
+                        />
                       </div>
-                      <h3 className="text-white font-semibold text-lg text-center">{category.nome}</h3>
+                      <div className="flex-1 min-w-0">
+                        <h3 className="font-semibold text-white truncate group-hover:text-primary-400 transition-colors">
+                          {category.nome}
+                        </h3>
+                        {category.descricao && (
+                          <p className="text-sm text-gray-400 truncate">{category.descricao}</p>
+                        )}
+                      </div>
                     </Link>
                   ))}
                 </div>
