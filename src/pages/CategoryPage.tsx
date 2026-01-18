@@ -270,7 +270,7 @@ const CategoryPage: React.FC = () => {
     );
   }
 
-  const categoryImage = buildAlbumCoverUrl({ id: String(category.id), cover_url: category.image_url });
+  const categoryImage = category.image_url || `https://picsum.photos/seed/category-${category.id}/400/400`;
 
   return (
     <>
@@ -294,6 +294,7 @@ const CategoryPage: React.FC = () => {
                 src={categoryImage}
                 alt={category.name}
                 className="w-56 h-56 md:w-56 md:h-56 object-cover ring-4 ring-primary-500/30 rounded-md mx-auto md:mx-0"
+                onError={(e) => { (e.currentTarget as HTMLImageElement).src = `https://picsum.photos/seed/category-fallback-${category.id}/400/400`; }}
               />
               <div className="flex-1">
                 <h1 className="text-3xl md:text-4xl font-bold text-white leading-tight text-center md:text-left">{category.name}</h1>
