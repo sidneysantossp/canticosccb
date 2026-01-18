@@ -159,7 +159,7 @@ export const advancedSearch = async (params: { query: string; type?: string; lim
       console.log('🔍 Buscando álbuns com termo:', searchTerm);
       const { data: albums, error: albumsError } = await supabase
         .from('albums')
-        .select('id, title, composer_name, cover_url')
+        .select('id, title, artist, cover_url')
         .ilike('title', searchTerm)
         .limit(limit);
 
@@ -170,7 +170,7 @@ export const advancedSearch = async (params: { query: string; type?: string; lim
         results.albums = (albums || []).map((a: any) => ({
           id: String(a.id),
           title: a.title || 'Álbum',
-          composer_name: a.composer_name,
+          composer_name: a.artist,
           cover_url: a.cover_url
         }));
       }
