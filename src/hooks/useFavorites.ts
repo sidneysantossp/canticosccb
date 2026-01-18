@@ -79,16 +79,21 @@ export const useFavorites = () => {
     }
 
     try {
+      // Normalizar ID para string
+      const normalizedId = String(hymnId);
+      
       // Atualizar UI otimisticamente (antes da resposta do servidor)
-      const wasRemoving = favorites.has(hymnId);
+      const wasRemoving = favorites.has(normalizedId);
+      console.log(`💚 toggleFavorite(${hymnId}) -> ${wasRemoving ? 'REMOVER' : 'ADICIONAR'}`, { normalizedId, favorites: Array.from(favorites) });
       
       setFavorites(prev => {
         const newFavorites = new Set(prev);
         if (wasRemoving) {
-          newFavorites.delete(hymnId);
+          newFavorites.delete(normalizedId);
         } else {
-          newFavorites.add(hymnId);
+          newFavorites.add(normalizedId);
         }
+        console.log('✅ Favoritos atualizados:', Array.from(newFavorites));
         return newFavorites;
       });
 
@@ -101,32 +106,34 @@ export const useFavorites = () => {
       }
 
       if (ok) {
-        // Sem toasts
+        console.log('✅ Favorito atualizado no backend com sucesso');
       } else {
+        console.error('❌ Erro ao atualizar favorito no backend');
         // Reverter UI em caso de erro
         setFavorites(prev => {
           const newFavorites = new Set(prev);
           if (wasRemoving) {
-            newFavorites.add(hymnId);
+            newFavorites.add(normalizedId);
           } else {
-            newFavorites.delete(hymnId);
+            newFavorites.delete(normalizedId);
           }
           return newFavorites;
         });
         console.error('Erro ao atualizar favorito. Tente novamente.');
       }
     } catch (error) {
-      console.error('Erro ao alternar favorito:', error);
+      console.error('❌ Erro ao alternar favorito:', error);
       console.error('Erro ao atualizar favorito. Tente novamente.');
       
       // Reverter UI em caso de erro
+      const normalizedId = String(hymnId);
       setFavorites(prev => {
         const newFavorites = new Set(prev);
-        const wasRemoving = favorites.has(hymnId);
+        const wasRemoving = favorites.has(normalizedId);
         if (wasRemoving) {
-          newFavorites.add(hymnId);
+          newFavorites.add(normalizedId);
         } else {
-          newFavorites.delete(hymnId);
+          newFavorites.delete(normalizedId);
         }
         return newFavorites;
       });
@@ -137,7 +144,11 @@ export const useFavorites = () => {
    * Verificar se um hino está nos favoritos
    */
   const isFavorited = (hymnId: string): boolean => {
-    return favorites.has(hymnId);
+    // Normalizar ID para string para garantir comparação correta
+    const normalizedId = String(hymnId);
+    const result = favorites.has(normalizedId);
+    console.log(`🔍 isFavorited(${hymnId}) -> ${result}`, { normalizedId, favorites: Array.from(favorites) });
+    return result;
   };
 
   /**
