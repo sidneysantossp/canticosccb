@@ -45,11 +45,19 @@ Para que o login com Google funcione corretamente, você precisa configurar o Go
 
 ### 5. Configurar URLs Permitidas no Supabase
 1. No Supabase Dashboard, vá em **Authentication** → **URL Configuration**
-2. Em **Redirect URLs**, adicione:
+2. **Site URL**: Mantenha `http://localhost:3000` (padrão)
+3. Em **Redirect URLs**, adicione as seguintes URLs (clique em "Add URL" para cada uma):
    - `http://localhost:5173/auth/callback`
+   - `http://localhost:5173/*` (wildcard para desenvolvimento)
    - `https://canticosccb.vercel.app/auth/callback`
+   - `https://canticosccb.vercel.app/*` (wildcard para Vercel)
+   - `https://*.vercel.app/auth/callback` (para preview deployments)
    - `https://canticosccb.com.br/auth/callback`
-3. Clique em **Save**
+   - `https://canticosccb.com.br/*` (wildcard para produção)
+   - `https://www.canticosccb.com.br/auth/callback` (com www)
+4. Clique em **Save**
+
+**Nota:** As URLs com wildcard (`*`) permitem que qualquer rota funcione após a autenticação.
 
 ## Fluxo de Autenticação
 
