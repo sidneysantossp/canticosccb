@@ -24,11 +24,13 @@ Para que o login com Google funcione corretamente, você precisa configurar o Go
    - **Name**: Canticos CCB
    - **Authorized JavaScript origins**:
      - `http://localhost:5173`
+     - `https://canticosccb.vercel.app`
      - `https://canticosccb.com.br`
      - `https://rdogsfrplohxnemvtetn.supabase.co`
    - **Authorized redirect URIs**:
      - `https://rdogsfrplohxnemvtetn.supabase.co/auth/v1/callback`
      - `http://localhost:5173/auth/callback`
+     - `https://canticosccb.vercel.app/auth/callback`
 
 6. Clique em **Create** e copie:
    - **Client ID**
@@ -45,6 +47,7 @@ Para que o login com Google funcione corretamente, você precisa configurar o Go
 1. No Supabase Dashboard, vá em **Authentication** → **URL Configuration**
 2. Em **Redirect URLs**, adicione:
    - `http://localhost:5173/auth/callback`
+   - `https://canticosccb.vercel.app/auth/callback`
    - `https://canticosccb.com.br/auth/callback`
 3. Clique em **Save**
 
@@ -62,6 +65,7 @@ Para que o login com Google funcione corretamente, você precisa configurar o Go
 
 Após configurar, teste o login com Google em:
 - Desenvolvimento: http://localhost:5173/login
+- Staging (Vercel): https://canticosccb.vercel.app/login
 - Produção: https://canticosccb.com.br/login
 
 ## Troubleshooting
