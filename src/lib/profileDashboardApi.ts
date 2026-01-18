@@ -60,16 +60,82 @@ export interface ProfileDashboardData {
 }
 
 export async function getProfileDashboardData(userId: string, _isComposer: boolean): Promise<ProfileDashboardData> {
-  const isLocalDevelopment = typeof window !== 'undefined' && (
-    window.location.hostname === 'localhost' || 
-    window.location.hostname === '127.0.0.1' ||
-    window.location.hostname.startsWith('192.168.') ||
-    window.location.hostname.startsWith('10.') ||
-    window.location.hostname.startsWith('172.')
-  );
-  const API_BASE_URL = isLocalDevelopment ? '/api' : ((import.meta as any)?.env?.VITE_API_BASE_URL || 'https://canticosccb.com.br/api');
-  const res = await fetch(`${API_BASE_URL}/profile-dashboard/index.php?usuario_id=${encodeURIComponent(userId)}`);
-  if (!res.ok) throw new Error('Falha ao carregar dashboard do perfil');
-  const data = await res.json();
-  return data as ProfileDashboardData;
+  const { supabase } = await import('@/lib/supabase-auth');
+  
+  try {
+    // Buscar estatísticas em paralelo
+    const [
+      { count: playlistsCount },
+      { count: favoritesCount },
+      { data: playlists },
+      { data: recentPlays },
+      { data: followedComposers }
+    ] = await Promise.all([
+      // Contagem de playlists
+      supabase.from('playlists').select('*', { count: 'exact', head: true }).eq('user_id', userId),
+      // Contagem de favoritos
+      supabase.from('favoritos').select('*', { count: 'exact', head: true }).eq('usuario_id', userId),
+      // Playlists do usuário
+      supabase.from('playlists').select('*').eq('user_id', userId).order('created_at', { ascending: false }).limit(10),
+      // Histórico recente
+      supabase.from('historico').select(`
+        id,
+        created_at,
+        hinos (id, titulo, compositor_nome, capa)
+      `).eq('usuario_id', userId).order('created_at', { ascending: false }).limit(10),
+      // Compositores seguidos
+      supabase.from('seguidores').select(`
+        compositor_id,
+        compositores (id, name, artistic_name, photo_url)
+      `).eq('usuario_id', userId).limit(20)
+    ]);
+
+    return {
+      stats: {
+        playlistsCount: playlistsCount || 0,
+        favoritesCount: favoritesCount || 0,
+        hoursListened: 0,
+        followersCount: 0
+      },
+      recentPlays: (recentPlays || []).map((item: any) => ({
+        id: String(item.id),
+        hymn: item.hinos ? {
+          id: String(item.hinos.id),
+          title: item.hinos.titulo,
+          composer_name: item.hinos.compositor_nome,
+          cover_url: item.hinos.capa
+        } : undefined,
+        created_at: item.created_at
+      })),
+      activities: [],
+      followedComposers: (followedComposers || []).map((item: any) => ({
+        id: String(item.compositores?.id || item.compositor_id),
+        name: item.compositores?.name || 'Compositor',
+        artistic_name: item.compositores?.artistic_name,
+        photo_url: item.compositores?.photo_url,
+        followers_count: 0,
+        songs_count: 0
+      })),
+      playlists: (playlists || []).map((p: any) => ({
+        id: String(p.id),
+        name: p.name,
+        description: p.description,
+        cover_url: p.cover_url,
+        songs_count: 0,
+        created_at: p.created_at
+      })),
+      composerProfile: null
+    };
+  } catch (error) {
+    console.error('Erro ao carregar dashboard:', error);
+    // Retornar dados vazios em caso de erro
+    return {
+      stats: { playlistsCount: 0, favoritesCount: 0, hoursListened: 0, followersCount: 0 },
+      recentPlays: [],
+      activities: [],
+      followedComposers: [],
+      playlists: [],
+      composerProfile: null
+    };
+  }
 }

@@ -85,11 +85,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           });
           return true;
         } else {
-          console.log('⚠️ Usuário não encontrado no banco, criando...');
-          // Criar novo usuário
+          console.log('⚠️ Usuário não encontrado no banco, criando/atualizando...');
+          // Usar upsert para evitar erro de duplicate key
           const { data: newUser, error } = await authClient.supabase
             .from('usuarios')
-            .insert({
+            .upsert({
               auth_id: session.user.id,
               nome: session.user.user_metadata?.full_name || session.user.email?.split('@')[0] || 'Usuário',
               email: session.user.email!,
@@ -97,21 +97,23 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
               tipo: 'usuario',
               ativo: 1,
               plano: 'free',
-            })
+            }, { onConflict: 'auth_id' })
             .select()
             .single();
           
           if (!error && newUser) {
-            console.log('✅ Usuário criado:', newUser.nome);
+            console.log('✅ Usuário criado/atualizado:', newUser.nome);
             localStorage.setItem('user', JSON.stringify(newUser));
             setUser(newUser);
             setProfile({
               ...newUser,
               plan: 'free',
-              is_admin: false,
-              is_composer: false
+              is_admin: newUser.tipo === 'admin',
+              is_composer: newUser.tipo === 'compositor'
             });
             return true;
+          } else if (error) {
+            console.error('❌ Erro ao criar usuário:', error);
           }
         }
       } catch (err) {
