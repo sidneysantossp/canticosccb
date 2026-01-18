@@ -105,74 +105,98 @@ export const advancedSearch = async (params: { query: string; type?: string; lim
 
     // Buscar hinos
     if (type === 'all' || type === 'hymns') {
-      const { data: hymns } = await supabase
+      console.log('🔍 Buscando hinos com termo:', searchTerm);
+      const { data: hymns, error: hymnsError } = await supabase
         .from('hinos')
         .select('id, numero, titulo, compositor_nome, categoria, capa, audio_url')
-        .or(`titulo.ilike.${searchTerm},compositor_nome.ilike.${searchTerm},numero.eq.${parseInt(query) || 0}`)
+        .or(`titulo.ilike.${searchTerm},compositor_nome.ilike.${searchTerm}`)
         .eq('ativo', 1)
         .limit(limit);
 
-      results.hymns = (hymns || []).map((h: any) => ({
-        id: String(h.id),
-        number: h.numero || 0,
-        title: h.titulo || 'Hino',
-        composer_name: h.compositor_nome,
-        category_name: h.categoria,
-        cover_url: h.capa,
-        audio_url: h.audio_url
-      }));
+      if (hymnsError) {
+        console.error('❌ Erro ao buscar hinos:', hymnsError);
+      } else {
+        console.log('✅ Hinos encontrados:', hymns?.length || 0);
+        results.hymns = (hymns || []).map((h: any) => ({
+          id: String(h.id),
+          number: h.numero || 0,
+          title: h.titulo || 'Hino',
+          composer_name: h.compositor_nome,
+          category_name: h.categoria,
+          cover_url: h.capa,
+          audio_url: h.audio_url
+        }));
+      }
     }
 
     // Buscar compositores
     if (type === 'all' || type === 'composers') {
-      const { data: composers } = await supabase
+      console.log('🔍 Buscando compositores com termo:', searchTerm);
+      const { data: composers, error: composersError } = await supabase
         .from('compositores')
         .select('id, name, artistic_name, bio, photo_url')
         .or(`name.ilike.${searchTerm},artistic_name.ilike.${searchTerm}`)
         .limit(limit);
 
-      results.composers = (composers || []).map((c: any) => ({
-        id: String(c.id),
-        name: c.name || c.artistic_name || 'Compositor',
-        bio: c.bio,
-        photo_url: c.photo_url
-      }));
+      if (composersError) {
+        console.error('❌ Erro ao buscar compositores:', composersError);
+      } else {
+        console.log('✅ Compositores encontrados:', composers?.length || 0);
+        results.composers = (composers || []).map((c: any) => ({
+          id: String(c.id),
+          name: c.name || c.artistic_name || 'Compositor',
+          bio: c.bio,
+          photo_url: c.photo_url
+        }));
+      }
     }
 
     // Buscar álbuns
     if (type === 'all' || type === 'albums') {
-      const { data: albums } = await supabase
+      console.log('🔍 Buscando álbuns com termo:', searchTerm);
+      const { data: albums, error: albumsError } = await supabase
         .from('albums')
         .select('id, titulo, compositor_nome, capa')
         .ilike('titulo', searchTerm)
         .limit(limit);
 
-      results.albums = (albums || []).map((a: any) => ({
-        id: String(a.id),
-        title: a.titulo || 'Álbum',
-        composer_name: a.compositor_nome,
-        cover_url: a.capa
-      }));
+      if (albumsError) {
+        console.error('❌ Erro ao buscar álbuns:', albumsError);
+      } else {
+        console.log('✅ Álbuns encontrados:', albums?.length || 0);
+        results.albums = (albums || []).map((a: any) => ({
+          id: String(a.id),
+          title: a.titulo || 'Álbum',
+          composer_name: a.compositor_nome,
+          cover_url: a.capa
+        }));
+      }
     }
 
     // Buscar playlists
     if (type === 'all' || type === 'playlists') {
-      const { data: playlists } = await supabase
+      console.log('🔍 Buscando playlists com termo:', searchTerm);
+      const { data: playlists, error: playlistsError } = await supabase
         .from('playlists')
         .select('id, name, description, cover_url')
         .ilike('name', searchTerm)
         .eq('is_public', 1)
         .limit(limit);
 
-      results.playlists = (playlists || []).map((p: any) => ({
-        id: String(p.id),
-        name: p.name || 'Playlist',
-        description: p.description,
-        cover_url: p.cover_url
-      }));
+      if (playlistsError) {
+        console.error('❌ Erro ao buscar playlists:', playlistsError);
+      } else {
+        console.log('✅ Playlists encontradas:', playlists?.length || 0);
+        results.playlists = (playlists || []).map((p: any) => ({
+          id: String(p.id),
+          name: p.name || 'Playlist',
+          description: p.description,
+          cover_url: p.cover_url
+        }));
+      }
     }
 
-    console.log('✅ Resultados da busca:', {
+    console.log('✅ Resultados totais da busca:', {
       hymns: results.hymns.length,
       composers: results.composers.length,
       albums: results.albums.length,
@@ -181,7 +205,7 @@ export const advancedSearch = async (params: { query: string; type?: string; lim
 
     return results;
   } catch (error) {
-    console.error('Erro na busca avançada:', error);
+    console.error('❌ Erro crítico na busca avançada:', error);
     return { hymns: [], composers: [], albums: [], playlists: [] };
   }
 };
