@@ -4,6 +4,7 @@ import { Play, Heart, Share2, ArrowLeft, Music } from 'lucide-react';
 import { supabase } from '@/lib/supabase-auth';
 import { usePlayerStore } from '@/stores/playerStore';
 import useFavoritesStore from '@/stores/favoritesStore';
+import { usePlayerContext } from '@/contexts/PlayerContext';
 import SEOHead from '@/components/SEO/SEOHead';
 
 interface Hymn {
@@ -23,6 +24,7 @@ const HymnDetailPage: React.FC = () => {
   const navigate = useNavigate();
   const { play } = usePlayerStore();
   const { isFavorite, addFavorite, removeFavorite } = useFavoritesStore();
+  const { openFullScreen } = usePlayerContext();
   const [hymn, setHymn] = useState<Hymn | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -61,6 +63,9 @@ const HymnDetailPage: React.FC = () => {
       coverUrl: hymn.cover_url || '',
       audioUrl: hymn.audio_url || fallback
     } as any);
+    
+    // Abrir player fullscreen no mobile (< 768px)
+    openFullScreen('default');
   };
 
   const handleFavorite = () => {
