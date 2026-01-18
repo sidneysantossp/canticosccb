@@ -194,7 +194,11 @@ const SearchPage: React.FC = () => {
                 <h2 className="text-2xl font-bold text-white mb-6">Hinos</h2>
                 <div className="space-y-2">
                   {hymns.map((song) => (
-                    <div key={song.id} className="flex items-center gap-4 p-3 rounded-lg hover:bg-background-hover transition-colors group w-full">
+                    <Link 
+                      key={song.id} 
+                      to={`/hino/${song.id}`}
+                      className="flex items-center gap-4 p-3 rounded-lg hover:bg-background-hover transition-colors group w-full"
+                    >
                       <img src={song.cover_url || 'https://picsum.photos/seed/search1/100/100'} alt={song.title} className="w-12 h-12 rounded object-cover" />
                       <div className="flex-1">
                         <div className="text-white font-medium">{(() => {
@@ -214,17 +218,16 @@ const SearchPage: React.FC = () => {
                       </div>
                       <button
                         className="opacity-0 group-hover:opacity-100 transition-opacity p-2 rounded-full hover:bg-background-tertiary"
-                        onClick={() => {
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
                           const fallback = 'https://commondatastorage.googleapis.com/codeskulptor-demos/DDR_assets/Sevish_-__nbsp_.mp3';
                           play({ id: song.id, title: song.title, artist: song.composer_name || 'Coral CCB', coverUrl: song.cover_url || '', audioUrl: fallback } as any)
                         }}
                       >
                         <Play className="w-5 h-5 text-white" />
                       </button>
-                      <Link to={`/hino/${song.id}`} className="opacity-0 group-hover:opacity-100 transition-opacity p-2 rounded-full hover:bg-background-tertiary text-text-muted hover:text-white">
-                        Ver
-                      </Link>
-                    </div>
+                    </Link>
                   ))}
                 </div>
               </section>
