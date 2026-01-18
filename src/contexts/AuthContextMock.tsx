@@ -47,6 +47,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     // Verificar se há usuário logado no localStorage
     const loadUser = () => {
       const currentUser = authClient.getCurrentUser();
+      console.log('🔍 loadUser chamado, currentUser:', currentUser);
       if (currentUser) {
         setUser(currentUser);
         setProfile({
@@ -55,10 +56,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           is_admin: currentUser.tipo === 'admin',
           is_composer: currentUser.tipo === 'compositor'
         });
+        return true;
       }
+      return false;
     };
 
-    loadUser();
+    // Carregar usuário imediatamente
+    const hasUser = loadUser();
+    console.log('🔐 Auth init, hasUser:', hasUser);
     
     // Restaurar estado de gerenciamento se existir
     const storedComposerId = sessionStorage.getItem('managingComposerId');
@@ -71,19 +76,50 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     // Listener para mudanças de autenticação do Supabase
     const { data: { subscription } } = authClient.supabase.auth.onAuthStateChange(
       async (event, session) => {
-        console.log('🔐 Auth state changed:', event);
+        console.log('🔐 Auth state changed:', event, session?.user?.email);
         
         if (event === 'SIGNED_IN' && session?.user) {
-          // Recarregar usuário do localStorage (já foi salvo pelo callback)
-          loadUser();
+          // Aguardar um pouco para garantir que o localStorage foi atualizado
+          setTimeout(() => {
+            loadUser();
+            setLoading(false);
+          }, 100);
+        } else if (event === 'INITIAL_SESSION') {
+          // Sessão inicial - verificar se há usuário
+          if (session?.user) {
+            setTimeout(() => {
+              loadUser();
+              setLoading(false);
+            }, 100);
+          } else {
+            setLoading(false);
+          }
         } else if (event === 'SIGNED_OUT') {
           setUser(null);
           setProfile(null);
+          setLoading(false);
+        } else if (event === 'TOKEN_REFRESHED') {
+          // Token atualizado, recarregar usuário
+          loadUser();
         }
       }
     );
     
-    setLoading(false);
+    // Se já tem usuário carregado, podemos marcar como não loading
+    if (hasUser) {
+      setLoading(false);
+    } else {
+      // Timeout de segurança - se depois de 2s ainda estiver loading, desmarcar
+      const timeout = setTimeout(() => {
+        console.log('⏰ Timeout de loading - desmarcando');
+        setLoading(false);
+      }, 2000);
+      
+      return () => {
+        clearTimeout(timeout);
+        subscription.unsubscribe();
+      };
+    }
 
     // Cleanup
     return () => {
