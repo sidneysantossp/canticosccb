@@ -5,9 +5,12 @@ import { usePlayerStore } from '@/stores/playerStore';
 import SEOHead from '@/components/SEO/SEOHead';
 import { generateWebsiteSchema } from '@/utils/schemaGenerator';
 import { advancedSearch, type HymnSearchResult, type ComposerSearchResult, type AlbumSearchResult, type PlaylistSearchResult } from '@/lib/mockApis';
+import { useAuth } from '@/contexts/AuthContextMock';
+import { supabase } from '@/lib/supabase-auth';
 
 const SearchPage: React.FC = () => {
   const { play } = usePlayerStore();
+  const { user } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
   const initialQuery = searchParams.get('q') || '';
   const [searchQuery, setSearchQuery] = useState(initialQuery);
@@ -17,15 +20,9 @@ const SearchPage: React.FC = () => {
   const [composers, setComposers] = useState<ComposerSearchResult[]>([]);
   const [albums, setAlbums] = useState<AlbumSearchResult[]>([]);
   const [playlists, setPlaylists] = useState<PlaylistSearchResult[]>([]);
+  const [recentSearches, setRecentSearches] = useState<string[]>([]);
 
   const schema = generateWebsiteSchema();
-
-  const recentSearches = [
-    'Hino 100',
-    'Vencendo Vem Jesus',
-    'Coral CCB',
-    'Hinos de Louvor'
-  ];
 
   const popularSearches = [
     { term: 'Hinos Clássicos', icon: BookOpen },
@@ -43,6 +40,37 @@ const SearchPage: React.FC = () => {
     { id: 'albums', label: 'Álbuns', icon: Disc },
     { id: 'playlists', label: 'Playlists', icon: Disc }
   ];
+
+  // Carregar buscas recentes do histórico do usuário
+  useEffect(() => {
+    const loadRecentSearches = async () => {
+      if (!user?.id) {
+        setRecentSearches([]);
+        return;
+      }
+
+      try {
+        const { data: history } = await supabase
+          .from('historico')
+          .select('hinos(titulo)')
+          .eq('usuario_id', user.id)
+          .order('created_at', { ascending: false })
+          .limit(10);
+
+        if (history) {
+          const searches = history
+            .map((h: any) => h.hinos?.titulo)
+            .filter((t: string | null) => t != null)
+            .slice(0, 4);
+          setRecentSearches(searches);
+        }
+      } catch (error) {
+        console.error('Erro ao carregar buscas recentes:', error);
+      }
+    };
+
+    loadRecentSearches();
+  }, [user?.id]);
 
   useEffect(() => {
     let isMounted = true;
