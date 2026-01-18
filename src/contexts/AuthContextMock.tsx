@@ -61,6 +61,65 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       return false;
     };
 
+    // Função para buscar/criar usuário baseado na sessão Supabase
+    const syncUserFromSession = async (session: any) => {
+      if (!session?.user) return false;
+      
+      try {
+        // Buscar usuário pelo auth_id
+        const { data: usuario } = await authClient.supabase
+          .from('usuarios')
+          .select('*')
+          .eq('auth_id', session.user.id)
+          .single();
+        
+        if (usuario) {
+          console.log('✅ Usuário encontrado no banco:', usuario.nome);
+          localStorage.setItem('user', JSON.stringify(usuario));
+          setUser(usuario);
+          setProfile({
+            ...usuario,
+            plan: 'free',
+            is_admin: usuario.tipo === 'admin',
+            is_composer: usuario.tipo === 'compositor'
+          });
+          return true;
+        } else {
+          console.log('⚠️ Usuário não encontrado no banco, criando...');
+          // Criar novo usuário
+          const { data: newUser, error } = await authClient.supabase
+            .from('usuarios')
+            .insert({
+              auth_id: session.user.id,
+              nome: session.user.user_metadata?.full_name || session.user.email?.split('@')[0] || 'Usuário',
+              email: session.user.email!,
+              avatar_url: session.user.user_metadata?.avatar_url,
+              tipo: 'usuario',
+              ativo: 1,
+              plano: 'free',
+            })
+            .select()
+            .single();
+          
+          if (!error && newUser) {
+            console.log('✅ Usuário criado:', newUser.nome);
+            localStorage.setItem('user', JSON.stringify(newUser));
+            setUser(newUser);
+            setProfile({
+              ...newUser,
+              plan: 'free',
+              is_admin: false,
+              is_composer: false
+            });
+            return true;
+          }
+        }
+      } catch (err) {
+        console.error('❌ Erro ao sincronizar usuário:', err);
+      }
+      return false;
+    };
+
     // Carregar usuário imediatamente
     const hasUser = loadUser();
     console.log('🔐 Auth init, hasUser:', hasUser);
@@ -79,24 +138,24 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         console.log('🔐 Auth state changed:', event, session?.user?.email);
         
         if (event === 'SIGNED_IN' && session?.user) {
-          // Aguardar um pouco para garantir que o localStorage foi atualizado
-          setTimeout(() => {
-            loadUser();
-            setLoading(false);
-          }, 100);
+          // Sincronizar usuário do banco
+          const synced = await syncUserFromSession(session);
+          console.log('🔄 Sync após SIGNED_IN:', synced);
+          setLoading(false);
         } else if (event === 'INITIAL_SESSION') {
           // Sessão inicial - verificar se há usuário
           if (session?.user) {
-            setTimeout(() => {
-              loadUser();
-              setLoading(false);
-            }, 100);
-          } else {
-            setLoading(false);
+            // Tentar carregar do localStorage primeiro
+            if (!loadUser()) {
+              // Se não encontrou, sincronizar do banco
+              await syncUserFromSession(session);
+            }
           }
+          setLoading(false);
         } else if (event === 'SIGNED_OUT') {
           setUser(null);
           setProfile(null);
+          localStorage.removeItem('user');
           setLoading(false);
         } else if (event === 'TOKEN_REFRESHED') {
           // Token atualizado, recarregar usuário
@@ -109,11 +168,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (hasUser) {
       setLoading(false);
     } else {
-      // Timeout de segurança - se depois de 2s ainda estiver loading, desmarcar
+      // Timeout de segurança - se depois de 3s ainda estiver loading, desmarcar
       const timeout = setTimeout(() => {
         console.log('⏰ Timeout de loading - desmarcando');
         setLoading(false);
-      }, 2000);
+      }, 3000);
       
       return () => {
         clearTimeout(timeout);
