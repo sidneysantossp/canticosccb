@@ -20,20 +20,25 @@ export async function getUserFavorites(userId: number): Promise<string[]> {
 
 export async function addFavorite(userId: number, hymnId: number): Promise<boolean> {
   try {
-    const { error } = await supabase
+    console.log('💚 addFavorite - Tentando adicionar:', { userId, hymnId });
+    
+    const { data, error } = await supabase
       .from('favoritos')
       .insert({
         usuario_id: userId,
         hino_id: hymnId
-      });
+      })
+      .select();
 
     if (error) {
-      console.error('Erro ao adicionar favorito:', error);
+      console.error('❌ Erro ao adicionar favorito:', error);
       return false;
     }
 
+    console.log('✅ Favorito adicionado com sucesso:', data);
     return true;
-  } catch {
+  } catch (err) {
+    console.error('❌ Exceção ao adicionar favorito:', err);
     return false;
   }
 }

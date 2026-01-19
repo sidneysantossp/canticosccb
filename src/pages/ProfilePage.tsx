@@ -89,7 +89,7 @@ const ProfilePage: React.FC = () => {
   
   const statsDisplay = [
     { label: 'Playlists Criadas', value: stats.playlistsCount.toString(), icon: Music },
-    { label: 'Músicas Curtidas', value: stats.favoritesCount.toString(), icon: Heart },
+    { label: 'Meus Favoritos', value: stats.favoritesCount.toString(), icon: Heart },
     { label: 'Horas Ouvidas', value: stats.hoursListened.toString(), icon: Clock },
     { label: 'Seguidores', value: stats.followersCount.toString(), icon: Users }
   ];

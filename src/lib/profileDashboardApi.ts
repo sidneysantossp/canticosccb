@@ -74,7 +74,7 @@ export async function getProfileDashboardData(userId: string, _isComposer: boole
       // Contagem de playlists
       supabase.from('playlists').select('*', { count: 'exact', head: true }).eq('user_id', userId),
       // Contagem de favoritos
-      supabase.from('favoritos').select('*', { count: 'exact', head: true }).eq('usuario_id', userId),
+      supabase.from('favoritos').select('*', { count: 'exact', head: true }).eq('usuario_id', Number(userId)),
       // Playlists do usuário
       supabase.from('playlists').select('*').eq('user_id', userId).order('created_at', { ascending: false }).limit(10),
       // Histórico recente
@@ -89,6 +89,12 @@ export async function getProfileDashboardData(userId: string, _isComposer: boole
         compositores (id, name, artistic_name, photo_url)
       `).eq('usuario_id', userId).limit(20)
     ]);
+
+    console.log('📊 ProfileDashboard - Stats carregadas:', {
+      userId,
+      playlistsCount,
+      favoritesCount
+    });
 
     return {
       stats: {
