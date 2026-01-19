@@ -35,6 +35,8 @@ const useFavoritesStore = create<FavoritesState>()(
       error: null,
 
       addFavorite: (hino, userId) => {
+        console.log('💚 favoritesStore.addFavorite chamado:', { hino, userId });
+        
         const now = new Date().toISOString();
         const newFavorite: FavoriteHino = {
           ...hino,
@@ -46,9 +48,29 @@ const useFavoritesStore = create<FavoritesState>()(
           favorites: [newFavorite, ...state.favorites],
           error: null
         }));
+        
+        console.log('✅ Favorito adicionado ao estado local');
+        
         if (userId) {
           const uid = Number(userId) || 0;
-          if (uid) import('@/lib/favoritesApi').then(m => m.addFavorite(uid, hino.id).catch(() => {}));
+          console.log('🔄 Tentando salvar no Supabase:', { uid, hinoId: hino.id });
+          if (uid) {
+            import('@/lib/favoritesApi').then(m => {
+              m.addFavorite(uid, hino.id)
+                .then(success => {
+                  if (success) {
+                    console.log('✅ Favorito salvo no Supabase com sucesso!');
+                  } else {
+                    console.error('❌ Falha ao salvar favorito no Supabase');
+                  }
+                })
+                .catch(err => {
+                  console.error('❌ Erro ao salvar favorito no Supabase:', err);
+                });
+            });
+          }
+        } else {
+          console.warn('⚠️ userId não fornecido - favorito não será salvo no Supabase');
         }
       },
 

@@ -91,12 +91,12 @@ const ProfilePage: React.FC = () => {
 
   // Atualizar contagem de favoritos em tempo real quando favorites mudar
   useEffect(() => {
-    if (favorites.size > 0) {
+    if (favorites.length >= 0) {
       setStats(prev => ({
         ...prev,
-        favoritesCount: favorites.size
+        favoritesCount: favorites.length
       }));
-      console.log('💚 Contagem de favoritos atualizada:', favorites.size);
+      console.log('💚 Contagem de favoritos atualizada:', favorites.length);
     }
   }, [favorites]);
   
