@@ -419,9 +419,9 @@ const ProfilePage: React.FC = () => {
             {/* Top Playlists */}
             <div>
               <h3 className="text-xl font-bold text-white mb-4">Minhas Playlists</h3>
-              {userPlaylists.length > 0 ? (
+              {playlists.length > 0 ? (
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                  {userPlaylists.slice(0, 3).map((playlist) => (
+                  {playlists.slice(0, 3).map((playlist) => (
                     <Link
                       key={playlist.id}
                       to={`/playlist/${playlist.id}`}
@@ -438,7 +438,7 @@ const ProfilePage: React.FC = () => {
                         </button>
                       </div>
                       <h4 className="font-semibold text-white mb-1 truncate">{playlist.name}</h4>
-                      <p className="text-sm text-text-muted">{playlist.songs_count} {playlist.songs_count === 1 ? 'hino' : 'hinos'}</p>
+                      <p className="text-sm text-text-muted">{playlist.hymns?.length || 0} {(playlist.hymns?.length || 0) === 1 ? 'hino' : 'hinos'}</p>
                     </Link>
                   ))}
                 </div>
@@ -470,9 +470,9 @@ const ProfilePage: React.FC = () => {
                 Criar Playlist
               </Link>
             </div>
-            {userPlaylists.length > 0 ? (
+            {playlists.length > 0 ? (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                {userPlaylists.map((playlist) => (
+                {playlists.map((playlist) => (
                   <Link
                     key={playlist.id}
                     to={`/playlist/${playlist.id}`}
@@ -489,7 +489,7 @@ const ProfilePage: React.FC = () => {
                       </button>
                     </div>
                     <h4 className="font-semibold text-white mb-1 truncate">{playlist.name}</h4>
-                    <p className="text-sm text-text-muted line-clamp-2">{playlist.description || `${playlist.songs_count} ${playlist.songs_count === 1 ? 'hino' : 'hinos'}`}</p>
+                    <p className="text-sm text-text-muted line-clamp-2">{playlist.description || `${playlist.hymns?.length || 0} ${(playlist.hymns?.length || 0) === 1 ? 'hino' : 'hinos'}`}</p>
                   </Link>
                 ))}
               </div>
