@@ -24,6 +24,7 @@ import { getProfileDashboardData, type FollowedComposer, type UserPlaylist } fro
 import { uploadUserAvatar } from '@/lib/uploadHelpers';
 import { buildAvatarUrl } from '@/lib/media-helper';
 import useFavoritesStore from '@/stores/favoritesStore';
+import usePlaylistsStore from '@/stores/playlistsStore';
 
 const ProfilePage: React.FC = () => {
   const navigate = useNavigate();
@@ -31,6 +32,7 @@ const ProfilePage: React.FC = () => {
   const { play } = usePlayerStore();
   const { openFullScreen } = usePlayerContext();
   const { favorites } = useFavoritesStore();
+  const { playlists } = usePlaylistsStore();
   const [activeTab, setActiveTab] = useState('overview');
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
   const [composerData, setComposerData] = useState<any>(null);
@@ -99,6 +101,17 @@ const ProfilePage: React.FC = () => {
       console.log('💚 Contagem de favoritos atualizada:', favorites.length);
     }
   }, [favorites]);
+
+  // Atualizar contagem de playlists em tempo real quando playlists mudar
+  useEffect(() => {
+    if (playlists.length >= 0) {
+      setStats(prev => ({
+        ...prev,
+        playlistsCount: playlists.length
+      }));
+      console.log('🎵 Contagem de playlists atualizada:', playlists.length);
+    }
+  }, [playlists]);
   
   const statsDisplay = [
     { label: 'Playlists Criadas', value: stats.playlistsCount.toString(), icon: Music },
