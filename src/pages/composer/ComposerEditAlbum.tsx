@@ -158,7 +158,7 @@ const ComposerEditAlbum: React.FC = () => {
 
         // Carregar hinos do álbum
         try {
-          const hinosResponse = await albunsApi.listHinos(parseInt(id));
+          const hinosResponse = await albunsApi.listHinos(id);
           console.log('🎵 [EditAlbum] Resposta albunsApi.listHinos:', hinosResponse);
           const rawH: any = hinosResponse as any;
           const albumHinos = Array.isArray(rawH?.data?.hinos)

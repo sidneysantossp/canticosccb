@@ -23,206 +23,237 @@ export interface UsersFilters {
   plan?: 'all' | 'free' | 'premium' | 'pro';
 }
 
-// Mock database
-let mockUsers: User[] = [
-  {
-    id: '1',
-    email: 'admin@canticosccb.com.br',
-    name: 'Administrador',
-    username: 'admin',
-    avatar_url: null,
-    plan: 'pro',
-    role: 'admin',
-    status: 'active',
-    is_admin: true,
-    is_blocked: false,
-    email_verified: true,
-    created_at: new Date(Date.now() - 365 * 24 * 60 * 60 * 1000).toISOString(),
-    last_login: new Date().toISOString()
-  },
-  {
-    id: '2',
-    email: 'usuario1@example.com',
-    name: 'João Silva',
-    username: 'joaosilva',
-    avatar_url: null,
-    plan: 'premium',
-    role: 'user',
-    status: 'active',
-    is_admin: false,
-    is_blocked: false,
-    email_verified: true,
-    created_at: new Date(Date.now() - 180 * 24 * 60 * 60 * 1000).toISOString(),
-    last_login: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString()
-  },
-  {
-    id: '3',
-    email: 'usuario2@example.com',
-    name: 'Maria Santos',
-    username: 'mariasantos',
-    avatar_url: null,
-    plan: 'free',
-    role: 'user',
-    status: 'active',
-    is_admin: false,
-    is_blocked: false,
-    email_verified: true,
-    created_at: new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString(),
-    last_login: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString()
-  },
-  {
-    id: '4',
-    email: 'usuario3@example.com',
-    name: 'Pedro Oliveira',
-    username: 'pedrooliveira',
-    avatar_url: null,
-    plan: 'free',
-    role: 'user',
-    status: 'banned',
-    is_admin: false,
-    is_blocked: true,
-    email_verified: true,
-    created_at: new Date(Date.now() - 60 * 24 * 60 * 60 * 1000).toISOString(),
-    last_login: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString()
-  },
-  {
-    id: '5',
-    email: 'usuario4@example.com',
-    name: 'Ana Costa',
-    username: 'anacosta',
-    avatar_url: null,
-    plan: 'premium',
-    role: 'moderator',
-    status: 'active',
-    is_admin: false,
-    is_blocked: false,
-    email_verified: false,
-    created_at: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(),
-    last_login: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString()
-  },
-  {
-    id: '6',
-    email: 'usuario5@example.com',
-    name: 'Carlos Ferreira',
-    username: 'carlosferreira',
-    avatar_url: null,
-    plan: 'free',
-    role: 'user',
-    status: 'active',
-    is_admin: false,
-    is_blocked: false,
-    email_verified: true,
-    created_at: new Date(Date.now() - 15 * 24 * 60 * 60 * 1000).toISOString(),
-    last_login: new Date(Date.now() - 12 * 60 * 60 * 1000).toISOString()
-  }
-];
+// Mock data removed - using Supabase real data
 
 export const getAllUsers = async (page: number = 1, limit: number = 20, filters: UsersFilters = {}): Promise<{ data: User[]; count: number; totalPages: number }> => {
-  await new Promise(resolve => setTimeout(resolve, 500));
-  
-  let filteredUsers = [...mockUsers];
-  
-  // Apply search filter
-  if (filters.search) {
-    const search = filters.search.toLowerCase();
-    filteredUsers = filteredUsers.filter(u => 
-      u.email.toLowerCase().includes(search) ||
-      u.name?.toLowerCase().includes(search)
-    );
-  }
-  
-  // Apply role filter
-  if (filters.role && filters.role !== 'all') {
-    if (filters.role === 'admin') {
-      filteredUsers = filteredUsers.filter(u => u.is_admin);
-    } else {
-      filteredUsers = filteredUsers.filter(u => !u.is_admin);
+  try {
+    console.log('🔍 [getAllUsers] Fetching users with filters:', filters);
+    const { supabaseFetch } = await import('@/lib/supabaseRest');
+    
+    const queryFilters: Record<string, string> = {
+      select: '*',
+      order: 'created_at.desc'
+    };
+    
+    // Apply search filter
+    if (filters.search) {
+      queryFilters.or = `(name.ilike.%${filters.search}%,email.ilike.%${filters.search}%)`;
     }
-  }
-  
-  // Apply status filter
-  if (filters.status && filters.status !== 'all') {
-    if (filters.status === 'blocked') {
-      filteredUsers = filteredUsers.filter(u => u.is_blocked);
-    } else {
-      filteredUsers = filteredUsers.filter(u => !u.is_blocked);
+    
+    // Apply role filter
+    if (filters.role && filters.role !== 'all') {
+      if (filters.role === 'admin') {
+        queryFilters.is_admin = 'eq.true';
+      } else {
+        queryFilters.is_admin = 'eq.false';
+      }
     }
+    
+    // Apply status filter
+    if (filters.status && filters.status !== 'all') {
+      if (filters.status === 'blocked') {
+        queryFilters.is_blocked = 'eq.true';
+      } else {
+        queryFilters.is_blocked = 'eq.false';
+      }
+    }
+    
+    // Apply plan filter
+    if (filters.plan && filters.plan !== 'all') {
+      queryFilters.plan = `eq.${filters.plan}`;
+    }
+    
+    // Fetch all matching users for count
+    const allUsers = await supabaseFetch<any>('users', queryFilters);
+    const totalCount = allUsers.length;
+    const totalPages = Math.ceil(totalCount / limit);
+    
+    // Apply pagination
+    queryFilters.limit = String(limit);
+    queryFilters.offset = String((page - 1) * limit);
+    
+    const rows = await supabaseFetch<any>('users', queryFilters);
+    
+    // Map to User interface
+    const users: User[] = rows.map(userData => ({
+      id: String(userData.id),
+      email: userData.email,
+      name: userData.name || null,
+      username: userData.name?.toLowerCase().replace(/\s+/g, '') || null,
+      avatar_url: userData.avatar_url || null,
+      plan: (userData.plan as any) || 'free',
+      role: userData.is_admin ? 'admin' : 'user',
+      status: userData.is_blocked ? 'banned' : (userData.status === 'inactive' ? 'inactive' : 'active'),
+      is_admin: userData.is_admin === true,
+      is_blocked: userData.is_blocked === true,
+      email_verified: userData.email_verified || true,
+      created_at: userData.created_at || new Date().toISOString(),
+      last_login: null
+    }));
+    
+    console.log(`✅ [getAllUsers] Found ${users.length} users (total: ${totalCount})`);
+    
+    return {
+      data: users,
+      count: totalCount,
+      totalPages
+    };
+  } catch (error: any) {
+    console.error('❌ [getAllUsers] Error:', error);
+    return {
+      data: [],
+      count: 0,
+      totalPages: 0
+    };
   }
-  
-  // Apply plan filter
-  if (filters.plan && filters.plan !== 'all') {
-    filteredUsers = filteredUsers.filter(u => u.plan === filters.plan);
-  }
-  
-  const totalCount = filteredUsers.length;
-  const totalPages = Math.ceil(totalCount / limit);
-  const start = (page - 1) * limit;
-  const paginatedUsers = filteredUsers.slice(start, start + limit);
-  
-  return {
-    data: paginatedUsers,
-    count: totalCount,
-    totalPages
-  };
 };
 
 export const getUserById = async (id: string): Promise<User | null> => {
-  await new Promise(resolve => setTimeout(resolve, 300));
-  return mockUsers.find(u => u.id === id) || null;
+  try {
+    console.log('🔍 [getUserById] Fetching user ID:', id);
+    const { supabaseFetch } = await import('@/lib/supabaseRest');
+    
+    const rows = await supabaseFetch<any>('users', {
+      id: `eq.${id}`,
+      select: '*',
+      limit: '1'
+    });
+    
+    if (rows.length === 0) {
+      console.warn('⚠️ [getUserById] User not found');
+      return null;
+    }
+    
+    const userData = rows[0];
+    console.log('✅ [getUserById] User found:', userData);
+    
+    // Mapear dados do Supabase para interface User
+    const user: User = {
+      id: String(userData.id),
+      email: userData.email,
+      name: userData.name || null,
+      username: userData.name?.toLowerCase().replace(/\s+/g, '') || null,
+      avatar_url: userData.avatar_url || null,
+      plan: (userData.plan as any) || 'free',
+      role: userData.is_admin ? 'admin' : 'user',
+      status: userData.is_blocked ? 'banned' : (userData.status === 'inactive' ? 'inactive' : 'active'),
+      is_admin: userData.is_admin === true,
+      is_blocked: userData.is_blocked === true,
+      email_verified: userData.email_verified || true,
+      created_at: userData.created_at || new Date().toISOString(),
+      last_login: null
+    };
+    
+    return user;
+  } catch (error: any) {
+    console.error('❌ [getUserById] Error:', error);
+    return null;
+  }
 };
 
-export const createUser = async (data: Partial<User>): Promise<{ success: boolean; user?: User }> => {
-  await new Promise(resolve => setTimeout(resolve, 500));
-  const newUser: User = {
-    id: String(Date.now()),
-    email: data.email || '',
-    name: data.name || null,
-    username: data.username || null,
-    avatar_url: data.avatar_url || null,
-    plan: data.plan || 'free',
-    role: data.role || 'user',
-    status: data.status || 'active',
-    is_admin: data.is_admin || false,
-    is_blocked: false,
-    email_verified: data.email_verified || false,
-    created_at: new Date().toISOString(),
-    last_login: null
-  };
-  mockUsers.push(newUser);
-  return { success: true, user: newUser };
+export const createUser = async (data: Partial<User> & { password?: string }): Promise<{ success: boolean; user?: User }> => {
+  try {
+    console.log('🔍 [createUser] Creating user with data:', data);
+    
+    // Criar registro diretamente na tabela users
+    const { supabaseInsert } = await import('@/lib/supabaseRest');
+    
+    const userData = {
+      name: data.name || '',
+      email: data.email!,
+      avatar_url: data.avatar_url || null,
+      is_admin: data.is_admin || false,
+      is_composer: false,
+      is_blocked: data.is_blocked || false,
+      status: data.is_blocked ? 'inactive' : 'active',
+      plan: data.plan || 'free',
+      email_verified: data.email_verified || false,
+    };
+    
+    console.log('📦 [createUser] Inserting user data:', userData);
+    
+    const result = await supabaseInsert('users', userData) as any;
+    console.log('✅ [createUser] User record created:', result);
+    
+    const newUser: User = {
+      id: String(result.id || result[0]?.id || Date.now()),
+      email: data.email!,
+      name: data.name || null,
+      username: data.username || null,
+      avatar_url: data.avatar_url || null,
+      plan: (data.plan as any) || 'free',
+      role: data.is_admin ? 'admin' : 'user',
+      status: data.is_blocked ? 'banned' : 'active',
+      is_admin: data.is_admin || false,
+      is_blocked: data.is_blocked || false,
+      email_verified: data.email_verified || false,
+      created_at: new Date().toISOString(),
+      last_login: null
+    };
+    
+    console.log('✅ [createUser] Success! User:', newUser);
+    return { success: true, user: newUser };
+  } catch (error: any) {
+    console.error('❌ [createUser] Error:', error);
+    throw new Error(error.message || 'Erro ao criar usuário');
+  }
 };
 
 export const updateUser = async (id: string, data: Partial<User>): Promise<{ success: boolean }> => {
-  await new Promise(resolve => setTimeout(resolve, 500));
-  const index = mockUsers.findIndex(u => u.id === id);
-  if (index !== -1) {
-    mockUsers[index] = {
-      ...mockUsers[index],
-      ...data
-    };
+  try {
+    console.log('🔍 [updateUser] Updating user ID:', id, 'with data:', data);
+    const { supabaseUpdate } = await import('@/lib/supabaseRest');
+    
+    // Mapear dados da interface User para campos do Supabase
+    const updateData: any = {};
+    
+    if (data.name !== undefined) updateData.name = data.name;
+    if (data.email !== undefined) updateData.email = data.email;
+    if (data.avatar_url !== undefined) updateData.avatar_url = data.avatar_url;
+    if (data.plan !== undefined) updateData.plan = data.plan;
+    if (data.is_admin !== undefined) updateData.is_admin = data.is_admin;
+    if (data.is_blocked !== undefined) {
+      updateData.is_blocked = data.is_blocked;
+      updateData.status = data.is_blocked ? 'inactive' : 'active';
+    }
+    
+    console.log('📦 [updateUser] Mapped update data:', updateData);
+    
+    await supabaseUpdate('users', { id: `eq.${id}` }, updateData);
+    console.log('✅ [updateUser] User updated successfully');
+    
     return { success: true };
+  } catch (error: any) {
+    console.error('❌ [updateUser] Error:', error);
+    return { success: false };
   }
-  return { success: false };
 };
 
 export const deleteUser = async (id: string): Promise<{ success: boolean }> => {
-  await new Promise(resolve => setTimeout(resolve, 300));
-  const index = mockUsers.findIndex(u => u.id === id);
-  if (index !== -1) {
-    mockUsers.splice(index, 1);
+  try {
+    console.log('🔍 [deleteUser] Deleting user ID:', id);
+    const { supabaseDelete } = await import('@/lib/supabaseRest');
+    
+    await supabaseDelete('users', { id: `eq.${id}` });
+    console.log('✅ [deleteUser] User deleted successfully');
+    
     return { success: true };
+  } catch (error: any) {
+    console.error('❌ [deleteUser] Error:', error);
+    return { success: false };
   }
-  return { success: false };
 };
 
 export const toggleUserBlock = async (id: string): Promise<{ success: boolean }> => {
-  await new Promise(resolve => setTimeout(resolve, 300));
-  const index = mockUsers.findIndex(u => u.id === id);
-  if (index !== -1) {
-    mockUsers[index].is_blocked = !mockUsers[index].is_blocked;
-    return { success: true };
+  try {
+    const user = await getUserById(id);
+    if (!user) return { success: false };
+    
+    return updateUser(id, { is_blocked: !user.is_blocked });
+  } catch (error) {
+    console.error('❌ [toggleUserBlock] Error:', error);
+    return { success: false };
   }
-  return { success: false };
 };
 
 export const blockUser = async (id: string): Promise<{ success: boolean }> => {
@@ -234,73 +265,80 @@ export const unblockUser = async (id: string): Promise<{ success: boolean }> => 
 };
 
 export const toggleUserAdmin = async (id: string): Promise<{ success: boolean }> => {
-  await new Promise(resolve => setTimeout(resolve, 300));
-  const index = mockUsers.findIndex(u => u.id === id);
-  if (index !== -1) {
-    mockUsers[index].is_admin = !mockUsers[index].is_admin;
-    return { success: true };
+  try {
+    const user = await getUserById(id);
+    if (!user) return { success: false };
+    
+    return updateUser(id, { is_admin: !user.is_admin });
+  } catch (error) {
+    console.error('❌ [toggleUserAdmin] Error:', error);
+    return { success: false };
   }
-  return { success: false };
 };
 
 export const getUserStats = async (): Promise<{ total: number; active: number; blocked: number; admins: number; premium: number; emailVerified: number; newUsers: number }> => {
-  await new Promise(resolve => setTimeout(resolve, 300));
-  const thirtyDaysAgo = Date.now() - 30 * 24 * 60 * 60 * 1000;
-  return {
-    total: mockUsers.length,
-    active: mockUsers.filter(u => !u.is_blocked).length,
-    blocked: mockUsers.filter(u => u.is_blocked).length,
-    admins: mockUsers.filter(u => u.is_admin).length,
-    premium: mockUsers.filter(u => u.plan === 'premium' || u.plan === 'pro').length,
-    emailVerified: mockUsers.filter(u => u.email_verified).length,
-    newUsers: mockUsers.filter(u => new Date(u.created_at).getTime() > thirtyDaysAgo).length
-  };
+  try {
+    const { supabaseFetch } = await import('@/lib/supabaseRest');
+    const allUsers = await supabaseFetch<any>('users', { select: '*' });
+    
+    const thirtyDaysAgo = Date.now() - 30 * 24 * 60 * 60 * 1000;
+    
+    return {
+      total: allUsers.length,
+      active: allUsers.filter((u: any) => !u.is_blocked && u.status !== 'inactive').length,
+      blocked: allUsers.filter((u: any) => u.is_blocked === true).length,
+      admins: allUsers.filter((u: any) => u.is_admin === true).length,
+      premium: allUsers.filter((u: any) => u.plan === 'premium' || u.plan === 'pro').length,
+      emailVerified: allUsers.filter((u: any) => u.email_verified).length,
+      newUsers: allUsers.filter((u: any) => new Date(u.created_at).getTime() > thirtyDaysAgo).length
+    };
+  } catch (error) {
+    console.error('❌ [getUserStats] Error:', error);
+    return { total: 0, active: 0, blocked: 0, admins: 0, premium: 0, emailVerified: 0, newUsers: 0 };
+  }
 };
 
 // Additional functions for AdminSettingsUsers
 export const getUsers = async (filters: { search?: string; role?: string; status?: string; emailVerified?: string } = {}): Promise<{ users: User[] }> => {
-  await new Promise(resolve => setTimeout(resolve, 500));
-  let filtered = [...mockUsers];
-  
-  if (filters.search) {
-    const search = filters.search.toLowerCase();
-    filtered = filtered.filter(u => 
-      u.email.toLowerCase().includes(search) ||
-      u.name?.toLowerCase().includes(search)
-    );
-  }
-  
-  if (filters.role && filters.role !== 'all') {
-    filtered = filtered.filter(u => u.role === filters.role);
-  }
-  
-  if (filters.status && filters.status !== 'all') {
-    filtered = filtered.filter(u => u.status === filters.status);
-  }
-  
-  if (filters.emailVerified && filters.emailVerified !== 'all') {
-    filtered = filtered.filter(u => u.email_verified === (filters.emailVerified === 'true'));
-  }
-  
-  return { users: filtered };
+  const result = await getAllUsers(1, 1000, {
+    search: filters.search,
+    role: filters.role as any,
+    status: filters.status as any
+  });
+  return { users: result.data };
 };
 
 export const deleteUsers = async (ids: string[]): Promise<{ success: boolean }> => {
-  await new Promise(resolve => setTimeout(resolve, 500));
-  mockUsers = mockUsers.filter(u => !ids.includes(u.id));
-  return { success: true };
+  try {
+    const { supabaseDelete } = await import('@/lib/supabaseRest');
+    
+    for (const id of ids) {
+      await supabaseDelete('users', { id: `eq.${id}` });
+    }
+    
+    return { success: true };
+  } catch (error) {
+    console.error('❌ [deleteUsers] Error:', error);
+    return { success: false };
+  }
 };
 
 export const updateUsersStatus = async (ids: string[], status: 'active' | 'inactive' | 'banned'): Promise<{ success: boolean }> => {
-  await new Promise(resolve => setTimeout(resolve, 500));
-  ids.forEach(id => {
-    const user = mockUsers.find(u => u.id === id);
-    if (user) {
-      user.status = status;
-      user.is_blocked = status === 'banned';
+  try {
+    const { supabaseUpdate } = await import('@/lib/supabaseRest');
+    
+    for (const id of ids) {
+      await supabaseUpdate('users', { id: `eq.${id}` }, {
+        is_blocked: status === 'banned',
+        status: status === 'banned' ? 'inactive' : 'active'
+      });
     }
-  });
-  return { success: true };
+    
+    return { success: true };
+  } catch (error) {
+    console.error('❌ [updateUsersStatus] Error:', error);
+    return { success: false };
+  }
 };
 
 export const sendVerificationEmail = async (id: string): Promise<{ success: boolean }> => {

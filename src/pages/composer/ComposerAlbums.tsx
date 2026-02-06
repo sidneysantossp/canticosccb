@@ -140,7 +140,7 @@ const ComposerAlbums: React.FC = () => {
             const expect = String(compositorNome).toLowerCase();
             for (const a of limited) {
               try {
-                const hr = await albunsApi.listHinos(parseInt(a.id));
+                const hr = await albunsApi.listHinos(a.id);
                 const rawH: any = hr as any;
                 const list = Array.isArray(rawH?.data?.hinos)
                   ? rawH.data.hinos

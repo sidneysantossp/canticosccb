@@ -130,7 +130,7 @@ export async function getCompositores(params?: {
   verified?: boolean;
 }) {
   let query = supabase
-    .from('compositores')
+    .from('composers')
     .select('*')
     .eq('is_approved', true);
 
@@ -153,7 +153,7 @@ export async function getCompositores(params?: {
 
 export async function getCompositorById(id: string) {
   const { data, error } = await supabase
-    .from('compositores')
+    .from('composers')
     .select('*')
     .eq('id', id)
     .single();
@@ -164,7 +164,7 @@ export async function getCompositorById(id: string) {
 
 export async function getCompositorBySlug(slug: string) {
   const { data, error } = await supabase
-    .from('compositores')
+    .from('composers')
     .select('*')
     .eq('slug', slug)
     .single();
@@ -384,9 +384,9 @@ export async function registerPlay(hinoId: string, userId?: number) {
 
 // ==================== USUÁRIOS ====================
 
-export async function getUsuarioById(id: number) {
+export async function getUsuarioById(id: string | number) {
   const { data, error } = await supabase
-    .from('usuarios')
+    .from('users')
     .select('*')
     .eq('id', id)
     .single();
@@ -395,9 +395,9 @@ export async function getUsuarioById(id: number) {
   return data;
 }
 
-export async function updateUsuario(id: number, dados: Record<string, any>) {
+export async function updateUsuario(id: string | number, dados: Record<string, any>) {
   const { data, error } = await supabase
-    .from('usuarios')
+    .from('users')
     .update(dados)
     .eq('id', id)
     .select()
@@ -409,10 +409,10 @@ export async function updateUsuario(id: number, dados: Record<string, any>) {
 
 // ==================== SEGUIDORES ====================
 
-export async function followCompositor(userId: number, compositorId: string) {
+export async function followCompositor(userId: string | number, compositorId: string) {
   const { data, error } = await supabase
-    .from('seguidores')
-    .insert({ usuario_id: userId, compositor_id: compositorId })
+    .from('user_follows')
+    .insert({ user_id: userId, composer_id: compositorId })
     .select()
     .single();
   
@@ -420,22 +420,22 @@ export async function followCompositor(userId: number, compositorId: string) {
   return data;
 }
 
-export async function unfollowCompositor(userId: number, compositorId: string) {
+export async function unfollowCompositor(userId: string | number, compositorId: string) {
   const { error } = await supabase
-    .from('seguidores')
+    .from('user_follows')
     .delete()
-    .eq('usuario_id', userId)
-    .eq('compositor_id', compositorId);
+    .eq('user_id', userId)
+    .eq('composer_id', compositorId);
   
   if (error) throw error;
 }
 
-export async function isFollowing(userId: number, compositorId: string) {
+export async function isFollowing(userId: string | number, compositorId: string) {
   const { data } = await supabase
-    .from('seguidores')
+    .from('user_follows')
     .select('id')
-    .eq('usuario_id', userId)
-    .eq('compositor_id', compositorId)
+    .eq('user_id', userId)
+    .eq('composer_id', compositorId)
     .single();
   
   return !!data;

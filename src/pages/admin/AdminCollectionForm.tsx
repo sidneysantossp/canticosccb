@@ -24,11 +24,11 @@ const AdminCollectionForm: React.FC = () => {
 
   useEffect(() => {
     if (isEditing && id) {
-      loadCollection(parseInt(id));
+      loadCollection(id);
     }
   }, [id, isEditing]);
 
-  const loadCollection = async (collectionId: number) => {
+  const loadCollection = async (collectionId: string) => {
     try {
       setIsLoading(true);
       const response = await albunsApi.get(collectionId);

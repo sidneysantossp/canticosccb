@@ -5,7 +5,7 @@ import { usePlayerStore } from '@/stores/playerStore';
 import useFavoritesStore from '@/stores/favoritesStore';
 import usePlaylistsStore from '@/stores/playlistsStore';
 import { usePlayerContext } from '@/contexts/PlayerContext';
-import { useAuth } from '@/contexts/AuthContextMock';
+import { useAuth } from '@/contexts/AuthContext';
 import SEOHead from '@/components/SEO/SEOHead';
 import LoginRequiredModal from '@/components/modals/LoginRequiredModal';
 import { albunsApi } from '@/lib/api-client';
@@ -107,7 +107,7 @@ const AlbumDetailPage: React.FC = () => {
         );
         setAlbum({ ...album, tracks: updatedTracks });
       }
-    } catch {}
+    } catch { }
   };
 
   const loadAlbumData = async () => {
@@ -119,7 +119,7 @@ const AlbumDetailPage: React.FC = () => {
         return;
       }
 
-      const albumRes = await albunsApi.get(Number(id));
+      const albumRes = await albunsApi.get(id);
       const albumRaw: any = (albumRes as any)?.data || albumRes;
       if (!albumRaw || !albumRaw.id) {
         console.error('Álbum não encontrado');
@@ -127,7 +127,7 @@ const AlbumDetailPage: React.FC = () => {
         return;
       }
 
-      const tracksRes = await albunsApi.listHinos(Number(id));
+      const tracksRes = await albunsApi.listHinos(id);
       const tracksRaw: any = (tracksRes as any)?.data || tracksRes;
       const list: any[] = Array.isArray(tracksRaw?.hinos) ? tracksRaw.hinos : [];
 
@@ -183,24 +183,24 @@ const AlbumDetailPage: React.FC = () => {
 
   const handleTrackSelectAndOpenFullscreen = (track: AlbumTrack) => {
     if (!album) return;
-    
+
     // Encontrar índice da faixa clicada
     const trackIndex = album.tracks.findIndex(t => t.id === track.id);
-    
+
     if (trackIndex !== -1) {
       const { clearQueue, addToQueue, setRepeat } = usePlayerStore.getState();
-      
+
       // Limpar fila e ativar repeat para álbum
       clearQueue();
       setRepeat('all');
-      
+
       // Adicionar faixas seguintes à fila
       const remainingTracks = album.tracks.slice(trackIndex + 1);
       remainingTracks.forEach(t => addToQueue(t));
-      
+
       console.log(`🎵 Tocando faixa ${trackIndex + 1}/${album.tracks.length} - ${remainingTracks.length} faixas na fila`);
     }
-    
+
     play(track);
     // Registrar play
     registerPlay(track.id);
@@ -209,29 +209,29 @@ const AlbumDetailPage: React.FC = () => {
 
   const handlePlayAll = () => {
     if (!album || album.tracks.length === 0) return;
-    
+
     // Ativar repeat automaticamente para álbuns
     const { setRepeat, clearQueue, addToQueue } = usePlayerStore.getState();
     setRepeat('all');
-    
+
     // Limpar fila atual
     clearQueue();
-    
+
     // Adicionar todas as faixas à fila (exceto a primeira que vai tocar)
     album.tracks.slice(1).forEach(track => {
       addToQueue(track);
     });
-    
+
     // Tocar primeira faixa
     const firstTrack = album.tracks[0];
     play(firstTrack);
-    
+
     // Registrar play da primeira faixa
     registerPlay(firstTrack.id);
-    
+
     // Abrir fullscreen com tema de álbum
     openFullScreen('album');
-    
+
     console.log(`🎵 Reproduzindo álbum completo: ${album.tracks.length} faixas na fila`);
   };
 
@@ -321,7 +321,7 @@ const AlbumDetailPage: React.FC = () => {
   const handleShareAlbum = () => {
     if (!album) return;
     const url = window.location.href;
-    
+
     if (navigator.share) {
       navigator.share({
         title: album.title,
@@ -436,7 +436,7 @@ const AlbumDetailPage: React.FC = () => {
                 </h1>
                 <p className="text-base md:text-lg text-gray-200 mb-3 font-medium">{album.artist}</p>
                 <p className="text-sm text-gray-300 mb-4 max-w-2xl leading-relaxed">{album.description}</p>
-                
+
                 <div className="flex items-center gap-2 text-sm text-gray-300">
                   <span className="font-semibold">{album.releaseYear}</span>
                   <span className="text-gray-500">•</span>
@@ -460,21 +460,19 @@ const AlbumDetailPage: React.FC = () => {
                 <Play className="w-5 h-5 fill-current" />
                 <span>Reproduzir</span>
               </button>
-              
+
               <button
                 onClick={handleToggleFavoriteAlbum}
-                className={`p-3 rounded-full hover:bg-white/10 transition-all ${
-                  album && isFavorite(parseInt(album.id)) 
-                    ? 'text-red-500' 
+                className={`p-3 rounded-full hover:bg-white/10 transition-all ${album && isFavorite(parseInt(album.id))
+                    ? 'text-red-500'
                     : 'text-gray-400 hover:text-white'
-                }`}
+                  }`}
                 title={album && isFavorite(parseInt(album.id)) ? "Remover dos favoritos" : "Adicionar aos favoritos"}
               >
-                <Heart className={`w-6 h-6 ${
-                  album && isFavorite(parseInt(album.id)) ? 'fill-red-500' : ''
-                }`} />
+                <Heart className={`w-6 h-6 ${album && isFavorite(parseInt(album.id)) ? 'fill-red-500' : ''
+                  }`} />
               </button>
-              
+
               <div className="relative">
                 <button
                   ref={menuButtonRef}
@@ -517,12 +515,11 @@ const AlbumDetailPage: React.FC = () => {
                       onClick={handleToggleFavoriteAlbum}
                       className="w-full px-4 py-3 flex items-center gap-3 hover:bg-white/10 transition-colors text-left"
                     >
-                      <Heart 
-                        className={`w-4 h-4 ${
-                          isFavorite(parseInt(album.id)) 
-                            ? 'text-red-500 fill-red-500' 
+                      <Heart
+                        className={`w-4 h-4 ${isFavorite(parseInt(album.id))
+                            ? 'text-red-500 fill-red-500'
                             : 'text-gray-400'
-                        }`}
+                          }`}
                       />
                       <span className="text-white text-sm">
                         {isFavorite(parseInt(album.id)) ? 'Remover dos favoritos' : 'Adicionar aos favoritos'}
@@ -577,11 +574,10 @@ const AlbumDetailPage: React.FC = () => {
             {album.tracks.map((track, index) => (
               <div
                 key={track.id}
-                className={`group grid grid-cols-[40px_1fr_80px] md:grid-cols-[40px_40px_1fr_1fr_80px] gap-4 px-4 py-2 rounded-md transition-all ${
-                  currentTrack?.id === track.id 
-                    ? 'bg-white/10' 
+                className={`group grid grid-cols-[40px_1fr_80px] md:grid-cols-[40px_40px_1fr_1fr_80px] gap-4 px-4 py-2 rounded-md transition-all ${currentTrack?.id === track.id
+                    ? 'bg-white/10'
                     : 'hover:bg-white/5'
-                }`}
+                  }`}
                 onClick={() => handleTrackSelectAndOpenFullscreen(track)}
               >
                 {/* Número / Play Button */}
@@ -590,16 +586,14 @@ const AlbumDetailPage: React.FC = () => {
                     onClick={() => handlePlayPause(track)}
                     className="relative w-8 h-8 flex items-center justify-center"
                   >
-                    <span className={`absolute text-sm ${
-                      currentTrack?.id === track.id 
-                        ? 'text-primary-400 font-semibold' 
+                    <span className={`absolute text-sm ${currentTrack?.id === track.id
+                        ? 'text-primary-400 font-semibold'
                         : 'text-gray-400 group-hover:opacity-0'
-                    } transition-opacity`}>
+                      } transition-opacity`}>
                       {index + 1}
                     </span>
-                    <div className={`absolute opacity-0 group-hover:opacity-100 transition-opacity ${
-                      currentTrack?.id === track.id ? 'opacity-100' : ''
-                    }`}>
+                    <div className={`absolute opacity-0 group-hover:opacity-100 transition-opacity ${currentTrack?.id === track.id ? 'opacity-100' : ''
+                      }`}>
                       {currentTrack?.id === track.id && isPlaying ? (
                         <Pause className="w-4 h-4 text-primary-400 fill-current" />
                       ) : (
@@ -620,9 +614,8 @@ const AlbumDetailPage: React.FC = () => {
 
                 {/* Título */}
                 <div className="flex flex-col justify-center min-w-0">
-                  <span className={`text-sm font-medium truncate ${
-                    currentTrack?.id === track.id ? 'text-primary-400' : 'text-white group-hover:text-primary-400'
-                  } transition-colors`}>
+                  <span className={`text-sm font-medium truncate ${currentTrack?.id === track.id ? 'text-primary-400' : 'text-white group-hover:text-primary-400'
+                    } transition-colors`}>
                     {track.title}
                   </span>
                   <span className="text-xs text-gray-400 truncate md:hidden mt-0.5">
@@ -652,11 +645,10 @@ const AlbumDetailPage: React.FC = () => {
                   </button>
                   <button
                     onClick={() => handleToggleFavorite(track.id)}
-                    className={`p-1.5 rounded-full transition-all ${
-                      isFavorite(parseInt(track.id))
+                    className={`p-1.5 rounded-full transition-all ${isFavorite(parseInt(track.id))
                         ? 'text-primary-400 opacity-100'
                         : 'text-gray-400 opacity-0 group-hover:opacity-100 hover:text-white'
-                    }`}
+                      }`}
                   >
                     <Heart className={`w-4 h-4 ${isFavorite(parseInt(track.id)) ? 'fill-current' : ''}`} />
                   </button>
@@ -681,14 +673,14 @@ const AlbumDetailPage: React.FC = () => {
       {/* Modal de Seleção de Playlist */}
       {showPlaylistModal && (
         <div className="fixed inset-0 z-[99999] flex items-center justify-center" style={{ zIndex: 99999 }}>
-          <div 
+          <div
             className="absolute inset-0 bg-black/60 backdrop-blur-sm"
             onClick={() => {
               setShowPlaylistModal(false);
               setSelectedTrackForPlaylist(null);
             }}
           />
-          
+
           <div className="relative bg-gradient-to-br from-gray-800 to-gray-900 rounded-2xl p-6 mx-4 w-full max-w-md shadow-2xl border border-gray-700/50">
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-xl font-bold text-white">Adicionar à Playlist</h2>
@@ -705,12 +697,12 @@ const AlbumDetailPage: React.FC = () => {
 
             <div className="mb-4">
               <p className="text-gray-300 text-sm mb-4">
-                {selectedTrackForPlaylist 
+                {selectedTrackForPlaylist
                   ? `Adicionar "${selectedTrackForPlaylist.title}" à uma playlist:`
                   : `Selecione uma playlist para adicionar todas as ${album?.tracks?.length || 0} faixas do álbum "${album?.title}":`
                 }
               </p>
-              
+
               <div className="max-h-60 overflow-y-auto space-y-2">
                 {playlists.length > 0 ? (
                   playlists.map((playlist) => (

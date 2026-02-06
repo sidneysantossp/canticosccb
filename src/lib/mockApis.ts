@@ -58,7 +58,7 @@ export const quickSearch = async (query: string): Promise<SearchResult> => {
         .eq('ativo', 1)
         .limit(10),
       supabase
-        .from('compositores')
+        .from('composers')
         .select('id, name, artistic_name, bio, photo_url')
         .or(`name.ilike.${searchTerm},artistic_name.ilike.${searchTerm}`)
         .limit(5)
@@ -136,7 +136,7 @@ export const advancedSearch = async (params: { query: string; type?: string; lim
     if (type === 'all' || type === 'composers') {
       console.log('🔍 Buscando compositores com termo:', searchTerm);
       const { data: composers, error: composersError } = await supabase
-        .from('compositores')
+        .from('composers')
         .select('id, name, artistic_name, bio, photo_url')
         .or(`name.ilike.${searchTerm},artistic_name.ilike.${searchTerm}`)
         .limit(limit);
@@ -229,5 +229,5 @@ export const getLogoByType = async (type: string): Promise<{ url: string } | nul
   } catch {}
 
   // Fallback seguro local (garante UI funcional)
-  return { url: '/logo-canticos-ccb.svg' };
+  return { url: 'https://canticosccb.com.br/logo-canticos-ccb.png' };
 };

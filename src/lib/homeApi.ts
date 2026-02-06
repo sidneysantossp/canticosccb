@@ -104,29 +104,28 @@ type SupabaseHymnRow = {
 
 type SupabaseComposerRow = {
   id?: number | string;
-  nome?: string;
   name?: string;
-  nome_artistico?: string;
   artistic_name?: string;
-  biografia?: string;
   bio?: string;
+  biography?: string;
+  verified?: boolean;
+  status?: string;
   avatar_url?: string;
   photo_url?: string;
-  verificado?: boolean | number;
-  verified?: boolean;
+  slug?: string;
+  category?: string;
+  is_featured?: boolean;
   is_trending?: boolean;
   followers_count?: number;
 };
 
 type SupabaseAlbumRow = {
   id?: number | string;
-  titulo?: string;
   title?: string;
+  description?: string;
   cover_url?: string;
-  compositor_id?: number;
   artist?: string;
-  is_published?: boolean;
-  active?: boolean;
+  created_at?: string;
 };
 
 type SupabaseBannerRow = {
@@ -156,24 +155,32 @@ const mapSupabaseHymn = (row: SupabaseHymnRow): HomeHymn => ({
 });
 
 const mapSupabaseComposer = (row: SupabaseComposerRow): HomeComposer => {
-  const id = String(row.id ?? row.name ?? row.nome ?? Math.random());
-  const name = row.artistic_name || row.nome_artistico || row.name || row.nome || 'Compositor CCB';
+  const id = String(row.id ?? Math.random());
+  const name = row.artistic_name ?? row.name ?? 'Compositor CCB';
+  const rowAvatar = row.avatar_url || row.photo_url;
+  const avatarUrl = rowAvatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&size=400&background=1a1a1a&color=00D1FF`;
   return {
     id,
     name,
-    avatar_url: row.photo_url ?? row.avatar_url ?? ASSETS.DEFAULT_AVATAR,
+    avatar_url: avatarUrl,
     followers_count: row.followers_count ?? 0,
-    is_trending: Boolean(row.is_trending ?? row.verified ?? row.verificado),
-    bio: row.bio ?? row.biografia ?? undefined,
+    is_trending: Boolean(row.is_trending || row.verified),
+    bio: row.biography ?? row.bio ?? undefined,
   };
 };
 
-const mapSupabaseAlbum = (row: SupabaseAlbumRow, index: number): HomeAlbum => ({
-  id: String(row.id ?? `album-${index}`),
-  title: row.title ?? row.titulo ?? `Álbum ${index + 1}`,
-  artist: row.artist ?? 'Canticos CCB',
-  cover_url: row.cover_url ?? ASSETS.PLACEHOLDER_IMAGE,
-});
+const mapSupabaseAlbum = (
+  row: SupabaseAlbumRow,
+  index: number,
+  composerNames: Record<string, string>
+): HomeAlbum => {
+  return {
+    id: String(row.id ?? `album-${index}`),
+    title: row.title ?? `Álbum ${index + 1}`,
+    artist: row.artist ?? 'Canticos CCB',
+    cover_url: row.cover_url ?? ASSETS.PLACEHOLDER_IMAGE,
+  };
+};
 
 const mapSupabaseBanner = (row: SupabaseBannerRow): HomeBanner => ({
   id: String(row.id ?? row.title ?? `banner-${Math.random()}`),
@@ -187,23 +194,27 @@ const mapSupabaseBanner = (row: SupabaseBannerRow): HomeBanner => ({
   gradient_overlay: row.gradient_overlay ?? undefined,
 });
 
+const normalizeHomeCategory = (value: string | undefined | null) => slugify(String(value ?? ''));
+
 async function getHomePageDataFromSupabase(): Promise<HomePageData> {
   const heroBanners = supabaseFetch<SupabaseBannerRow>('banners', {
-    select: 'id,title,description,image_url,link_url,link_id,gradient_overlay,button_text',
+    select: 'id,title,description,image_url,link_url,link_id,gradient_overlay,button_text,type',
     is_active: 'eq.true',
     order: 'position.asc',
     limit: '6',
+  }).then(rows => {
+    console.log('🎬 [homeApi] Banners retornados do Supabase:', rows.length, rows);
+    return rows;
   });
-  const composerRows = supabaseFetch<SupabaseComposerRow>('compositores', {
-    select: 'id,name,artistic_name,bio,photo_url,verified,is_trending,followers_count',
-    is_approved: 'eq.true',
+  const composerRows = supabaseFetch<SupabaseComposerRow>('composers', {
+    select: 'id,name,artistic_name,bio,biography,verified,status,avatar_url,photo_url,slug,category,is_featured,is_trending,followers_count',
+    status: 'neq.inactive',
     order: 'name.asc',
     limit: '20',
   });
   const albumRows = supabaseFetch<SupabaseAlbumRow>('albums', {
-    select: 'id,title,cover_url,artist',
+    select: 'id,title,description,cover_url,artist,created_at',
     is_published: 'eq.true',
-    active: 'eq.true',
     order: 'created_at.desc',
     limit: '12',
   });
@@ -215,7 +226,6 @@ async function getHomePageDataFromSupabase(): Promise<HomePageData> {
   const hymnRows = supabaseFetch<SupabaseHymnRow>('hinos', {
     select: 'id,numero,titulo,compositor_nome,categoria,cover_url,audio_url,duracao,created_at',
     ativo: 'eq.true',
-    status: 'eq.published',
     order: 'created_at.desc',
     limit: '60',
   });
@@ -228,17 +238,39 @@ async function getHomePageDataFromSupabase(): Promise<HomePageData> {
     hymnRows,
   ]);
 
+  const composerNameById = composersData.reduce<Record<string, string>>((acc, row) => {
+    if (row.id == null) return acc;
+    const id = String(row.id);
+    acc[id] = row.artistic_name ?? row.name ?? 'Compositor CCB';
+    return acc;
+  }, {});
+
   const hymns = hymnsData.map(mapSupabaseHymn);
   const grouped = {
-    cantados: hymns.filter((h) => (h.category || '').toLowerCase() === 'cantados'),
-    tocados: hymns.filter((h) => (h.category || '').toLowerCase() === 'tocados'),
-    avulsos: hymns.filter((h) => (h.category || '').toLowerCase() === 'avulsos'),
+    cantados: hymns
+      .filter((h) => {
+        const normalized = normalizeHomeCategory(h.category);
+        return normalized === 'cantados' || normalized.includes('cantados');
+      })
+      .map((h) => ({ ...h, category: 'Cantados' })),
+    tocados: hymns
+      .filter((h) => {
+        const normalized = normalizeHomeCategory(h.category);
+        return normalized === 'tocados' || normalized.includes('tocados');
+      })
+      .map((h) => ({ ...h, category: 'Tocados' })),
+    avulsos: hymns
+      .filter((h) => {
+        const normalized = normalizeHomeCategory(h.category);
+        return normalized === 'avulsos' || normalized.includes('avulsos');
+      })
+      .map((h) => ({ ...h, category: 'Avulsos' })),
   };
 
   return {
     banners: bannersData.map(mapSupabaseBanner),
     featured: hymns.slice(0, 6),
-    albums: albumsData.map((album, index) => mapSupabaseAlbum(album, index)),
+    albums: albumsData.map((album, index) => mapSupabaseAlbum(album, index, composerNameById)),
     hymnsCantados: grouped.cantados,
     hymnsTocados: grouped.tocados,
     hymnsAvulsos: grouped.avulsos,
@@ -370,80 +402,59 @@ export async function getHomePageData(): Promise<HomePageData> {
     tryGetCollection<any>('categories'),
   ]);
 
-  let apiBanners: any[] = [];
-  try {
-    const res = await apiFetch('/api/banners/index.php?type=hero&active=1');
-    if (res.ok) {
-      const json = await res.json();
-      const arr = Array.isArray(json)
-        ? json
-        : (Array.isArray(json?.banners)
-            ? json.banners
-            : (Array.isArray(json?.data) ? json.data : []));
-      apiBanners = arr || [];
-    }
-  } catch (e) {
-    // fallback silencioso
-  }
+  const apiBanners: any[] = [];
 
-  // Buscar hinos por categoria diretamente do backend
   let cantadosApi: any[] = [];
   let tocadosApi: any[] = [];
   let avulsosApi: any[] = [];
 
-  // Mock data for fallback
   const mockHinos = [
-    { id: 1, numero: 1, titulo: 'Hino de Adoração', compositor: 'João de Deus', categoria: 'Hinos Cantados' },
-    { id: 2, numero: 2, titulo: 'Hino de Louvor', compositor: 'Maria José', categoria: 'Hinos Cantados' },
-    { id: 3, numero: 3, titulo: 'Hino de Comunhão', compositor: 'Carlos Silva', categoria: 'Hinos Tocados' },
-    { id: 4, numero: 4, titulo: 'Hino Especial', compositor: 'Ana Santos', categoria: 'Hinos Avulsos' },
-    { id: 5, numero: 5, titulo: 'Hino de Evangelização', compositor: 'Pedro Costa', categoria: 'Hinos Avulsos' }
+    { id: 1, numero: 1, titulo: 'Hino de Adoração', compositor_nome: 'João de Deus', categoria: 'Hinos Cantados', cover_url: 'https://picsum.photos/seed/hino-1/400/400', audio_url: '' },
+    { id: 2, numero: 2, titulo: 'Hino de Louvor', compositor_nome: 'Maria José', categoria: 'Hinos Cantados', cover_url: 'https://picsum.photos/seed/hino-2/400/400', audio_url: '' },
+    { id: 6, numero: 6, titulo: 'Hino de Graça', compositor_nome: 'José Lima', categoria: 'Hinos Cantados', cover_url: 'https://picsum.photos/seed/hino-6/400/400', audio_url: '' },
+    { id: 7, numero: 7, titulo: 'Hino de Fé', compositor_nome: 'Ruth Oliveira', categoria: 'Hinos Cantados', cover_url: 'https://picsum.photos/seed/hino-7/400/400', audio_url: '' },
+    { id: 3, numero: 3, titulo: 'Hino de Comunhão', compositor_nome: 'Carlos Silva', categoria: 'Hinos Tocados', cover_url: 'https://picsum.photos/seed/hino-3/400/400', audio_url: '' },
+    { id: 8, numero: 8, titulo: 'Hino Instrumental', compositor_nome: 'Paulo Mendes', categoria: 'Hinos Tocados', cover_url: 'https://picsum.photos/seed/hino-8/400/400', audio_url: '' },
+    { id: 9, numero: 9, titulo: 'Hino de Reverência', compositor_nome: 'Lucas Almeida', categoria: 'Hinos Tocados', cover_url: 'https://picsum.photos/seed/hino-9/400/400', audio_url: '' },
+    { id: 10, numero: 10, titulo: 'Hino de Paz', compositor_nome: 'Marcos Reis', categoria: 'Hinos Tocados', cover_url: 'https://picsum.photos/seed/hino-10/400/400', audio_url: '' },
+    { id: 4, numero: 4, titulo: 'Hino Especial', compositor_nome: 'Ana Santos', categoria: 'Hinos Avulsos', cover_url: 'https://picsum.photos/seed/hino-4/400/400', audio_url: '' },
+    { id: 5, numero: 5, titulo: 'Hino de Evangelização', compositor_nome: 'Pedro Costa', categoria: 'Hinos Avulsos', cover_url: 'https://picsum.photos/seed/hino-5/400/400', audio_url: '' },
+    { id: 11, numero: 11, titulo: 'Hino de Esperança', compositor_nome: 'Sara Nunes', categoria: 'Hinos Avulsos', cover_url: 'https://picsum.photos/seed/hino-11/400/400', audio_url: '' },
+    { id: 12, numero: 12, titulo: 'Hino de Alegria', compositor_nome: 'Daniel Souza', categoria: 'Hinos Avulsos', cover_url: 'https://picsum.photos/seed/hino-12/400/400', audio_url: '' },
   ];
 
-  try {
-    const cat1 = encodeURIComponent('Hinos Cantados');
-    const cat2 = encodeURIComponent('Hinos Tocados');
-    const cat3 = encodeURIComponent('Hinos Avulsos');
-    const [rc, rt, ra] = await Promise.all([
-      apiFetch(`/api/hinos/index.php?categoria=${cat1}&ativo=1&limit=12`),
-      apiFetch(`/api/hinos/index.php?categoria=${cat2}&ativo=1&limit=12`),
-      apiFetch(`/api/hinos/index.php?categoria=${cat3}&ativo=1&limit=12`),
-    ]);
-    if (rc.ok) {
-      const json = await rc.json().catch(() => ({} as any));
-      cantadosApi = Array.isArray(json?.hinos) ? json.hinos : (Array.isArray(json) ? json : []);
-      if (cantadosApi.length === 0) {
-        console.warn('API returned empty cantados, using mock data');
-        cantadosApi = mockHinos.filter(h => h.categoria === 'Hinos Cantados');
-      }
-    } else {
-      console.warn('API failed for cantados, using mock data');
+  if (isSupabaseConfigured) {
+    try {
+      const [cantados, tocados, avulsos] = await Promise.all([
+        supabaseFetch<any>('hinos', {
+          categoria: 'ilike.%Hinos Cantados%',
+          ativo: 'eq.true',
+          select: 'id,numero,titulo,compositor_nome,categoria,audio_url,cover_url',
+          limit: '12'
+        }),
+        supabaseFetch<any>('hinos', {
+          categoria: 'ilike.%Hinos Tocados%',
+          ativo: 'eq.true',
+          select: 'id,numero,titulo,compositor_nome,categoria,audio_url,cover_url',
+          limit: '12'
+        }),
+        supabaseFetch<any>('hinos', {
+          categoria: 'ilike.%Hinos Avulsos%',
+          ativo: 'eq.true',
+          select: 'id,numero,titulo,compositor_nome,categoria,audio_url,cover_url',
+          limit: '12'
+        })
+      ]);
+      cantadosApi = cantados.length > 0 ? cantados : mockHinos.filter(h => h.categoria === 'Hinos Cantados');
+      tocadosApi = tocados.length > 0 ? tocados : mockHinos.filter(h => h.categoria === 'Hinos Tocados');
+      avulsosApi = avulsos.length > 0 ? avulsos : mockHinos.filter(h => h.categoria === 'Hinos Avulsos');
+    } catch (e) {
+      console.warn('Supabase error loading hinos by category:', e);
       cantadosApi = mockHinos.filter(h => h.categoria === 'Hinos Cantados');
-    }
-    if (rt.ok) {
-      const json = await rt.json().catch(() => ({} as any));
-      tocadosApi = Array.isArray(json?.hinos) ? json.hinos : (Array.isArray(json) ? json : []);
-      if (tocadosApi.length === 0) {
-        console.warn('API returned empty tocados, using mock data');
-        tocadosApi = mockHinos.filter(h => h.categoria === 'Hinos Tocados');
-      }
-    } else {
-      console.warn('API failed for tocados, using mock data');
       tocadosApi = mockHinos.filter(h => h.categoria === 'Hinos Tocados');
-    }
-    if (ra.ok) {
-      const json = await ra.json().catch(() => ({} as any));
-      avulsosApi = Array.isArray(json?.hinos) ? json.hinos : (Array.isArray(json) ? json : []);
-      if (avulsosApi.length === 0) {
-        console.warn('API returned empty avulsos, using mock data');
-        avulsosApi = mockHinos.filter(h => h.categoria === 'Hinos Avulsos');
-      }
-    } else {
-      console.warn('API failed for avulsos, using mock data');
       avulsosApi = mockHinos.filter(h => h.categoria === 'Hinos Avulsos');
     }
-  } catch (e) {
-    console.warn('API error for hymns, using mock data:', e);
+  } else {
     cantadosApi = mockHinos.filter(h => h.categoria === 'Hinos Cantados');
     tocadosApi = mockHinos.filter(h => h.categoria === 'Hinos Tocados');
     avulsosApi = mockHinos.filter(h => h.categoria === 'Hinos Avulsos');
@@ -475,7 +486,7 @@ export async function getHomePageData(): Promise<HomePageData> {
       {
         id: h.id ?? h.documentId,
         title: h.titulo ?? h.title,
-        composer_name: h.compositor ?? h.composer_name ?? h.artist,
+        composer_name: h.compositor_nome ?? h.composer_name ?? h.artist,
         category: 'Cantados',
         cover_url: h.cover_url ?? h.coverUrl,
         audio_url: h.audio_url ?? h.audioUrl,
@@ -492,7 +503,7 @@ export async function getHomePageData(): Promise<HomePageData> {
       {
         id: h.id ?? h.documentId,
         title: h.titulo ?? h.title,
-        composer_name: h.compositor ?? h.composer_name ?? h.artist,
+        composer_name: h.compositor_nome ?? h.composer_name ?? h.artist,
         category: 'Tocados',
         cover_url: h.cover_url ?? h.coverUrl,
         audio_url: h.audio_url ?? h.audioUrl,
@@ -509,7 +520,7 @@ export async function getHomePageData(): Promise<HomePageData> {
       {
         id: h.id ?? h.documentId,
         title: h.titulo ?? h.title,
-        composer_name: h.compositor ?? h.composer_name ?? h.artist,
+        composer_name: h.compositor_nome ?? h.composer_name ?? h.artist,
         category: 'Avulsos',
         cover_url: h.cover_url ?? h.coverUrl,
         audio_url: h.audio_url ?? h.audioUrl,

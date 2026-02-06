@@ -20,56 +20,55 @@ interface Compositor {
 
 type Composer = Compositor & {
   avatar_url?: string;
-  photo_url?: string;
   imageUrl?: string;
-  image?: string;
-  followers_count?: number;
   followers?: number;
+  followers_count?: number;
   bio?: string;
   category?: string;
-  is_trending?: boolean;
   total_hymns?: number;
   popularHino?: string;
-  verificado?: number;
-  verified?: boolean;
+  verificado?: number | boolean;
 };
 
 type SupabaseComposerRow = {
   id?: number | string;
-  nome?: string;
   name?: string;
-  nome_artistico?: string;
   artistic_name?: string;
-  biografia?: string;
   bio?: string;
+  biography?: string;
+  verified?: boolean;
+  status?: string;
   avatar_url?: string;
   photo_url?: string;
-  verificado?: boolean | number;
-  verified?: boolean;
+  slug?: string;
+  category?: string;
+  is_featured?: boolean;
   is_trending?: boolean;
   followers_count?: number;
 };
 
-const normalizeComposerRow = (row: any): Composer => {
-  const id = String(row.id ?? row.compositor_id ?? row.uuid ?? Math.random());
-  const name = row.artistic_name ?? row.nome_artistico ?? row.name ?? row.nome ?? 'Compositor CCB';
-  const avatarUrl = row.photo_url ?? row.avatar_url ?? row.image ?? '';
+const normalizeComposerRow = (row: SupabaseComposerRow): Composer => {
+  const id = String(row.id ?? Math.random());
+  const name = row.artistic_name ?? row.name ?? 'Compositor CCB';
+  const rowAvatar = row.avatar_url || row.photo_url;
+  const avatarUrl = rowAvatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&size=400&background=1a1a1a&color=00D1FF`;
 
   return {
     id,
     name,
-    description: row.biografia ?? row.description ?? 'Compositor da CCB',
-    image: avatarUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&size=400&background=1a1a1a&color=00D1FF`,
+    description: row.biography ?? row.bio ?? 'Compositor da CCB',
+    image: avatarUrl,
     avatar_url: avatarUrl,
-    photo_url: avatarUrl,
     imageUrl: avatarUrl,
-    followers_count: row.followers_count ?? row.followers ?? 0,
-    followers: row.followers ?? row.followers_count ?? 0,
-    is_trending: Boolean(row.is_trending ?? row.trending ?? row.em_alta ?? row.verificado),
-    popularHino: row.popularHino ?? 'Hinos populares',
-    total_hymns: row.total_hymns ?? row.totalHinos ?? 0,
-    verificado: row.verificado ?? (row.verified ? 1 : 0),
-    verified: Boolean(row.verified ?? row.verificado),
+    followers_count: row.followers_count ?? 0,
+    followers: row.followers_count ?? 0,
+    isTrending: Boolean(row.is_trending || row.verified),
+    popularHino: 'Hinos populares',
+    total_hymns: 0,
+    totalHinos: 0,
+    verificado: row.verified ? 1 : 0,
+    bio: row.biography ?? row.bio,
+    category: row.category,
   };
 };
 
@@ -125,52 +124,45 @@ const ComposersSection: React.FC = () => {
         setTimeout(() => reject(new Error('Timeout loading composers')), 6000)
       );
 
-      const supabaseQuery = supabaseFetch<SupabaseComposerRow>('compositores', {
-        select: 'id,name,artistic_name,bio,photo_url,verified,is_trending,followers_count',
-        is_approved: 'eq.true',
+      const supabaseQuery = supabaseFetch<SupabaseComposerRow>('composers', {
+        select: 'id,name,artistic_name,bio,biography,verified,status,avatar_url,photo_url,slug,category,is_featured,is_trending,followers_count',
+        status: 'neq.inactive',
         order: 'name.asc',
         limit: '100',
       }).then(rows => rows.map(normalizeComposerRow));
 
-      const apiQuery = apiFetch('api/compositores/index.php?limit=100')
-        .then(res => {
-          if (!res.ok) throw new Error('Erro ao carregar compositores');
-          return res.json();
-        })
-        .then(data => {
-          console.log('🎵 Compositores do banco:', data);
-          const compositoresArray = data.compositores || data || [];
-          return compositoresArray.map((comp: any) => normalizeComposerRow(comp));
-        });
-
-      const fetchPromise = isSupabaseConfigured ? supabaseQuery : apiQuery;
+      const fetchPromise = supabaseQuery;
 
       const fresh = await Promise.race([
         fetchPromise,
         timeoutPromise,
       ]);
 
-      if (fresh && Array.isArray(fresh)) {
+      if (fresh && Array.isArray(fresh) && fresh.length > 0) {
         const cacheCount = cachedComposers?.length || 0;
         const freshCount = fresh.length;
         const cacheIds = (cachedComposers || []).map((c: any) => c.id).join(',');
         const freshIds = fresh.map((c: any) => c.id).join(',');
-        console.log('ðŸ“¦ Cache vs Backend:', { cacheCount, freshCount, cacheIds, freshIds });
-        console.log('ðŸ“¦ Fresh data completa:', fresh.map(c => `${c.id}:${c.name}`));
 
         const isDifferent = cacheCount !== freshCount || cacheIds !== freshIds;
-        if (isDifferent) {
-          console.log('ðŸ”„ Substituindo cache por dados do backend');
+        if (isDifferent || !cachedComposers || cacheCount === 0) {
           setComposers(fresh as Composer[]);
-        } else if (!cachedComposers || cacheCount === 0) {
-          console.log('âœ… Usando dados do backend (sem cache)');
-          setComposers(fresh as Composer[]);
-        } else {
-          console.log('âœ… Cache e backend idÃªnticos, mantendo cache');
         }
       } else {
-        console.warn('âš ï¸ Backend retornou vazio. Mantendo lista vazia.');
-        setComposers([]);
+        // Fallback: dados de demonstração quando Supabase não está disponível
+        if (!isSupabaseConfigured) {
+          const fallbackComposers: Composer[] = [
+            { id: 'demo-1', name: 'João de Deus', description: 'Compositor da CCB', image: 'https://ui-avatars.com/api/?name=Jo%C3%A3o+de+Deus&size=400&background=1a1a1a&color=00D1FF', totalHinos: 12, popularHino: 'Hino de Adoração', followers: 1500, isTrending: true },
+            { id: 'demo-2', name: 'Maria José', description: 'Compositora da CCB', image: 'https://ui-avatars.com/api/?name=Maria+Jos%C3%A9&size=400&background=1a1a1a&color=00D1FF', totalHinos: 8, popularHino: 'Hino de Louvor', followers: 980, isTrending: false },
+            { id: 'demo-3', name: 'Carlos Silva', description: 'Compositor da CCB', image: 'https://ui-avatars.com/api/?name=Carlos+Silva&size=400&background=1a1a1a&color=00D1FF', totalHinos: 15, popularHino: 'Hino de Comunhão', followers: 2100, isTrending: true },
+            { id: 'demo-4', name: 'Ana Santos', description: 'Compositora da CCB', image: 'https://ui-avatars.com/api/?name=Ana+Santos&size=400&background=1a1a1a&color=00D1FF', totalHinos: 6, popularHino: 'Hino Especial', followers: 750, isTrending: false },
+            { id: 'demo-5', name: 'Pedro Costa', description: 'Compositor da CCB', image: 'https://ui-avatars.com/api/?name=Pedro+Costa&size=400&background=1a1a1a&color=00D1FF', totalHinos: 10, popularHino: 'Hino de Evangelização', followers: 1200, isTrending: true },
+            { id: 'demo-6', name: 'Ruth Oliveira', description: 'Compositora da CCB', image: 'https://ui-avatars.com/api/?name=Ruth+Oliveira&size=400&background=1a1a1a&color=00D1FF', totalHinos: 9, popularHino: 'Hino de Fé', followers: 890, isTrending: false },
+          ];
+          setComposers(fallbackComposers);
+        } else {
+          setComposers([]);
+        }
       }
       
     } catch (error) {
@@ -183,11 +175,8 @@ const ComposersSection: React.FC = () => {
 
   // Converter compositores para formato do componente
   const displayComposers = composers.map(c => {
-    // Priorizar avatar_url, depois photo_url, por Ãºltimo gerar fallback
-    const avatarUrl = c.avatar_url || c.photo_url || '';
+    const avatarUrl = c.avatar_url || c.image || c.imageUrl || '';
     const finalImage = buildAvatarUrl({ id: String(c.id), avatar_url: avatarUrl, name: c.name });
-    
-    console.log(`ðŸ–¼ï¸ Avatar de ${c.name}:`, { avatar_url: c.avatar_url, photo_url: c.photo_url, final: finalImage });
     
     return {
       id: c.id,
@@ -197,8 +186,8 @@ const ComposersSection: React.FC = () => {
       totalHinos: c.total_hymns ?? c.totalHinos ?? 0,
       popularHino: c.popularHino ?? 'Hinos populares',
       followers: c.followers_count ?? c.followers ?? 0,
-      isTrending: Boolean(c.is_trending ?? c.isTrending),
-      verified: Boolean(c.verified ?? (c as any).verificado === 1),
+      isTrending: Boolean(c.isTrending),
+      verified: Boolean((c as any).verificado === 1),
     };
   });
 

@@ -6,11 +6,11 @@ import { usePlayerStore } from '@/stores/playerStore';
 import useFavoritesStore from '@/stores/favoritesStore';
 import usePlaylistsStore from '@/stores/playlistsStore';
 import useNotificationsStore, { createFavoriteNotification } from '@/stores/notificationsStore';
-import { useAuth } from '@/contexts/AuthContextMock';
+import { useAuth } from '@/contexts/AuthContext';
 import { useNotifications } from '@/contexts/NotificationsContext';
 import { usePlayerContext } from '@/contexts/PlayerContext';
 import { buildHinoUrl, buildAlbumCoverUrl } from '@/lib/media-helper';
-import { apiFetch } from '@/lib/api-helper';
+import { supabaseFetch, supabaseInsert, supabaseDelete, isSupabaseConfigured } from '@/lib/supabaseRest';
 
 interface Composer {
   id: string;
@@ -54,7 +54,7 @@ export default function ComposerPublicProfilePage() {
   const { user } = useAuth();
   const { refreshCount } = useNotifications();
   const { openFullScreen } = usePlayerContext();
-  
+
   const [composer, setComposer] = useState<Composer | null>(null);
   const [songs, setSongs] = useState<ComposerSong[]>([]);
   const [showPlaylistModal, setShowPlaylistModal] = useState(false);
@@ -74,98 +74,97 @@ export default function ComposerPublicProfilePage() {
 
   // Funções definidas antes dos useEffects
   const fetchCounts = async (composerId: string) => {
-    try {
-      // Buscar contagem de seguidores
-      const resFollowers = await apiFetch(`api/compositores/seguidores.php?compositor_id=${composerId}`);
-      if (resFollowers.ok) {
-        const data = await resFollowers.json();
-        setFollowersCount(data.total || 0);
-      }
+    if (!isSupabaseConfigured) return;
 
-      // TODO: Implementar contagem de músicas publicadas
-      setPublishedSongsCount(0);
+    try {
+      const followers = await supabaseFetch<any>('user_follows', {
+        composer_id: `eq.${composerId}`,
+        select: 'id'
+      });
+      setFollowersCount(followers.length);
+
+      const songs = await supabaseFetch<any>('hinos', {
+        compositor_id: `eq.${composerId}`,
+        ativo: 'eq.true',
+        select: 'id'
+      });
+      setPublishedSongsCount(songs.length);
     } catch (error) {
       console.error('❌ Erro ao carregar contagens do compositor:', error);
     }
   };
 
   const loadComposer = async (composerId: string) => {
+    if (!isSupabaseConfigured) {
+      setIsLoading(false);
+      return;
+    }
+
     try {
       setIsLoading(true);
       console.log('🎵 Carregando perfil do compositor:', composerId);
-      
-      // Buscar compositor do banco (usar endpoint direto com query string)
-      const res = await apiFetch(`/api/compositores/index.php?id=${composerId}`);
-      if (!res.ok) throw new Error('Erro ao buscar compositor');
-      
-      const data = await res.json();
-      console.log('📦 Resposta da API:', data);
-      
-      // API pode retornar:
-      // - objeto único do compositor (GET /api/compositores/:id)
-      // - { compositor: {...} }
-      // - { compositores: [...] }
-      const composerData = data?.compositor 
-        || (Array.isArray(data?.compositores) ? data.compositores[0] : undefined)
-        || (data && (data.id || data.nome || data.nome_artistico) ? data : undefined);
-      
-      if (composerData) {
-        const mappedComposer: Composer = {
-          id: String(composerData.id),
-          name: composerData.nome || 'Compositor',
-          avatar_url: composerData.avatar_url,
-          photo_url: composerData.avatar_url,
-          bio: composerData.biografia || '',
-          followers_count: 0, // TODO: implementar
-          is_trending: false,
-          created_at: composerData.created_at || new Date().toISOString()
-        };
-        
-        setComposer(mappedComposer);
-        // Buscar hinos publicados deste compositor
-        try {
-          const compName = encodeURIComponent(mappedComposer.name);
-          // Aceitar múltiplos formatos de retorno
-          const resSongs = await apiFetch(`api/hinos/?compositor=${compName}&ativo=1&limit=1000`);
-          if (resSongs.ok) {
-            const dataSongs = await resSongs.json();
-            const arr = Array.isArray(dataSongs) ? dataSongs : (dataSongs.data || dataSongs.hinos || dataSongs.items || []);
-            const mapped = (arr || []).map((h: any) => {
-              // Garantir que audio_url sempre tenha .mp3
-              let audioUrl = h.audio_url || '';
-              if (audioUrl && !audioUrl.startsWith('http') && !audioUrl.endsWith('.mp3')) {
-                audioUrl = audioUrl + '.mp3';
-              }
-              const coverUrl = buildAlbumCoverUrl({ id: String(h.id), cover_url: h.cover_url });
 
-              return {
-                id: String(h.id),
-                title: h.titulo,
-                duration: h.duracao,
-                plays: h.plays || 0,
-                cover_url: coverUrl,
-                audio_url: audioUrl,
-                number: h.numero,
-                lyrics: h.letra,
-                created_at: h.created_at,
-              };
-            });
-            setSongs(mapped);
-            setPublishedSongsCount(mapped.length);
-          } else {
-            setSongs([]);
-            setPublishedSongsCount(0);
-          }
-        } catch (e) {
-          console.warn('Não foi possível carregar hinos do compositor');
-          setSongs([]);
-          setPublishedSongsCount(0);
-        }
-        console.log('✅ Compositor carregado:', mappedComposer);
-      } else {
+      const composerRows = await supabaseFetch<any>('composers', {
+        id: `eq.${composerId}`,
+        select: 'id,name,artistic_name,bio,biography,photo_url,avatar_url,verified,is_trending,followers_count,created_at'
+      });
+
+      if (composerRows.length === 0) {
         console.error('❌ Compositor não encontrado');
         setComposer(null);
+        setIsLoading(false);
+        return;
       }
+
+      const composerData = composerRows[0];
+      const mappedComposer: Composer = {
+        id: String(composerData.id),
+        name: composerData.artistic_name || composerData.name || 'Compositor',
+        avatar_url: composerData.avatar_url || composerData.photo_url,
+        photo_url: composerData.photo_url || composerData.avatar_url,
+        bio: composerData.biography || composerData.bio || '',
+        followers_count: composerData.followers_count || 0,
+        is_trending: Boolean(composerData.is_trending),
+        created_at: composerData.created_at || new Date().toISOString()
+      };
+
+      setComposer(mappedComposer);
+
+      try {
+        const hymnRows = await supabaseFetch<any>('hinos', {
+          compositor_id: `eq.${composerId}`,
+          ativo: 'eq.true',
+          select: 'id,titulo,duracao,plays,cover_url,audio_url,numero,letra,created_at',
+          limit: '1000'
+        });
+
+        const mapped = hymnRows.map((h: any) => {
+          let audioUrl = h.audio_url || '';
+          if (audioUrl && !audioUrl.startsWith('http') && !audioUrl.endsWith('.mp3')) {
+            audioUrl = audioUrl + '.mp3';
+          }
+          const coverUrl = buildAlbumCoverUrl({ id: String(h.id), cover_url: h.cover_url });
+
+          return {
+            id: String(h.id),
+            title: h.titulo,
+            duration: h.duracao,
+            plays: h.plays || 0,
+            cover_url: coverUrl,
+            audio_url: audioUrl,
+            number: h.numero,
+            lyrics: h.letra,
+            created_at: h.created_at,
+          };
+        });
+        setSongs(mapped);
+        setPublishedSongsCount(mapped.length);
+      } catch (e) {
+        console.warn('Não foi possível carregar hinos do compositor');
+        setSongs([]);
+        setPublishedSongsCount(0);
+      }
+      console.log('✅ Compositor carregado:', mappedComposer);
     } catch (error) {
       console.error('❌ Erro ao carregar compositor:', error);
       setComposer(null);
@@ -184,17 +183,18 @@ export default function ComposerPublicProfilePage() {
   };
 
   const checkIfFollowing = async (composerId: string) => {
-    if (!user?.id) {
+    if (!user?.id || !isSupabaseConfigured) {
       setIsFollowing(false);
       return;
     }
 
     try {
-      const res = await apiFetch(`api/compositores/seguidores.php?compositor_id=${composerId}&usuario_id=${user.id}`);
-      if (res.ok) {
-        const data = await res.json();
-        setIsFollowing(data.is_following || false);
-      }
+      const rows = await supabaseFetch<any>('user_follows', {
+        composer_id: `eq.${composerId}`,
+        user_id: `eq.${user.id}`,
+        select: 'id'
+      });
+      setIsFollowing(rows.length > 0);
     } catch (error) {
       console.error('❌ Erro ao verificar seguidor:', error);
     }
@@ -206,44 +206,31 @@ export default function ComposerPublicProfilePage() {
       return;
     }
 
-    if (!id) return;
+    if (!id || !isSupabaseConfigured) return;
 
     try {
       if (isFollowing) {
-        // Deixar de seguir
-        const res = await apiFetch(`api/compositores/seguidores.php?compositor_id=${id}&usuario_id=${user.id}`, {
-          method: 'DELETE'
+        const success = await supabaseDelete('user_follows', {
+          composer_id: `eq.${id}`,
+          user_id: `eq.${user.id}`
         });
 
-        if (res.ok) {
-          const data = await res.json();
+        if (success) {
           setIsFollowing(false);
-          if (data.total_followers !== undefined) {
-            setFollowersCount(data.total_followers);
-          }
+          setFollowersCount((prev) => Math.max(0, (prev || 0) - 1));
           console.log('✅ Deixou de seguir compositor');
         }
       } else {
-        // Seguir
-        const res = await apiFetch('api/compositores/seguidores.php', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            compositor_id: parseInt(id),
-            usuario_id: user.id
-          })
+        const result = await supabaseInsert<any>('user_follows', {
+          composer_id: id,
+          user_id: user.id
         });
 
-        if (res.ok) {
-          const data = await res.json();
+        if (result) {
           setIsFollowing(true);
-          if (data.total_followers !== undefined) {
-            setFollowersCount(data.total_followers);
-          }
+          setFollowersCount((prev) => (prev || 0) + 1);
           console.log('✅ Seguindo compositor');
-          
-          // Atualizar badge de notificações em tempo real
-          // Pequeno delay para garantir que a notificação foi criada no backend
+
           setTimeout(() => {
             refreshCount();
           }, 500);
@@ -304,11 +291,17 @@ export default function ComposerPublicProfilePage() {
 
   // Abrir álbum diretamente no player (tema de álbum) com fila de faixas
   const handleOpenAlbum = async (album: ComposerAlbum) => {
+    if (!isSupabaseConfigured) {
+      navigate(`/album/${album.id}`);
+      return;
+    }
+
     try {
-      const res = await apiFetch(`api/albuns/hinos.php?album_id=${album.id}`);
-      if (!res.ok) throw new Error('Falha ao carregar faixas do álbum');
-      const data = await res.json();
-      const list: any[] = Array.isArray(data?.hinos) ? data.hinos : (Array.isArray(data?.data) ? data.data : []);
+      const hymnRows = await supabaseFetch<any>('album_hinos', {
+        album_id: `eq.${album.id}`,
+        select: 'hinos(id,titulo,ordem,numero,categoria,compositor,duracao,audio_url,cover_url,letra)'
+      });
+      const list: any[] = hymnRows.map((row: any) => row.hinos).filter(Boolean);
 
       const toMMSS = (v: any) => {
         if (v == null) return '0:00';
@@ -356,25 +349,25 @@ export default function ComposerPublicProfilePage() {
 
   useEffect(() => {
     const loadAlbums = async () => {
-      if (!composer?.id) return;
+      if (!composer?.id || !isSupabaseConfigured) return;
       setLoadingAlbums(true);
       try {
-        const res = await apiFetch(`api/albuns/index.php?compositor_id=${composer.id}&limit=1000`);
-        if (res.ok) {
-          const data = await res.json();
-          const arr = Array.isArray(data?.albuns) ? data.albuns : (data?.data?.albuns || []);
-          const mapped: ComposerAlbum[] = (arr || []).map((a: any) => ({
-            id: String(a.id),
-            title: a.titulo || a.title || 'Álbum',
-            cover_url: buildAlbumCoverUrl({ id: String(a.id), cover_url: a.cover_url }),
-            year: a.ano ?? undefined,
-            song_count: (a.total_hinos ?? a.total_tracks ?? a.hinos_count ?? 0),
-            created_at: a.created_at,
-          }));
-          setAlbums(mapped);
-        } else {
-          setAlbums([]);
-        }
+        const albumRows = await supabaseFetch<any>('albums', {
+          compositor_id: `eq.${composer.id}`,
+          is_published: 'eq.true',
+          select: 'id,title,cover_url,year,created_at',
+          limit: '1000'
+        });
+
+        const mapped: ComposerAlbum[] = albumRows.map((a: any) => ({
+          id: String(a.id),
+          title: a.title || 'Álbum',
+          cover_url: buildAlbumCoverUrl({ id: String(a.id), cover_url: a.cover_url }),
+          year: a.year ?? undefined,
+          song_count: 0,
+          created_at: a.created_at,
+        }));
+        setAlbums(mapped);
       } catch {
         setAlbums([]);
       } finally {
@@ -418,8 +411,8 @@ export default function ComposerPublicProfilePage() {
   const displaySongsCount = publishedSongsCount ?? songs.length;
 
   const avatarUrl = composer.avatar_url || composer.photo_url;
-  const finalImage = avatarUrl && avatarUrl.trim() !== '' 
-    ? avatarUrl 
+  const finalImage = avatarUrl && avatarUrl.trim() !== ''
+    ? avatarUrl
     : `https://ui-avatars.com/api/?name=${encodeURIComponent(composer.name)}&size=400&background=1a1a1a&color=00D1FF`;
 
   const formatDuration = (value?: string | number | null) => {
@@ -454,9 +447,9 @@ export default function ComposerPublicProfilePage() {
     } else {
       // Fallback: usar um MP3 real do servidor
       console.warn('⚠️ Hino sem audio_url, usando fallback');
-      audioUrl = buildHinoUrl({ 
-        id: song.id, 
-        audio_url: 'a-capelacantados-o-deus-bendito-www-canticosccb-com-br-1761280811.mp3' 
+      audioUrl = buildHinoUrl({
+        id: song.id,
+        audio_url: 'a-capelacantados-o-deus-bendito-www-canticosccb-com-br-1761280811.mp3'
       });
     }
 
@@ -527,9 +520,8 @@ export default function ComposerPublicProfilePage() {
                 {composer.bio && (
                   <div className="mb-4 max-w-3xl">
                     <p
-                      className={`text-gray-300 transition-all duration-300 ${
-                        !isBioExpanded ? 'line-clamp-3' : ''
-                      }`}
+                      className={`text-gray-300 transition-all duration-300 ${!isBioExpanded ? 'line-clamp-3' : ''
+                        }`}
                     >
                       {composer.bio}
                     </p>
@@ -564,9 +556,9 @@ export default function ComposerPublicProfilePage() {
                   <div className="flex items-center gap-2 text-gray-300">
                     <Clock className="w-5 h-5" />
                     <span>
-                      Membro desde {new Date(composer.created_at).toLocaleDateString('pt-BR', { 
-                        month: 'long', 
-                        year: 'numeric' 
+                      Membro desde {new Date(composer.created_at).toLocaleDateString('pt-BR', {
+                        month: 'long',
+                        year: 'numeric'
                       })}
                     </span>
                   </div>
@@ -576,11 +568,10 @@ export default function ComposerPublicProfilePage() {
                 <div className="flex gap-3">
                   <button
                     onClick={handleFollow}
-                    className={`px-6 py-3 rounded-lg font-medium transition-colors flex items-center gap-2 ${
-                      isFollowing
+                    className={`px-6 py-3 rounded-lg font-medium transition-colors flex items-center gap-2 ${isFollowing
                         ? 'bg-gray-700 hover:bg-gray-600 text-white'
                         : 'bg-primary-500 hover:bg-primary-600 text-black'
-                    }`}
+                      }`}
                   >
                     <Heart className={`w-5 h-5 ${isFollowing ? 'fill-current' : ''}`} />
                     {isFollowing ? 'Seguindo' : 'Seguir'}
@@ -603,33 +594,30 @@ export default function ComposerPublicProfilePage() {
         <div className="max-w-7xl mx-auto px-6 mt-8">
           {/* Tabs */}
           <div className="flex gap-4 border-b border-gray-800 mb-8">
-            <button 
+            <button
               onClick={() => setActiveTab('hinos')}
-              className={`px-4 py-3 border-b-2 font-medium transition-colors ${
-                activeTab === 'hinos' 
-                  ? 'border-primary-500 text-primary-400' 
+              className={`px-4 py-3 border-b-2 font-medium transition-colors ${activeTab === 'hinos'
+                  ? 'border-primary-500 text-primary-400'
                   : 'border-transparent text-gray-400 hover:text-white'
-              }`}
+                }`}
             >
               Hinos
             </button>
-            <button 
+            <button
               onClick={() => setActiveTab('albuns')}
-              className={`px-4 py-3 border-b-2 font-medium transition-colors ${
-                activeTab === 'albuns' 
-                  ? 'border-primary-500 text-primary-400' 
+              className={`px-4 py-3 border-b-2 font-medium transition-colors ${activeTab === 'albuns'
+                  ? 'border-primary-500 text-primary-400'
                   : 'border-transparent text-gray-400 hover:text-white'
-              }`}
+                }`}
             >
               Álbuns
             </button>
-            <button 
+            <button
               onClick={() => setActiveTab('sobre')}
-              className={`px-4 py-3 border-b-2 font-medium transition-colors ${
-                activeTab === 'sobre' 
-                  ? 'border-primary-500 text-primary-400' 
+              className={`px-4 py-3 border-b-2 font-medium transition-colors ${activeTab === 'sobre'
+                  ? 'border-primary-500 text-primary-400'
                   : 'border-transparent text-gray-400 hover:text-white'
-              }`}
+                }`}
             >
               Sobre
             </button>
@@ -670,11 +658,10 @@ export default function ComposerPublicProfilePage() {
                               {formatDuration(song.duration)}
                             </span>
                             <div
-                              className={`flex items-center justify-center w-8 h-8 rounded-full transition-colors ${
-                                currentTrack?.id === song.id && isPlaying
+                              className={`flex items-center justify-center w-8 h-8 rounded-full transition-colors ${currentTrack?.id === song.id && isPlaying
                                   ? 'bg-primary-500 text-black'
                                   : 'text-gray-400 group-hover:text-white'
-                              }`}
+                                }`}
                             >
                               {currentTrack?.id === song.id && isPlaying ? (
                                 <Pause className="w-4 h-4" />
@@ -696,21 +683,20 @@ export default function ComposerPublicProfilePage() {
                             </button>
                             <button
                               type="button"
-                              className={`hidden md:inline-flex items-center justify-center w-8 h-8 rounded-full transition-colors ${
-                                user && isFavorite(parseInt(song.id)) 
-                                  ? 'text-red-500 hover:text-red-400' 
+                              className={`hidden md:inline-flex items-center justify-center w-8 h-8 rounded-full transition-colors ${user && isFavorite(parseInt(song.id))
+                                  ? 'text-red-500 hover:text-red-400'
                                   : 'text-gray-500 hover:text-primary-400'
-                              }`}
+                                }`}
                               onClick={(event) => {
                                 event.stopPropagation();
-                                
+
                                 if (!user) {
                                   // Mostrar modal de informações com alerta de login
                                   setSelectedSong(song);
                                   setShowSongInfoModal(true);
                                   return;
                                 }
-                                
+
                                 const songId = parseInt(song.id);
                                 const uid = user?.id ? Number(user.id) : undefined;
                                 if (isFavorite(songId)) {
@@ -822,7 +808,7 @@ export default function ComposerPublicProfilePage() {
           {activeTab === 'sobre' && (
             <div className="max-w-3xl py-8">
               <h3 className="text-2xl font-bold text-white mb-6">Sobre {composer.name}</h3>
-              
+
               {composer.bio ? (
                 <div className="space-y-4">
                   <div>
@@ -840,9 +826,9 @@ export default function ComposerPublicProfilePage() {
                     <div>
                       <p className="text-sm text-gray-500 mb-1">Membro desde</p>
                       <p className="text-lg font-semibold text-white">
-                        {new Date(composer.created_at).toLocaleDateString('pt-BR', { 
-                          month: 'long', 
-                          year: 'numeric' 
+                        {new Date(composer.created_at).toLocaleDateString('pt-BR', {
+                          month: 'long',
+                          year: 'numeric'
                         })}
                       </p>
                     </div>
