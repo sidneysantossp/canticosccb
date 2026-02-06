@@ -126,7 +126,7 @@ const ComposersSection: React.FC = () => {
 
       const supabaseQuery = supabaseFetch<SupabaseComposerRow>('composers', {
         select: 'id,name,artistic_name,bio,biography,verified,status,avatar_url,photo_url,slug,category,is_featured,is_trending,followers_count',
-        status: 'neq.inactive',
+        status: 'eq.approved',
         order: 'name.asc',
         limit: '100',
       }).then(rows => rows.map(normalizeComposerRow));

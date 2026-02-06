@@ -208,7 +208,7 @@ async function getHomePageDataFromSupabase(): Promise<HomePageData> {
   });
   const composerRows = supabaseFetch<SupabaseComposerRow>('composers', {
     select: 'id,name,artistic_name,bio,biography,verified,status,avatar_url,photo_url,slug,category,is_featured,is_trending,followers_count',
-    status: 'neq.inactive',
+    status: 'eq.approved',
     order: 'name.asc',
     limit: '20',
   });
