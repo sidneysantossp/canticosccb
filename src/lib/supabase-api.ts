@@ -132,7 +132,7 @@ export async function getCompositores(params?: {
   let query = supabase
     .from('composers')
     .select('*')
-    .eq('is_approved', true);
+    .or('verified.eq.true,status.eq.approved');
 
   if (params?.verified) {
     query = query.eq('verified', true);

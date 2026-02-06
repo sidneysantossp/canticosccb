@@ -66,7 +66,7 @@ export const getFeaturedComposers = async (): Promise<Composer[]> => {
   try {
     const rows = await supabaseFetch<any>('composers', {
       select: SELECT_FIELDS,
-      status: 'eq.approved',
+      or: '(verified.eq.true,status.eq.approved)',
       order: 'name.asc',
     });
     return rows.map(mapRow);

@@ -216,7 +216,10 @@ export const compositoresApi = {
       if (data.artistic_name !== undefined) updateData.artistic_name = data.artistic_name;
       if (data.biografia !== undefined) { updateData.biography = data.biografia.trim(); updateData.bio = data.biografia.trim(); }
       if (data.biography !== undefined) updateData.biography = data.biography;
-      if (data.verificado !== undefined) updateData.verified = data.verificado === 1 || data.verificado === true;
+      if (data.verificado !== undefined) {
+        updateData.verified = data.verificado === 1 || data.verificado === true;
+        updateData.status = updateData.verified ? 'approved' : 'pending';
+      }
       if (data.verified !== undefined) updateData.verified = data.verified;
       if (data.ativo !== undefined) updateData.status = (data.ativo === 1 || data.ativo === true) ? 'active' : 'inactive';
       if (data.status !== undefined) updateData.status = data.status;
