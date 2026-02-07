@@ -148,7 +148,32 @@ export const updateComposer = async (id: string, data: Partial<Composer>): Promi
 export const deleteComposer = async (id: string): Promise<{ success: boolean }> => {
   if (!isSupabaseConfigured) return { success: false };
   try {
+    // 1. Buscar email do compositor antes de deletar
+    let composerEmail: string | null = null;
+    try {
+      const rows = await supabaseFetch<any>('composers', { id: `eq.${id}`, select: 'email', limit: '1' });
+      composerEmail = rows?.[0]?.email || null;
+    } catch (e) {
+      console.warn('⚠️ [composersAdminApi] Could not fetch composer email:', e);
+    }
+
+    // 2. Deletar registro do compositor
     await supabaseDelete('composers', { id: `eq.${id}` });
+
+    // 3. Desativar o usuário associado
+    if (composerEmail) {
+      try {
+        const { supabase } = await import('@/lib/supabase-auth');
+        await supabase
+          .from('users')
+          .update({ is_composer: false, is_blocked: true, status: 'deleted' })
+          .eq('email', composerEmail);
+        console.log('✅ [composersAdminApi] Associated user deactivated:', composerEmail);
+      } catch (e) {
+        console.warn('⚠️ [composersAdminApi] Error deactivating user:', e);
+      }
+    }
+
     return { success: true };
   } catch (error) {
     console.error('❌ [composersAdminApi] deleteComposer error:', error);

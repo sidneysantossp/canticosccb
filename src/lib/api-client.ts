@@ -405,11 +405,51 @@ export const compositoresApi = {
     }
   },
   delete: async (id: string | number) => {
-    const { supabaseDelete } = await import('./supabaseRest');
+    const { supabaseFetch, supabaseDelete } = await import('./supabaseRest');
+    const { supabase } = await import('./supabase-auth');
     try {
       console.log('🔍 [compositoresApi.delete] Deleting composer ID:', id);
+
+      // 1. Buscar o email do compositor antes de deletar
+      let composerEmail: string | null = null;
+      try {
+        const rows = await supabaseFetch<any>('composers', {
+          id: `eq.${id}`,
+          select: 'email',
+          limit: '1',
+        });
+        composerEmail = rows?.[0]?.email || null;
+        console.log('📧 [compositoresApi.delete] Composer email:', composerEmail);
+      } catch (e) {
+        console.warn('⚠️ [compositoresApi.delete] Could not fetch composer email:', e);
+      }
+
+      // 2. Deletar o compositor
       await supabaseDelete('composers', { id: `eq.${id}` });
-      console.log('✅ [compositoresApi.delete] Composer deleted successfully');
+      console.log('✅ [compositoresApi.delete] Composer record deleted');
+
+      // 3. Desativar o usuário associado (via Supabase JS client com sessão do admin)
+      if (composerEmail) {
+        try {
+          const { error: updateError } = await supabase
+            .from('users')
+            .update({
+              is_composer: false,
+              is_blocked: true,
+              status: 'deleted',
+            })
+            .eq('email', composerEmail);
+
+          if (updateError) {
+            console.warn('⚠️ [compositoresApi.delete] Failed to deactivate user:', updateError.message);
+          } else {
+            console.log('✅ [compositoresApi.delete] Associated user deactivated');
+          }
+        } catch (e) {
+          console.warn('⚠️ [compositoresApi.delete] Error deactivating user:', e);
+        }
+      }
+
       return { success: true };
     } catch (error: any) {
       console.error('❌ [compositoresApi.delete] Error:', error);
@@ -789,23 +829,40 @@ export const usuariosApi = {
     }
   },
   delete: async (id: string | number) => {
-    const { supabaseDelete, supabaseUpdate } = await import('./supabaseRest');
+    const { supabase } = await import('./supabase-auth');
     try {
       console.log('🗑️ [usuariosApi.delete] Attempting to delete user ID:', id);
-      const result = await supabaseDelete('users', { id: `eq.${id}` });
-      if (!result) {
-        // Hard delete failed (likely RLS) — try soft delete
-        console.warn('⚠️ [usuariosApi.delete] Hard delete failed, trying soft delete...');
-        const softResult = await supabaseUpdate('users', { id: `eq.${id}` }, {
-          status: 'deleted',
-          is_blocked: true,
-        });
-        if (!softResult || (Array.isArray(softResult) && softResult.length === 0)) {
-          throw new Error('Não foi possível excluir o usuário. Verifique as permissões do banco de dados.');
+
+      // Try hard delete via Supabase JS client (uses admin's auth session)
+      const { error: deleteError } = await supabase
+        .from('users')
+        .delete()
+        .eq('id', id);
+
+      if (deleteError) {
+        console.warn('⚠️ [usuariosApi.delete] Hard delete failed:', deleteError.message, '— trying soft delete...');
+
+        // Fallback: soft delete (mark as deleted + blocked)
+        const { error: updateError, data: updateData } = await supabase
+          .from('users')
+          .update({
+            status: 'deleted',
+            is_blocked: true,
+          })
+          .eq('id', id)
+          .select('id');
+
+        if (updateError) {
+          throw new Error(`Não foi possível excluir o usuário: ${updateError.message}`);
         }
+        if (!updateData || updateData.length === 0) {
+          throw new Error('Usuário não encontrado ou sem permissão para excluir.');
+        }
+
         console.log('✅ [usuariosApi.delete] Soft delete successful');
         return { success: true, error: null };
       }
+
       console.log('✅ [usuariosApi.delete] Hard delete successful');
       return { success: true, error: null };
     } catch (error: any) {
