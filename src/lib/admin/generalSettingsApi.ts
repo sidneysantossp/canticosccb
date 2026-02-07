@@ -1,5 +1,4 @@
-// Mock API for General Settings
-// Replace with real implementation when backend is ready
+import { supabaseFetch, supabaseUpdate, supabaseInsert } from '@/lib/supabaseRest';
 
 export interface GeneralSettings {
   site_name: string;
@@ -49,23 +48,80 @@ const defaultSettings: GeneralSettings = {
   facebook_pixel_id: ''
 };
 
+// Chaves que são booleanas ou numéricas (para conversão correta)
+const booleanKeys: (keyof GeneralSettings)[] = [
+  'maintenance_mode', 'registration_enabled', 'email_verification_required',
+  'backup_enabled', 'analytics_enabled'
+];
+const numberKeys: (keyof GeneralSettings)[] = [
+  'max_upload_size', 'session_timeout', 'items_per_page'
+];
+
+/**
+ * Salva ou atualiza uma chave no site_config
+ */
+async function upsertConfigKey(key: string, value: string): Promise<void> {
+  const existing = await supabaseFetch<any>('site_config', {
+    config_key: `eq.${key}`,
+    select: 'id',
+    limit: '1',
+  });
+
+  if (existing.length > 0) {
+    await supabaseUpdate('site_config', { config_key: `eq.${key}` }, { config_value: value });
+  } else {
+    await supabaseInsert('site_config', { config_key: key, config_value: value });
+  }
+}
+
 export const getGeneralSettings = async (): Promise<GeneralSettings> => {
-  // Simulate API call
-  await new Promise(resolve => setTimeout(resolve, 500));
-  return { ...defaultSettings };
+  try {
+    const allKeys = Object.keys(defaultSettings);
+    const keysList = allKeys.join(',');
+
+    const rows = await supabaseFetch<any>('site_config', {
+      config_key: `in.(${keysList})`,
+      select: 'config_key,config_value',
+    });
+
+    const configMap: Record<string, string> = {};
+    for (const row of rows) {
+      configMap[row.config_key] = row.config_value;
+    }
+
+    // Montar objeto com valores do DB, fallback para default
+    const result: any = { ...defaultSettings };
+    for (const key of allKeys) {
+      if (configMap[key] !== undefined && configMap[key] !== null) {
+        if (booleanKeys.includes(key as keyof GeneralSettings)) {
+          result[key] = configMap[key] === 'true';
+        } else if (numberKeys.includes(key as keyof GeneralSettings)) {
+          result[key] = parseInt(configMap[key]) || (defaultSettings as any)[key];
+        } else {
+          result[key] = configMap[key];
+        }
+      }
+    }
+
+    return result as GeneralSettings;
+  } catch (err) {
+    console.error('Erro ao carregar configurações gerais:', err);
+    return { ...defaultSettings };
+  }
 };
 
 export const updateGeneralSettings = async (settings: GeneralSettings): Promise<GeneralSettings> => {
-  // Simulate API call
-  await new Promise(resolve => setTimeout(resolve, 1000));
-  console.log('Updating settings:', settings);
+  const entries = Object.entries(settings);
+
+  for (const [key, value] of entries) {
+    await upsertConfigKey(key, String(value));
+  }
+
   return { ...settings };
 };
 
 export const resetToDefaultSettings = async (): Promise<GeneralSettings> => {
-  // Simulate API call
-  await new Promise(resolve => setTimeout(resolve, 800));
-  return { ...defaultSettings };
+  return await updateGeneralSettings({ ...defaultSettings });
 };
 
 export const validateSettings = (settings: GeneralSettings): string[] => {
@@ -87,16 +143,11 @@ export const validateSettings = (settings: GeneralSettings): string[] => {
 };
 
 export const exportSettings = async (): Promise<string> => {
-  // Simulate API call
-  await new Promise(resolve => setTimeout(resolve, 300));
   const settings = await getGeneralSettings();
   return JSON.stringify(settings, null, 2);
 };
 
 export const importSettings = async (jsonData: string): Promise<GeneralSettings> => {
-  // Simulate API call
-  await new Promise(resolve => setTimeout(resolve, 500));
-  
   try {
     const settings = JSON.parse(jsonData);
     const errors = validateSettings(settings);
@@ -105,8 +156,11 @@ export const importSettings = async (jsonData: string): Promise<GeneralSettings>
       throw new Error(`Configurações inválidas: ${errors.join(', ')}`);
     }
     
+    // Salvar no Supabase
+    await updateGeneralSettings(settings);
     return settings;
-  } catch (error) {
+  } catch (error: any) {
+    if (error.message?.includes('Configurações inválidas')) throw error;
     throw new Error('Arquivo JSON inválido');
   }
 };
