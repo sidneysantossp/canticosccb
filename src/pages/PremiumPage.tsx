@@ -1,11 +1,17 @@
 import React, { useState } from 'react';
 import { Check, X, Crown, Zap, Music, Download, Users, Headphones } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Navigate } from 'react-router-dom';
 import SEOHead from '@/components/SEO/SEOHead';
+import { usePremiumEnabled } from '@/hooks/usePremiumEnabled';
 
 const PremiumPage: React.FC = () => {
   const navigate = useNavigate();
+  const premiumEnabled = usePremiumEnabled();
   const [billingPeriod, setBillingPeriod] = useState<'monthly' | 'yearly'>('monthly');
+
+  if (!premiumEnabled) {
+    return <Navigate to="/" replace />;
+  }
 
   const seoTitle = 'Premium - Ouça Sem Limites';
   const seoDescription = 'Assine o Premium e desfrute de hinos sem anúncios, downloads ilimitados, qualidade superior e acesso offline. A partir de R$ 19,90/mês.';

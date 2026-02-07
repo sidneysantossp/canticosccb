@@ -6,6 +6,7 @@ import { useMobileMenu } from '@/contexts/MobileMenuContext';
 import { useNotifications } from '@/contexts/NotificationsContext';
 import UserMobileSidebar from './UserMobileSidebar';
 import { buildAvatarUrl } from '@/lib/media-helper';
+import { usePremiumEnabled } from '@/hooks/usePremiumEnabled';
 import ComposerMobileSidebar from './ComposerMobileSidebar';
 import AdminMobileSidebar from './AdminMobileSidebar';
 import PublicMobileSidebar from './PublicMobileSidebar';
@@ -22,6 +23,7 @@ const Header: React.FC = () => {
   const { user, profile, signOut, isAdmin, isComposer } = useAuth();
   const { isMenuOpen, openMenu, closeMenu } = useMobileMenu();
   const { unreadCount } = useNotifications();
+  const premiumEnabled = usePremiumEnabled();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -322,8 +324,8 @@ const Header: React.FC = () => {
                       Configurações
                     </Link>
                     
-                    {/* Premium Link */}
-                    {profile?.plan !== 'premium' && (
+                    {/* Premium Link - only show if premium is enabled globally */}
+                    {premiumEnabled && profile?.plan !== 'premium' && (
                       <Link
                         to="/premium"
                         className="flex items-center gap-3 px-4 py-2.5 hover:bg-background-hover transition-colors text-yellow-500"
@@ -336,7 +338,7 @@ const Header: React.FC = () => {
                       </Link>
                     )}
                     
-                    {profile?.plan === 'premium' && (
+                    {premiumEnabled && profile?.plan === 'premium' && (
                       <Link
                         to="/subscription"
                         className="flex items-center gap-3 px-4 py-2.5 hover:bg-background-hover transition-colors text-text-primary"

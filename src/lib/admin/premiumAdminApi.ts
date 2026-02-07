@@ -56,23 +56,63 @@ function setCookie(name: string, value: string, days = 30) {
 
 export const getPremiumVisibility = async (): Promise<boolean> => {
   try {
-    const raw = typeof localStorage !== 'undefined' ? localStorage.getItem(PREMIUM_ENABLED_KEY) : null;
-    if (raw !== null) return raw === '1' || raw === 'true';
-    const cookie = getCookie(PREMIUM_ENABLED_COOKIE);
-    if (cookie !== null) return cookie === '1' || cookie === 'true';
-    return false;
+    // Try localStorage cache first for fast reads
+    const cached = typeof localStorage !== 'undefined' ? localStorage.getItem(PREMIUM_ENABLED_KEY) : null;
+    if (cached !== null) {
+      // Also fetch from DB in background to keep cache fresh
+      fetchPremiumVisibilityFromDB().catch(() => {});
+      return cached === '1' || cached === 'true';
+    }
+    // Fallback: fetch from site_config
+    return await fetchPremiumVisibilityFromDB();
   } catch {
     return false;
   }
 };
 
+async function fetchPremiumVisibilityFromDB(): Promise<boolean> {
+  try {
+    const { supabaseFetch } = await import('@/lib/supabaseRest');
+    const rows = await supabaseFetch<any>('site_config', {
+      config_key: 'eq.premium_enabled',
+      select: 'config_value',
+      limit: '1',
+    });
+    const val = rows.length > 0 ? rows[0].config_value : 'false';
+    const enabled = val === 'true' || val === '1';
+    // Update local cache
+    if (typeof localStorage !== 'undefined') {
+      localStorage.setItem(PREMIUM_ENABLED_KEY, enabled ? '1' : '0');
+    }
+    return enabled;
+  } catch {
+    return false;
+  }
+}
+
 export const setPremiumVisibility = async (enabled: boolean): Promise<void> => {
   try {
+    // Update localStorage cache
     if (typeof localStorage !== 'undefined') {
       localStorage.setItem(PREMIUM_ENABLED_KEY, enabled ? '1' : '0');
     }
     setCookie(PREMIUM_ENABLED_COOKIE, enabled ? '1' : '0');
-  } catch {}
+
+    // Persist to site_config in Supabase
+    const { supabaseFetch, supabaseUpdate, supabaseInsert } = await import('@/lib/supabaseRest');
+    const existing = await supabaseFetch<any>('site_config', {
+      config_key: 'eq.premium_enabled',
+      select: 'id',
+      limit: '1',
+    });
+    if (existing.length > 0) {
+      await supabaseUpdate('site_config', { config_key: 'eq.premium_enabled' }, { config_value: String(enabled) });
+    } else {
+      await supabaseInsert('site_config', { config_key: 'premium_enabled', config_value: String(enabled) });
+    }
+  } catch (err) {
+    console.error('[setPremiumVisibility] Error persisting to site_config:', err);
+  }
 };
 
 function loadPlansFromStorage(): PremiumPlan[] | null {

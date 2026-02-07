@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
-import { Crown, Search, Mail, Calendar, X, CheckCircle, XCircle } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Crown, Search, Mail, Calendar, X, CheckCircle, XCircle, ToggleLeft, ToggleRight } from 'lucide-react';
+import { getPremiumVisibility, setPremiumVisibility } from '@/lib/admin/premiumAdminApi';
 
 interface PremiumUser {
   id: string;
@@ -16,6 +17,25 @@ interface PremiumUser {
 const AdminUsersPremium: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [filterStatus, setFilterStatus] = useState<string>('all');
+  const [premiumEnabled, setPremiumEnabled] = useState(false);
+  const [togglingPremium, setTogglingPremium] = useState(false);
+
+  useEffect(() => {
+    getPremiumVisibility().then(setPremiumEnabled);
+  }, []);
+
+  const handleTogglePremium = async () => {
+    setTogglingPremium(true);
+    try {
+      const newValue = !premiumEnabled;
+      await setPremiumVisibility(newValue);
+      setPremiumEnabled(newValue);
+    } catch (err) {
+      console.error('Erro ao alterar visibilidade premium:', err);
+    } finally {
+      setTogglingPremium(false);
+    }
+  };
 
   const [users] = useState<PremiumUser[]>([
     {
@@ -75,6 +95,41 @@ const AdminUsersPremium: React.FC = () => {
       <div>
         <h1 className="text-3xl font-bold text-white mb-2">Usuários Premium</h1>
         <p className="text-gray-400">Gerencie assinaturas e usuários premium</p>
+      </div>
+
+      {/* Premium Toggle */}
+      <div className="bg-gray-900/50 border border-gray-800 rounded-xl p-6">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <div className={`p-3 rounded-xl ${premiumEnabled ? 'bg-yellow-500/20' : 'bg-gray-700/50'}`}>
+              <Crown className={`w-6 h-6 ${premiumEnabled ? 'text-yellow-400' : 'text-gray-500'}`} />
+            </div>
+            <div>
+              <h3 className="text-white font-semibold text-lg">Funcionalidade Premium</h3>
+              <p className="text-gray-400 text-sm">
+                {premiumEnabled
+                  ? 'Ativada — o botão "Assinar Premium" está visível para os usuários'
+                  : 'Desativada — o botão "Assinar Premium" está oculto para todos os usuários'}
+              </p>
+            </div>
+          </div>
+          <button
+            onClick={handleTogglePremium}
+            disabled={togglingPremium}
+            className={`relative inline-flex h-8 w-14 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-900 ${
+              premiumEnabled
+                ? 'bg-yellow-500 focus:ring-yellow-500'
+                : 'bg-gray-600 focus:ring-gray-500'
+            } ${togglingPremium ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
+            title={premiumEnabled ? 'Desativar Premium' : 'Ativar Premium'}
+          >
+            <span
+              className={`inline-block h-6 w-6 transform rounded-full bg-white shadow-lg transition-transform ${
+                premiumEnabled ? 'translate-x-7' : 'translate-x-1'
+              }`}
+            />
+          </button>
+        </div>
       </div>
 
       {/* Stats */}
