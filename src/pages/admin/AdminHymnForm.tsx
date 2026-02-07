@@ -70,7 +70,7 @@ const AdminHymnForm: React.FC = () => {
           numero: hino.numero || 0,
           titulo: hino.titulo || '',
           categorias: hino.categorias || (hino.categoria ? [hino.categoria] : []),
-          compositor: hino.compositor || '',
+          compositor: hino.compositor_nome || hino.compositor || '',
           cover_url: hino.cover_url || '',
           audio_url: hino.audio_url || '',
           duracao: hino.duracao || '',
@@ -202,7 +202,7 @@ const AdminHymnForm: React.FC = () => {
         titulo: formData.titulo.trim(),
         categorias: formData.categorias,
         categoria: formData.categorias[0] || '', // Manter compatibilidade com campo antigo
-        compositor: formData.compositor.trim() || undefined,
+        compositor_nome: formData.compositor.trim() || undefined,
         cover_url: coverUrl || undefined,
         audio_url: audioUrl || undefined,
         duracao: formData.duracao || undefined,

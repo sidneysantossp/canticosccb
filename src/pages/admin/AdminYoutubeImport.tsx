@@ -193,19 +193,19 @@ const AdminYoutubeImport: React.FC = () => {
         if (uploaded) audioUrl = uploaded
       }
 
-      const hinoData = {
-        numero: formData.numero || undefined,
+      const hinoData: Record<string, any> = {
         titulo: formData.titulo.trim(),
         categorias: formData.categorias,
         categoria: formData.categorias[0] || '',
-        compositor: formData.compositor.trim() || undefined,
-        cover_url: coverUrl || undefined,
-        audio_url: audioUrl || undefined,
-        duracao: formData.duracao || undefined,
-        letra: formData.letra || undefined,
         ativo: formData.ativo,
-        youtube_source: formData.youtube_source || undefined // Campo interno
       }
+      if (formData.numero) hinoData.numero = formData.numero
+      if (formData.compositor?.trim()) hinoData.compositor_nome = formData.compositor.trim()
+      if (coverUrl) hinoData.cover_url = coverUrl
+      if (audioUrl) hinoData.audio_url = audioUrl
+      if (formData.duracao) hinoData.duracao = formData.duracao
+      if (formData.letra) hinoData.letra = formData.letra
+      if (formData.youtube_source) hinoData.youtube_source = formData.youtube_source
 
       const response = await hinosApi.create(hinoData)
 
@@ -213,6 +213,7 @@ const AdminYoutubeImport: React.FC = () => {
         throw new Error(response.error)
       }
 
+      alert('Hino salvo com sucesso!')
       navigate('/admin/hinos')
     } catch (error: any) {
       console.error('Erro ao salvar hino:', error)

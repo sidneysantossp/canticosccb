@@ -111,18 +111,21 @@ export const hinosApi = {
     const { supabaseInsert, supabaseFetch } = await import('./supabaseRest');
     try {
       // Inserir hino sem categorias primeiro
-      const hinoData = {
-        numero: data.numero,
+      const hinoData: Record<string, any> = {
         titulo: data.titulo,
-        categoria: data.categorias?.[0] || '',
-        compositor: data.compositor,
-        cover_url: data.cover_url,
-        audio_url: data.audio_url,
-        duracao: data.duracao,
-        letra: data.letra,
-        ativo: data.ativo,
+        categoria: data.categorias?.[0] || data.categoria || '',
         status: 'published',
       };
+      if (data.numero) hinoData.numero = data.numero;
+      if (data.compositor) hinoData.compositor_nome = data.compositor;
+      if (data.compositor_nome) hinoData.compositor_nome = data.compositor_nome;
+      if (data.compositor_id) hinoData.compositor_id = data.compositor_id;
+      if (data.cover_url) hinoData.cover_url = data.cover_url;
+      if (data.audio_url) hinoData.audio_url = data.audio_url;
+      if (data.duracao) hinoData.duracao = data.duracao;
+      if (data.letra) hinoData.letra = data.letra;
+      if (data.ativo !== undefined) hinoData.ativo = data.ativo;
+      if (data.youtube_source) hinoData.youtube_source = data.youtube_source;
       
       const result = await supabaseInsert('hinos', hinoData);
       
@@ -160,17 +163,20 @@ export const hinosApi = {
     const { supabaseUpdate, supabaseDelete, supabaseInsert, supabaseFetch } = await import('./supabaseRest');
     try {
       // Atualizar hino
-      const updateData: any = {
-        numero: data.numero,
+      const updateData: Record<string, any> = {
         titulo: data.titulo,
-        categoria: data.categorias?.[0] || '',
-        compositor: data.compositor,
-        cover_url: data.cover_url,
-        audio_url: data.audio_url,
-        duracao: data.duracao,
-        letra: data.letra,
-        ativo: data.ativo,
+        categoria: data.categorias?.[0] || data.categoria || '',
       };
+      if (data.numero !== undefined) updateData.numero = data.numero;
+      if (data.compositor) updateData.compositor_nome = data.compositor;
+      if (data.compositor_nome) updateData.compositor_nome = data.compositor_nome;
+      if (data.compositor_id) updateData.compositor_id = data.compositor_id;
+      if (data.cover_url !== undefined) updateData.cover_url = data.cover_url;
+      if (data.audio_url !== undefined) updateData.audio_url = data.audio_url;
+      if (data.duracao !== undefined) updateData.duracao = data.duracao;
+      if (data.letra !== undefined) updateData.letra = data.letra;
+      if (data.ativo !== undefined) updateData.ativo = data.ativo;
+      if (data.youtube_source) updateData.youtube_source = data.youtube_source;
       
       const result = await supabaseUpdate('hinos', { id: `eq.${id}` }, updateData);
       
