@@ -10,7 +10,7 @@ const CompositorCadastroPage: React.FC = () => {
 
   const handleCadastro = () => {
     if (!user) {
-      navigate('/register?role=compositor');
+      navigate('/compositor/onboarding');
       return;
     }
     if (isComposer) {

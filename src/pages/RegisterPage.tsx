@@ -1,13 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Eye, EyeOff, Mail, Lock, User, ArrowLeft, Check, AlertCircle } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { checkEmailExists, googleLogin } from '@/lib/auth-client';
 
 const RegisterPage: React.FC = () => {
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
-  const roleParam = searchParams.get('role');
   const { signUp } = useAuth();
 
   const [formData, setFormData] = useState({
@@ -41,7 +39,7 @@ const RegisterPage: React.FC = () => {
               const idToken = response?.credential;
               if (!idToken) throw new Error('Credencial inválida');
               await googleLogin(idToken);
-              navigate(roleParam === 'compositor' ? '/compositor/onboarding' : '/onboarding');
+              navigate('/onboarding');
             } catch (err) {
               console.error('Google Sign-In error:', err);
               setError('Falha no login com Google. Tente novamente.');
@@ -170,7 +168,7 @@ const RegisterPage: React.FC = () => {
 
     try {
       await signUp(formData.email, formData.password, formData.name);
-      navigate(roleParam === 'compositor' ? '/compositor/onboarding' : '/onboarding');
+      navigate('/onboarding');
     } catch (err: any) {
       console.error('❌ Register error:', err);
       console.error('❌ Register error message:', err?.message);
@@ -237,9 +235,7 @@ const RegisterPage: React.FC = () => {
             className="w-[250px] mx-auto object-contain mb-2"
             referrerPolicy="no-referrer"
           />
-          <p className="text-text-muted">
-            {roleParam === 'compositor' ? 'Crie sua conta para cadastrar-se como compositor' : 'Junte-se a milhares de ouvintes'}
-          </p>
+          <p className="text-text-muted">Junte-se a milhares de ouvintes</p>
         </div>
 
         {/* Register Form */}

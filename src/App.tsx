@@ -215,6 +215,7 @@ const AppContent: React.FC = () => {
           <Route path="playlists" element={<PlaylistsPage />} />
           <Route path="radio" element={<RadioPage />} />
           <Route path="compositor/cadastro" element={<CompositorCadastroPage />} />
+          <Route path="compositor/onboarding" element={<ComposerOnboarding />} />
           <Route path="compositor/publicar" element={<CompositorPublicarPage />} />
           <Route path="ajuda" element={<AjudaPage />} />
           <Route path="contato" element={<ContatoPage />} />
@@ -280,7 +281,7 @@ const AppContent: React.FC = () => {
           <Route path="composer/notifications" element={<ProtectedComposerRoute><ComposerNotifications /></ProtectedComposerRoute>} />
           <Route path="compositor/direitos-autorais" element={<ProtectedComposerRoute><ComposerCopyrightClaims /></ProtectedComposerRoute>} />
           <Route path="composer/copyright-claims" element={<ProtectedComposerRoute><ComposerCopyrightClaims /></ProtectedComposerRoute>} />
-          <Route path="compositor/onboarding" element={<ProtectedComposerRoute><ComposerOnboarding /></ProtectedComposerRoute>} />
+          {/* compositor/onboarding is public - it has its own signup form */}
           <Route path="composer/trending" element={<ProtectedComposerRoute><TrendsPage /></ProtectedComposerRoute>} />
           <Route path="composer/liked" element={<ProtectedComposerRoute><LikedSongsPage /></ProtectedComposerRoute>} />
           <Route path="composer/history" element={<ProtectedComposerRoute><HistoryPage /></ProtectedComposerRoute>} />
