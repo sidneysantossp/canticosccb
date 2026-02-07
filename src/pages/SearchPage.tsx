@@ -237,7 +237,8 @@ const SearchPage: React.FC = () => {
                           e.preventDefault();
                           e.stopPropagation();
                           const fallback = 'https://commondatastorage.googleapis.com/codeskulptor-demos/DDR_assets/Sevish_-__nbsp_.mp3';
-                          play({ id: song.id, title: song.title, artist: song.composer_name || 'Coral CCB', coverUrl: song.cover_url || '', audioUrl: fallback } as any)
+                          const ytSrc = (song as any).youtube_source || undefined;
+                          play({ id: song.id, title: song.title, artist: song.composer_name || 'Coral CCB', coverUrl: song.cover_url || '', audioUrl: ytSrc ? '' : (song.audio_url || fallback), youtubeSource: ytSrc } as any)
                         }}
                       >
                         <Play className="w-5 h-5 text-white" />

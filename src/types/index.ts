@@ -22,6 +22,7 @@ export interface Hino {
   plays: number;
   isLiked: boolean;
   createdAt: string;
+  youtubeSource?: string;
 }
 
 export interface Playlist {

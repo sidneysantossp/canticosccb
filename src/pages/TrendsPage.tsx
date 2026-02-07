@@ -50,7 +50,7 @@ const TrendsPage: React.FC = () => {
       if (isSupabaseConfigured) {
         try {
           const supabaseData = await supabaseFetch<any>('hinos', {
-            select: 'id,numero,titulo,compositor_nome,categoria,cover_url,audio_url,duracao,created_at',
+            select: 'id,numero,titulo,compositor_nome,categoria,cover_url,audio_url,duracao,created_at,youtube_source',
             ativo: 'eq.true',
             order: 'created_at.desc',
             limit: '100',
@@ -95,6 +95,7 @@ const TrendsPage: React.FC = () => {
         previousRank: index + 1,
         trending: topSet.has(String(h.id)) ? 'up' : 'stable',
         albumTitle: h.album_titulo || undefined,
+        youtubeSource: h.youtube_source || undefined,
       }));
 
       setTrendsData(normalized);
@@ -110,6 +111,7 @@ const TrendsPage: React.FC = () => {
     if (currentTrack?.id === hymn.id && isPlaying) {
       pause();
     } else {
+      const ytSrc = (hymn as any).youtubeSource || undefined;
       const track = {
         id: hymn.id,
         number: hymn.number,
@@ -121,17 +123,20 @@ const TrendsPage: React.FC = () => {
         duration: hymn.duration,
         plays: hymn.plays,
         isLiked: false,
-        createdAt: new Date().toISOString()
+        createdAt: new Date().toISOString(),
+        youtubeSource: ytSrc,
       };
-      // Tentar obter o audio_url real deste hino
-      try {
-        const r = await apiFetch(`api/hinos/${hymn.id}`);
-        if (r.ok) {
-          const d = await r.json();
-          const item = d?.data || d?.hino || d;
-          if (item?.audio_url) (track as any).audioUrl = buildHinoUrl({ id: String(hymn.id), audio_url: item.audio_url });
-        }
-      } catch {}
+      // Se tem YouTube source, não precisa buscar audio_url
+      if (!ytSrc) {
+        try {
+          const r = await apiFetch(`api/hinos/${hymn.id}`);
+          if (r.ok) {
+            const d = await r.json();
+            const item = d?.data || d?.hino || d;
+            if (item?.audio_url) (track as any).audioUrl = buildHinoUrl({ id: String(hymn.id), audio_url: item.audio_url });
+          }
+        } catch {}
+      }
       play(track as any);
       // Open full screen on mobile for a consistent UX
       setTimeout(() => {

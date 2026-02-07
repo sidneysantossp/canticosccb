@@ -170,6 +170,18 @@ export const useAudioPlayer = () => {
 
   // Carregar e reproduzir quando há uma nova faixa
   useEffect(() => {
+    // Se a faixa usa YouTube oculto, não carregar no <Audio> HTML
+    const hasYoutubeSource = !!(currentTrack as any)?.youtubeSource;
+    if (hasYoutubeSource) {
+      // Pausar áudio HTML se estiver tocando (YouTube player cuida)
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current.src = '';
+      }
+      setIsLoading(false);
+      return;
+    }
+
     console.log('🎵 useAudioPlayer - Track mudou:', {
       hasTrack: !!currentTrack,
       title: currentTrack?.title,
@@ -222,6 +234,10 @@ export const useAudioPlayer = () => {
 
   // Controlar play/pause
   useEffect(() => {
+    // Se é YouTube, o useYoutubePlayer controla
+    const hasYoutubeSource = !!(currentTrack as any)?.youtubeSource;
+    if (hasYoutubeSource) return;
+
     const audio = audioRef.current;
     if (!audio || !audio.src) return;
 

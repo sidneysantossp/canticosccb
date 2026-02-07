@@ -45,7 +45,7 @@ const HymnDetailPage: React.FC = () => {
 
       const rows = await supabaseFetch<any>('hinos', {
         id: `eq.${id}`,
-        select: 'id,numero,titulo,compositor_nome,categoria,cover_url,audio_url,letra,duracao',
+        select: 'id,numero,titulo,compositor_nome,categoria,cover_url,audio_url,letra,duracao,youtube_source',
         limit: '1'
       });
 
@@ -59,7 +59,8 @@ const HymnDetailPage: React.FC = () => {
           cover_url: rows[0].cover_url,
           audio_url: rows[0].audio_url,
           letra: rows[0].letra,
-          duracao: rows[0].duracao
+          duracao: rows[0].duracao,
+          youtube_source: rows[0].youtube_source
         });
       } else {
         setHymn(null);
@@ -81,7 +82,8 @@ const HymnDetailPage: React.FC = () => {
       title: hymn.titulo,
       artist: hymn.compositor_nome || 'Coral CCB',
       coverUrl: hymn.cover_url || '',
-      audioUrl: hymn.audio_url || fallback
+      audioUrl: hymn.youtube_source ? '' : (hymn.audio_url || fallback),
+      youtubeSource: hymn.youtube_source || undefined
     } as any);
     
     // Abrir player fullscreen no mobile (< 768px)

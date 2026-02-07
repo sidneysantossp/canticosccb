@@ -85,7 +85,7 @@ const CategoryPage: React.FC = () => {
       const list = await supabaseFetch<any>('hinos', {
         categoria: `ilike.%${resolvedName}%`,
         ativo: 'eq.true',
-        select: 'id,numero,titulo,compositor_nome,categoria,cover_url,audio_url,duracao,plays_count',
+        select: 'id,numero,titulo,compositor_nome,categoria,cover_url,audio_url,duracao,plays_count,youtube_source',
         limit: '50'
       });
 
@@ -98,6 +98,7 @@ const CategoryPage: React.FC = () => {
         cover_url: h.cover_url || undefined,
         audio_url: h.audio_url || undefined,
         plays_count: h.plays_count != null ? Number(h.plays_count) : undefined,
+        youtube_source: h.youtube_source || undefined,
       }));
 
       setSongs(formattedSongs);
@@ -117,11 +118,8 @@ const CategoryPage: React.FC = () => {
 
   const resolveSongTrack = (song: Song) => {
     const coverUrl = song.cover_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(song.title)}&background=1f2937&color=ffffff`;
-    let audioUrl = song.audio_url || '';
-    if (!audioUrl) {
-      // fallback simples: mantém vazio, o player deve lidar com ausência
-      audioUrl = '';
-    }
+    const ytSource = (song as any).youtube_source || undefined;
+    let audioUrl = ytSource ? '' : (song.audio_url || '');
     return {
       id: song.id,
       title: song.title,
@@ -134,6 +132,7 @@ const CategoryPage: React.FC = () => {
       lyrics: '',
       isLiked: false,
       createdAt: new Date().toISOString(),
+      youtubeSource: ytSource,
     } as any;
   };
 
@@ -176,18 +175,20 @@ const CategoryPage: React.FC = () => {
   };
 
   const handlePlayPause = (song: Song) => {
+    const ytSource = (song as any).youtube_source || undefined;
     const track = {
       id: song.id,
       title: song.title,
       artist: song.artist,
       duration: song.duration,
       coverUrl: song.cover_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(song.title)}&background=1f2937&color=ffffff`,
-      audioUrl: song.audio_url || '',
+      audioUrl: ytSource ? '' : (song.audio_url || ''),
       number: song.number || 0,
       category: category?.name || 'Categoria',
       plays: song.plays_count || 0,
       isLiked: isFavorite(parseInt(song.id)),
-      createdAt: new Date().toISOString()
+      createdAt: new Date().toISOString(),
+      youtubeSource: ytSource,
     };
 
     if (currentTrack?.id === song.id && isPlaying) {

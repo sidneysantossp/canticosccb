@@ -38,6 +38,7 @@ type PopularHino = {
   rank: number;
   previousRank: number;
   trending: 'up' | 'down' | 'stable';
+  youtubeSource?: string;
 };
 
 type SupabaseHymnRow = {
@@ -51,6 +52,7 @@ type SupabaseHymnRow = {
   audio_url?: string;
   duracao?: string;
   created_at?: string;
+  youtube_source?: string;
 };
 
 const mapSupabasePopularHino = (row: SupabaseHymnRow, index: number): PopularHino => ({
@@ -68,6 +70,7 @@ const mapSupabasePopularHino = (row: SupabaseHymnRow, index: number): PopularHin
   rank: index + 1,
   previousRank: index + 1,
   trending: 'stable',
+  youtubeSource: row.youtube_source || undefined,
 });
 
 const HomeAlternativePage: React.FC = () => {
@@ -172,7 +175,7 @@ const HomeAlternativePage: React.FC = () => {
       try {
         let normalized: PopularHino[] = [];
         normalized = await supabaseFetch<SupabaseHymnRow>('hinos', {
-          select: 'id,numero,titulo,compositor_nome,categoria,cover_url,audio_url,duracao,created_at',
+          select: 'id,numero,titulo,compositor_nome,categoria,cover_url,audio_url,duracao,created_at,youtube_source',
           ativo: 'eq.true',
           status: 'eq.published',
           order: 'created_at.desc',
