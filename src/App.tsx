@@ -154,7 +154,10 @@ import AdminExportForm from '@/pages/admin/AdminExportForm';
 import AdminBibleNarrated from '@/pages/admin/AdminBibleNarrated';
 import AdminBibleNarratedForm from '@/pages/admin/AdminBibleNarratedForm';
 import GlobalAudioPlayer from '@/components/GlobalAudioPlayer';
+import { usePresence } from '@/hooks/usePresence';
 import { Navigate } from 'react-router-dom';
+
+const PresenceTracker: React.FC = () => { usePresence(); return null; };
 
 const AppContent: React.FC = () => {
   return (
@@ -467,6 +470,7 @@ function App() {
             <PlayerProvider>
               <MobileMenuProvider>
                 <GlobalAudioPlayer />
+                <PresenceTracker />
                 <AppContent />
               </MobileMenuProvider>
             </PlayerProvider>
