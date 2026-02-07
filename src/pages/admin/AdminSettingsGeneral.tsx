@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Settings, Save, RefreshCw, Globe, Mail, Shield, Database, Server, Download, Upload, AlertTriangle, Bell } from 'lucide-react';
 import { sendTestPush, sendCampaign } from '@/lib/admin/pushSettingsApi';
+import { supabaseFetch, supabaseUpdate, supabaseInsert } from '@/lib/supabaseRest';
 import SuccessModal from '@/components/SuccessModal';
 import {
   getGeneralSettings,
@@ -36,6 +37,12 @@ const AdminSettingsGeneral: React.FC = () => {
     type: 'success' | 'error' | 'info';
     details?: string;
   }>({ title: '', message: '', type: 'success' });
+
+  // YouTube API Key states
+  const [youtubeApiKey, setYoutubeApiKey] = useState('');
+  const [showYoutubeKey, setShowYoutubeKey] = useState(false);
+  const [isSavingYoutubeKey, setIsSavingYoutubeKey] = useState(false);
+  const [youtubeKeySaved, setYoutubeKeySaved] = useState(false);
 
   const [settings, setSettings] = useState<GeneralSettings>({
     site_name: 'Cânticos CCB',
@@ -79,11 +86,52 @@ const AdminSettingsGeneral: React.FC = () => {
       setError(null);
       const settingsData = await getGeneralSettings();
       setSettings(settingsData);
+
+      // Carregar YouTube API Key do site_config
+      try {
+        const rows = await supabaseFetch<any>('site_config', {
+          config_key: 'eq.youtube_api_key',
+          select: 'config_value',
+          limit: '1',
+        });
+        if (rows.length > 0) {
+          setYoutubeApiKey(rows[0].config_value || '');
+        }
+      } catch (e) {
+        console.warn('Erro ao carregar YouTube API Key:', e);
+      }
     } catch (err: any) {
       console.error('Error loading settings:', err);
       setError(err?.message || 'Erro ao carregar configura\u00e7\u00f5es');
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleSaveYoutubeKey = async () => {
+    try {
+      setIsSavingYoutubeKey(true);
+      setYoutubeKeySaved(false);
+
+      const existing = await supabaseFetch<any>('site_config', {
+        config_key: 'eq.youtube_api_key',
+        select: 'id',
+        limit: '1',
+      });
+
+      if (existing.length > 0) {
+        await supabaseUpdate('site_config', { config_key: 'eq.youtube_api_key' }, { config_value: youtubeApiKey });
+      } else {
+        await supabaseInsert('site_config', { config_key: 'youtube_api_key', config_value: youtubeApiKey });
+      }
+
+      setYoutubeKeySaved(true);
+      setTimeout(() => setYoutubeKeySaved(false), 3000);
+    } catch (err: any) {
+      console.error('Erro ao salvar YouTube API Key:', err);
+      setError(err?.message || 'Erro ao salvar YouTube API Key');
+    } finally {
+      setIsSavingYoutubeKey(false);
     }
   };
 
@@ -776,6 +824,62 @@ const AdminSettingsGeneral: React.FC = () => {
                   </div>
                 </div>
               )}
+
+              {/* YouTube API */}
+              <h3 className="text-white font-semibold text-lg mt-8 mb-4">YouTube Data API</h3>
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-2">
+                    YouTube API Key
+                  </label>
+                  <div className="relative">
+                    <input
+                      type={showYoutubeKey ? 'text' : 'password'}
+                      value={youtubeApiKey}
+                      onChange={(e) => setYoutubeApiKey(e.target.value)}
+                      className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-3 pr-12 text-white focus:outline-none focus:border-primary-600"
+                      placeholder="AIzaSy..."
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowYoutubeKey(!showYoutubeKey)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white"
+                    >
+                      {showYoutubeKey ? <span className="text-xs">Ocultar</span> : <span className="text-xs">Mostrar</span>}
+                    </button>
+                  </div>
+                  <p className="text-gray-500 text-xs mt-1">
+                    Necessária para importação de hinos via YouTube. Obtenha em{' '}
+                    <a href="https://console.cloud.google.com/apis/credentials" target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:underline">
+                      Google Cloud Console
+                    </a>
+                  </p>
+                </div>
+
+                {youtubeApiKey ? (
+                  <div className="flex items-center gap-2 p-3 bg-green-500/10 border border-green-500/30 rounded-lg">
+                    <span className="text-green-400 text-sm">YouTube API Key configurada</span>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-2 p-3 bg-yellow-500/10 border border-yellow-500/30 rounded-lg">
+                    <AlertTriangle className="w-4 h-4 text-yellow-400" />
+                    <span className="text-yellow-400 text-sm">YouTube API Key não configurada. A importação de hinos via YouTube não funcionará.</span>
+                  </div>
+                )}
+
+                <button
+                  type="button"
+                  onClick={handleSaveYoutubeKey}
+                  disabled={isSavingYoutubeKey}
+                  className="px-5 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-lg transition-colors disabled:opacity-50"
+                >
+                  {isSavingYoutubeKey ? 'Salvando...' : 'Salvar YouTube API Key'}
+                </button>
+
+                {youtubeKeySaved && (
+                  <p className="text-green-400 text-sm">YouTube API Key salva com sucesso!</p>
+                )}
+              </div>
             </div>
           )}
         </div>
