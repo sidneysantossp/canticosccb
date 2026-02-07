@@ -1,8 +1,8 @@
 import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ArrowLeft, Save, Music, Upload, Clock } from 'lucide-react'
+import { ArrowLeft, Save, Music, Upload, Clock, Search } from 'lucide-react'
 import { Link } from 'react-router-dom'
-import { hinosApi, uploadApi, categoriasApi, type Categoria } from '@/lib/api-client'
+import { hinosApi, uploadApi, categoriasApi, compositoresApi, type Categoria } from '@/lib/api-client'
 import YoutubeImportForm from '@/components/admin/YoutubeImportForm'
 import ReactQuill from 'react-quill'
 import 'react-quill/dist/quill.snow.css'
@@ -23,6 +23,8 @@ const AdminYoutubeImport: React.FC = () => {
     titulo: '',
     categorias: [] as string[],
     compositor: '',
+    compositor_id: null as string | null,
+    participacao_especial: '',
     cover_url: '',
     audio_url: '',
     duracao: '',
@@ -32,6 +34,13 @@ const AdminYoutubeImport: React.FC = () => {
   })
 
   const [youtubeMetadata, setYoutubeMetadata] = useState<YoutubeMetadata | null>(null)
+
+  // Autocomplete compositor
+  const [compositorSearch, setCompositorSearch] = useState('')
+  const [compositorResults, setCompositorResults] = useState<any[]>([])
+  const [showCompositorDropdown, setShowCompositorDropdown] = useState(false)
+  const [searchingCompositor, setSearchingCompositor] = useState(false)
+  const compositorDropdownRef = React.useRef<HTMLDivElement>(null)
   const [coverFile, setCoverFile] = useState<File | null>(null)
   const [audioFile, setAudioFile] = useState<File | null>(null)
   const [coverPreview, setCoverPreview] = useState('')
@@ -63,6 +72,49 @@ const AdminYoutubeImport: React.FC = () => {
   React.useEffect(() => {
     loadCategories()
   }, [])
+
+  // Fechar dropdown compositor ao clicar fora
+  React.useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (compositorDropdownRef.current && !compositorDropdownRef.current.contains(e.target as Node)) {
+        setShowCompositorDropdown(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
+
+  // Buscar compositores com debounce
+  React.useEffect(() => {
+    if (!compositorSearch || compositorSearch.length < 2) {
+      setCompositorResults([])
+      return
+    }
+    const timer = setTimeout(async () => {
+      setSearchingCompositor(true)
+      try {
+        const res = await compositoresApi.list({ search: compositorSearch, limit: 10 })
+        const list = res.data?.compositores || []
+        setCompositorResults(list)
+        setShowCompositorDropdown(list.length > 0)
+      } catch {
+        setCompositorResults([])
+      } finally {
+        setSearchingCompositor(false)
+      }
+    }, 300)
+    return () => clearTimeout(timer)
+  }, [compositorSearch])
+
+  const selectCompositor = (comp: any) => {
+    setFormData(prev => ({
+      ...prev,
+      compositor: comp.name || comp.nome || '',
+      compositor_id: String(comp.id),
+    }))
+    setCompositorSearch(comp.name || comp.nome || '')
+    setShowCompositorDropdown(false)
+  }
 
   const loadCategories = async () => {
     try {
@@ -201,6 +253,8 @@ const AdminYoutubeImport: React.FC = () => {
       }
       if (formData.numero) hinoData.numero = formData.numero
       if (formData.compositor?.trim()) hinoData.compositor_nome = formData.compositor.trim()
+      if (formData.compositor_id) hinoData.compositor_id = formData.compositor_id
+      if (formData.participacao_especial?.trim()) hinoData.participacao_especial = formData.participacao_especial.trim()
       if (coverUrl) hinoData.cover_url = coverUrl
       if (audioUrl) hinoData.audio_url = audioUrl
       if (formData.duracao) hinoData.duracao = formData.duracao
@@ -347,15 +401,76 @@ const AdminYoutubeImport: React.FC = () => {
                 </p>
               </div>
 
-              <div>
-                <label className="block text-gray-400 text-sm font-semibold mb-2">Compositor</label>
-                <input
-                  type="text"
-                  value={formData.compositor}
-                  onChange={(e) => setFormData({ ...formData, compositor: e.target.value })}
-                  className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-green-600"
-                  placeholder="Nome do compositor"
-                />
+              <div className="space-y-4">
+                {/* Compositor com autocomplete */}
+                <div ref={compositorDropdownRef} className="relative">
+                  <label className="block text-gray-400 text-sm font-semibold mb-2">Compositor</label>
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
+                    <input
+                      type="text"
+                      value={compositorSearch}
+                      onChange={(e) => {
+                        setCompositorSearch(e.target.value)
+                        setFormData(prev => ({ ...prev, compositor: e.target.value, compositor_id: null }))
+                      }}
+                      onFocus={() => { if (compositorResults.length > 0) setShowCompositorDropdown(true) }}
+                      className="w-full bg-gray-800 border border-gray-700 rounded-lg pl-10 pr-4 py-3 text-white focus:outline-none focus:border-green-600"
+                      placeholder="Buscar compositor..."
+                      autoComplete="off"
+                    />
+                    {searchingCompositor && (
+                      <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-green-500"></div>
+                      </div>
+                    )}
+                  </div>
+                  {showCompositorDropdown && compositorResults.length > 0 && (
+                    <div className="absolute z-50 w-full mt-1 bg-gray-800 border border-gray-700 rounded-lg shadow-xl max-h-48 overflow-y-auto">
+                      {compositorResults.map((comp: any) => (
+                        <button
+                          key={comp.id}
+                          type="button"
+                          onClick={() => selectCompositor(comp)}
+                          className="w-full text-left px-4 py-2.5 hover:bg-gray-700 transition-colors flex items-center gap-3"
+                        >
+                          {comp.avatar_url || comp.photo_url ? (
+                            <img src={comp.avatar_url || comp.photo_url} alt="" className="w-8 h-8 rounded-full object-cover" />
+                          ) : (
+                            <div className="w-8 h-8 rounded-full bg-gray-600 flex items-center justify-center text-white text-xs font-bold">
+                              {(comp.name || comp.nome || '?')[0].toUpperCase()}
+                            </div>
+                          )}
+                          <div>
+                            <div className="text-white text-sm font-medium">{comp.name || comp.nome}</div>
+                            {comp.artistic_name && comp.artistic_name !== comp.name && (
+                              <div className="text-gray-400 text-xs">{comp.artistic_name}</div>
+                            )}
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                  {formData.compositor_id && (
+                    <p className="text-green-400 text-xs mt-1">Compositor vinculado: {formData.compositor}</p>
+                  )}
+                  {compositorSearch.length >= 2 && !searchingCompositor && compositorResults.length === 0 && (
+                    <p className="text-gray-500 text-xs mt-1">Nenhum compositor encontrado. O nome digitado será salvo.</p>
+                  )}
+                </div>
+
+                {/* Participação Especial */}
+                <div>
+                  <label className="block text-gray-400 text-sm font-semibold mb-2">Participação Especial</label>
+                  <input
+                    type="text"
+                    value={formData.participacao_especial}
+                    onChange={(e) => setFormData({ ...formData, participacao_especial: e.target.value })}
+                    className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-green-600"
+                    placeholder="Ex: Participação de João Silva"
+                  />
+                  <p className="text-gray-500 text-xs mt-1">Opcional. Informe participações especiais no hino.</p>
+                </div>
               </div>
             </div>
 
