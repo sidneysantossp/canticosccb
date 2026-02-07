@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { categoriasApi, compositorGerentesApi } from '@/lib/api-client';
 import { useAuth } from '@/contexts/AuthContext';
-import { validateDocument, checkEmailAvailability, registerComposer, uploadDocumentImage } from '@/lib/composerOnboardingApi';
+import { validateDocument, checkEmailAvailability, registerComposer, uploadDocumentImage, createComposerProfile } from '@/lib/composerOnboardingApi';
+import { supabase } from '@/lib/supabase-auth';
 import {
   Music,
   Users,
@@ -550,56 +551,89 @@ const ComposerOnboarding: React.FC = () => {
         documentImagePath = await uploadDocumentImage(formData.documentFront);
       }
 
-      // 3. Register composer via Supabase
-      console.log('🚀 Registrando compositor via Supabase...');
+      // 3. Criar conta via Supabase Auth (garante hash de senha correto)
+      console.log('🚀 Criando conta via Supabase Auth...');
+      const { data: authData, error: authError } = await supabase.auth.signUp({
+        email: formData.email,
+        password: formData.password,
+        options: {
+          data: { name: formData.name },
+          emailRedirectTo: `${window.location.origin}/composer/dashboard`,
+        },
+      });
 
-      const registerResult = await registerComposer({
+      if (authError) {
+        if (authError.message.includes('already registered')) {
+          throw new Error('Este email já está cadastrado. Tente fazer login.');
+        }
+        throw new Error(authError.message);
+      }
+
+      if (!authData.user) {
+        throw new Error('Erro ao criar conta. Tente novamente.');
+      }
+
+      const userId = authData.user.id;
+      console.log('✅ Conta criada no Supabase Auth:', userId);
+
+      // 4. Criar perfil na tabela users (como compositor)
+      console.log('📝 Criando perfil de usuário...');
+      try {
+        await supabase.from('users').upsert({
+          id: userId,
+          email: formData.email,
+          name: formData.name,
+          phone: formData.phone || null,
+          plan: 'free',
+          status: 'active',
+          is_admin: false,
+          is_composer: true,
+          is_blocked: false,
+        }, { onConflict: 'id' });
+      } catch (e) {
+        console.warn('⚠️ Erro ao criar perfil (pode já existir via trigger):', e);
+      }
+
+      // 5. Criar perfil de compositor
+      console.log('🎵 Criando perfil de compositor...');
+      const composerResult = await createComposerProfile({
         nome: formData.name,
         nome_artistico: formData.artisticName || formData.name,
         email: formData.email,
-        senha: formData.password,
         telefone: formData.phone,
         biografia: formData.bio,
         documento_tipo: formData.documentType,
         documento_numero: formData.documentNumber || '',
-        documento_imagem: documentImagePath || undefined
+        documento_imagem: documentImagePath || undefined,
       });
 
-      if (!registerResult.success) {
-        throw new Error(registerResult.error || 'Erro ao registrar compositor');
-      }
+      console.log('✅ Compositor registrado:', composerResult);
 
-      console.log('✅ Compositor registrado:', registerResult);
-
-      // 2. Enviar convite ao gerente (se configurado)
-      if (formData.hasManager && formData.managerData && registerResult.compositor_id) {
+      // 6. Enviar convite ao gerente (se configurado)
+      const compositorId = composerResult?.compositor_id;
+      if (formData.hasManager && formData.managerData && compositorId) {
         try {
           console.log('📧 Enviando convite ao gerente:', formData.managerData.email);
           const inviteResponse = await compositorGerentesApi.convidar({
-            compositor_id: registerResult.compositor_id,
+            compositor_id: compositorId,
             email_gerente: formData.managerData.email,
             notas: `Convite automático enviado durante o cadastro do compositor ${formData.artisticName}`
           });
-
-
           if (!inviteResponse.error) {
             console.log('✅ Convite enviado com sucesso ao gerente');
           }
         } catch (error) {
           console.error('⚠️ Erro ao enviar convite ao gerente:', error);
-          // Não bloquear o cadastro se o convite falhar
         }
       }
 
-      // 3. Fazer login automático
+      // 7. Fazer login automático (agora funciona porque Auth hash é correto)
       console.log('🔑 Fazendo login automático...');
       await signIn(formData.email, formData.password);
 
-      // 3. Aguardar um pouco para garantir que a autenticação foi processada
       await new Promise(resolve => setTimeout(resolve, 1000));
 
-      // 4. Redirecionar para o dashboard de compositor
-      // O ProtectedComposerRoute vai mostrar a mensagem "Perfil em Análise"
+      // 8. Redirecionar para o dashboard de compositor
       console.log('✅ Login concluído, redirecionando para dashboard de compositor...');
       navigate('/composer/dashboard');
 

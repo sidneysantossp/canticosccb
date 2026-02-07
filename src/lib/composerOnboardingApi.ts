@@ -129,6 +129,64 @@ export async function registerComposer(data: ComposerRegistrationData): Promise<
 }
 
 /**
+ * Creates only the composer profile (without auth user — that's handled by supabase.auth.signUp)
+ */
+export async function createComposerProfile(data: Omit<ComposerRegistrationData, 'senha'>): Promise<{ success: boolean; compositor_id?: number; error?: string }> {
+  if (!isSupabaseConfigured) {
+    return { success: false, error: 'Supabase not configured' };
+  }
+
+  try {
+    const { supabaseInsert } = await import('./supabaseRest');
+
+    const slug = (data.nome_artistico || data.nome)
+      .toLowerCase()
+      .replace(/[^a-z0-9\s-]/g, '')
+      .replace(/\s+/g, '-')
+      .replace(/-+/g, '-')
+      .trim();
+
+    const composerData: Record<string, any> = {
+      name: data.nome,
+      artistic_name: data.nome_artistico || data.nome,
+      email: data.email,
+      phone: data.telefone || null,
+      bio: data.biografia || null,
+      verified: false,
+      status: 'pending',
+      slug: slug || `composer-${Date.now()}`,
+      category: 'solo',
+    };
+
+    const result = await supabaseInsert<any>('composers', composerData);
+    const compositorId = result?.id || (Array.isArray(result) ? result[0]?.id : null);
+
+    // Save document if provided
+    if (data.documento_tipo && data.documento_numero && compositorId) {
+      try {
+        await supabaseInsert('composer_documents', {
+          composer_id: compositorId,
+          document_type: data.documento_tipo,
+          document_number: data.documento_numero,
+          document_image: data.documento_imagem || null,
+          status: 'pending',
+        });
+      } catch (docErr) {
+        console.warn('[createComposerProfile] Error saving document (table may not exist):', docErr);
+      }
+    }
+
+    return {
+      success: true,
+      compositor_id: compositorId,
+    };
+  } catch (error: any) {
+    console.error('[createComposerProfile] Error:', error);
+    return { success: false, error: error.message || 'Erro ao criar perfil de compositor' };
+  }
+}
+
+/**
  * Uploads a document image to Supabase Storage
  */
 export async function uploadDocumentImage(file: File): Promise<string | null> {
