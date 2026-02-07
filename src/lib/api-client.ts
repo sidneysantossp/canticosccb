@@ -126,6 +126,7 @@ export const hinosApi = {
       if (data.letra) hinoData.letra = data.letra;
       if (data.ativo !== undefined) hinoData.ativo = data.ativo;
       if (data.youtube_source) hinoData.youtube_source = data.youtube_source;
+      if (data.participacao_especial) hinoData.participacao_especial = data.participacao_especial;
       
       const result = await supabaseInsert('hinos', hinoData);
       
@@ -177,6 +178,7 @@ export const hinosApi = {
       if (data.letra !== undefined) updateData.letra = data.letra;
       if (data.ativo !== undefined) updateData.ativo = data.ativo;
       if (data.youtube_source) updateData.youtube_source = data.youtube_source;
+      if (data.participacao_especial !== undefined) updateData.participacao_especial = data.participacao_especial;
       
       const result = await supabaseUpdate('hinos', { id: `eq.${id}` }, updateData);
       
