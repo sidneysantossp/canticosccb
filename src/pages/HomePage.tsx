@@ -299,7 +299,11 @@ const HomePage: React.FC = () => {
       number: hymn.number,
       title: hymn.title,
       cover: hymn.cover_url || '',
-      subtitle: hymn.composer_name || 'Hino Cantado'
+      subtitle: hymn.composer_name || 'Hino Cantado',
+      audioUrl: hymn.youtube_source ? '' : (hymn.audio_url || ''),
+      youtubeSource: hymn.youtube_source || undefined,
+      artist: hymn.composer_name || 'Hino Cantado',
+      coverUrl: hymn.cover_url || '',
     }));
   const hinosCantadosFinal = hinosCantados.filter(h => !!h.cover && h.cover.trim() !== '');
   
@@ -317,7 +321,11 @@ const HomePage: React.FC = () => {
       number: hymn.number,
       title: hymn.title,
       cover: hymn.cover_url || '',
-      subtitle: hymn.composer_name || 'Hino Tocado'
+      subtitle: hymn.composer_name || 'Hino Tocado',
+      audioUrl: hymn.youtube_source ? '' : (hymn.audio_url || ''),
+      youtubeSource: hymn.youtube_source || undefined,
+      artist: hymn.composer_name || 'Hino Tocado',
+      coverUrl: hymn.cover_url || '',
     }));
   const hinosTocadosFinal = hinosTocados.filter(h => !!h.cover && h.cover.trim() !== '');
   
@@ -335,7 +343,11 @@ const HomePage: React.FC = () => {
       number: hymn.number,
       title: hymn.title,
       cover: hymn.cover_url || '',
-      subtitle: hymn.composer_name || 'Hino Avulso'
+      subtitle: hymn.composer_name || 'Hino Avulso',
+      audioUrl: hymn.youtube_source ? '' : (hymn.audio_url || ''),
+      youtubeSource: hymn.youtube_source || undefined,
+      artist: hymn.composer_name || 'Hino Avulso',
+      coverUrl: hymn.cover_url || '',
     }));
   const hinosAvulsosFinal = hinosAvulsos.filter(h => !!h.cover && h.cover.trim() !== '');
   
@@ -466,7 +478,7 @@ const HomePage: React.FC = () => {
           <PersonalizedSection
             title="Recomendado para você"
             items={personalized.mix}
-            onPlay={(t: RecTrack) => handlePlayTrack({ id: t.id, title: t.title, artist: t.composer_name, coverUrl: t.cover_url, audioUrl: t.audio_url })}
+            onPlay={(t: RecTrack) => handlePlayTrack({ id: t.id, title: t.title, artist: t.composer_name, coverUrl: t.cover_url, audioUrl: t.youtube_source ? '' : t.audio_url, youtubeSource: t.youtube_source || undefined })}
           />
         )}
         {(() => {
@@ -476,7 +488,7 @@ const HomePage: React.FC = () => {
           <PersonalizedSection
             title="Dos compositores que você segue"
             items={personalized.byFollowedComposers}
-            onPlay={(t: RecTrack) => handlePlayTrack({ id: t.id, title: t.title, artist: t.composer_name, coverUrl: t.cover_url, audioUrl: t.audio_url })}
+            onPlay={(t: RecTrack) => handlePlayTrack({ id: t.id, title: t.title, artist: t.composer_name, coverUrl: t.cover_url, audioUrl: t.youtube_source ? '' : t.audio_url, youtubeSource: t.youtube_source || undefined })}
           />
         )}
 

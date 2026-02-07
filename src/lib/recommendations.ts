@@ -8,6 +8,7 @@ export interface RecTrack {
   audio_url: string;
   category?: string;
   reason?: string;
+  youtube_source?: string;
 }
 
 export interface PersonalizedData {
@@ -24,6 +25,7 @@ const toRecTrack = (h: any, reason?: string): RecTrack => ({
   audio_url: String(h.audio_url || ''),
   category: String(h.categoria || h.category || ''),
   reason,
+  youtube_source: h.youtube_source || undefined,
 });
 
 export async function getPersonalizedHomeData(_userId: string): Promise<PersonalizedData> {

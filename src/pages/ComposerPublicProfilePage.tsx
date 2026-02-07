@@ -134,7 +134,7 @@ export default function ComposerPublicProfilePage() {
         const hymnRows = await supabaseFetch<any>('hinos', {
           compositor_id: `eq.${composerId}`,
           ativo: 'eq.true',
-          select: 'id,titulo,duracao,plays,cover_url,audio_url,numero,letra,created_at',
+          select: 'id,titulo,duracao,plays,cover_url,audio_url,numero,letra,created_at,youtube_source',
           limit: '1000'
         });
 
@@ -155,6 +155,7 @@ export default function ComposerPublicProfilePage() {
             number: h.numero,
             lyrics: h.letra,
             created_at: h.created_at,
+            youtube_source: h.youtube_source || undefined,
           };
         });
         setSongs(mapped);
@@ -457,6 +458,7 @@ export default function ComposerPublicProfilePage() {
       ? buildAlbumCoverUrl({ id: String(song.id), cover_url: song.cover_url })
       : `https://ui-avatars.com/api/?name=${encodeURIComponent(song.title)}&background=1f2937&color=ffffff`;
 
+    const ytSrc = (song as any).youtube_source || undefined;
     play({
       id: song.id,
       title: song.title,
@@ -464,12 +466,13 @@ export default function ComposerPublicProfilePage() {
       category: 'Hino',
       artist: composer?.name || 'Compositor',
       duration: formatDuration(song.duration),
-      audioUrl,
+      audioUrl: ytSrc ? '' : audioUrl,
       coverUrl: coverUrlResolved,
       lyrics: song.lyrics,
       isLiked: false,
-      createdAt: song.created_at
-    });
+      createdAt: song.created_at,
+      youtubeSource: ytSrc,
+    } as any);
 
     console.log('🎵 Tocando:', song.title, 'Audio URL:', audioUrl);
     openFullScreen();

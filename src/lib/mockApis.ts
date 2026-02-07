@@ -109,7 +109,7 @@ export const advancedSearch = async (params: { query: string; type?: string; lim
       
       const { data: hymns, error: hymnsError } = await supabase
         .from('hinos')
-        .select('id, numero, titulo, compositor_nome, categoria, cover_url, audio_url')
+        .select('id, numero, titulo, compositor_nome, categoria, cover_url, audio_url, youtube_source')
         .or(`titulo.ilike.${searchTerm},compositor_nome.ilike.${searchTerm}`)
         .limit(limit);
 
@@ -127,7 +127,8 @@ export const advancedSearch = async (params: { query: string; type?: string; lim
           composer_name: h.compositor_nome,
           category_name: h.categoria,
           cover_url: h.cover_url,
-          audio_url: h.audio_url
+          audio_url: h.audio_url,
+          youtube_source: h.youtube_source || undefined
         }));
       }
     }

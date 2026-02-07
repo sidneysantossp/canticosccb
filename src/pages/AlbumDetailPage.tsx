@@ -139,12 +139,13 @@ const AlbumDetailPage: React.FC = () => {
         artist: h.compositor || artistName,
         duration: toMMSS(h.duracao),
         coverUrl: albumRaw.cover_url || h.cover_url || 'https://picsum.photos/400/400',
-        audioUrl: h.audio_url || '',
+        audioUrl: h.youtube_source ? '' : (h.audio_url || ''),
         plays: 0,
         isLiked: false,
         createdAt: h.created_at || albumRaw.created_at,
         category: 'Cantados',
-        lyrics: h.letra || h.lyrics || ''
+        lyrics: h.letra || h.lyrics || '',
+        youtubeSource: h.youtube_source || undefined,
       }));
 
       const totalDuration = sumDurations(tracks.map(t => t.duration));

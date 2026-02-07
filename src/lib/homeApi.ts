@@ -41,6 +41,7 @@ export interface HomeHymn {
   audio_url?: string;
   duration?: string;
   created_at?: string;
+  youtube_source?: string;
 }
 
 export interface HomeAlbum {
@@ -100,6 +101,7 @@ type SupabaseHymnRow = {
   audio_url?: string;
   duracao?: string;
   created_at?: string;
+  youtube_source?: string;
 };
 
 type SupabaseComposerRow = {
@@ -152,6 +154,7 @@ const mapSupabaseHymn = (row: SupabaseHymnRow): HomeHymn => ({
   audio_url: row.audio_url ?? '',
   duration: row.duracao ?? '00:00',
   created_at: row.created_at ?? new Date().toISOString(),
+  youtube_source: row.youtube_source || undefined,
 });
 
 const mapSupabaseComposer = (row: SupabaseComposerRow): HomeComposer => {
@@ -224,7 +227,7 @@ async function getHomePageDataFromSupabase(): Promise<HomePageData> {
     order: 'nome.asc',
   });
   const hymnRows = supabaseFetch<SupabaseHymnRow>('hinos', {
-    select: 'id,numero,titulo,compositor_nome,categoria,cover_url,audio_url,duracao,created_at',
+    select: 'id,numero,titulo,compositor_nome,categoria,cover_url,audio_url,duracao,created_at,youtube_source',
     ativo: 'eq.true',
     order: 'created_at.desc',
     limit: '60',
@@ -317,6 +320,7 @@ const mapHymn = (hymn: any, fallbackId: string, index: number): HomeHymn => {
     audio_url: hymn.audio_url ?? hymn.audioUrl ?? '',
     duration: hymn.duration ?? '4:00',
     created_at: hymn.created_at ?? hymn.createdAt ?? new Date().toISOString(),
+    youtube_source: hymn.youtube_source || undefined,
   };
 };
 
@@ -429,19 +433,19 @@ export async function getHomePageData(): Promise<HomePageData> {
         supabaseFetch<any>('hinos', {
           categoria: 'ilike.%Hinos Cantados%',
           ativo: 'eq.true',
-          select: 'id,numero,titulo,compositor_nome,categoria,audio_url,cover_url',
+          select: 'id,numero,titulo,compositor_nome,categoria,audio_url,cover_url,youtube_source',
           limit: '12'
         }),
         supabaseFetch<any>('hinos', {
           categoria: 'ilike.%Hinos Tocados%',
           ativo: 'eq.true',
-          select: 'id,numero,titulo,compositor_nome,categoria,audio_url,cover_url',
+          select: 'id,numero,titulo,compositor_nome,categoria,audio_url,cover_url,youtube_source',
           limit: '12'
         }),
         supabaseFetch<any>('hinos', {
           categoria: 'ilike.%Hinos Avulsos%',
           ativo: 'eq.true',
-          select: 'id,numero,titulo,compositor_nome,categoria,audio_url,cover_url',
+          select: 'id,numero,titulo,compositor_nome,categoria,audio_url,cover_url,youtube_source',
           limit: '12'
         })
       ]);
@@ -492,6 +496,7 @@ export async function getHomePageData(): Promise<HomePageData> {
         audio_url: h.audio_url ?? h.audioUrl,
         duration: h.duracao ?? h.duration,
         created_at: h.created_at ?? h.createdAt,
+        youtube_source: h.youtube_source,
       },
       'cantado',
       index,
@@ -509,6 +514,7 @@ export async function getHomePageData(): Promise<HomePageData> {
         audio_url: h.audio_url ?? h.audioUrl,
         duration: h.duracao ?? h.duration,
         created_at: h.created_at ?? h.createdAt,
+        youtube_source: h.youtube_source,
       },
       'tocado',
       index,
@@ -526,6 +532,7 @@ export async function getHomePageData(): Promise<HomePageData> {
         audio_url: h.audio_url ?? h.audioUrl,
         duration: h.duracao ?? h.duration,
         created_at: h.created_at ?? h.createdAt,
+        youtube_source: h.youtube_source,
       },
       'avulso',
       index,

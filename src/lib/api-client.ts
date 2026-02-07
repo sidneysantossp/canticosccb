@@ -484,7 +484,7 @@ export const albunsApi = {
     try {
       const rows = await supabaseFetch<any>('album_hinos', {
         album_id: `eq.${albumId}`,
-        select: 'hino_id,ordem,hinos(id,titulo,numero,compositor,compositor_nome,categoria,duracao,audio_url,cover_url,letra,created_at)',
+        select: 'hino_id,ordem,hinos(id,titulo,numero,compositor,compositor_nome,categoria,duracao,audio_url,cover_url,letra,created_at,youtube_source)',
         order: 'ordem.asc',
       });
       const hinos = rows

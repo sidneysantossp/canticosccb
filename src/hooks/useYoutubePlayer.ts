@@ -7,7 +7,6 @@
 import { useEffect, useRef, useCallback } from 'react';
 import { usePlayerStore } from '@/stores/playerStore';
 
-// Tipo global para YouTube IFrame API
 declare global {
   interface Window {
     YT: any;
@@ -25,9 +24,7 @@ function loadYouTubeAPI(): Promise<void> {
       resolve();
       return;
     }
-
     ytApiCallbacks.push(resolve);
-
     if (ytApiLoading) return;
     ytApiLoading = true;
 
@@ -46,49 +43,55 @@ function loadYouTubeAPI(): Promise<void> {
   });
 }
 
+// ID único para o container do player
+const YT_CONTAINER_ID = 'yt-hidden-player-wrap';
+const YT_PLAYER_ID = 'yt-hidden-player';
+
 export const useYoutubePlayer = () => {
   const playerRef = useRef<any>(null);
-  const containerRef = useRef<HTMLDivElement | null>(null);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const currentVideoIdRef = useRef<string | null>(null);
-  const isActiveRef = useRef(false);
+  const seekLockRef = useRef(false);
 
-  const {
-    currentTrack,
-    isPlaying,
-    volume,
-    currentTime,
-    setCurrentTime,
-    setDuration,
-  } = usePlayerStore();
+  // Seletores Zustand individuais para minimizar re-renders
+  const currentTrack = usePlayerStore((s) => s.currentTrack);
+  const isPlaying = usePlayerStore((s) => s.isPlaying);
+  const volume = usePlayerStore((s) => s.volume);
 
-  // Detectar se a faixa atual usa YouTube
   const youtubeSource = (currentTrack as any)?.youtubeSource || null;
 
-  // Criar container oculto para o player
-  useEffect(() => {
-    if (!containerRef.current) {
-      const div = document.createElement('div');
-      div.id = 'yt-hidden-player-container';
-      div.style.cssText = 'position:fixed;top:-9999px;left:-9999px;width:1px;height:1px;opacity:0;pointer-events:none;overflow:hidden;';
-      document.body.appendChild(div);
-
-      const inner = document.createElement('div');
-      inner.id = 'yt-hidden-player';
-      div.appendChild(inner);
-
-      containerRef.current = div;
+  // Garantir container no DOM (uma vez, fora do ciclo de vida do React)
+  const ensureContainer = useCallback(() => {
+    let wrap = document.getElementById(YT_CONTAINER_ID);
+    if (!wrap) {
+      wrap = document.createElement('div');
+      wrap.id = YT_CONTAINER_ID;
+      // Pequeno, fora da tela, mas tecnicamente no DOM
+      wrap.style.cssText =
+        'position:fixed;bottom:0;right:0;width:2px;height:2px;overflow:hidden;opacity:0.01;pointer-events:none;z-index:-1;';
+      document.body.appendChild(wrap);
     }
-
-    return () => {
-      if (containerRef.current) {
-        containerRef.current.remove();
-        containerRef.current = null;
-      }
-    };
+    // Garantir div interna do player
+    let inner = document.getElementById(YT_PLAYER_ID);
+    if (!inner) {
+      inner = document.createElement('div');
+      inner.id = YT_PLAYER_ID;
+      wrap.appendChild(inner);
+    }
+    return wrap;
   }, []);
 
-  // Limpar intervalo de tracking
+  // Recriar a div interna do player (necessário ao trocar vídeo)
+  const recreatePlayerDiv = useCallback(() => {
+    const wrap = document.getElementById(YT_CONTAINER_ID);
+    if (!wrap) return;
+    const old = document.getElementById(YT_PLAYER_ID);
+    if (old) old.remove();
+    const inner = document.createElement('div');
+    inner.id = YT_PLAYER_ID;
+    wrap.appendChild(inner);
+  }, []);
+
   const clearTrackingInterval = useCallback(() => {
     if (intervalRef.current) {
       clearInterval(intervalRef.current);
@@ -96,115 +99,135 @@ export const useYoutubePlayer = () => {
     }
   }, []);
 
-  // Iniciar tracking de tempo
   const startTrackingInterval = useCallback(() => {
     clearTrackingInterval();
     intervalRef.current = setInterval(() => {
-      if (playerRef.current?.getCurrentTime) {
-        const time = playerRef.current.getCurrentTime();
+      const p = playerRef.current;
+      if (!p?.getCurrentTime) return;
+      try {
+        const time = p.getCurrentTime();
         if (typeof time === 'number' && !isNaN(time)) {
-          setCurrentTime(time);
+          seekLockRef.current = true;
+          usePlayerStore.getState().setCurrentTime(time);
+          // Liberar lock após 100ms para não bloquear seek manual
+          setTimeout(() => { seekLockRef.current = false; }, 100);
         }
-      }
-    }, 250);
-  }, [clearTrackingInterval, setCurrentTime]);
+      } catch {}
+    }, 500);
+  }, [clearTrackingInterval]);
 
-  // Carregar e reproduzir vídeo YouTube
+  // ===== Efeito principal: carregar/destruir player YouTube =====
   useEffect(() => {
     if (!youtubeSource) {
-      // Se não é YouTube, destruir player e limpar
+      // Não é YouTube: limpar tudo
       if (playerRef.current) {
+        console.log('[YT-Player] Destruindo player (faixa sem YouTube)');
         try { playerRef.current.destroy(); } catch {}
         playerRef.current = null;
       }
       clearTrackingInterval();
       currentVideoIdRef.current = null;
-      isActiveRef.current = false;
       return;
     }
 
-    // Se é o mesmo vídeo, não recriar
+    // Mesmo vídeo já carregado: não recriar
     if (currentVideoIdRef.current === youtubeSource && playerRef.current) {
-      isActiveRef.current = true;
+      console.log('[YT-Player] Mesmo vídeo, reutilizando player');
       return;
     }
 
-    isActiveRef.current = true;
+    console.log('[YT-Player] Iniciando player para videoId:', youtubeSource);
     currentVideoIdRef.current = youtubeSource;
 
     const initPlayer = async () => {
-      await loadYouTubeAPI();
+      try {
+        await loadYouTubeAPI();
+        console.log('[YT-Player] YouTube API carregada');
+      } catch (err) {
+        console.error('[YT-Player] Erro ao carregar YouTube API:', err);
+        return;
+      }
 
-      // Destruir player anterior se existir
+      // Destruir player anterior
       if (playerRef.current) {
         try { playerRef.current.destroy(); } catch {}
         playerRef.current = null;
       }
 
-      // Recriar div interna
-      const container = containerRef.current;
-      if (container) {
-        const existing = container.querySelector('#yt-hidden-player');
-        if (existing) existing.remove();
-        const inner = document.createElement('div');
-        inner.id = 'yt-hidden-player';
-        container.appendChild(inner);
-      }
+      ensureContainer();
+      recreatePlayerDiv();
 
-      playerRef.current = new window.YT.Player('yt-hidden-player', {
-        height: '1',
-        width: '1',
-        videoId: youtubeSource,
-        playerVars: {
-          autoplay: 1,
-          controls: 0,
-          disablekb: 1,
-          fs: 0,
-          iv_load_policy: 3,
-          modestbranding: 1,
-          rel: 0,
-          showinfo: 0,
-          origin: window.location.origin,
-        },
-        events: {
-          onReady: (event: any) => {
-            const player = event.target;
-            // Obter duração
-            const dur = player.getDuration();
-            if (dur && !isNaN(dur)) {
-              setDuration(dur);
-            }
-            // Definir volume
-            player.setVolume(volume * 100);
-            // Iniciar reprodução
-            if (usePlayerStore.getState().isPlaying) {
-              player.playVideo();
-            }
-            // Iniciar tracking
-            startTrackingInterval();
+      const vol = usePlayerStore.getState().volume;
+
+      console.log('[YT-Player] Criando YT.Player...');
+      try {
+        playerRef.current = new window.YT.Player(YT_PLAYER_ID, {
+          height: '1',
+          width: '1',
+          videoId: youtubeSource,
+          playerVars: {
+            autoplay: 1,
+            controls: 0,
+            disablekb: 1,
+            fs: 0,
+            iv_load_policy: 3,
+            modestbranding: 1,
+            rel: 0,
+            showinfo: 0,
+            origin: window.location.origin,
           },
-          onStateChange: (event: any) => {
-            const state = event.data;
-            // YT.PlayerState: ENDED=0, PLAYING=1, PAUSED=2, BUFFERING=3, CUED=5
-            if (state === 0) {
-              // Vídeo terminou
-              clearTrackingInterval();
-              usePlayerStore.getState().playNext();
-            } else if (state === 1) {
-              // Reproduzindo - atualizar duração se necessário
-              const dur = event.target.getDuration();
+          events: {
+            onReady: (event: any) => {
+              console.log('[YT-Player] Player pronto!');
+              const p = event.target;
+
+              const dur = p.getDuration();
               if (dur && !isNaN(dur) && dur > 0) {
-                setDuration(dur);
+                usePlayerStore.getState().setDuration(dur);
               }
+
+              p.setVolume(vol * 100);
+
+              if (usePlayerStore.getState().isPlaying) {
+                console.log('[YT-Player] Iniciando reprodução...');
+                p.playVideo();
+              }
+
               startTrackingInterval();
-            }
+            },
+            onStateChange: (event: any) => {
+              const state = event.data;
+              const stateNames: Record<number, string> = {
+                [-1]: 'UNSTARTED', 0: 'ENDED', 1: 'PLAYING',
+                2: 'PAUSED', 3: 'BUFFERING', 5: 'CUED'
+              };
+              console.log('[YT-Player] Estado:', stateNames[state] || state);
+
+              if (state === 0) {
+                clearTrackingInterval();
+                usePlayerStore.getState().playNext();
+              } else if (state === 1) {
+                const dur = event.target.getDuration();
+                if (dur && !isNaN(dur) && dur > 0) {
+                  usePlayerStore.getState().setDuration(dur);
+                }
+                startTrackingInterval();
+              }
+            },
+            onError: (event: any) => {
+              const errorCodes: Record<number, string> = {
+                2: 'ID inválido', 5: 'Conteúdo HTML5 erro',
+                100: 'Vídeo não encontrado', 101: 'Reprodução bloqueada',
+                150: 'Reprodução bloqueada (101)',
+              };
+              console.error('[YT-Player] ERRO:', errorCodes[event.data] || event.data);
+              clearTrackingInterval();
+            },
           },
-          onError: (event: any) => {
-            console.warn('YouTube player error:', event.data);
-            clearTrackingInterval();
-          },
-        },
-      });
+        });
+      } catch (err) {
+        console.error('[YT-Player] Erro ao criar player:', err);
+      }
     };
 
     initPlayer();
@@ -212,11 +235,14 @@ export const useYoutubePlayer = () => {
     return () => {
       clearTrackingInterval();
     };
-  }, [youtubeSource, clearTrackingInterval, startTrackingInterval, setDuration, volume]);
+    // NÃO incluir volume aqui - volume é controlado por efeito separado
+  }, [youtubeSource, clearTrackingInterval, startTrackingInterval, ensureContainer, recreatePlayerDiv]);
 
-  // Controlar play/pause
+  // ===== Play/Pause =====
   useEffect(() => {
-    if (!isActiveRef.current || !playerRef.current?.getPlayerState) return;
+    if (!currentVideoIdRef.current || !playerRef.current) return;
+    // Verificar se player está pronto
+    if (typeof playerRef.current.getPlayerState !== 'function') return;
 
     try {
       if (isPlaying) {
@@ -229,27 +255,47 @@ export const useYoutubePlayer = () => {
     } catch {}
   }, [isPlaying, startTrackingInterval, clearTrackingInterval]);
 
-  // Controlar volume
+  // ===== Volume =====
   useEffect(() => {
-    if (!isActiveRef.current || !playerRef.current?.setVolume) return;
+    if (!currentVideoIdRef.current || !playerRef.current?.setVolume) return;
     try {
       playerRef.current.setVolume(volume * 100);
     } catch {}
   }, [volume]);
 
-  // Controlar seek (posição)
+  // ===== Seek manual (via barra de progresso) =====
   useEffect(() => {
-    if (!isActiveRef.current || !playerRef.current?.seekTo) return;
-    try {
-      const ytTime = playerRef.current.getCurrentTime();
-      if (typeof ytTime === 'number' && Math.abs(ytTime - currentTime) > 2) {
-        playerRef.current.seekTo(currentTime, true);
-      }
-    } catch {}
-  }, [currentTime]);
+    let prevTime = usePlayerStore.getState().currentTime;
+    const unsub = usePlayerStore.subscribe((state) => {
+      const newTime = state.currentTime;
+      if (newTime === prevTime) return;
+      prevTime = newTime;
+      // Se o lock está ativo, foi atualização do tracking interval, ignorar
+      if (seekLockRef.current) return;
+      if (!currentVideoIdRef.current || !playerRef.current?.seekTo) return;
+      try {
+        const ytTime = playerRef.current.getCurrentTime();
+        if (typeof ytTime === 'number' && Math.abs(ytTime - newTime) > 2) {
+          console.log('[YT-Player] Seek manual para:', newTime);
+          playerRef.current.seekTo(newTime, true);
+        }
+      } catch {}
+    });
+    return unsub;
+  }, []);
 
-  return {
-    isYoutubeActive: isActiveRef.current && !!youtubeSource,
-    youtubeSource,
-  };
+  // Cleanup ao desmontar
+  useEffect(() => {
+    return () => {
+      clearTrackingInterval();
+      if (playerRef.current) {
+        try { playerRef.current.destroy(); } catch {}
+        playerRef.current = null;
+      }
+      const wrap = document.getElementById(YT_CONTAINER_ID);
+      if (wrap) wrap.remove();
+    };
+  }, [clearTrackingInterval]);
+
+  return { youtubeSource };
 };

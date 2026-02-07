@@ -445,9 +445,9 @@ const AdminYoutubeImport: React.FC = () => {
                     className="hidden"
                   />
                 </label>
-                {youtubeMetadata && (
-                  <p className="text-yellow-400 text-xs mt-1">
-                    ⚠️ O áudio do YouTube será processado automaticamente (função em desenvolvimento)
+                {youtubeMetadata && !audioFile && (
+                  <p className="text-green-400 text-xs mt-1">
+                    ✓ O áudio será reproduzido diretamente do YouTube (player oculto). Upload de arquivo é opcional.
                   </p>
                 )}
               </div>
