@@ -160,15 +160,20 @@ export const deleteComposer = async (id: string): Promise<{ success: boolean }> 
     // 2. Deletar registro do compositor
     await supabaseDelete('composers', { id: `eq.${id}` });
 
-    // 3. Desativar o usuário associado
+    // 3. Desativar o usuário associado (via RPC com SECURITY DEFINER para bypass de RLS)
     if (composerEmail) {
       try {
         const { supabase } = await import('@/lib/supabase-auth');
-        await supabase
-          .from('users')
-          .update({ is_composer: false, is_blocked: true, status: 'deleted' })
-          .eq('email', composerEmail);
-        console.log('✅ [composersAdminApi] Associated user deactivated:', composerEmail);
+        const { data: rpcResult, error: rpcError } = await supabase.rpc('admin_deactivate_user_by_email', {
+          p_email: composerEmail,
+        });
+        if (rpcError) {
+          console.warn('⚠️ [composersAdminApi] RPC deactivate failed:', rpcError.message);
+        } else if (rpcResult && !rpcResult.success) {
+          console.warn('⚠️ [composersAdminApi] Deactivate failed:', rpcResult.error);
+        } else {
+          console.log('✅ [composersAdminApi] Associated user deactivated via RPC:', composerEmail);
+        }
       } catch (e) {
         console.warn('⚠️ [composersAdminApi] Error deactivating user:', e);
       }

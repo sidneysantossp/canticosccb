@@ -428,22 +428,19 @@ export const compositoresApi = {
       await supabaseDelete('composers', { id: `eq.${id}` });
       console.log('✅ [compositoresApi.delete] Composer record deleted');
 
-      // 3. Desativar o usuário associado (via Supabase JS client com sessão do admin)
+      // 3. Desativar o usuário associado (via RPC com SECURITY DEFINER para bypass de RLS)
       if (composerEmail) {
         try {
-          const { error: updateError } = await supabase
-            .from('users')
-            .update({
-              is_composer: false,
-              is_blocked: true,
-              status: 'deleted',
-            })
-            .eq('email', composerEmail);
+          const { data: rpcResult, error: rpcError } = await supabase.rpc('admin_deactivate_user_by_email', {
+            p_email: composerEmail,
+          });
 
-          if (updateError) {
-            console.warn('⚠️ [compositoresApi.delete] Failed to deactivate user:', updateError.message);
+          if (rpcError) {
+            console.warn('⚠️ [compositoresApi.delete] RPC deactivate failed:', rpcError.message);
+          } else if (rpcResult && !rpcResult.success) {
+            console.warn('⚠️ [compositoresApi.delete] Deactivate failed:', rpcResult.error);
           } else {
-            console.log('✅ [compositoresApi.delete] Associated user deactivated');
+            console.log('✅ [compositoresApi.delete] Associated user deactivated via RPC');
           }
         } catch (e) {
           console.warn('⚠️ [compositoresApi.delete] Error deactivating user:', e);
@@ -831,39 +828,23 @@ export const usuariosApi = {
   delete: async (id: string | number) => {
     const { supabase } = await import('./supabase-auth');
     try {
-      console.log('🗑️ [usuariosApi.delete] Attempting to delete user ID:', id);
+      console.log('🗑️ [usuariosApi.delete] Calling admin_delete_user RPC for ID:', id);
 
-      // Try hard delete via Supabase JS client (uses admin's auth session)
-      const { error: deleteError } = await supabase
-        .from('users')
-        .delete()
-        .eq('id', id);
+      const { data, error } = await supabase.rpc('admin_delete_user', {
+        p_target_user_id: id,
+      });
 
-      if (deleteError) {
-        console.warn('⚠️ [usuariosApi.delete] Hard delete failed:', deleteError.message, '— trying soft delete...');
+      console.log('🗑️ [usuariosApi.delete] RPC response:', data, error);
 
-        // Fallback: soft delete (mark as deleted + blocked)
-        const { error: updateError, data: updateData } = await supabase
-          .from('users')
-          .update({
-            status: 'deleted',
-            is_blocked: true,
-          })
-          .eq('id', id)
-          .select('id');
-
-        if (updateError) {
-          throw new Error(`Não foi possível excluir o usuário: ${updateError.message}`);
-        }
-        if (!updateData || updateData.length === 0) {
-          throw new Error('Usuário não encontrado ou sem permissão para excluir.');
-        }
-
-        console.log('✅ [usuariosApi.delete] Soft delete successful');
-        return { success: true, error: null };
+      if (error) {
+        throw new Error(error.message);
       }
 
-      console.log('✅ [usuariosApi.delete] Hard delete successful');
+      if (data && !data.success) {
+        throw new Error(data.error || 'Erro ao excluir usuário');
+      }
+
+      console.log('✅ [usuariosApi.delete] User deleted successfully via RPC');
       return { success: true, error: null };
     } catch (error: any) {
       console.error('❌ [usuariosApi.delete] Error:', error);
