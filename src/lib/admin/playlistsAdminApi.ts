@@ -31,156 +31,166 @@ export interface CreatePlaylistData {
 
 export type Playlist = EditorialPlaylist;
 
-// Mock database
-let mockPlaylists: EditorialPlaylist[] = [
-  {
-    id: '1',
-    title: 'Hinos de Adoração',
-    description: 'Os melhores hinos para momentos de adoração',
-    category: 'worship',
-    mood: 'Contemplativo',
-    curator_name: 'Equipe Editorial CCB',
-    cover_url: '',
-    is_featured: true,
-    is_active: true,
-    plays_count: 15420,
-    likes_count: 850,
-    followers_count: 1200,
-    items_count: 25,
-    created_at: new Date(Date.now() - 120 * 24 * 60 * 60 * 1000).toISOString(),
-    updated_at: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString()
-  },
-  {
-    id: '2',
-    title: 'Devocional Matinal',
-    description: 'Hinos para começar o dia com Deus',
-    category: 'devotional',
-    mood: 'Inspirador',
-    curator_name: 'Equipe Editorial CCB',
-    cover_url: '',
-    is_featured: true,
-    is_active: true,
-    plays_count: 8900,
-    likes_count: 520,
-    followers_count: 890,
-    items_count: 18,
-    created_at: new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString(),
-    updated_at: new Date(Date.now() - 15 * 24 * 60 * 60 * 1000).toISOString()
-  },
-  {
-    id: '3',
-    title: 'Hinos da Mocidade',
-    description: 'Seleção especial para os jovens da CCB',
-    category: 'youth',
-    mood: 'Energético',
-    curator_name: 'Equipe Editorial CCB',
-    cover_url: '',
-    is_featured: false,
-    is_active: true,
-    plays_count: 12350,
-    likes_count: 720,
-    followers_count: 1450,
-    items_count: 30,
-    created_at: new Date(Date.now() - 60 * 24 * 60 * 60 * 1000).toISOString(),
-    updated_at: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString()
-  },
-  {
-    id: '4',
-    title: 'Hinos Clássicos',
-    description: 'Os hinos mais tradicionais da congregação',
-    category: 'classic',
-    mood: 'Tradicional',
-    curator_name: 'Equipe Editorial CCB',
-    cover_url: '',
-    is_featured: false,
-    is_active: true,
-    plays_count: 20100,
-    likes_count: 1100,
-    followers_count: 2300,
-    items_count: 40,
-    created_at: new Date(Date.now() - 150 * 24 * 60 * 60 * 1000).toISOString(),
-    updated_at: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString()
-  },
-  {
-    id: '5',
-    title: 'Infantil - Louvorzinho',
-    description: 'Hinos para as crianças aprenderem',
-    category: 'children',
-    mood: 'Alegre',
-    curator_name: 'Equipe Editorial CCB',
-    cover_url: '',
-    is_featured: false,
-    is_active: false,
-    plays_count: 3200,
-    likes_count: 180,
-    followers_count: 420,
-    items_count: 15,
-    created_at: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(),
-    updated_at: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString()
-  }
-];
+// Mock data removed - using Supabase real data
 
 export const getAll = async (): Promise<EditorialPlaylist[]> => {
-  await new Promise(resolve => setTimeout(resolve, 500));
-  return [...mockPlaylists];
+  try {
+    const { supabaseFetch } = await import('@/lib/supabaseRest');
+    console.log('🔍 [playlistsAdminApi] Fetching playlists from Supabase...');
+    
+    const rows = await supabaseFetch<any>('playlists', {
+      select: '*',
+      order: 'created_at.desc'
+    });
+    
+    console.log(`✅ [playlistsAdminApi] Found ${rows.length} playlists`);
+    
+    // Map Supabase data to EditorialPlaylist interface
+    const playlists: EditorialPlaylist[] = rows.map(row => ({
+      id: String(row.id),
+      title: row.titulo || row.title || '',
+      description: row.descricao || row.description || '',
+      category: row.categoria || row.category || 'general',
+      mood: row.mood || undefined,
+      curator_name: row.curator_name || 'Equipe Editorial CCB',
+      cover_url: row.cover_url || row.imagem_url || '',
+      is_featured: row.is_featured || row.destaque || false,
+      is_active: row.is_active != null ? row.is_active : (row.ativo != null ? row.ativo === 1 : true),
+      plays_count: row.plays_count || row.total_plays || 0,
+      likes_count: row.likes_count || row.total_likes || 0,
+      followers_count: row.followers_count || row.total_followers || 0,
+      items_count: row.items_count || row.total_items || 0,
+      created_at: row.created_at || new Date().toISOString(),
+      updated_at: row.updated_at || row.created_at || new Date().toISOString()
+    }));
+    
+    return playlists;
+  } catch (error) {
+    console.error('❌ [playlistsAdminApi] Error fetching playlists:', error);
+    return [];
+  }
 };
 
 export const getAllPlaylists = getAll;
 
 export const getById = async (id: string): Promise<EditorialPlaylist | null> => {
-  await new Promise(resolve => setTimeout(resolve, 300));
-  return mockPlaylists.find(p => p.id === id) || null;
+  try {
+    const { supabaseFetch } = await import('@/lib/supabaseRest');
+    const rows = await supabaseFetch<any>('playlists', {
+      id: `eq.${id}`,
+      select: '*',
+      limit: '1'
+    });
+    
+    if (rows.length === 0) return null;
+    
+    const row = rows[0];
+    return {
+      id: String(row.id),
+      title: row.titulo || row.title || '',
+      description: row.descricao || row.description || '',
+      category: row.categoria || row.category || 'general',
+      mood: row.mood || undefined,
+      curator_name: row.curator_name || 'Equipe Editorial CCB',
+      cover_url: row.cover_url || row.imagem_url || '',
+      is_featured: row.is_featured || row.destaque || false,
+      is_active: row.is_active != null ? row.is_active : (row.ativo != null ? row.ativo === 1 : true),
+      plays_count: row.plays_count || row.total_plays || 0,
+      likes_count: row.likes_count || row.total_likes || 0,
+      followers_count: row.followers_count || row.total_followers || 0,
+      items_count: row.items_count || row.total_items || 0,
+      created_at: row.created_at || new Date().toISOString(),
+      updated_at: row.updated_at || row.created_at || new Date().toISOString()
+    };
+  } catch (error) {
+    console.error('❌ [playlistsAdminApi.getById] Error:', error);
+    return null;
+  }
 };
 
 export const create = async (data: CreatePlaylistData): Promise<{ success: boolean; playlist?: EditorialPlaylist }> => {
-  await new Promise(resolve => setTimeout(resolve, 500));
-  const newPlaylist: EditorialPlaylist = {
-    id: String(Date.now()),
-    title: data.title,
-    description: data.description || '',
-    category: data.category,
-    mood: data.mood,
-    curator_name: data.curator_name || 'Equipe Editorial CCB',
-    cover_url: data.cover_url || '',
-    is_featured: data.is_featured || false,
-    is_active: data.is_active !== false,
-    plays_count: 0,
-    likes_count: 0,
-    followers_count: 0,
-    items_count: 0,
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString()
-  };
-  mockPlaylists.unshift(newPlaylist);
-  return { success: true, playlist: newPlaylist };
+  try {
+    const { supabaseInsert } = await import('@/lib/supabaseRest');
+    
+    const insertData = {
+      titulo: data.title,
+      descricao: data.description || '',
+      categoria: data.category,
+      mood: data.mood,
+      curator_name: data.curator_name || 'Equipe Editorial CCB',
+      cover_url: data.cover_url || '',
+      is_featured: data.is_featured || false,
+      is_active: data.is_active !== false,
+      plays_count: 0,
+      likes_count: 0,
+      followers_count: 0,
+      items_count: 0
+    };
+    
+    const result = await supabaseInsert('playlists', insertData) as any;
+    
+    const newPlaylist: EditorialPlaylist = {
+      id: String(result.id || result[0]?.id),
+      title: data.title,
+      description: data.description || '',
+      category: data.category,
+      mood: data.mood,
+      curator_name: data.curator_name || 'Equipe Editorial CCB',
+      cover_url: data.cover_url || '',
+      is_featured: data.is_featured || false,
+      is_active: data.is_active !== false,
+      plays_count: 0,
+      likes_count: 0,
+      followers_count: 0,
+      items_count: 0,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    };
+    
+    return { success: true, playlist: newPlaylist };
+  } catch (error) {
+    console.error('❌ [playlistsAdminApi.create] Error:', error);
+    return { success: false };
+  }
 };
 
 export const createPlaylist = create;
 
 export const update = async (id: string, data: Partial<EditorialPlaylist>): Promise<{ success: boolean }> => {
-  await new Promise(resolve => setTimeout(resolve, 500));
-  const index = mockPlaylists.findIndex(p => p.id === id);
-  if (index !== -1) {
-    mockPlaylists[index] = {
-      ...mockPlaylists[index],
-      ...data,
-      updated_at: new Date().toISOString()
-    };
+  try {
+    const { supabaseUpdate } = await import('@/lib/supabaseRest');
+    
+    const updateData: any = {};
+    if (data.title !== undefined) updateData.titulo = data.title;
+    if (data.description !== undefined) updateData.descricao = data.description;
+    if (data.category !== undefined) updateData.categoria = data.category;
+    if (data.mood !== undefined) updateData.mood = data.mood;
+    if (data.curator_name !== undefined) updateData.curator_name = data.curator_name;
+    if (data.cover_url !== undefined) updateData.cover_url = data.cover_url;
+    if (data.is_featured !== undefined) updateData.is_featured = data.is_featured;
+    if (data.is_active !== undefined) updateData.is_active = data.is_active;
+    
+    updateData.updated_at = new Date().toISOString();
+    
+    await supabaseUpdate('playlists', { id: `eq.${id}` }, updateData);
     return { success: true };
+  } catch (error) {
+    console.error('❌ [playlistsAdminApi.update] Error:', error);
+    return { success: false };
   }
-  return { success: false };
 };
 
 export const updatePlaylist = update;
 
 export const deleteItem = async (id: string): Promise<{ success: boolean }> => {
-  await new Promise(resolve => setTimeout(resolve, 300));
-  const index = mockPlaylists.findIndex(p => p.id === id);
-  if (index !== -1) {
-    mockPlaylists.splice(index, 1);
+  try {
+    const { supabaseDelete } = await import('@/lib/supabaseRest');
+    await supabaseDelete('playlists', { id: `eq.${id}` });
     return { success: true };
+  } catch (error) {
+    console.error('❌ [playlistsAdminApi.deleteItem] Error:', error);
+    return { success: false };
   }
-  return { success: false };
 };
 
 export const deletePlaylist = deleteItem;

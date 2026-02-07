@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useAuth } from '@/contexts/AuthContextMock';
+import { useAuth } from '@/contexts/AuthContext';
 import { Clock, History as HistoryIcon, Trash2 } from 'lucide-react';
 import * as historyApi from '@/lib/historyApi';
 

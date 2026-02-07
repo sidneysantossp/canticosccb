@@ -9,6 +9,7 @@ import {
   BannerType,
   CreateBannerData
 } from '@/lib/admin/bannersAdminApi';
+import { getSupabaseStorageUrl } from '@/lib/supabaseRest';
 
 const BANNER_TYPES: { value: BannerType; label: string }[] = [
   { value: 'hero', label: 'Hero/Principal' },
@@ -75,24 +76,28 @@ const AdminBannerForm: React.FC = () => {
           gradient_overlay: banner.gradient_overlay || 'bg-gradient-to-br from-[#3b82f6]/80 to-[#8b5cf6]/80'
         });
         // Normalizar URL antiga pública /media/banners/ -> stream seguro
-        const normalizeUrl = (url: string) => {
-          if (!url) return '';
-          const lower = url.toLowerCase();
-          const fileName = url.split('/').pop() || '';
-          const origin = typeof window !== 'undefined' ? window.location.origin : '';
-          const isLocalhost = origin.includes('localhost');
-          const base = isLocalhost ? `${window.location.protocol}//localhost/1canticosccb` : origin;
-          const isOldPublic = lower.includes('/media/banners/');
-          const isRelativeStream = lower.startsWith('/api/stream.php');
-          if (isOldPublic && fileName) {
-            return `${base}/api/stream.php?type=banners&file=${encodeURIComponent(fileName)}`;
+        const resolveBannerUrl = (value: string) => {
+          if (!value) return '';
+          try {
+            if (/^https?:\/\//i.test(value)) {
+              const parsed = new URL(value, window.location.origin);
+              const file = parsed.searchParams.get('file');
+              const type = parsed.searchParams.get('type') || 'banners';
+              if (file) {
+                return getSupabaseStorageUrl(type, file);
+              }
+              return value;
+            }
+          } catch {
+            // ignore invalid URLs
           }
-          if (isRelativeStream) {
-            return `${base}${url.startsWith('/') ? '' : '/'}${url}`;
-          }
-          return url;
+
+          const sanitized = value.replace(/\\/g, '/').replace(/^\/+/, '');
+          const fileName = sanitized.split('/').pop() || sanitized;
+          if (!fileName) return value;
+          return getSupabaseStorageUrl('banners', fileName);
         };
-        const normalizedUrl = normalizeUrl(banner.image_url);
+        const normalizedUrl = resolveBannerUrl(banner.image_url);
         setImagePreview(normalizedUrl);
         const isVideo = /\.(mp4|webm|mov)(\?|#|$)/i.test(normalizedUrl) || normalizedUrl.includes('type=banners');
         setPreviewType(isVideo ? 'video' : 'image');

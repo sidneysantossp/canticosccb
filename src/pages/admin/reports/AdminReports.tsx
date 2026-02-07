@@ -1,18 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Flag, Search, CheckCircle, Eye, AlertTriangle, Music, User, MessageSquare, XCircle } from 'lucide-react';
-
-interface Report {
-  id: number;
-  type: 'song' | 'user' | 'comment';
-  title: string;
-  reporter: string;
-  reason: string;
-  status: 'open' | 'in_review' | 'resolved' | 'rejected';
-  priority: 'low' | 'medium' | 'high';
-  date: string;
-  description?: string;
-}
+import { getReports, updateReportStatus, type Report } from '@/lib/admin/reportsApi';
 
 const AdminReports: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
@@ -20,37 +9,45 @@ const AdminReports: React.FC = () => {
   const [filterType, setFilterType] = useState<string>('all');
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [reports, setReports] = useState<Report[]>([]);
 
-  // Mock API - Replace with real API calls
-  const allReports: Report[] = [
-    { id: 1, type: 'song', title: 'Hino 145 - Conteúdo Inadequado', reporter: 'João Silva', reason: 'Conteúdo Impróprio', status: 'open', priority: 'high', date: '2024-01-20', description: 'A letra do hino contém conteúdo que não condiz com os princípios da igreja' },
-    { id: 2, type: 'user', title: 'Usuário: Maria Santos', reporter: 'Pedro Costa', reason: 'Spam em comentários', status: 'in_review', priority: 'medium', date: '2024-01-19', description: 'Usuário postando links de promoção em vários hinos' },
-    { id: 3, type: 'comment', title: 'Comentário ofensivo em Hino 200', reporter: 'Ana Oliveira', reason: 'Linguagem Ofensiva', status: 'open', priority: 'high', date: '2024-01-21', description: 'Comentário com palavras de baixo calão e ofensas' },
-    { id: 4, type: 'song', title: 'Hino 89 - Qualidade de Áudio', reporter: 'Carlos Mendes', reason: 'Problema Técnico', status: 'resolved', priority: 'low', date: '2024-01-18', description: 'Áudio com ruídos e baixa qualidade' },
-    { id: 5, type: 'user', title: 'Usuário: Roberto Lima', reporter: 'Fernanda Costa', reason: 'Perfil Falso', status: 'open', priority: 'medium', date: '2024-01-22', description: 'Usuário se passando por compositor conhecido' },
-    { id: 6, type: 'comment', title: 'Comentário em Hino 345', reporter: 'Lucas Pereira', reason: 'Conteúdo Religioso Impróprio', status: 'rejected', priority: 'low', date: '2024-01-17', description: 'Comentário com interpretação divergente da doutrina' },
-    { id: 7, type: 'song', title: 'Hino 432 - Direitos Autorais', reporter: 'Paula Santos', reason: 'Violção de Copyright', status: 'in_review', priority: 'high', date: '2024-01-23', description: 'Hino pode estar violando direitos autorais de outra obra' },
-    { id: 8, type: 'user', title: 'Usuário: Marcos Rodrigues', reporter: 'Juliana Alves', reason: 'Assédio', status: 'open', priority: 'high', date: '2024-01-24', description: 'Usuário enviando mensagens inadequadas para outros membros' },
-  ];
-
-  const [reports, setReports] = useState<Report[]>(allReports);
+  const fetchReports = async () => {
+    setIsLoading(true);
+    try {
+      const data = await getReports({
+        status: filterStatus !== 'all' ? filterStatus : undefined,
+        type: filterType !== 'all' ? filterType : undefined
+      });
+      setReports(data);
+      setError(null);
+    } catch (err) {
+      console.error('Error loading reports:', err);
+      setError('Falha ao carregar denúncias.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   useEffect(() => {
-    // Simulate API loading
-    const timer = setTimeout(() => {
-      setIsLoading(false);
-    }, 500);
-    return () => clearTimeout(timer);
-  }, []);
+    fetchReports();
+  }, [filterStatus, filterType]);
 
-  const filteredReports = reports
-    .filter(r => filterStatus === 'all' || r.status === filterStatus)
-    .filter(r => filterType === 'all' || r.type === filterType)
-    .filter(r => 
-      r.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      r.reporter.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      r.reason.toLowerCase().includes(searchQuery.toLowerCase())
-    );
+  const handleStatusUpdate = async (id: number, newStatus: string) => {
+    try {
+      await updateReportStatus(id, newStatus);
+      // Refresh local state or re-fetch
+      setReports(prev => prev.map(r => r.id === id ? { ...r, status: newStatus as any } : r));
+    } catch (err) {
+      console.error('Error updating status:', err);
+      alert('Erro ao atualizar status');
+    }
+  };
+
+  const filteredReports = reports.filter(r =>
+    r.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    (r.reporter && r.reporter.toLowerCase().includes(searchQuery.toLowerCase())) ||
+    r.reason.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
   const getTypeIcon = (type: string) => {
     switch (type) {
@@ -77,8 +74,8 @@ const AdminReports: React.FC = () => {
     };
 
     return (
-      <span className={`px-2 py-1 rounded-lg text-xs font-semibold border ${styles[status as keyof typeof styles]}`}>
-        {labels[status as keyof typeof labels]}
+      <span className={`px-2 py-1 rounded-lg text-xs font-semibold border ${styles[status as keyof typeof styles] || styles.open}`}>
+        {labels[status as keyof typeof labels] || status}
       </span>
     );
   };
@@ -97,8 +94,8 @@ const AdminReports: React.FC = () => {
     };
 
     return (
-      <span className={`px-2 py-1 rounded-full text-xs font-semibold ${styles[priority as keyof typeof styles]}`}>
-        {labels[priority as keyof typeof labels]}
+      <span className={`px-2 py-1 rounded-full text-xs font-semibold ${styles[priority as keyof typeof styles] || styles.medium}`}>
+        {labels[priority as keyof typeof labels] || priority}
       </span>
     );
   };
@@ -121,7 +118,7 @@ const AdminReports: React.FC = () => {
           <h2 className="text-xl font-bold text-red-200 mb-2">Erro ao carregar denúncias</h2>
           <p className="text-red-300 mb-4">{error}</p>
           <button
-            onClick={() => window.location.reload()}
+            onClick={() => fetchReports()}
             className="btn-primary"
           >
             Tentar Novamente
@@ -143,7 +140,7 @@ const AdminReports: React.FC = () => {
         <h1 className="text-3xl font-bold text-white mb-2">Denúncias e Relatórios</h1>
         <p className="text-gray-400">Gerencie denúncias de conteúdo e usuários</p>
       </div>
-      
+
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <div className="bg-gray-900/50 border border-gray-800 rounded-xl p-4">
@@ -228,11 +225,10 @@ const AdminReports: React.FC = () => {
             <div key={report.id} className="bg-gray-900/50 border border-gray-800 rounded-xl p-6 hover:border-gray-700 transition-colors">
               <div className="flex items-start justify-between mb-4">
                 <div className="flex items-start gap-4 flex-1">
-                  <div className={`p-3 rounded-lg ${
-                    report.type === 'song' ? 'bg-yellow-500/20 text-yellow-400' :
-                    report.type === 'user' ? 'bg-blue-500/20 text-blue-400' :
-                    'bg-purple-500/20 text-purple-400'
-                  }`}>
+                  <div className={`p-3 rounded-lg ${report.type === 'song' ? 'bg-yellow-500/20 text-yellow-400' :
+                      report.type === 'user' ? 'bg-blue-500/20 text-blue-400' :
+                        'bg-purple-500/20 text-purple-400'
+                    }`}>
                     {getTypeIcon(report.type)}
                   </div>
                   <div className="flex-1">
@@ -248,28 +244,34 @@ const AdminReports: React.FC = () => {
                       <p className="text-gray-500 text-sm mb-3">{report.description}</p>
                     )}
                     <div className="flex items-center gap-4 text-xs text-gray-500">
-                      <span>👤 Denunciado por: <span className="text-gray-400">{report.reporter}</span></span>
+                      <span>👤 Denunciado por: <span className="text-gray-400">{report.reporter || 'Anônimo'}</span></span>
                       <span>📅 {new Date(report.date).toLocaleDateString('pt-BR')}</span>
                     </div>
                   </div>
                 </div>
               </div>
               <div className="flex gap-2">
-                <Link 
-                  to={`/admin/reports/${report.id}`} 
+                <Link
+                  to={`/admin/reports/${report.id}`}
                   className="flex items-center gap-2 px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-lg transition-colors"
                 >
                   <Eye className="w-4 h-4" />
                   Ver Detalhes
                 </Link>
                 {report.status === 'open' && (
-                  <button className="flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors">
+                  <button
+                    onClick={() => handleStatusUpdate(report.id, 'resolved')}
+                    className="flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors"
+                  >
                     <CheckCircle className="w-4 h-4" />
                     Resolver
                   </button>
                 )}
                 {(report.status === 'open' || report.status === 'in_review') && (
-                  <button className="flex items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors">
+                  <button
+                    onClick={() => handleStatusUpdate(report.id, 'rejected')}
+                    className="flex items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors"
+                  >
                     <XCircle className="w-4 h-4" />
                     Rejeitar
                   </button>

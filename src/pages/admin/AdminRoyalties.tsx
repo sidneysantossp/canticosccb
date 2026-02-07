@@ -16,49 +16,13 @@ const AdminRoyalties: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Simula carregamento inicial
-  React.useEffect(() => {
-    const timer = setTimeout(() => {
-      setIsLoading(false);
-    }, 500);
-    return () => clearTimeout(timer);
-  }, []);
+  const [royalties, setRoyalties] = useState<RoyaltyPayment[]>([]);
 
-  // Dados mockados
-  const royalties: RoyaltyPayment[] = [
-    {
-      id: '1',
-      composer: 'João Silva',
-      month: 'Janeiro 2025',
-      streams: 45230,
-      revenue: 1356.90,
-      status: 'paid'
-    },
-    {
-      id: '2',
-      composer: 'Maria Santos',
-      month: 'Janeiro 2025',
-      streams: 67890,
-      revenue: 2036.70,
-      status: 'paid'
-    },
-    {
-      id: '3',
-      composer: 'Pedro Costa',
-      month: 'Fevereiro 2025',
-      streams: 34120,
-      revenue: 1023.60,
-      status: 'processing'
-    },
-    {
-      id: '4',
-      composer: 'Ana Lima',
-      month: 'Fevereiro 2025',
-      streams: 12450,
-      revenue: 373.50,
-      status: 'pending'
-    }
-  ];
+  React.useEffect(() => {
+    // TODO: Integrar com tabela 'royalties' do Supabase quando disponível
+    setRoyalties([]);
+    setIsLoading(false);
+  }, []);
 
   const totalRevenue = royalties.reduce((sum, r) => sum + r.revenue, 0);
   const totalStreams = royalties.reduce((sum, r) => sum + r.streams, 0);

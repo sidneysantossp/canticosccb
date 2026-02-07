@@ -1,15 +1,75 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Users, Mic2, Music, Play } from 'lucide-react';
+import { supabaseFetch } from '@/lib/supabaseRest';
+
+interface DashboardStats {
+  totalUsers: number;
+  activeUsers: number;
+  totalComposers: number;
+  totalHymns: number;
+  totalPlays: number;
+}
 
 const AdminDashboardSimple: React.FC = () => {
+  const [stats, setStats] = useState<DashboardStats>({
+    totalUsers: 0,
+    activeUsers: 0,
+    totalComposers: 0,
+    totalHymns: 0,
+    totalPlays: 0
+  });
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    loadStats();
+  }, []);
+
+  const loadStats = async () => {
+    try {
+      setIsLoading(true);
+      console.log('🔍 [Dashboard] Loading stats...');
+
+      // Buscar usuários
+      const users = await supabaseFetch<any>('usuarios', { select: 'id,ativo,tipo' });
+      const totalUsers = users.length;
+      const activeUsers = users.filter((u: any) => u.ativo === 1).length;
+      const totalComposers = users.filter((u: any) => u.tipo === 'compositor').length;
+
+      // Buscar hinos
+      const hymns = await supabaseFetch<any>('hinos', { select: 'id,plays_count,ativo' });
+      const totalHymns = hymns.filter((h: any) => h.ativo === true || h.ativo === 1).length;
+      const totalPlays = hymns.reduce((sum: number, h: any) => sum + (h.plays_count || 0), 0);
+
+      setStats({
+        totalUsers,
+        activeUsers,
+        totalComposers,
+        totalHymns,
+        totalPlays
+      });
+
+      console.log('✅ [Dashboard] Stats loaded:', { totalUsers, activeUsers, totalComposers, totalHymns, totalPlays });
+    } catch (error) {
+      console.error('❌ [Dashboard] Error loading stats:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const formatNumber = (num: number): string => {
+    if (num >= 1000000) return `${(num / 1000000).toFixed(1)}M`;
+    if (num >= 1000) return `${(num / 1000).toFixed(1)}K`;
+    return num.toString();
+  };
+
   return (
     <div className="min-h-screen bg-gray-950 p-6 space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold text-white mb-2">Dashboard Admin</h1>
-          <p className="text-gray-400">Visão geral da plataforma (Versão Simplificada)</p>
+          <p className="text-gray-400">Visão geral da plataforma</p>
         </div>
       </div>
 
@@ -22,7 +82,11 @@ const AdminDashboardSimple: React.FC = () => {
             </div>
           </div>
           <h3 className="text-gray-400 text-sm mb-1">Usuários Ativos</h3>
-          <p className="text-3xl font-bold text-white">24,547</p>
+          {isLoading ? (
+            <div className="h-9 bg-gray-800 animate-pulse rounded"></div>
+          ) : (
+            <p className="text-3xl font-bold text-white">{formatNumber(stats.activeUsers)}</p>
+          )}
         </div>
 
         <div className="bg-gray-900/50 border border-gray-800 rounded-xl p-6">
@@ -32,7 +96,11 @@ const AdminDashboardSimple: React.FC = () => {
             </div>
           </div>
           <h3 className="text-gray-400 text-sm mb-1">Compositores</h3>
-          <p className="text-3xl font-bold text-white">1,234</p>
+          {isLoading ? (
+            <div className="h-9 bg-gray-800 animate-pulse rounded"></div>
+          ) : (
+            <p className="text-3xl font-bold text-white">{formatNumber(stats.totalComposers)}</p>
+          )}
         </div>
 
         <div className="bg-gray-900/50 border border-gray-800 rounded-xl p-6">
@@ -42,7 +110,11 @@ const AdminDashboardSimple: React.FC = () => {
             </div>
           </div>
           <h3 className="text-gray-400 text-sm mb-1">Hinos Publicados</h3>
-          <p className="text-3xl font-bold text-white">8,456</p>
+          {isLoading ? (
+            <div className="h-9 bg-gray-800 animate-pulse rounded"></div>
+          ) : (
+            <p className="text-3xl font-bold text-white">{formatNumber(stats.totalHymns)}</p>
+          )}
         </div>
 
         <div className="bg-gray-900/50 border border-gray-800 rounded-xl p-6">
@@ -52,7 +124,11 @@ const AdminDashboardSimple: React.FC = () => {
             </div>
           </div>
           <h3 className="text-gray-400 text-sm mb-1">Total de Plays</h3>
-          <p className="text-3xl font-bold text-white">2.4M</p>
+          {isLoading ? (
+            <div className="h-9 bg-gray-800 animate-pulse rounded"></div>
+          ) : (
+            <p className="text-3xl font-bold text-white">{formatNumber(stats.totalPlays)}</p>
+          )}
         </div>
       </div>
 

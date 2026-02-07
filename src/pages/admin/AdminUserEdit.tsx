@@ -36,30 +36,36 @@ const AdminUserEdit: React.FC = () => {
     try {
       setIsLoading(true);
       setLoadError(null);
-      console.log('Fetching user:', userId);
-      const response = await usuariosApi.get(parseInt(userId));
-      console.log('User fetched:', response);
+      console.log('🔍 [AdminUserEdit] Fetching user:', userId);
+      const response = await usuariosApi.get(userId);
+      console.log('📦 [AdminUserEdit] User fetched response:', response);
       
       if (response.error) {
+        console.error('❌ [AdminUserEdit] Error in response:', response.error);
         throw new Error(response.error);
       }
       
       if (response.data) {
         const user = response.data;
-        setFormData({
+        console.log('✅ [AdminUserEdit] User data:', user);
+        
+        const newFormData = {
           nome: user.nome || '',
           email: user.email || '',
           avatar_url: user.avatar_url || '',
           tipo: (user.tipo as 'usuario' | 'compositor' | 'admin') || 'usuario',
           ativo: user.ativo === 1,
-        });
+        };
+        console.log('📝 [AdminUserEdit] Setting form data:', newFormData);
+        setFormData(newFormData);
       } else {
+        console.warn('⚠️ [AdminUserEdit] No data in response');
         const msg = 'Usuário não encontrado';
         setLoadError(msg);
         setTimeout(() => navigate('/admin/users'), 2000);
       }
     } catch (error: any) {
-      console.error('Error loading user:', error);
+      console.error('❌ [AdminUserEdit] Error loading user:', error);
       const msg = error?.message || 'Erro ao carregar usuário';
       setLoadError(msg);
     } finally {
@@ -102,7 +108,7 @@ const AdminUserEdit: React.FC = () => {
       };
 
       console.log('Updating user with:', updates);
-      const response = await usuariosApi.update(parseInt(id), updates);
+      const response = await usuariosApi.update(id!, updates);
       
       if (response.error) {
         throw new Error(response.error);
@@ -163,7 +169,7 @@ const AdminUserEdit: React.FC = () => {
       try {
         if (id) {
           console.log('Persisting avatar_url immediately for user:', id, url);
-          await usuariosApi.update(parseInt(id), { avatar_url: url });
+          await usuariosApi.update(id!, { avatar_url: url });
         }
       } catch (persistErr) {
         console.warn('Could not persist avatar immediately, will rely on Save button.', persistErr);

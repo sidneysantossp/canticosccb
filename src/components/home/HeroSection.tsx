@@ -27,12 +27,11 @@ const HeroSection: React.FC<HeroSectionProps> = ({ banners = [] }) => {
   
   const navigate = useNavigate();
   
-  // Helper: detectar URL de vídeo (inclui stream.php com query file=*.mp4)
+  // Helper: detectar URL de vídeo (extensões conhecidas)
   const isVideoUrl = (url: string) => {
     const u = (url || '').toLowerCase();
     if (!u) return false;
     if (/\.(mp4|webm|mov)(\?|#|$)/i.test(u)) return true;
-    if (u.includes('/api/stream.php') && /file=.*\.(mp4|webm|mov)(\?|#|$)/i.test(u)) return true;
     return false;
   };
 
@@ -164,7 +163,31 @@ const HeroSection: React.FC<HeroSectionProps> = ({ banners = [] }) => {
   };
 
 
-  if (!slide) return null;
+  // Fallback: banner padrão quando não há banners do backend
+  if (!slide) {
+    return (
+      <div className="relative h-[360px] md:h-[350px] rounded-lg overflow-hidden mb-8 mt-0 md:mx-6 md:mt-2">
+        <div className="absolute inset-0 bg-gradient-to-br from-primary-600 to-primary-900" />
+        <div className="relative z-10 flex items-center h-full px-6 md:px-12">
+          <div className="max-w-2xl">
+            <h1 className="text-4xl md:text-6xl font-bold text-white mb-4">
+              Cânticos CCB
+            </h1>
+            <p className="text-lg md:text-xl text-gray-200 mb-8">
+              Ouça hinos da Congregação Cristã no Brasil. Louvor e adoração em um só lugar.
+            </p>
+            <button
+              onClick={() => navigate('/buscar')}
+              className="bg-white hover:bg-gray-100 text-primary-600 font-semibold px-8 py-3 rounded-full flex items-center gap-2 transition-all hover:scale-105"
+            >
+              <Play className="w-5 h-5 fill-current" />
+              Explorar Hinos
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   // Função para gerar background gradient inline
   const getGradientStyle = (color: string) => {
@@ -183,7 +206,7 @@ const HeroSection: React.FC<HeroSectionProps> = ({ banners = [] }) => {
 
   return (
     <div
-      className="relative h-[360px] md:h-[350px] rounded-lg overflow-hidden mb-8 mt-0 md:mx-6 md:mt-6"
+      className="relative h-[360px] md:h-[350px] rounded-lg overflow-hidden mb-8 mt-0 md:mx-6 md:mt-2"
       onTouchStart={handleTouchStart}
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}

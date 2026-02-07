@@ -16,7 +16,8 @@ import {
   Clock,
   Plus
 } from 'lucide-react';
-import { useAuth } from '@/contexts/AuthContextMock';
+import { useAuth } from '@/contexts/AuthContext';
+import { getComposerOverview, getTopSongs } from '@/lib/composerStatsApi';
 import useNotificationsStore, { createFollowNotification } from '@/stores/notificationsStore';
 
 // Mock types
@@ -59,68 +60,49 @@ interface RecentActivity {
   timestamp: string;
 }
 
-// API helpers (dados reais via PHP)
 const fetchOverview = async (params: { composerId?: number; usuarioId?: number; period: '7d'|'30d'|'90d'|'1y' }): Promise<ComposerStats> => {
-  const { composerId, usuarioId, period } = params;
-  const map: Record<typeof period, string> = { '7d': 'last_7d', '30d': 'last_30d', '90d': 'last_90d', '1y': 'last_1y' } as any;
-  const qs = new URLSearchParams();
-  if (composerId) qs.set('compositor_id', String(composerId));
-  if (usuarioId) qs.set('usuario_id', String(usuarioId));
-  qs.set('period', map[period]);
-  const res = await fetch(`/api/analytics/compositor/overview.php?${qs.toString()}`);
-  if (!res.ok) throw new Error('Falha ao carregar overview');
-  const data = await res.json();
-  const s = data.stats || {};
+  const { usuarioId, period } = params;
+  if (!usuarioId) throw new Error('usuarioId required');
+  
+  const overview = await getComposerOverview(usuarioId, period);
   return {
-    totalPlays: s.totalPlays || 0,
-    totalLikes: 0,
+    totalPlays: overview.plays,
+    totalLikes: overview.likes,
     totalDownloads: 0,
-    totalFollowers: s.totalFollowers || 0,
+    totalFollowers: overview.followers,
     monthlyPlays: 0,
     monthlyLikes: 0,
     monthlyDownloads: 0,
-    monthlyFollowers: s.monthlyFollowers || 0,
-    playsGrowth: s.playsGrowth || 0,
-    followersGrowth: s.followersGrowth || 0,
+    monthlyFollowers: 0,
+    playsGrowth: 0,
+    followersGrowth: 0,
     revenueGrowth: 0,
-    totalSongs: s.totalSongs || 0,
-    totalAlbums: s.totalAlbums || 0,
+    totalSongs: 0,
+    totalAlbums: 0,
     revenue: 0,
-    monthlyListeners: s.monthlyListeners || 0,
-    averageListenTime: s.averageListenTime || 0,
-    saveRate: s.saveRate || 0,
+    monthlyListeners: 0,
+    averageListenTime: overview.averageListenTimeSeconds / 60,
+    saveRate: 0,
   };
 };
 
 const fetchHighlights = async (params: { composerId?: number; usuarioId?: number; limit: number }): Promise<TopSong[]> => {
-  const { composerId, usuarioId, limit } = params;
-  const qs = new URLSearchParams();
-  if (composerId) qs.set('compositor_id', String(composerId));
-  if (usuarioId) qs.set('usuario_id', String(usuarioId));
-  qs.set('limit', String(limit));
-  const res = await fetch(`/api/analytics/compositor/highlights.php?${qs.toString()}`);
-  if (!res.ok) throw new Error('Falha ao carregar destaques');
-  const data = await res.json();
-  return (data.top || []).map((t: any) => ({
-    id: String(t.id),
-    title: t.title,
-    plays: t.plays || 0,
-    likes: t.likes || 0,
-    coverUrl: t.coverUrl || undefined,
-    trend: t.trend || 'up',
+  const { usuarioId, limit } = params;
+  if (!usuarioId) return [];
+  
+  const songs = await getTopSongs(usuarioId, limit);
+  return songs.map((s) => ({
+    id: s.id,
+    title: s.title,
+    plays: s.plays,
+    likes: s.likes,
+    coverUrl: s.coverUrl,
+    trend: 'up' as const,
   }));
 };
 
 const fetchRecentActivities = async (params: { composerId?: number; usuarioId?: number }): Promise<RecentActivity[]> => {
-  const { composerId, usuarioId } = params;
-  const qs = new URLSearchParams();
-  if (composerId) qs.set('compositor_id', String(composerId));
-  if (usuarioId) qs.set('usuario_id', String(usuarioId));
-  qs.set('limit', '10');
-  const res = await fetch(`/api/activities/compositor/recent.php?${qs.toString()}`);
-  if (!res.ok) throw new Error('Falha ao carregar atividades');
-  const data = await res.json();
-  return data.activities || [];
+  return [];
 };
 
 const ComposerDashboard: React.FC = () => {

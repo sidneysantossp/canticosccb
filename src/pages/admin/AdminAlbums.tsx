@@ -53,7 +53,7 @@ const AdminAlbums: React.FC = () => {
     }
   };
 
-  const handleDelete = async (id: number, title: string) => {
+  const handleDelete = async (id: string | number, title: string) => {
     if (!window.confirm(`Tem certeza que deseja deletar "${title}"?`)) return;
 
     try {
@@ -111,8 +111,8 @@ const AdminAlbums: React.FC = () => {
           >
             <div className="relative aspect-square">
               <img
-                src={album.cover_url || 'https://via.placeholder.com/300x300?text=Sem+Capa'}
-                alt={album.title || album.titulo}
+                src={album.cover_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(album.title || 'A')}&background=1f2937&color=9ca3af&size=300`}
+                alt={album.title}
                 className="w-full h-full object-cover"
               />
               <div className="absolute top-2 right-2 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -123,7 +123,7 @@ const AdminAlbums: React.FC = () => {
                   <Edit className="w-4 h-4" />
                 </Link>
                 <button
-                  onClick={() => handleDelete(album.id, album.title || album.titulo)}
+                  onClick={() => handleDelete(album.id, album.title)}
                   className="p-2 rounded-lg bg-red-500/90 text-white hover:bg-red-600 transition-colors"
                 >
                   <Trash2 className="w-4 h-4" />
@@ -131,12 +131,12 @@ const AdminAlbums: React.FC = () => {
               </div>
             </div>
             <div className="p-4">
-              <h3 className="text-white font-bold text-lg mb-1 truncate">{album.title || album.titulo}</h3>
+              <h3 className="text-white font-bold text-lg mb-1 truncate">{album.title}</h3>
               <p className="text-gray-400 text-sm truncate">
                 {album.artist || 'Sem artista'}
               </p>
               <p className="text-gray-500 text-xs mt-1">
-                {album.genre && <span>{album.genre} • </span>}
+                {(album as any).genre && <span>{(album as any).genre} • </span>}
                 {album.total_tracks || 0} músicas
               </p>
             </div>

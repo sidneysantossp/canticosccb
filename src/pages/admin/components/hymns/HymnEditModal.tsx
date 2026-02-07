@@ -149,12 +149,12 @@ const HymnEditModal: React.FC<Props> = ({ isOpen, hymn, editForm, setEditForm, o
     }
     
     // Se for apenas nome de arquivo, usa API de streaming
-    let streamUrl = '';
-    if (type === 'audio') {
-      streamUrl = getHinoUrl(url); // gera /api/stream.php?type=hinos&file=...
-    } else {
-      streamUrl = getAlbumCoverUrl(url); // gera /api/stream.php?type=albuns&file=...
-    }
+      let streamUrl = '';
+      if (type === 'audio') {
+        streamUrl = getHinoUrl(url); // gera a URL do Supabase Storage para o hino
+      } else {
+        streamUrl = getAlbumCoverUrl(url); // gera a URL do Supabase Storage para a capa
+      }
     
     console.log('🔗 Generated streaming URL:', streamUrl);
     return streamUrl;
@@ -279,7 +279,7 @@ const HymnEditModal: React.FC<Props> = ({ isOpen, hymn, editForm, setEditForm, o
                       className="w-full h-full object-cover"
                       onError={(e) => {
                         console.error('❌ Erro ao carregar capa');
-                        e.currentTarget.src = 'https://via.placeholder.com/300x300/1db954/ffffff?text=Erro+ao+Carregar';
+                        e.currentTarget.src = 'data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22300%22 height=%22300%22%3E%3Crect fill=%22%231a1a1a%22 width=%22300%22 height=%22300%22/%3E%3Ctext fill=%22%23666%22 x=%2250%25%22 y=%2250%25%22 text-anchor=%22middle%22 dy=%22.3em%22 font-size=%2214%22%3EErro ao Carregar%3C/text%3E%3C/svg%3E';
                       }}
                     />
                     <button

@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { categoriasApi, compositorGerentesApi } from '@/lib/api-client';
-import { useAuth } from '@/contexts/AuthContextMock';
-import { apiFetch } from '@/lib/api-helper';
+import { useAuth } from '@/contexts/AuthContext';
+import { validateDocument, checkEmailAvailability, registerComposer, uploadDocumentImage } from '@/lib/composerOnboardingApi';
 import {
   Music,
   Users,
@@ -48,6 +48,7 @@ interface OnboardingData {
   coverImage: string | null;
   genres: string[];
   documentType: 'rg' | 'passport' | 'cnh' | '';
+  documentNumber: string;
   documentFront: File | null;
   documentBack: File | null;
   acceptedTerms: boolean;
@@ -87,6 +88,7 @@ const ComposerOnboarding: React.FC = () => {
     coverImage: null,
     genres: [],
     documentType: '',
+    documentNumber: '',
     documentFront: null,
     documentBack: null,
     acceptedTerms: false,
@@ -126,13 +128,12 @@ const ComposerOnboarding: React.FC = () => {
         setLoadingGenres(true);
         console.log('🎵 [Onboarding] Carregando categorias...');
         const response = await categoriasApi.list();
-        console.log('🎵 [Onboarding] Resposta API:', response);
-        const categories = response.data?.items || response.data || [];
+        const categories = response.data || [];
         const categoriesArray = Array.isArray(categories) ? categories : [];
         console.log('🎵 [Onboarding] Categorias processadas:', categoriesArray);
         const genreNames = categoriesArray.map((cat: any) => cat.nome);
         console.log('🎵 [Onboarding] Gêneros:', genreNames);
-        
+
         if (genreNames.length > 0) {
           setAvailableGenres(genreNames);
         } else {
@@ -249,7 +250,7 @@ const ComposerOnboarding: React.FC = () => {
 
   const formatPhone = (value: string) => {
     const cleaned = value.replace(/\D/g, '');
-    
+
     if (cleaned.length <= 2) {
       return cleaned;
     }
@@ -275,10 +276,10 @@ const ComposerOnboarding: React.FC = () => {
   const handleCepChange = (value: string) => {
     const formatted = formatCep(value);
     handleInputChange('cep', formatted);
-    
+
     const cleanCep = formatted.replace(/\D/g, '');
     setCepFilled(cleanCep.length === 8);
-    
+
     if (cleanCep.length === 8) {
       searchCep(formatted);
     }
@@ -286,7 +287,7 @@ const ComposerOnboarding: React.FC = () => {
 
   const searchCep = async (cep: string) => {
     const cleanCep = cep.replace(/\D/g, '');
-    
+
     if (cleanCep.length !== 8) {
       setCepError('CEP deve conter 8 dígitos');
       return;
@@ -343,14 +344,14 @@ const ComposerOnboarding: React.FC = () => {
 
     try {
       const response = await compositorGerentesApi.buscarUsuario(email);
-      
+
       if (response.error || !response.data) {
         setManagerSearchError('Usuário não encontrado com este email');
         setFormData(prev => ({ ...prev, managerData: null }));
       } else {
-        setFormData(prev => ({ 
-          ...prev, 
-          managerData: response.data 
+        setFormData(prev => ({
+          ...prev,
+          managerData: response.data
         }));
         setManagerSearchError('');
       }
@@ -388,7 +389,7 @@ const ComposerOnboarding: React.FC = () => {
 
   const handleFileUpload = async (file: File, type: 'front' | 'back') => {
     const validation = validateDocumentFile(file);
-    
+
     if (!validation.valid) {
       alert(validation.error);
       return;
@@ -396,7 +397,7 @@ const ComposerOnboarding: React.FC = () => {
 
     if (type === 'front') {
       setFormData(prev => ({ ...prev, documentFront: file }));
-      
+
       // OCR DESABILITADO TEMPORARIAMENTE - Validação manual pelo admin
       console.log('ℹ️ Validação OCR desabilitada. Documento será revisado pelo admin.');
       setDocumentValidation({
@@ -420,65 +421,25 @@ const ComposerOnboarding: React.FC = () => {
     setDocumentValidation(null);
 
     try {
-      const formDataToSend = new FormData();
-      formDataToSend.append('document', file);
-      formDataToSend.append('expected_name', formData.name);
-      formDataToSend.append('doc_type', formData.documentType);
+      console.log('📝 Validating document via Supabase...');
 
-      // Usando proxy do Vite - /api redireciona automaticamente
-      const apiUrl = '/api/validate-document-simple.php';
-      
-      console.log('🌐 Usando proxy Vite - URL:', apiUrl);
-      console.log('📦 FormData:', {
-        hasDocument: formDataToSend.has('document'),
-        expectedName: formDataToSend.get('expected_name'),
-        docType: formDataToSend.get('doc_type')
-      });
+      const result = await validateDocument(
+        formData.documentType,
+        formData.documentNumber || '',
+        file
+      );
 
-      const response = await fetch(apiUrl, {
-        method: 'POST',
-        body: formDataToSend,
-        mode: 'cors',
-        credentials: 'same-origin'
-      });
-      
-      console.log('📡 Response status:', response.status);
-      console.log('📡 Response ok:', response.ok);
-
-      const text = await response.text();
-      console.log('📝 Response text:', text);
-      
-      let result;
-      try {
-        result = JSON.parse(text);
-      } catch (e) {
-        console.error('❌ Erro ao parsear JSON:', e);
-        console.log('📄 Texto recebido:', text);
-        throw new Error('Resposta inválida da API');
-      }
-
-      console.log('✅ Result parsed:', result);
+      console.log('✅ Validation result:', result);
       setDocumentValidation(result);
 
-      if (!result.valid && result.similarity < 60) {
+      if (!result.valid && result.message) {
         alert(
-          `⚠️ ATENÇÃO: O nome no documento não corresponde ao cadastrado.\n\n` +
-          `Nome esperado: ${result.expected_name}\n` +
-          `Nome encontrado: ${result.extracted_name}\n` +
-          `Similaridade: ${result.similarity}%\n\n` +
-          `Verifique se o nome cadastrado está correto ou envie outro documento.`
+          `⚠️ ATENÇÃO: ${result.message}\n\n` +
+          `Verifique se os dados estão corretos ou envie outro documento.`
         );
       }
-
-      console.log('✅ Validação OCR:', result);
     } catch (error: any) {
-      console.error('❌ Erro na validação OCR:', error);
-      console.error('Detalhes do erro:', {
-        message: error.message,
-        stack: error.stack,
-        name: error.name
-      });
-      // Não bloquear usuário se OCR falhar
+      console.error('❌ Erro na validação:', error);
       setDocumentValidation({
         valid: false,
         error: error.message || 'Não foi possível validar o documento automaticamente. Será revisado manualmente.'
@@ -495,7 +456,7 @@ const ComposerOnboarding: React.FC = () => {
     } else {
       setDragActiveBack(false);
     }
-    
+
     const file = e.dataTransfer.files[0];
     if (file) {
       handleFileUpload(file, type);
@@ -536,17 +497,11 @@ const ComposerOnboarding: React.FC = () => {
 
   const checkEmailExists = async (email: string) => {
     if (!email || !email.includes('@')) return;
-    
+
     setCheckingEmail(true);
     try {
-      const response = await apiFetch('api/usuarios/check-email.php', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email })
-      });
-      
-      const data = await response.json();
-      setEmailExists(data.exists || false);
+      const result = await checkEmailAvailability(email);
+      setEmailExists(result.exists);
     } catch (error) {
       console.error('Erro ao verificar email:', error);
     } finally {
@@ -571,74 +526,62 @@ const ComposerOnboarding: React.FC = () => {
       setSubmitError('Este email já está cadastrado');
       return;
     }
-    
+
     setIsSubmitting(true);
     setSubmitError(null);
-    
+
     try {
       // 1. Converter documentos para base64
       const documents = [];
       if (formData.documentFront && formData.documentBack && formData.documentType) {
         const frontBase64 = await fileToBase64(formData.documentFront);
         const backBase64 = await fileToBase64(formData.documentBack);
-        
+
         documents.push({
           type: formData.documentType,
           frontImage: frontBase64,
           backImage: backBase64
         });
       }
-      
-      // 2. Registrar compositor na API (usando proxy do Vite)
-      console.log('🚀 Registrando compositor em: /api/compositores/register.php');
-      
-      const registerResponse = await apiFetch('api/compositores/register.php', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          email: formData.email,
-          password: formData.password,
-          name: formData.name,
-          artisticName: formData.artisticName,
-          bio: formData.bio,
-          composerType: formData.composerType,
-          phone: formData.phone,
-          cep: formData.cep,
-          street: formData.street,
-          number: formData.number,
-          complement: formData.complement,
-          neighborhood: formData.neighborhood,
-          city: formData.city,
-          state: formData.state,
-          website: formData.website,
-          instagram: formData.instagram,
-          facebook: formData.facebook,
-          youtube: formData.youtube,
-          genres: formData.genres,
-          documents: documents
-        }),
-      });
-      
-      const registerData = await registerResponse.json();
-      
-      if (!registerResponse.ok) {
-        throw new Error(registerData.error || 'Erro ao criar conta');
+
+      // 2. Upload document images if available
+      let documentImagePath: string | null = null;
+      if (formData.documentFront) {
+        documentImagePath = await uploadDocumentImage(formData.documentFront);
       }
-      
-      console.log('\u2705 Compositor registrado:', registerData);
-      
+
+      // 3. Register composer via Supabase
+      console.log('🚀 Registrando compositor via Supabase...');
+
+      const registerResult = await registerComposer({
+        nome: formData.name,
+        nome_artistico: formData.artisticName || formData.name,
+        email: formData.email,
+        senha: formData.password,
+        telefone: formData.phone,
+        biografia: formData.bio,
+        documento_tipo: formData.documentType,
+        documento_numero: formData.documentNumber || '',
+        documento_imagem: documentImagePath || undefined
+      });
+
+      if (!registerResult.success) {
+        throw new Error(registerResult.error || 'Erro ao registrar compositor');
+      }
+
+      console.log('✅ Compositor registrado:', registerResult);
+
       // 2. Enviar convite ao gerente (se configurado)
-      if (formData.hasManager && formData.managerData && registerData.compositor_id) {
+      if (formData.hasManager && formData.managerData && registerResult.compositor_id) {
         try {
           console.log('📧 Enviando convite ao gerente:', formData.managerData.email);
           const inviteResponse = await compositorGerentesApi.convidar({
-            compositor_id: registerData.compositor_id,
+            compositor_id: registerResult.compositor_id,
             email_gerente: formData.managerData.email,
             notas: `Convite automático enviado durante o cadastro do compositor ${formData.artisticName}`
           });
-          
+
+
           if (!inviteResponse.error) {
             console.log('✅ Convite enviado com sucesso ao gerente');
           }
@@ -647,26 +590,26 @@ const ComposerOnboarding: React.FC = () => {
           // Não bloquear o cadastro se o convite falhar
         }
       }
-      
+
       // 3. Fazer login automático
       console.log('🔑 Fazendo login automático...');
       await signIn(formData.email, formData.password);
-      
+
       // 3. Aguardar um pouco para garantir que a autenticação foi processada
       await new Promise(resolve => setTimeout(resolve, 1000));
-      
+
       // 4. Redirecionar para o dashboard de compositor
       // O ProtectedComposerRoute vai mostrar a mensagem "Perfil em Análise"
       console.log('✅ Login concluído, redirecionando para dashboard de compositor...');
       navigate('/composer/dashboard');
-      
+
     } catch (error: any) {
       console.error('\u274c Erro no cadastro:', error);
       const errorMessage = error.message || 'Erro ao finalizar cadastro. Tente novamente.';
-      
+
       // Mostrar alert para garantir que o usuário veja
       alert(`❌ ${errorMessage}`);
-      
+
       setSubmitError(errorMessage);
       setIsSubmitting(false);
     }
@@ -684,7 +627,7 @@ const ComposerOnboarding: React.FC = () => {
         const passwordValid = formData.password && formData.password.length >= 6;
         const passwordMatch = formData.password === formData.passwordConfirm;
         const addressValid = formData.cep && formData.street && formData.number && formData.city && formData.state;
-        
+
         if (!emailValid || !passwordValid || !passwordMatch || !addressValid) {
           return false;
         }
@@ -752,15 +695,13 @@ const ComposerOnboarding: React.FC = () => {
                   <button
                     key={type.id}
                     onClick={() => handleInputChange('composerType', type.id)}
-                    className={`p-6 rounded-xl border-2 transition-all ${
-                      formData.composerType === type.id
-                        ? 'border-primary-500 bg-primary-500/10'
-                        : 'border-gray-700 bg-background-secondary hover:border-gray-600'
-                    }`}
+                    className={`p-6 rounded-xl border-2 transition-all ${formData.composerType === type.id
+                      ? 'border-primary-500 bg-primary-500/10'
+                      : 'border-gray-700 bg-background-secondary hover:border-gray-600'
+                      }`}
                   >
-                    <Icon className={`w-12 h-12 mx-auto mb-4 ${
-                      formData.composerType === type.id ? 'text-primary-400' : 'text-text-muted'
-                    }`} />
+                    <Icon className={`w-12 h-12 mx-auto mb-4 ${formData.composerType === type.id ? 'text-primary-400' : 'text-text-muted'
+                      }`} />
                     <h3 className="text-white font-semibold mb-2">{type.title}</h3>
                     <p className="text-text-muted text-sm">{type.description}</p>
                   </button>
@@ -836,11 +777,10 @@ const ComposerOnboarding: React.FC = () => {
                       <button
                         key={genre}
                         onClick={() => toggleGenre(genre)}
-                        className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
-                          formData.genres.includes(genre)
-                            ? 'bg-primary-500 text-black'
-                            : 'bg-background-tertiary text-white hover:bg-gray-700'
-                        }`}
+                        className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${formData.genres.includes(genre)
+                          ? 'bg-primary-500 text-black'
+                          : 'bg-background-tertiary text-white hover:bg-gray-700'
+                          }`}
                       >
                         {genre}
                       </button>
@@ -886,13 +826,13 @@ const ComposerOnboarding: React.FC = () => {
                     </button>
                   )}
                 </div>
-                
+
                 {formData.hasManager && (
                   <div className="bg-background-tertiary p-4 rounded-lg space-y-4">
                     <p className="text-text-muted text-sm">
                       Digite o email do gerente de conta. Ele receberá uma notificação e precisará aceitar para gerenciar seu perfil.
                     </p>
-                    
+
                     <div>
                       <label className="block text-white font-medium mb-2">
                         Email do Gerente de Conta
@@ -920,13 +860,13 @@ const ComposerOnboarding: React.FC = () => {
                           {searchingManager ? 'Buscando...' : 'Buscar'}
                         </button>
                       </div>
-                      
+
                       {managerSearchError && (
                         <p className="text-red-400 text-sm mt-2">
                           {managerSearchError}
                         </p>
                       )}
-                      
+
                       {formData.managerData && (
                         <div className="mt-4 p-4 bg-background-secondary border border-green-500/30 rounded-lg">
                           <div className="flex items-center gap-3">
@@ -985,11 +925,10 @@ const ComposerOnboarding: React.FC = () => {
                     }}
                     onBlur={(e) => checkEmailExists(e.target.value)}
                     placeholder="seu@email.com"
-                    className={`w-full pl-10 pr-4 py-3 bg-background-tertiary border rounded-lg text-white focus:outline-none focus:ring-2 ${
-                      emailExists 
-                        ? 'border-red-500 focus:ring-red-500' 
-                        : 'border-gray-700 focus:ring-primary-500'
-                    }`}
+                    className={`w-full pl-10 pr-4 py-3 bg-background-tertiary border rounded-lg text-white focus:outline-none focus:ring-2 ${emailExists
+                      ? 'border-red-500 focus:ring-red-500'
+                      : 'border-gray-700 focus:ring-primary-500'
+                      }`}
                   />
                   {checkingEmail && (
                     <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
@@ -1060,20 +999,20 @@ const ComposerOnboarding: React.FC = () => {
                       )}
                     </button>
                   </div>
-                  {formData.password && formData.passwordConfirm && 
-                   formData.password !== formData.passwordConfirm && (
-                    <p className="text-red-400 text-sm mt-1">
-                      As senhas não coincidem
-                    </p>
-                  )}
-                  {formData.password && formData.passwordConfirm && 
-                   formData.password === formData.passwordConfirm && 
-                   formData.password.length >= 6 && (
-                    <p className="text-green-400 text-sm mt-1 flex items-center gap-2">
-                      <CheckCircle className="w-4 h-4" />
-                      Senhas conferem
-                    </p>
-                  )}
+                  {formData.password && formData.passwordConfirm &&
+                    formData.password !== formData.passwordConfirm && (
+                      <p className="text-red-400 text-sm mt-1">
+                        As senhas não coincidem
+                      </p>
+                    )}
+                  {formData.password && formData.passwordConfirm &&
+                    formData.password === formData.passwordConfirm &&
+                    formData.password.length >= 6 && (
+                      <p className="text-green-400 text-sm mt-1 flex items-center gap-2">
+                        <CheckCircle className="w-4 h-4" />
+                        Senhas conferem
+                      </p>
+                    )}
                 </div>
               </div>
 
@@ -1093,7 +1032,7 @@ const ComposerOnboarding: React.FC = () => {
 
               <div className="border-t border-gray-700 pt-6">
                 <h3 className="text-white font-semibold mb-4">Endereço</h3>
-                
+
                 <div className="mb-6">
                   <label className="block text-white font-medium mb-2">
                     CEP *
@@ -1307,11 +1246,10 @@ const ComposerOnboarding: React.FC = () => {
                       onDragOver={handleDragOver}
                       onDragEnter={() => handleDragEnter('front')}
                       onDragLeave={() => handleDragLeave('front')}
-                      className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors ${
-                        dragActiveFront
-                          ? 'border-primary-400 bg-primary-500/10'
-                          : 'border-gray-700 hover:border-gray-600'
-                      }`}
+                      className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors ${dragActiveFront
+                        ? 'border-primary-400 bg-primary-500/10'
+                        : 'border-gray-700 hover:border-gray-600'
+                        }`}
                     >
                       {formData.documentFront ? (
                         <div className="space-y-2">
@@ -1355,11 +1293,10 @@ const ComposerOnboarding: React.FC = () => {
                       onDragOver={handleDragOver}
                       onDragEnter={() => handleDragEnter('back')}
                       onDragLeave={() => handleDragLeave('back')}
-                      className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors ${
-                        dragActiveBack
-                          ? 'border-primary-400 bg-primary-500/10'
-                          : 'border-gray-700 hover:border-gray-600'
-                      }`}
+                      className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors ${dragActiveBack
+                        ? 'border-primary-400 bg-primary-500/10'
+                        : 'border-gray-700 hover:border-gray-600'
+                        }`}
                     >
                       {formData.documentBack ? (
                         <div className="space-y-2">
@@ -1407,13 +1344,12 @@ const ComposerOnboarding: React.FC = () => {
               )}
 
               {documentValidation && !validatingDocument && (
-                <div className={`mt-6 p-4 rounded-lg ${
-                  documentValidation.valid 
-                    ? 'bg-green-500/10 border border-green-500/30'
-                    : documentValidation.similarity && documentValidation.similarity >= 60
+                <div className={`mt-6 p-4 rounded-lg ${documentValidation.valid
+                  ? 'bg-green-500/10 border border-green-500/30'
+                  : documentValidation.similarity && documentValidation.similarity >= 60
                     ? 'bg-yellow-500/10 border border-yellow-500/30'
                     : 'bg-red-500/10 border border-red-500/30'
-                }`}>
+                  }`}>
                   <div className="flex items-start gap-3">
                     {documentValidation.valid ? (
                       <CheckCircle className="w-5 h-5 text-green-400 flex-shrink-0 mt-0.5" />
@@ -1611,20 +1547,18 @@ const ComposerOnboarding: React.FC = () => {
             {Array.from({ length: totalSteps }).map((_, index) => (
               <React.Fragment key={index}>
                 <div
-                  className={`w-10 h-10 rounded-full flex items-center justify-center font-semibold transition-colors ${
-                    index <= currentStep
-                      ? 'bg-primary-500 text-black'
-                      : 'bg-background-secondary text-text-muted'
-                  }`}
+                  className={`w-10 h-10 rounded-full flex items-center justify-center font-semibold transition-colors ${index <= currentStep
+                    ? 'bg-primary-500 text-black'
+                    : 'bg-background-secondary text-text-muted'
+                    }`}
                 >
                   {index < currentStep ? <CheckCircle className="w-6 h-6" /> : index + 1}
                 </div>
                 {index < totalSteps - 1 && (
                   <div className="flex-1 h-1 mx-2 bg-background-secondary">
                     <div
-                      className={`h-full transition-all duration-300 ${
-                        index < currentStep ? 'bg-primary-500' : 'bg-background-secondary'
-                      }`}
+                      className={`h-full transition-all duration-300 ${index < currentStep ? 'bg-primary-500' : 'bg-background-secondary'
+                        }`}
                       style={{ width: index < currentStep ? '100%' : '0%' }}
                     />
                   </div>
@@ -1654,11 +1588,10 @@ const ComposerOnboarding: React.FC = () => {
           <button
             onClick={handlePrevious}
             disabled={currentStep === 0 || isSubmitting}
-            className={`flex items-center gap-2 px-6 py-3 rounded-lg font-medium transition-colors ${
-              currentStep === 0 || isSubmitting
-                ? 'bg-background-secondary text-text-muted cursor-not-allowed'
-                : 'bg-background-secondary text-white hover:bg-background-hover'
-            }`}
+            className={`flex items-center gap-2 px-6 py-3 rounded-lg font-medium transition-colors ${currentStep === 0 || isSubmitting
+              ? 'bg-background-secondary text-text-muted cursor-not-allowed'
+              : 'bg-background-secondary text-white hover:bg-background-hover'
+              }`}
           >
             <ArrowLeft className="w-5 h-5" />
             Voltar
@@ -1668,11 +1601,10 @@ const ComposerOnboarding: React.FC = () => {
             <button
               onClick={handleNext}
               disabled={!isStepValid() || isSubmitting}
-              className={`flex items-center gap-2 px-6 py-3 rounded-lg font-medium transition-colors ${
-                !isStepValid() || isSubmitting
-                  ? 'bg-gray-700 text-text-muted cursor-not-allowed'
-                  : 'bg-primary-500 text-black hover:bg-primary-400'
-              }`}
+              className={`flex items-center gap-2 px-6 py-3 rounded-lg font-medium transition-colors ${!isStepValid() || isSubmitting
+                ? 'bg-gray-700 text-text-muted cursor-not-allowed'
+                : 'bg-primary-500 text-black hover:bg-primary-400'
+                }`}
             >
               Próximo
               <ArrowRight className="w-5 h-5" />

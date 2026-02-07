@@ -1,4 +1,4 @@
-import { apiFetch } from '@/lib/api-helper';
+import { supabaseFetch, supabaseInsert, supabaseUpdate, supabaseDelete, isSupabaseConfigured, getSupabaseStorageUrl } from '@/lib/supabaseRest';
 
 export type BannerType = 'hero' | 'promotional' | 'contextual' | 'announcement' | 'featured';
 
@@ -32,44 +32,88 @@ export interface CreateBannerData {
 }
 
 export const getAllBanners = async (params?: { type?: BannerType; active?: boolean }): Promise<Banner[]> => {
-  const qs = new URLSearchParams();
-  if (params?.type) qs.append('type', params.type);
-  if (typeof params?.active === 'boolean') qs.append('active', params.active ? '1' : '0');
-  const url = `/api/banners/index.php${qs.toString() ? `?${qs.toString()}` : ''}`;
-  const res = await apiFetch(url);
-  const data = await res.json();
-  return data?.banners ?? [];
+  if (!isSupabaseConfigured) return [];
+
+  try {
+    const filters: Record<string, string> = {
+      select: 'id,title,description,image_url,link_url,link_type,link_id,type,position,is_active,gradient_overlay,created_at,updated_at',
+      order: 'position.asc'
+    };
+    
+    if (params?.type) filters.type = `eq.${params.type}`;
+    if (typeof params?.active === 'boolean') filters.is_active = `eq.${params.active}`;
+    
+    const rows = await supabaseFetch<any>('banners', filters);
+    return rows.map((row: any) => ({
+      id: String(row.id),
+      title: row.title,
+      description: row.description,
+      image_url: row.image_url,
+      link_url: row.link_url,
+      link_type: row.link_type,
+      link_id: row.link_id,
+      type: row.type,
+      position: row.position,
+      is_active: row.is_active,
+      gradient_overlay: row.gradient_overlay,
+      created_at: row.created_at,
+      updated_at: row.updated_at,
+    }));
+  } catch (error) {
+    console.error('Error fetching banners:', error);
+    return [];
+  }
 };
 
 export const getBannerById = async (id: string): Promise<Banner | null> => {
-  const res = await apiFetch(`/api/banners/index.php?id=${encodeURIComponent(id)}`);
-  if (!res.ok) return null;
-  return await res.json();
+  if (!isSupabaseConfigured) return null;
+
+  try {
+    const rows = await supabaseFetch<any>('banners', { id: `eq.${id}` });
+    if (rows.length === 0) return null;
+    const row = rows[0];
+    return {
+      id: String(row.id),
+      title: row.title,
+      description: row.description,
+      image_url: row.image_url,
+      link_url: row.link_url,
+      link_type: row.link_type,
+      link_id: row.link_id,
+      type: row.type,
+      position: row.position,
+      is_active: row.is_active,
+      gradient_overlay: row.gradient_overlay,
+      created_at: row.created_at,
+      updated_at: row.updated_at,
+    };
+  } catch (error) {
+    console.error('Error fetching banner:', error);
+    return null;
+  }
 };
 
 export const createBanner = async (data: CreateBannerData): Promise<Banner> => {
-  const res = await apiFetch('/api/banners/index.php', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(data),
-  });
-  const json = await res.json();
-  return json as Banner;
+  if (!isSupabaseConfigured) throw new Error('Supabase not configured');
+
+  const result = await supabaseInsert<any>('banners', data);
+  if (!result) throw new Error('Failed to create banner');
+  return result as Banner;
 };
 
 export const updateBanner = async (id: string, data: Partial<CreateBannerData>): Promise<Banner> => {
-  const res = await apiFetch(`/api/banners/index.php?id=${encodeURIComponent(id)}`, {
-    method: 'PUT',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(data),
-  });
-  const json = await res.json();
-  return json as Banner;
+  if (!isSupabaseConfigured) throw new Error('Supabase not configured');
+
+  const results = await supabaseUpdate<any>('banners', { id: `eq.${id}` }, data);
+  if (results.length === 0) throw new Error('Failed to update banner');
+  return results[0] as Banner;
 };
 
 export const deleteBanner = async (id: string): Promise<{ success: boolean }> => {
-  const res = await apiFetch(`/api/banners/index.php?id=${encodeURIComponent(id)}`, { method: 'DELETE' });
-  return await res.json();
+  if (!isSupabaseConfigured) return { success: false };
+
+  const success = await supabaseDelete('banners', { id: `eq.${id}` });
+  return { success };
 };
 
 export const toggleBannerActive = async (id: string, newStatus: boolean): Promise<Banner> => {
@@ -77,11 +121,10 @@ export const toggleBannerActive = async (id: string, newStatus: boolean): Promis
 };
 
 export const uploadBannerImage = async (file: File): Promise<string> => {
-  const form = new FormData();
-  form.append('file', file);
-  const res = await apiFetch('/api/banners/upload.php', { method: 'POST', body: form });
-  const json = await res.json();
-  return json?.url as string;
+  if (!isSupabaseConfigured) throw new Error('Supabase not configured');
+
+  const fileName = `banner-${Date.now()}-${file.name}`;
+  return getSupabaseStorageUrl('banners', fileName);
 };
 
 export const getAll = getAllBanners;

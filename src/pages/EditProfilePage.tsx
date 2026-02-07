@@ -1,19 +1,19 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { 
-  ArrowLeft, 
-  Camera, 
-  User, 
-  Mail, 
-  Phone, 
-  MapPin, 
+import {
+  ArrowLeft,
+  Camera,
+  User,
+  Mail,
+  Phone,
+  MapPin,
   Calendar,
   Save,
   Eye,
   EyeOff,
   Loader2
 } from 'lucide-react';
-import { useAuth } from '@/contexts/AuthContextMock';
+import { useAuth } from '@/contexts/AuthContext';
 import { usuariosApi } from '@/lib/api-client';
 import { uploadUserAvatar } from '@/lib/uploadHelpers';
 import { changePassword } from '@/lib/auth-client';
@@ -27,14 +27,14 @@ const EditProfilePage: React.FC = () => {
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
   const avatarInputRef = useRef<HTMLInputElement>(null);
   const [avatarPreviewUrl, setAvatarPreviewUrl] = useState<string | null>(null);
-  
+
   // Preferências
   const [preferences, setPreferences] = useState({
     notificacoesEmail: true,
     reproducaoAutomatica: true,
     perfilPublico: false
   });
-  
+
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -50,9 +50,9 @@ const EditProfilePage: React.FC = () => {
   // Carregar dados reais do compositor
   useEffect(() => {
     const loadComposerData = async () => {
-      console.log('EditProfilePage - Loading data...', { 
-        userId: user?.id, 
-        isComposer: profile?.is_composer 
+      console.log('EditProfilePage - Loading data...', {
+        userId: user?.id,
+        isComposer: profile?.is_composer
       });
 
       // Timeout de segurança
@@ -152,10 +152,10 @@ const EditProfilePage: React.FC = () => {
       try {
         const res = await usuariosApi.get(Number(user.id));
         console.log('📋 EditProfilePage - loadUser: API response', res);
-        
+
         const u = (res as any)?.data as { nome?: string; email?: string; avatar_url?: string; telefone?: string; localizacao?: string; data_nascimento?: string; biografia?: string; notificacoes_email?: number; reproducao_automatica?: number; perfil_publico?: number } | undefined;
         console.log('📋 EditProfilePage - loadUser: Extracted data', u);
-        
+
         if (u) {
           const newFormData = {
             name: u.nome || (profile as any)?.nome || '',
@@ -166,19 +166,19 @@ const EditProfilePage: React.FC = () => {
             bio: u.biografia || '',
           };
           console.log('📋 EditProfilePage - loadUser: Setting form data', newFormData);
-          
+
           setFormData(prev => ({
             ...prev,
             ...newFormData
           }));
-          
+
           // Carregar preferências
           setPreferences({
             notificacoesEmail: u.notificacoes_email === 1,
             reproducaoAutomatica: u.reproducao_automatica === 1,
             perfilPublico: u.perfil_publico === 1
           });
-          
+
           if (u.avatar_url) setAvatarPreviewUrl(u.avatar_url);
         } else {
           console.warn('⚠️ EditProfilePage - loadUser: No data in response');
@@ -198,7 +198,7 @@ const EditProfilePage: React.FC = () => {
     loadUser();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.id]);
-  
+
   const [showPasswords, setShowPasswords] = useState({
     current: false,
     new: false,
@@ -220,11 +220,11 @@ const EditProfilePage: React.FC = () => {
       console.error('❌ handlePreferenceChange: No user ID');
       return;
     }
-    
+
     const newValue = !preferences[key];
     console.log(`🔄 handlePreferenceChange: ${key} -> ${newValue}`);
     setPreferences(prev => ({ ...prev, [key]: newValue }));
-    
+
     try {
       // Mapear nomes frontend -> backend
       const fieldMap = {
@@ -232,25 +232,25 @@ const EditProfilePage: React.FC = () => {
         reproducaoAutomatica: 'reproducao_automatica',
         perfilPublico: 'perfil_publico'
       };
-      
+
       const backendField = fieldMap[key];
       const payload = { [backendField]: newValue ? 1 : 0 };
-      
+
       console.log(`📤 Enviando para API:`, {
         userId: user.id,
         field: backendField,
         value: newValue ? 1 : 0,
         payload
       });
-      
+
       const result = await usuariosApi.update(Number(user.id), payload as any);
-      
+
       console.log(`📥 Resposta da API:`, result);
-      
+
       if ((result as any)?.error) {
         throw new Error((result as any).error);
       }
-      
+
       console.log(`✅ Preferência ${key} (${backendField}) salva: ${newValue}`);
     } catch (error: any) {
       console.error(`❌ Erro ao salvar preferência ${key}:`, error);
@@ -288,9 +288,9 @@ const EditProfilePage: React.FC = () => {
         const raw = localStorage.getItem('user');
         if (raw) {
           const u = JSON.parse(raw);
-          const updated = { 
-            ...u, 
-            nome: formData.name, 
+          const updated = {
+            ...u,
+            nome: formData.name,
             email: formData.email,
             telefone: formData.phone || null,
             localizacao: formData.location || null,
@@ -299,7 +299,7 @@ const EditProfilePage: React.FC = () => {
           };
           localStorage.setItem('user', JSON.stringify(updated));
         }
-      } catch {}
+      } catch { }
 
       setMessage({ type: 'success', text: 'Informações salvas com sucesso!' });
     } catch (error: any) {
@@ -325,22 +325,22 @@ const EditProfilePage: React.FC = () => {
       setMessage({ type: 'error', text: 'As senhas não coincidem.' });
       return;
     }
-    
+
     if (formData.newPassword.length < 6) {
       setMessage({ type: 'error', text: 'A nova senha deve ter pelo menos 6 caracteres.' });
       return;
     }
-    
+
     setIsLoading(true);
     setMessage({ type: '', text: '' });
-    
+
     try {
       const result = await changePassword({
         email: user.email,
         senha_atual: formData.currentPassword,
         senha_nova: formData.newPassword
       });
-      
+
       if (result.success) {
         setMessage({ type: 'success', text: result.message || 'Senha alterada com sucesso!' });
         setFormData({
@@ -362,19 +362,19 @@ const EditProfilePage: React.FC = () => {
 
   const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     console.log('📸 handleAvatarUpload triggered');
-    
+
     const file = e.target.files?.[0];
     console.log('📸 File selected:', file ? {
       name: file.name,
       size: file.size,
       type: file.type
     } : 'No file');
-    
+
     if (!file) {
       console.warn('⚠️ No file selected');
       return;
     }
-    
+
     if (!user?.id) {
       console.error('❌ No user ID');
       setMessage({ type: 'error', text: 'Erro: usuário não identificado' });
@@ -384,7 +384,7 @@ const EditProfilePage: React.FC = () => {
     try {
       setIsUploadingAvatar(true);
       setMessage({ type: '', text: '' });
-      
+
       console.log('📸 Starting upload...', {
         userId: user.id,
         isComposer: profile?.is_composer,
@@ -445,11 +445,10 @@ const EditProfilePage: React.FC = () => {
 
       {/* Message */}
       {message.text && (
-        <div className={`p-4 rounded-lg mb-6 ${
-          message.type === 'success' 
-            ? 'bg-green-500/10 border border-green-500/50 text-green-500' 
+        <div className={`p-4 rounded-lg mb-6 ${message.type === 'success'
+            ? 'bg-green-500/10 border border-green-500/50 text-green-500'
             : 'bg-red-500/10 border border-red-500/50 text-red-500'
-        }`}>
+          }`}>
           {message.text}
         </div>
       )}
@@ -462,11 +461,10 @@ const EditProfilePage: React.FC = () => {
               <button
                 key={section.id}
                 onClick={() => setActiveSection(section.id)}
-                className={`w-full text-left px-4 py-3 rounded-lg transition-colors ${
-                  activeSection === section.id
+                className={`w-full text-left px-4 py-3 rounded-lg transition-colors ${activeSection === section.id
                     ? 'bg-primary-500/20 text-primary-400 border border-primary-500/30'
                     : 'text-text-muted hover:text-white hover:bg-background-secondary'
-                }`}
+                  }`}
               >
                 {section.label}
               </button>
@@ -479,13 +477,13 @@ const EditProfilePage: React.FC = () => {
           {activeSection === 'personal' && (
             <div className="bg-background-secondary rounded-xl p-6 space-y-6">
               <h2 className="text-xl font-semibold text-white mb-4">Informações Pessoais</h2>
-              
+
               {/* Avatar */}
               <div className="flex items-center gap-6">
                 <div className="relative">
                   <div className="w-24 h-24 rounded-full bg-background-tertiary flex items-center justify-center overflow-hidden">
                     {(avatarPreviewUrl || profile?.avatar_url) ? (
-                      <img 
+                      <img
                         src={buildAvatarUrl({
                           id: String(((user as any)?.id) || ((profile as any)?.id) || ''),
                           avatar_url: (avatarPreviewUrl || (profile as any)?.avatar_url || '') as string,
@@ -498,7 +496,7 @@ const EditProfilePage: React.FC = () => {
                       <User className="w-12 h-12 text-text-muted" />
                     )}
                   </div>
-                  <button 
+                  <button
                     onClick={() => avatarInputRef.current?.click()}
                     disabled={isUploadingAvatar}
                     className="absolute bottom-0 right-0 bg-primary-500 p-2 rounded-full hover:bg-primary-400 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
@@ -509,7 +507,7 @@ const EditProfilePage: React.FC = () => {
                       <Camera className="w-4 h-4 text-black" />
                     )}
                   </button>
-                  
+
                   {/* Hidden Input */}
                   <input
                     ref={avatarInputRef}
@@ -646,7 +644,7 @@ const EditProfilePage: React.FC = () => {
           {activeSection === 'security' && (
             <div className="bg-background-secondary rounded-xl p-6 space-y-6">
               <h2 className="text-xl font-semibold text-white mb-4">Segurança</h2>
-              
+
               <div className="space-y-4">
                 <div>
                   <label className="block text-sm font-medium text-white mb-2">
@@ -663,7 +661,7 @@ const EditProfilePage: React.FC = () => {
                     />
                     <button
                       type="button"
-                      onClick={() => setShowPasswords({...showPasswords, current: !showPasswords.current})}
+                      onClick={() => setShowPasswords({ ...showPasswords, current: !showPasswords.current })}
                       className="absolute right-3 top-1/2 transform -translate-y-1/2 text-text-muted hover:text-white"
                     >
                       {showPasswords.current ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
@@ -686,7 +684,7 @@ const EditProfilePage: React.FC = () => {
                     />
                     <button
                       type="button"
-                      onClick={() => setShowPasswords({...showPasswords, new: !showPasswords.new})}
+                      onClick={() => setShowPasswords({ ...showPasswords, new: !showPasswords.new })}
                       className="absolute right-3 top-1/2 transform -translate-y-1/2 text-text-muted hover:text-white"
                     >
                       {showPasswords.new ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
@@ -709,7 +707,7 @@ const EditProfilePage: React.FC = () => {
                     />
                     <button
                       type="button"
-                      onClick={() => setShowPasswords({...showPasswords, confirm: !showPasswords.confirm})}
+                      onClick={() => setShowPasswords({ ...showPasswords, confirm: !showPasswords.confirm })}
                       className="absolute right-3 top-1/2 transform -translate-y-1/2 text-text-muted hover:text-white"
                     >
                       {showPasswords.confirm ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
@@ -732,7 +730,7 @@ const EditProfilePage: React.FC = () => {
           {activeSection === 'preferences' && (
             <div className="bg-background-secondary rounded-xl p-6 space-y-6">
               <h2 className="text-xl font-semibold text-white mb-4">Preferências</h2>
-              
+
               <div className="space-y-6">
                 <div className="flex items-center justify-between">
                   <div>
@@ -740,9 +738,9 @@ const EditProfilePage: React.FC = () => {
                     <p className="text-sm text-text-muted">Receba atualizações sobre novos hinos e playlists</p>
                   </div>
                   <label className="relative inline-flex items-center cursor-pointer">
-                    <input 
-                      type="checkbox" 
-                      className="sr-only peer" 
+                    <input
+                      type="checkbox"
+                      className="sr-only peer"
                       checked={preferences.notificacoesEmail}
                       onChange={() => handlePreferenceChange('notificacoesEmail')}
                     />
@@ -756,9 +754,9 @@ const EditProfilePage: React.FC = () => {
                     <p className="text-sm text-text-muted">Continue ouvindo hinos similares</p>
                   </div>
                   <label className="relative inline-flex items-center cursor-pointer">
-                    <input 
-                      type="checkbox" 
-                      className="sr-only peer" 
+                    <input
+                      type="checkbox"
+                      className="sr-only peer"
                       checked={preferences.reproducaoAutomatica}
                       onChange={() => handlePreferenceChange('reproducaoAutomatica')}
                     />
@@ -772,9 +770,9 @@ const EditProfilePage: React.FC = () => {
                     <p className="text-sm text-text-muted">Permita que outros usuários vejam seu perfil</p>
                   </div>
                   <label className="relative inline-flex items-center cursor-pointer">
-                    <input 
-                      type="checkbox" 
-                      className="sr-only peer" 
+                    <input
+                      type="checkbox"
+                      className="sr-only peer"
                       checked={preferences.perfilPublico}
                       onChange={() => handlePreferenceChange('perfilPublico')}
                     />

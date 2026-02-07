@@ -304,7 +304,7 @@ const AdminFeatured: React.FC = () => {
                 alt={item.title}
                 className="w-full h-full object-cover"
                 onError={(e) => {
-                  e.currentTarget.src = 'https://via.placeholder.com/400x200/1a1a1a/ffffff?text=Sem+Imagem';
+                  e.currentTarget.src = 'data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22400%22 height=%22200%22%3E%3Crect fill=%22%231a1a1a%22 width=%22400%22 height=%22200%22/%3E%3Ctext fill=%22%23666%22 x=%2250%25%22 y=%2250%25%22 text-anchor=%22middle%22 dy=%22.3em%22 font-size=%2214%22%3ESem Imagem%3C/text%3E%3C/svg%3E';
                 }}
               />
               <div className="absolute top-2 right-2 flex gap-2">

@@ -50,7 +50,7 @@ const HymnsTable: React.FC<Props> = ({ hymns, getStatusBadge, onToggleFeatured, 
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-3">
                       <img
-                        src={hymn.cover_url || `https://picsum.photos/seed/hymn${hymn.number}/100`}
+                        src={hymn.cover_url || `https://ui-avatars.com/api/?name=${hymn.number || 'H'}&background=1f2937&color=9ca3af&size=100`}
                         alt={hymn.title}
                         className="w-12 h-12 rounded-lg object-cover"
                       />

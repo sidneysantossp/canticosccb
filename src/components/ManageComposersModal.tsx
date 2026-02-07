@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { X, Music, CheckCircle, Users } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '@/contexts/AuthContextMock';
+import { useAuth } from '@/contexts/AuthContext';
 import { compositorGerentesApi, type CompositorGerente } from '@/lib/api-client';
 
 interface ManageComposersModalProps {
@@ -22,7 +22,7 @@ const ManageComposersModal: React.FC<ManageComposersModalProps> = ({
   const [error, setError] = useState('');
   const { user, switchToComposer } = useAuth();
   const navigate = useNavigate();
-  
+
   const userId = propUserId || user?.id;
 
   useEffect(() => {
@@ -37,10 +37,10 @@ const ManageComposersModal: React.FC<ManageComposersModalProps> = ({
       setLoading(false);
       return;
     }
-    
+
     setLoading(true);
     setError('');
-    
+
     try {
       // Usar o cliente unificado (evita CORS e padroniza formato)
       const response: any = await compositorGerentesApi.listarCompositores(userId);
@@ -139,7 +139,7 @@ const ManageComposersModal: React.FC<ManageComposersModalProps> = ({
                         <Music className="w-8 h-8 text-primary-400" />
                       </div>
                     )}
-                    
+
                     <div className="flex-1 text-left">
                       <h3 className="text-white font-semibold text-lg group-hover:text-primary-400 transition-colors">
                         {composer.nome_artistico || composer.nome}
@@ -154,7 +154,7 @@ const ManageComposersModal: React.FC<ManageComposersModalProps> = ({
                         <span className="text-green-400 text-xs font-medium">Ativo</span>
                       </div>
                     </div>
-                    
+
                     <div className="text-primary-400 group-hover:translate-x-1 transition-transform">
                       →
                     </div>

@@ -5,7 +5,7 @@ import {
   Mic2,
   Music,
   Play,
-  DollarSign,
+
   TrendingUp,
   Clock,
   CheckCircle,
@@ -50,12 +50,12 @@ const AdminDashboard: React.FC = () => {
 
   const isLoading = loadingStats || loadingTopSongs || loadingActivity;
 
-  // Mock stats for display (will be replaced with real data)
-  const displayStats = stats ? [
+  const s = stats || { totalComposers: 0, publishedSongs: 0, totalPlays: 0, totalLikes: 0, totalSongs: 0, newUsersToday: 0, pendingSongs: 0, pendingComposers: 0, openReports: 0 };
+  const displayStats = [
     {
       id: 1,
       title: 'Compositores',
-      value: stats.totalComposers.toString(),
+      value: s.totalComposers.toString(),
       change: '+0%',
       trend: 'up' as const,
       icon: Mic2,
@@ -66,7 +66,7 @@ const AdminDashboard: React.FC = () => {
     {
       id: 2,
       title: 'Hinos Publicados',
-      value: stats.publishedSongs.toString(),
+      value: s.publishedSongs.toString(),
       change: '+0%',
       trend: 'up' as const,
       icon: Music,
@@ -77,9 +77,9 @@ const AdminDashboard: React.FC = () => {
     {
       id: 3,
       title: 'Total de Plays',
-      value: stats.totalPlays >= 1000 
-        ? `${(stats.totalPlays / 1000).toFixed(1)}K` 
-        : stats.totalPlays.toString(),
+      value: s.totalPlays >= 1000 
+        ? `${(s.totalPlays / 1000).toFixed(1)}K` 
+        : s.totalPlays.toString(),
       change: '+0%',
       trend: 'up' as const,
       icon: Play,
@@ -90,7 +90,7 @@ const AdminDashboard: React.FC = () => {
     {
       id: 4,
       title: 'Total de Curtidas',
-      value: stats.totalLikes.toString(),
+      value: s.totalLikes.toString(),
       change: '+0%',
       trend: 'up' as const,
       icon: Music,
@@ -101,7 +101,7 @@ const AdminDashboard: React.FC = () => {
     {
       id: 5,
       title: 'Total de Músicas',
-      value: stats.totalSongs.toString(),
+      value: s.totalSongs.toString(),
       change: '+0%',
       trend: 'up' as const,
       icon: Music,
@@ -112,81 +112,13 @@ const AdminDashboard: React.FC = () => {
     {
       id: 6,
       title: 'Novos Hoje',
-      value: stats.newUsersToday.toString(),
+      value: s.newUsersToday.toString(),
       change: '+0%',
       trend: 'up' as const,
       icon: TrendingUp,
       color: 'bg-emerald-500',
       bgColor: 'bg-emerald-500/10',
       textColor: 'text-emerald-500'
-    }
-  ] : [
-    // Fallback mock data
-    {
-      id: 1,
-      title: 'Usuários Ativos',
-      value: '24,547',
-      change: '+12.5%',
-      trend: 'up',
-      icon: Users,
-      color: 'bg-blue-500',
-      bgColor: 'bg-blue-500/10',
-      textColor: 'text-blue-500'
-    },
-    {
-      id: 2,
-      title: 'Compositores',
-      value: '1,234',
-      change: '+8.2%',
-      trend: 'up',
-      icon: Mic2,
-      color: 'bg-purple-500',
-      bgColor: 'bg-purple-500/10',
-      textColor: 'text-purple-500'
-    },
-    {
-      id: 3,
-      title: 'Hinos Publicados',
-      value: '8,456',
-      change: '+23.1%',
-      trend: 'up',
-      icon: Music,
-      color: 'bg-green-500',
-      bgColor: 'bg-green-500/10',
-      textColor: 'text-green-500'
-    },
-    {
-      id: 4,
-      title: 'Total de Plays',
-      value: '2.4M',
-      change: '+18.3%',
-      trend: 'up',
-      icon: Play,
-      color: 'bg-orange-500',
-      bgColor: 'bg-orange-500/10',
-      textColor: 'text-orange-500'
-    },
-    {
-      id: 5,
-      title: 'Receita (Premium)',
-      value: 'R$ 145.2K',
-      change: '+15.8%',
-      trend: 'up',
-      icon: DollarSign,
-      color: 'bg-emerald-500',
-      bgColor: 'bg-emerald-500/10',
-      textColor: 'text-emerald-500'
-    },
-    {
-      id: 6,
-      title: 'Novos Hoje',
-      value: '342',
-      change: '-2.4%',
-      trend: 'down',
-      icon: TrendingUp,
-      color: 'bg-red-500',
-      bgColor: 'bg-red-500/10',
-      textColor: 'text-red-500'
     }
   ];
 
@@ -308,7 +240,7 @@ const AdminDashboard: React.FC = () => {
             {(recentActivity || []).map((activity) => (
               <div key={activity.id} className="flex items-start gap-3 pb-4 border-b border-gray-800 last:border-0">
                 <img
-                  src={`https://i.pravatar.cc/150?u=${encodeURIComponent(activity.avatarSeed || activity.user || activity.id)}`}
+                  src={`https://ui-avatars.com/api/?name=${encodeURIComponent(activity.user || 'U')}&background=random&size=150`}
                   alt={activity.user}
                   className="w-10 h-10 rounded-full"
                 />
@@ -346,7 +278,7 @@ const AdminDashboard: React.FC = () => {
                 <div key={item.song_id} className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-800/50 transition-colors">
                   <span className="text-gray-400 font-bold text-lg w-6">{index + 1}</span>
                   <img
-                    src={song?.cover_url || 'https://picsum.photos/seed/' + index + '/100'}
+                    src={song?.cover_url || `https://ui-avatars.com/api/?name=${index + 1}&background=1f2937&color=9ca3af&size=100`}
                     alt={song?.title || 'Song'}
                     className="w-12 h-12 rounded-lg object-cover"
                   />

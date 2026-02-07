@@ -4,40 +4,25 @@ import { Megaphone, Plus, RefreshCw, AlertTriangle } from 'lucide-react';
 import CampaignsStatsCards from '@/pages/admin/components/campaigns/CampaignsStatsCards';
 import CampaignListItem from '@/pages/admin/components/campaigns/CampaignListItem';
 import CampaignEditModal from '@/pages/admin/components/campaigns/CampaignEditModal';
-
-interface Campaign {
-  id: string;
-  name: string;
-  description?: string;
-  campaign_type: 'email' | 'sms' | 'push' | 'banner' | 'social' | 'multi-channel';
-  target_audience: 'all' | 'premium' | 'free' | 'inactive' | 'new' | 'custom';
-  subject?: string;
-  scheduled_at?: string;
-  sent_at?: string;
-  status: 'draft' | 'scheduled' | 'sending' | 'sent' | 'paused' | 'cancelled' | 'completed';
-  sent_count: number;
-  delivered_count: number;
-  opened_count: number;
-  clicked_count: number;
-  converted_count: number;
-  budget?: number;
-  spent: number;
-  revenue_generated: number;
-  tags: string[];
-  created_at: string;
-}
-
+import {
+  Campaign as CampaignModel,
+  CampaignInput,
+  createCampaign,
+  deleteCampaign,
+  getAllCampaigns,
+  updateCampaign
+} from '@/lib/admin/campaignsAdminApi';
 const AdminCampaigns: React.FC = () => {
-  const [campaigns, setCampaigns] = useState<Campaign[]>([]);
+  const [campaigns, setCampaigns] = useState<CampaignModel[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showModal, setShowModal] = useState(false);
-  const [editingCampaign, setEditingCampaign] = useState<Campaign | null>(null);
+  const [editingCampaign, setEditingCampaign] = useState<CampaignModel | null>(null);
   const [formData, setFormData] = useState({
     name: '',
     description: '',
-    campaign_type: 'email' as Campaign['campaign_type'],
-    target_audience: 'all' as Campaign['target_audience'],
+    campaign_type: 'email' as CampaignModel['campaign_type'],
+    target_audience: 'all' as CampaignModel['target_audience'],
     subject: '',
     scheduled_at: '',
     budget: 0,
@@ -87,80 +72,15 @@ const AdminCampaigns: React.FC = () => {
     try {
       setIsLoading(true);
       setError(null);
-      
-      // Mock data
-      const mockCampaigns: Campaign[] = [
-        {
-          id: '1',
-          name: 'Lançamento Premium',
-          description: 'Campanha de lançamento do plano Premium',
-          campaign_type: 'email',
-          target_audience: 'free',
-          subject: 'Conheça o Novo Plano Premium',
-          status: 'completed',
-          sent_count: 1547,
-          delivered_count: 1489,
-          opened_count: 876,
-          clicked_count: 234,
-          converted_count: 67,
-          budget: 500,
-          spent: 487.50,
-          revenue_generated: 3350.00,
-          tags: ['lancamento', 'premium'],
-          sent_at: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
-          created_at: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString()
-        },
-        {
-          id: '2',
-          name: 'Reengajamento',
-          description: 'Trazer usuários inativos de volta',
-          campaign_type: 'push',
-          target_audience: 'inactive',
-          subject: 'Sentimos sua falta!',
-          status: 'sent',
-          sent_count: 823,
-          delivered_count: 798,
-          opened_count: 412,
-          clicked_count: 98,
-          converted_count: 34,
-          budget: 200,
-          spent: 156.80,
-          revenue_generated: 1020.00,
-          tags: ['reengajamento'],
-          sent_at: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
-          created_at: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString()
-        },
-        {
-          id: '3',
-          name: 'Black Friday 2025',
-          description: 'Campanha especial Black Friday',
-          campaign_type: 'multi-channel',
-          target_audience: 'all',
-          subject: 'Black Friday: 50% OFF',
-          status: 'scheduled',
-          sent_count: 0,
-          delivered_count: 0,
-          opened_count: 0,
-          clicked_count: 0,
-          converted_count: 0,
-          budget: 1000,
-          spent: 0,
-          revenue_generated: 0,
-          tags: ['black-friday', 'desconto'],
-          scheduled_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
-          created_at: new Date().toISOString()
-        }
-      ];
 
-      setCampaigns(mockCampaigns);
-      
+      const rows = await getAllCampaigns({ order: 'created_at.desc' });
+      setCampaigns(rows);
       setStats({
-        total: mockCampaigns.length,
-        active: mockCampaigns.filter(c => ['scheduled', 'sending', 'sent'].includes(c.status)).length,
-        totalSent: mockCampaigns.reduce((sum, c) => sum + c.sent_count, 0),
-        totalRevenue: mockCampaigns.reduce((sum, c) => sum + c.revenue_generated, 0)
+        total: rows.length,
+        active: rows.filter(c => ['scheduled', 'sending', 'sent'].includes(c.status)).length,
+        totalSent: rows.reduce((sum, c) => sum + (c.sent_count || 0), 0),
+        totalRevenue: rows.reduce((sum, c) => sum + (c.revenue_generated || 0), 0)
       });
-
     } catch (err: any) {
       console.error('Erro ao carregar campanhas:', err);
       setError(err?.message || 'Erro ao carregar campanhas');
@@ -168,8 +88,8 @@ const AdminCampaigns: React.FC = () => {
       setIsLoading(false);
     }
   };
-
-  const handleOpenModal = (campaign?: Campaign) => {
+  
+  const handleOpenModal = (campaign?: CampaignModel) => {
     if (campaign) {
       setEditingCampaign(campaign);
       setFormData({
@@ -199,11 +119,27 @@ const AdminCampaigns: React.FC = () => {
   };
 
   const handleSave = async () => {
+    const trimmedName = formData.name.trim();
+    if (!trimmedName) return;
+
     try {
-      if (!formData.name) {
-        return;
+      const payload: CampaignInput = {
+        name: trimmedName,
+        description: formData.description.trim() || undefined,
+        campaign_type: formData.campaign_type,
+        target_audience: formData.target_audience,
+        subject: formData.subject.trim() || undefined,
+        scheduled_at: formData.scheduled_at || undefined,
+        budget: formData.budget || undefined,
+        tags: formData.tags
+      };
+
+      if (editingCampaign) {
+        await updateCampaign(editingCampaign.id, payload);
+      } else {
+        await createCampaign(payload);
       }
-      await new Promise(resolve => setTimeout(resolve, 1000));
+
       setShowModal(false);
       loadData();
     } catch (error) {
@@ -212,9 +148,13 @@ const AdminCampaigns: React.FC = () => {
   };
 
   const handleDelete = async (id: string) => {
+    if (!confirm('Deseja realmente excluir esta campanha?')) return;
+
     try {
-      if (!confirm('Deseja realmente excluir esta campanha?')) return;
-      await new Promise(resolve => setTimeout(resolve, 500));
+      const success = await deleteCampaign(id);
+      if (!success) {
+        throw new Error('Falha ao excluir campanha');
+      }
       loadData();
     } catch (error) {
       console.error('Erro ao excluir campanha:', error);

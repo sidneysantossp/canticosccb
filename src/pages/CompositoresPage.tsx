@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { TrendingUp, Users, Music, ArrowLeft, Calendar } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
-// import { getFeaturedComposers } from '@/lib/admin/composersAdminApi';
+import { getFeaturedComposers } from '@/lib/admin/composersAdminApi';
 import SEOHead from '@/components/SEO/SEOHead';
 
 interface Compositor {
@@ -92,24 +92,24 @@ export default function CompositoresPage() {
     try {
       setIsLoading(true);
       console.log('🎵 CompositoresPage - Carregando compositores...');
-      
+
       // Tentar carregar do banco de dados
       const dbComposers = await getFeaturedComposers();
-      
+
       console.log('📊 CompositoresPage - Dados recebidos:', {
         length: dbComposers?.length || 0,
         firstComposer: dbComposers?.[0]?.name,
         allComposers: dbComposers?.map(c => c.name)
       });
-      
+
       if (dbComposers && dbComposers.length > 0) {
         // Converter dados do banco para o formato esperado
         let convertedComposers = dbComposers.map((composer: any, index: number) => {
           const avatarUrl = composer.avatar_url || composer.photo_url;
-          const finalImage = avatarUrl && avatarUrl.trim() !== '' 
-            ? avatarUrl 
+          const finalImage = avatarUrl && avatarUrl.trim() !== ''
+            ? avatarUrl
             : `https://ui-avatars.com/api/?name=${encodeURIComponent(composer.name)}&size=400&background=1a1a1a&color=00D1FF`;
-          
+
           return {
             id: composer.id,
             name: composer.name,
@@ -137,12 +137,12 @@ export default function CompositoresPage() {
             c.registeredDate && (now.getTime() - c.registeredDate.getTime()) < 30 * 24 * 60 * 60 * 1000
           );
         } */
-        
+
         console.log('✅ Compositores após filtro (período desabilitado):', convertedComposers.length);
 
         // Ordenar por seguidores (ranking)
         convertedComposers.sort((a, b) => b.followers - a.followers);
-        
+
         // Atualizar ranks após ordenação
         convertedComposers = convertedComposers.map((c, i) => ({ ...c, rank: i + 1 }));
 
@@ -151,11 +151,11 @@ export default function CompositoresPage() {
         // Fallback para dados mock (sem filtro de período)
         console.log('⚠️ Nenhum compositor no banco, usando mock data');
         let filteredMock = [...mockComposers];
-        
+
         // Ordenar por seguidores
         filteredMock.sort((a, b) => b.followers - a.followers);
         filteredMock = filteredMock.map((c, i) => ({ ...c, rank: i + 1 }));
-        
+
         setComposers(filteredMock);
       }
     } catch (error) {
@@ -249,32 +249,29 @@ export default function CompositoresPage() {
             <div className="flex gap-2 mt-6">
               <button
                 onClick={() => setSelectedPeriod('hoje')}
-                className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-                  selectedPeriod === 'hoje'
-                    ? 'bg-primary-500 text-black'
-                    : 'bg-white/10 text-white hover:bg-white/20'
-                }`}
+                className={`px-4 py-2 rounded-lg font-medium transition-colors ${selectedPeriod === 'hoje'
+                  ? 'bg-primary-500 text-black'
+                  : 'bg-white/10 text-white hover:bg-white/20'
+                  }`}
               >
                 <Calendar className="w-4 h-4 inline mr-2" />
                 Registrados Hoje
               </button>
               <button
                 onClick={() => setSelectedPeriod('semana')}
-                className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-                  selectedPeriod === 'semana'
-                    ? 'bg-primary-500 text-black'
-                    : 'bg-white/10 text-white hover:bg-white/20'
-                }`}
+                className={`px-4 py-2 rounded-lg font-medium transition-colors ${selectedPeriod === 'semana'
+                  ? 'bg-primary-500 text-black'
+                  : 'bg-white/10 text-white hover:bg-white/20'
+                  }`}
               >
                 Esta Semana
               </button>
               <button
                 onClick={() => setSelectedPeriod('mes')}
-                className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-                  selectedPeriod === 'mes'
-                    ? 'bg-primary-500 text-black'
-                    : 'bg-white/10 text-white hover:bg-white/20'
-                }`}
+                className={`px-4 py-2 rounded-lg font-medium transition-colors ${selectedPeriod === 'mes'
+                  ? 'bg-primary-500 text-black'
+                  : 'bg-white/10 text-white hover:bg-white/20'
+                  }`}
               >
                 Este Mês
               </button>
@@ -315,25 +312,23 @@ export default function CompositoresPage() {
                 <Link
                   key={compositor.id}
                   to={`/compositor/${compositor.id}`}
-                  className={`group relative bg-gradient-to-r ${
-                    index === 0
-                      ? 'from-primary-900/30 to-gray-900/30 border-primary-700/50'
-                      : 'from-gray-900/50 to-gray-800/30 border-gray-800/50'
-                  } backdrop-blur-sm border rounded-xl p-4 hover:scale-[1.02] transition-all duration-200 block cursor-pointer`}
+                  className={`group relative bg-gradient-to-r ${index === 0
+                    ? 'from-primary-900/30 to-gray-900/30 border-primary-700/50'
+                    : 'from-gray-900/50 to-gray-800/30 border-gray-800/50'
+                    } backdrop-blur-sm border rounded-xl p-4 hover:scale-[1.02] transition-all duration-200 block cursor-pointer`}
                 >
                   <div className="flex items-center gap-4">
                     {/* Rank */}
                     <div className="flex flex-col items-center gap-1">
                       <div
-                        className={`text-2xl font-bold ${
-                          index === 0
-                            ? 'text-primary-400'
-                            : index === 1
+                        className={`text-2xl font-bold ${index === 0
+                          ? 'text-primary-400'
+                          : index === 1
                             ? 'text-gray-300'
                             : index === 2
-                            ? 'text-amber-600'
-                            : 'text-gray-500'
-                        }`}
+                              ? 'text-amber-600'
+                              : 'text-gray-500'
+                          }`}
                       >
                         #{compositor.rank}
                       </div>

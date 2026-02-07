@@ -18,77 +18,12 @@ const AdminReportLogs: React.FC = () => {
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [dateRange, setDateRange] = useState('7days');
 
-  // Mock logs data
-  const mockLogs: LogEntry[] = [
-    {
-      id: '1',
-      timestamp: new Date().toISOString(),
-      level: 'success',
-      category: 'auth',
-      message: 'Usuário realizou login com sucesso',
-      user: 'João Silva',
-      ip: '192.168.1.100'
-    },
-    {
-      id: '2',
-      timestamp: new Date(Date.now() - 3600000).toISOString(),
-      level: 'info',
-      category: 'upload',
-      message: 'Novo hino adicionado: Hino 450',
-      user: 'Admin',
-      ip: '192.168.1.1'
-    },
-    {
-      id: '3',
-      timestamp: new Date(Date.now() - 7200000).toISOString(),
-      level: 'warning',
-      category: 'api',
-      message: 'Taxa de requisições próxima do limite',
-      ip: '192.168.1.50'
-    },
-    {
-      id: '4',
-      timestamp: new Date(Date.now() - 10800000).toISOString(),
-      level: 'error',
-      category: 'database',
-      message: 'Falha ao conectar com banco de dados',
-      ip: '192.168.1.1'
-    },
-    {
-      id: '5',
-      timestamp: new Date(Date.now() - 14400000).toISOString(),
-      level: 'success',
-      category: 'user',
-      message: 'Novo usuário registrado',
-      user: 'Maria Santos',
-      ip: '192.168.1.105'
-    },
-    {
-      id: '6',
-      timestamp: new Date(Date.now() - 18000000).toISOString(),
-      level: 'info',
-      category: 'admin',
-      message: 'Configurações do sistema atualizadas',
-      user: 'Admin',
-      ip: '192.168.1.1'
-    }
-  ];
-
   const [logs, setLogs] = useState<LogEntry[]>([]);
 
   useEffect(() => {
-    // Simulate loading logs from API
-    const timer = setTimeout(() => {
-      try {
-        setLogs(mockLogs);
-        setIsLoading(false);
-      } catch (err: any) {
-        setError(err?.message || 'Erro ao carregar relatório de logs');
-        setIsLoading(false);
-      }
-    }, 500);
-    return () => clearTimeout(timer);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // TODO: Integrar com tabela 'logs' do Supabase quando disponível
+    setLogs([]);
+    setIsLoading(false);
   }, []);
 
   const getLogIcon = (level: string) => {

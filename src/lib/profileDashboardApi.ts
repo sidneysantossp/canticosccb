@@ -1,4 +1,5 @@
 // API real para dados do painel de perfil
+import { supabase } from '@/lib/supabase-auth';
 
 export interface FollowedComposer {
   id: string;
@@ -59,36 +60,40 @@ export interface ProfileDashboardData {
   } | null;
 }
 
+// Helper: query segura que retorna fallback se a tabela não existir
+async function safeQuery<T>(query: PromiseLike<{ data: T | null; error: any; count?: number | null }>): Promise<{ data: T | null; error: any; count: number | null }> {
+  try {
+    const result = await query as any;
+    return { data: result.data, error: result.error, count: result.count ?? null };
+  } catch {
+    return { data: null, error: null, count: null };
+  }
+}
+
 export async function getProfileDashboardData(userId: string, _isComposer: boolean): Promise<ProfileDashboardData> {
-  const { supabase } = await import('@/lib/supabase-auth');
   
   try {
-    // Buscar estatísticas em paralelo
+    // Buscar estatísticas em paralelo (nomes de tabelas conforme schema real)
     const [
-      { count: playlistsCount },
-      { count: favoritesCount },
-      { data: playlists },
-      { data: recentPlays },
-      { data: followedComposers }
+      playlistsResult,
+      favoritesResult,
+      playlistsDataResult,
+      followsResult
     ] = await Promise.all([
       // Contagem de playlists
-      supabase.from('playlists').select('*', { count: 'exact', head: true }).eq('user_id', userId),
-      // Contagem de favoritos
-      supabase.from('favoritos').select('*', { count: 'exact', head: true }).eq('usuario_id', Number(userId)),
+      safeQuery(supabase.from('playlists').select('*', { count: 'exact', head: true }).eq('user_id', userId)),
+      // Contagem de favoritos (tabela: favorites, campo: user_id UUID)
+      safeQuery(supabase.from('favorites').select('*', { count: 'exact', head: true }).eq('user_id', userId)),
       // Playlists do usuário
-      supabase.from('playlists').select('*').eq('user_id', userId).order('created_at', { ascending: false }).limit(10),
-      // Histórico recente
-      supabase.from('historico').select(`
-        id,
-        created_at,
-        hinos (id, titulo, compositor_nome, capa)
-      `).eq('usuario_id', userId).order('created_at', { ascending: false }).limit(10),
-      // Compositores seguidos
-      supabase.from('seguidores').select(`
-        compositor_id,
-        compositores (id, name, artistic_name, photo_url)
-      `).eq('usuario_id', userId).limit(20)
+      safeQuery(supabase.from('playlists').select('*').eq('user_id', userId).order('created_at', { ascending: false }).limit(10)),
+      // Compositores seguidos (tabela: user_follows)
+      safeQuery(supabase.from('user_follows').select('*').eq('user_id', userId).limit(20))
     ]);
+
+    const playlistsCount = playlistsResult.count || 0;
+    const favoritesCount = favoritesResult.count || 0;
+    const playlists = playlistsDataResult.data as any[] | null;
+    const followedRaw = followsResult.data as any[] | null;
 
     console.log('📊 ProfileDashboard - Stats carregadas:', {
       userId,
@@ -98,27 +103,18 @@ export async function getProfileDashboardData(userId: string, _isComposer: boole
 
     return {
       stats: {
-        playlistsCount: playlistsCount || 0,
-        favoritesCount: favoritesCount || 0,
+        playlistsCount,
+        favoritesCount,
         hoursListened: 0,
         followersCount: 0
       },
-      recentPlays: (recentPlays || []).map((item: any) => ({
-        id: String(item.id),
-        hymn: item.hinos ? {
-          id: String(item.hinos.id),
-          title: item.hinos.titulo,
-          composer_name: item.hinos.compositor_nome,
-          cover_url: item.hinos.capa
-        } : undefined,
-        created_at: item.created_at
-      })),
+      recentPlays: [],
       activities: [],
-      followedComposers: (followedComposers || []).map((item: any) => ({
-        id: String(item.compositores?.id || item.compositor_id),
-        name: item.compositores?.name || 'Compositor',
-        artistic_name: item.compositores?.artistic_name,
-        photo_url: item.compositores?.photo_url,
+      followedComposers: (followedRaw || []).map((item: any) => ({
+        id: String(item.followed_id || item.compositor_id || item.id),
+        name: item.followed_name || 'Compositor',
+        artistic_name: item.artistic_name,
+        photo_url: item.photo_url,
         followers_count: 0,
         songs_count: 0
       })),

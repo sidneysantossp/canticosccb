@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Navigate, useNavigate } from 'react-router-dom';
-import { useAuth } from '@/contexts/AuthContextMock';
+import { useAuth } from '@/contexts/AuthContext';
 import { compositoresApi } from '@/lib/api-client';
 import { AlertCircle } from 'lucide-react';
 
@@ -30,7 +30,7 @@ export const ProtectedComposerRoute: React.FC<ProtectedComposerRouteProps> = ({ 
     try {
       // Buscar todos os compositores e encontrar pelo usuario_id
       const response = await compositoresApi.list({ limit: 100 });
-      
+
       if (response.error) {
         console.error('Erro ao verificar status:', response.error);
         setIsVerified(false);
@@ -40,9 +40,9 @@ export const ProtectedComposerRoute: React.FC<ProtectedComposerRouteProps> = ({ 
 
       const apiData = response.data as any;
       const compositores = apiData?.compositores || [];
-      
+
       // Encontrar o compositor pelo usuario_id
-      const compositor = compositores.find((c: any) => 
+      const compositor = compositores.find((c: any) =>
         Number(c?.usuario_id) === Number(user.id)
       );
 
@@ -103,16 +103,16 @@ export const ProtectedComposerRoute: React.FC<ProtectedComposerRouteProps> = ({ 
           <div className="w-16 h-16 bg-yellow-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
             <AlertCircle className="w-8 h-8 text-yellow-400" />
           </div>
-          
+
           <h2 className="text-2xl font-bold text-white mb-3">
             Perfil em Análise
           </h2>
-          
+
           <p className="text-gray-400 mb-6">
-            Seu perfil de compositor está em processo de verificação. 
+            Seu perfil de compositor está em processo de verificação.
             Nossa equipe está analisando seus documentos e em breve você terá acesso completo ao dashboard de compositor.
           </p>
-          
+
           <div className="bg-gray-800/50 border border-gray-700 rounded-lg p-4 mb-6 text-left">
             <p className="text-sm text-gray-300 mb-2">
               <strong className="text-white">O que fazer enquanto aguarda?</strong>

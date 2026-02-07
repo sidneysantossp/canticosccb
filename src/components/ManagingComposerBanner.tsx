@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { AlertTriangle, X } from 'lucide-react';
-import { useAuth } from '@/contexts/AuthContextMock';
+import { useAuth } from '@/contexts/AuthContext';
 import apiClient from '@/lib/api-client';
 import { useLocation } from 'react-router-dom';
 import { useNavigate } from 'react-router-dom';
@@ -81,17 +81,17 @@ const ManagingComposerBanner: React.FC = () => {
     sessionStorage.removeItem('managingComposerId');
     sessionStorage.removeItem('managingComposerName');
     // Limpar qualquer cache residual em localStorage
-    try { localStorage.removeItem('managingComposerId'); } catch {}
-    try { localStorage.removeItem('managingComposerName'); } catch {}
+    try { localStorage.removeItem('managingComposerId'); } catch { }
+    try { localStorage.removeItem('managingComposerName'); } catch { }
     // Atualizar estado local imediatamente para esconder a tarja
     setComposerId(null);
     setComposerName(null);
-    
+
     // Chamar função do contexto se existir
     if (switchBackToSelf) {
       switchBackToSelf();
     }
-    
+
     // Redirecionar para perfil do usuário
     navigate('/profile');
   };
@@ -109,7 +109,7 @@ const ManagingComposerBanner: React.FC = () => {
             Você está gerenciando a conta do Compositor: <span className="font-bold">{composerName || 'Carregando...'}</span>
           </p>
         </div>
-        
+
         <button
           onClick={handleSwitchBack}
           className="flex items-center gap-2 px-3 py-1.5 bg-black text-yellow-500 rounded-md font-medium hover:bg-gray-900 transition-colors text-xs whitespace-nowrap"

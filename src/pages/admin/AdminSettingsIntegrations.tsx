@@ -71,125 +71,15 @@ const AdminSettingsIntegrations: React.FC = () => {
       setIsLoading(true);
       setError(null);
       
-      // Mock data
-      const mockIntegrations: Integration[] = [
-        {
-          id: '1',
-          name: 'Google Analytics',
-          slug: 'google-analytics',
-          provider: 'google',
-          category: 'analytics',
-          description: 'Monitoramento de tráfego e comportamento dos usuários',
-          is_active: true,
-          is_configured: true,
-          api_key: 'UA-XXXXX-Y',
-          last_sync_at: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
-          documentation_url: 'https://analytics.google.com'
-        },
-        {
-          id: '2',
-          name: 'Stripe',
-          slug: 'stripe',
-          provider: 'stripe',
-          category: 'payment',
-          description: 'Gateway de pagamento internacional',
-          is_active: true,
-          is_configured: true,
-          last_sync_at: new Date(Date.now() - 30 * 60 * 1000).toISOString()
-        },
-        {
-          id: '3',
-          name: 'Google Search Console',
-          slug: 'google-search-console',
-          provider: 'google',
-          category: 'analytics',
-          description: 'Monitoramento de desempenho nas buscas do Google',
-          is_active: false,
-          is_configured: false,
-          documentation_url: 'https://search.google.com/search-console'
-        },
-        {
-          id: '4',
-          name: 'Facebook Pixel',
-          slug: 'facebook-pixel',
-          provider: 'facebook',
-          category: 'analytics',
-          description: 'Rastreamento de conversões do Facebook',
-          is_active: false,
-          is_configured: false
-        },
-        {
-          id: '5',
-          name: 'SendGrid',
-          slug: 'sendgrid',
-          provider: 'sendgrid',
-          category: 'email',
-          description: 'Serviço de envio de emails transacionais',
-          is_active: true,
-          is_configured: true
-        },
-        {
-          id: '6',
-          name: 'AWS S3',
-          slug: 'aws-s3',
-          provider: 'aws',
-          category: 'storage',
-          description: 'Armazenamento de arquivos na nuvem',
-          is_active: false,
-          is_configured: false
-        },
-        {
-          id: '7',
-          name: 'PayPal',
-          slug: 'paypal',
-          provider: 'paypal',
-          category: 'payment',
-          description: 'Processamento de pagamentos via PayPal',
-          is_active: false,
-          is_configured: false
-        }
-      ];
-
-      const mockWebhooks: Webhook[] = [
-        {
-          id: '1',
-          integration_id: '2',
-          name: 'Stripe - Pagamento Completado',
-          url: 'https://api.canticosccb.com.br/webhooks/stripe',
-          method: 'POST',
-          events: ['payment.succeeded', 'payment.failed'],
-          is_active: true,
-          success_count: 234,
-          failure_count: 5,
-          last_triggered_at: new Date(Date.now() - 10 * 60 * 1000).toISOString()
-        },
-        {
-          id: '2',
-          integration_id: '4',
-          name: 'SendGrid - Email Status',
-          url: 'https://api.canticosccb.com.br/webhooks/sendgrid',
-          method: 'POST',
-          events: ['email.delivered', 'email.bounced'],
-          is_active: true,
-          success_count: 1847,
-          failure_count: 12
-        }
-      ];
-
-      // Filtrar por categoria
-      let filteredIntegrations = mockIntegrations;
-      if (selectedCategory !== 'all') {
-        filteredIntegrations = mockIntegrations.filter(i => i.category === selectedCategory);
-      }
-
-      setIntegrations(filteredIntegrations);
-      setWebhooks(mockWebhooks);
+      // TODO: Integrar com tabela 'integrations' do Supabase quando disponível
+      setIntegrations([]);
+      setWebhooks([]);
       
       setStats({
-        totalIntegrations: mockIntegrations.length,
-        activeIntegrations: mockIntegrations.filter(i => i.is_active).length,
-        configuredIntegrations: mockIntegrations.filter(i => i.is_configured).length,
-        totalWebhooks: mockWebhooks.length
+        totalIntegrations: 0,
+        activeIntegrations: 0,
+        configuredIntegrations: 0,
+        totalWebhooks: 0
       });
 
     } catch (err: any) {

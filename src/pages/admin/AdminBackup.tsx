@@ -73,102 +73,14 @@ const AdminBackup: React.FC = () => {
       setIsLoading(true);
       setError(null);
       
-      // Mock data
-      const mockBackups: Backup[] = [
-        {
-          id: '1',
-          name: 'Backup Completo - 06/01/2025',
-          description: 'Backup completo do banco de dados',
-          backup_type: 'full',
-          scope: 'all',
-          file_name: 'backup_full_20250106.sql.gz',
-          file_size: 15728640,
-          file_url: '/backups/backup_full_20250106.sql.gz',
-          storage_location: 'local',
-          status: 'completed',
-          total_items: 12500,
-          processed_items: 12500,
-          compress: true,
-          encrypt: false,
-          is_scheduled: false,
-          retention_days: 30,
-          started_at: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(),
-          completed_at: new Date(Date.now() - 24 * 60 * 60 * 1000 + 30 * 60 * 1000).toISOString(),
-          duration_seconds: 1800,
-          created_at: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()
-        },
-        {
-          id: '2',
-          name: 'Backup Incremental - 07/01/2025',
-          description: 'Backup incremental diário',
-          backup_type: 'incremental',
-          scope: 'database',
-          file_name: 'backup_incr_20250107.sql.gz',
-          file_size: 2097152,
-          file_url: '/backups/backup_incr_20250107.sql.gz',
-          storage_location: 'local',
-          status: 'completed',
-          total_items: 1250,
-          processed_items: 1250,
-          compress: true,
-          encrypt: false,
-          is_scheduled: true,
-          retention_days: 7,
-          started_at: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
-          completed_at: new Date(Date.now() - 2 * 60 * 60 * 1000 + 15 * 60 * 1000).toISOString(),
-          duration_seconds: 900,
-          created_at: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString()
-        },
-        {
-          id: '3',
-          name: 'Backup de Mídias',
-          description: 'Backup de arquivos de mídia',
-          backup_type: 'data-only',
-          scope: 'media',
-          file_name: 'backup_media_20250107.tar.gz',
-          file_size: 52428800,
-          file_url: '/backups/backup_media_20250107.tar.gz',
-          storage_location: 's3',
-          status: 'completed',
-          total_items: 3450,
-          processed_items: 3450,
-          compress: true,
-          encrypt: true,
-          is_scheduled: false,
-          retention_days: 90,
-          started_at: new Date(Date.now() - 5 * 60 * 60 * 1000).toISOString(),
-          completed_at: new Date(Date.now() - 5 * 60 * 60 * 1000 + 45 * 60 * 1000).toISOString(),
-          duration_seconds: 2700,
-          created_at: new Date(Date.now() - 5 * 60 * 60 * 1000).toISOString()
-        },
-        {
-          id: '4',
-          name: 'Backup Agendado - Diário',
-          description: 'Backup automático diário',
-          backup_type: 'full',
-          scope: 'all',
-          storage_location: 'local',
-          status: 'running',
-          total_items: 10000,
-          processed_items: 4567,
-          compress: true,
-          encrypt: false,
-          is_scheduled: true,
-          retention_days: 30,
-          started_at: new Date(Date.now() - 15 * 60 * 1000).toISOString(),
-          created_at: new Date(Date.now() - 20 * 60 * 1000).toISOString()
-        }
-      ];
-
-      setBackups(mockBackups);
-      
-      const totalSize = mockBackups.reduce((sum, b) => sum + (b.file_size || 0), 0);
+      // TODO: Integrar com tabela 'backups' do Supabase quando disponível
+      setBackups([]);
 
       setStats({
-        total: mockBackups.length,
-        completed: mockBackups.filter(b => b.status === 'completed').length,
-        running: mockBackups.filter(b => b.status === 'running').length,
-        totalSize
+        total: 0,
+        completed: 0,
+        running: 0,
+        totalSize: 0
       });
 
     } catch (err: any) {

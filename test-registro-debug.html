@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teste de Registro - Debug</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #1a1a1a;
+            color: #fff;
+        }
+        .container {
+            background: #2a2a2a;
+            padding: 30px;
+            border-radius: 10px;
+        }
+        h1 { color: #4ade80; }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            color: #a0a0a0;
+        }
+        input {
+            width: 100%;
+            padding: 10px;
+            background: #1a1a1a;
+            border: 1px solid #444;
+            border-radius: 5px;
+            color: #fff;
+            font-size: 14px;
+        }
+        button {
+            background: #4ade80;
+            color: #000;
+            padding: 12px 30px;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+        button:hover {
+            background: #22c55e;
+        }
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        .log {
+            background: #000;
+            padding: 15px;
+            border-radius: 5px;
+            margin-top: 20px;
+            max-height: 400px;
+            overflow-y: auto;
+            font-family: monospace;
+            font-size: 12px;
+        }
+        .log-entry {
+            margin: 5px 0;
+            padding: 5px;
+            border-left: 3px solid #444;
+            padding-left: 10px;
+        }
+        .log-info { border-left-color: #3b82f6; color: #93c5fd; }
+        .log-success { border-left-color: #22c55e; color: #86efac; }
+        .log-error { border-left-color: #ef4444; color: #fca5a5; }
+        .log-warning { border-left-color: #f59e0b; color: #fcd34d; }
+        .status {
+            padding: 10px;
+            border-radius: 5px;
+            margin-top: 10px;
+            font-weight: bold;
+        }
+        .status-success {
+            background: #22c55e33;
+            color: #22c55e;
+            border: 1px solid #22c55e;
+        }
+        .status-error {
+            background: #ef444433;
+            color: #ef4444;
+            border: 1px solid #ef4444;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 Teste de Registro - Debug</h1>
+        <p>Este teste verifica o fluxo completo de registro de usuário.</p>
+
+        <div class="form-group">
+            <label>Nome:</label>
+            <input type="text" id="nome" value="Teste Usuario" />
+        </div>
+
+        <div class="form-group">
+            <label>Email:</label>
+            <input type="email" id="email" value="teste@example.com" />
+        </div>
+
+        <div class="form-group">
+            <label>Senha:</label>
+            <input type="password" id="senha" value="senha123" />
+        </div>
+
+        <button id="btnTestar" onclick="testarRegistro()">🚀 Testar Registro</button>
+        <button onclick="limparLogs()">🗑️ Limpar Logs</button>
+
+        <div id="status"></div>
+
+        <div class="log" id="logContainer"></div>
+    </div>
+
+    <script type="module">
+        import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
+
+        const SUPABASE_URL = 'https://rdogsfrplohxnemvtetn.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJkb2dzZnJwbG9oeG5lbXZ0ZXRuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTk1OTM0OTYsImV4cCI6MjA3NTE2OTQ5Nn0.xCgnffZoXbw2W5eRsArjq2jKBZLLuRRi1Lr8xDPSK2g';
+
+        const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        window.supabase = supabase;
+
+        function log(message, type = 'info') {
+            const logContainer = document.getElementById('logContainer');
+            const entry = document.createElement('div');
+            entry.className = `log-entry log-${type}`;
+            const timestamp = new Date().toLocaleTimeString();
+            entry.textContent = `[${timestamp}] ${message}`;
+            logContainer.appendChild(entry);
+            logContainer.scrollTop = logContainer.scrollHeight;
+            console.log(`[${type.toUpperCase()}]`, message);
+        }
+
+        function setStatus(message, isError = false) {
+            const statusDiv = document.getElementById('status');
+            statusDiv.className = `status ${isError ? 'status-error' : 'status-success'}`;
+            statusDiv.textContent = message;
+        }
+
+        window.limparLogs = function() {
+            document.getElementById('logContainer').innerHTML = '';
+            document.getElementById('status').innerHTML = '';
+        }
+
+        window.testarRegistro = async function() {
+            const btn = document.getElementById('btnTestar');
+            btn.disabled = true;
+            
+            limparLogs();
+            log('🔵 Iniciando teste de registro...', 'info');
+
+            try {
+                const nome = document.getElementById('nome').value;
+                const email = document.getElementById('email').value;
+                const senha = document.getElementById('senha').value;
+
+                log(`📝 Dados: Nome="${nome}", Email="${email}"`, 'info');
+
+                // Passo 1: Verificar se email já existe
+                log('🔍 Verificando se email já existe...', 'info');
+                const { data: existingUser, error: checkError } = await supabase
+                    .from('usuarios')
+                    .select('id')
+                    .eq('email', email)
+                    .maybeSingle();
+
+                if (checkError) {
+                    log(`⚠️ Erro ao verificar email: ${checkError.message}`, 'warning');
+                } else if (existingUser) {
+                    log('❌ Email já cadastrado!', 'error');
+                    setStatus('Email já cadastrado. Use outro email ou delete do banco.', true);
+                    btn.disabled = false;
+                    return;
+                } else {
+                    log('✅ Email disponível', 'success');
+                }
+
+                // Passo 2: Criar usuário no Supabase Auth
+                log('🔐 Criando usuário no Supabase Auth...', 'info');
+                const { data: authData, error: authError } = await supabase.auth.signUp({
+                    email: email,
+                    password: senha,
+                    options: {
+                        data: {
+                            nome: nome,
+                        },
+                    },
+                });
+
+                if (authError) {
+                    log(`❌ Erro no Supabase Auth: ${authError.message}`, 'error');
+                    setStatus(`Erro: ${authError.message}`, true);
+                    btn.disabled = false;
+                    return;
+                }
+
+                if (!authData.user) {
+                    log('❌ Usuário não foi criado (authData.user é null)', 'error');
+                    setStatus('Erro: Usuário não foi criado', true);
+                    btn.disabled = false;
+                    return;
+                }
+
+                log(`✅ Usuário criado no Auth! ID: ${authData.user.id}`, 'success');
+                
+                // Verificar se precisa confirmar email
+                if (authData.user.confirmed_at) {
+                    log('✅ Email confirmado automaticamente', 'success');
+                } else {
+                    log('⚠️ Email NÃO confirmado - pode precisar de confirmação', 'warning');
+                }
+
+                // Passo 3: Criar registro na tabela usuarios
+                log('💾 Criando perfil na tabela usuarios...', 'info');
+                const { data: usuario, error: userError } = await supabase
+                    .from('usuarios')
+                    .insert({
+                        auth_id: authData.user.id,
+                        nome: nome,
+                        email: email,
+                        tipo: 'usuario',
+                        ativo: 1,
+                        plano: 'free',
+                    })
+                    .select()
+                    .single();
+
+                if (userError) {
+                    log(`❌ Erro ao criar perfil: ${userError.message}`, 'error');
+                    log(`Código do erro: ${userError.code}`, 'error');
+                    log(`Detalhes: ${JSON.stringify(userError.details)}`, 'error');
+                    
+                    if (userError.code === '23505') {
+                        setStatus('Erro: Email duplicado na tabela usuarios', true);
+                    } else if (userError.code === '42501') {
+                        setStatus('Erro: Sem permissão para inserir (verificar RLS)', true);
+                    } else {
+                        setStatus(`Erro ao criar perfil: ${userError.message}`, true);
+                    }
+                    
+                    btn.disabled = false;
+                    return;
+                }
+
+                log(`✅ Perfil criado! ID: ${usuario.id}`, 'success');
+                log(`📊 Dados do usuário: ${JSON.stringify(usuario, null, 2)}`, 'info');
+
+                // Sucesso!
+                setStatus('✅ REGISTRO CONCLUÍDO COM SUCESSO!', false);
+                log('🎉 Teste concluído com sucesso!', 'success');
+
+            } catch (error) {
+                log(`❌ Erro inesperado: ${error.message}`, 'error');
+                console.error('Erro completo:', error);
+                setStatus(`Erro inesperado: ${error.message}`, true);
+            } finally {
+                btn.disabled = false;
+            }
+        }
+
+        log('✅ Script carregado. Pronto para testar!', 'success');
+    </script>
+</body>
+</html>

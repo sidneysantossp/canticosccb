@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { CheckCircle, Music, Mic2, AlertCircle } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { getPendingComposers } from '@/lib/admin/composersAdminApi';
+import { getAllSongs } from '@/lib/admin/songsAdminApi';
 
 const AdminApprovals: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
@@ -26,9 +27,17 @@ const AdminApprovals: React.FC = () => {
       const composers = await getPendingComposers();
       const composersCount = composers.length;
       
-      // Mock data for songs and reports (replace with real API calls when available)
-      const songsCount = 12; // Mock: getPendingSongs
-      const reportsCount = 23; // Mock: getOpenReports
+      // Load pending songs from API
+      let songsCount = 0;
+      try {
+        const songsResult = await getAllSongs(1, 1, { status: 'draft', search: '' });
+        songsCount = songsResult.count || 0;
+      } catch (e) {
+        console.warn('Could not load pending songs count:', e);
+      }
+      
+      // TODO: Integrar com tabela 'reports' do Supabase quando disponível
+      const reportsCount = 0;
       
       setPendingCounts({
         songs: songsCount,

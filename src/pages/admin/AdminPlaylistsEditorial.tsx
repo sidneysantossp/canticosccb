@@ -97,82 +97,6 @@ const AdminPlaylistsEditorial: React.FC = () => {
     }
   };
 
-  const loadDataOLD = async () => {
-    try {
-      setIsLoading(true);
-      
-      // OLD Mock data
-      const mockPlaylistsOLD: EditorialPlaylist[] = [
-        {
-          id: '1',
-          title: 'Hinos de Adoração',
-          description: 'Uma seleção especial de hinos para adoração',
-          category: 'worship',
-          mood: 'reflexivo',
-          curator_name: 'Equipe Editorial CCB',
-          cover_url: 'https://via.placeholder.com/300x300',
-          is_featured: true,
-          is_active: true,
-          plays_count: 15420,
-          likes_count: 892,
-          followers_count: 1234,
-          items_count: 25,
-          created_at: new Date().toISOString()
-        },
-        {
-          id: '2',
-          title: 'Culto de Doutrina',
-          description: 'Hinos apropriados para estudos doutrinários',
-          category: 'doctrine',
-          mood: 'calmo',
-          curator_name: 'Equipe Editorial CCB',
-          cover_url: 'https://via.placeholder.com/300x300',
-          is_featured: true,
-          is_active: true,
-          plays_count: 8750,
-          likes_count: 456,
-          followers_count: 789,
-          items_count: 18,
-          created_at: new Date().toISOString()
-        },
-        {
-          id: '3',
-          title: 'Hinos para Jovens',
-          description: 'Seleção de hinos que falam ao coração da juventude',
-          category: 'youth',
-          mood: 'energetico',
-          curator_name: 'Equipe Editorial CCB',
-          cover_url: 'https://via.placeholder.com/300x300',
-          is_featured: false,
-          is_active: true,
-          plays_count: 5230,
-          likes_count: 312,
-          followers_count: 567,
-          items_count: 20,
-          created_at: new Date().toISOString()
-        }
-      ];
-
-      const filtered = selectedCategory === 'all' 
-        ? mockPlaylistsOLD 
-        : mockPlaylistsOLD.filter(p => p.category === selectedCategory);
-
-      setPlaylists(filtered);
-      
-      setStats({
-        total: mockPlaylistsOLD.length,
-        active: mockPlaylistsOLD.filter(p => p.is_active).length,
-        featured: mockPlaylistsOLD.filter(p => p.is_featured).length,
-        totalPlays: mockPlaylistsOLD.reduce((sum, p) => sum + p.plays_count, 0)
-      });
-
-    } catch (error) {
-      console.error('Erro ao carregar playlists editoriais:', error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
   const handleOpenModal = (playlist?: EditorialPlaylist) => {
     if (playlist) {
       setEditingPlaylist(playlist);
@@ -380,7 +304,7 @@ const AdminPlaylistsEditorial: React.FC = () => {
                 alt={playlist.title}
                 className="w-full h-full object-cover"
                 onError={(e) => {
-                  e.currentTarget.src = 'https://via.placeholder.com/300x300/1a1a1a/ffffff?text=Playlist';
+                  e.currentTarget.src = 'data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22300%22 height=%22300%22%3E%3Crect fill=%22%231a1a1a%22 width=%22300%22 height=%22300%22/%3E%3Ctext fill=%22%23666%22 x=%2250%25%22 y=%2250%25%22 text-anchor=%22middle%22 dy=%22.3em%22 font-size=%2214%22%3EPlaylist%3C/text%3E%3C/svg%3E';
                 }}
               />
               <div className="absolute top-2 right-2 flex gap-2">

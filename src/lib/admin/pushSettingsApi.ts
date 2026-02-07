@@ -1,43 +1,37 @@
-import { apiFetch } from '../api-helper';
+import { supabaseRPC, isSupabaseConfigured } from '../supabaseRest';
 
 export async function sendTestPush(payload: { title: string; message: string; url?: string; topic?: string }) {
-  const res = await apiFetch('api/push/test.php', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(payload)
-  });
-  if (!res.ok) {
-    const text = await res.text();
-    throw new Error(text || 'Falha no envio de teste');
+  if (!isSupabaseConfigured) {
+    throw new Error('Supabase not configured');
   }
-  return res.json();
+
+  try {
+    return await supabaseRPC('send_test_push', payload);
+  } catch (error: any) {
+    throw new Error(error.message || 'Falha no envio de teste');
+  }
 }
 
 export async function sendCampaign(payload: { title: string; message: string; url?: string; link?: string; includeNewFollowers: boolean; includeMilestones: boolean; targetType?: 'all' | 'users' | 'user' | 'composers' | 'composer'; targetId?: number }) {
-  // Enviar notificações in-app ao invés de push FCM
-  console.log('[sendCampaign] Enviando para /api/notificacoes/send-campaign.php:', payload);
-  
-  const res = await apiFetch('api/notificacoes/send-campaign.php', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      title: payload.title,
-      message: payload.message,
-      link: payload.url || payload.link || null,
-      targetType: payload.targetType || 'all',
-      targetId: payload.targetId
-    })
-  });
-  
-  console.log('[sendCampaign] Status:', res.status, 'OK:', res.ok);
-  
-  if (!res.ok) {
-    const text = await res.text();
-    console.error('[sendCampaign] Erro:', text);
-    throw new Error(text || 'Falha no envio da campanha');
+  if (!isSupabaseConfigured) {
+    throw new Error('Supabase not configured');
   }
+
+  console.log('[sendCampaign] Enviando campanha via Supabase:', payload);
   
-  const data = await res.json();
-  console.log('[sendCampaign] Resposta:', data);
-  return data;
+  try {
+    const data = await supabaseRPC('send_notification_campaign', {
+      p_title: payload.title,
+      p_message: payload.message,
+      p_link: payload.url || payload.link || null,
+      p_target_type: payload.targetType || 'all',
+      p_target_id: payload.targetId
+    });
+    
+    console.log('[sendCampaign] Resposta:', data);
+    return data;
+  } catch (error: any) {
+    console.error('[sendCampaign] Erro:', error);
+    throw new Error(error.message || 'Falha no envio da campanha');
+  }
 }

@@ -17,61 +17,12 @@ const AdminComments: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Dados mockados
-  const mockComments: Comment[] = [
-    {
-      id: '1',
-      user: 'João Silva',
-      userEmail: 'joao@email.com',
-      song: 'Hino 1 - Oh! Que Glória',
-      content: 'Lindo hino! Muito edificante e toca o coração.',
-      status: 'approved',
-      created_at: '2025-10-05T10:30:00'
-    },
-    {
-      id: '2',
-      user: 'Maria Santos',
-      userEmail: 'maria@email.com',
-      song: 'Hino 5 - Vem, Ó Pródigo',
-      content: 'Este hino sempre me faz refletir sobre o amor de Deus.',
-      status: 'pending',
-      created_at: '2025-10-06T08:15:00'
-    },
-    {
-      id: '3',
-      user: 'Pedro Costa',
-      userEmail: 'pedro@email.com',
-      song: 'Hino 10 - Lindo País',
-      content: 'Mensagem muito clara e objetiva. Glória a Deus!',
-      status: 'pending',
-      created_at: '2025-10-06T14:20:00'
-    },
-    {
-      id: '4',
-      user: 'Ana Lima',
-      userEmail: 'ana@email.com',
-      song: 'Hino 15 - Ó Cristãos, Vinde Todos',
-      content: 'Comentário inapropriado aqui...',
-      status: 'rejected',
-      created_at: '2025-10-04T16:45:00'
-    }
-  ];
-
   const [comments, setComments] = useState<Comment[]>([]);
 
   useEffect(() => {
-    // Simulate API loading
-    const timer = setTimeout(() => {
-      try {
-        setComments(mockComments);
-        setIsLoading(false);
-      } catch (err: any) {
-        setError(err?.message || 'Erro ao carregar comentários');
-        setIsLoading(false);
-      }
-    }, 500);
-    return () => clearTimeout(timer);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // TODO: Integrar com tabela 'comments' do Supabase quando disponível
+    setComments([]);
+    setIsLoading(false);
   }, []);
 
   const handleApprove = (id: string) => {

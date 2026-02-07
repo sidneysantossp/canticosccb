@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { CheckCircle, XCircle, Eye, User, Mail, Phone, FileText, Shield } from 'lucide-react';
 import { compositoresApi, documentReviewsApi } from '@/lib/api-client';
+import { getDocumentStorageUrl } from '@/lib/documentStorage';
 
 interface PendingComposer {
   id: number;
@@ -137,7 +138,7 @@ const AdminComposersPending: React.FC = () => {
                           </div>
                           {doc.image_path && (
                             <img
-                              src={`/api/stream.php?type=documents&file=${doc.image_path.split('/').pop()}`}
+                              src={getDocumentStorageUrl(doc.image_path)}
                               alt={doc.document_type}
                               className="w-full rounded border border-gray-700 mt-2"
                               onError={(e) => {

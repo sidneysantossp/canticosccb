@@ -40,7 +40,7 @@ const AdminComposerForm: React.FC = () => {
     try {
       setIsLoadingData(true);
       setError('');
-      const response = await compositoresApi.get(Number(id));
+      const response = await compositoresApi.get(id!);
       if (response.data) {
         const compositor = response.data as any; // Type assertion para acessar email
         setFormData({
@@ -136,7 +136,7 @@ const AdminComposerForm: React.FC = () => {
 
       let response;
       if (isEditMode && id) {
-        response = await compositoresApi.update(Number(id), composerData);
+        response = await compositoresApi.update(id!, composerData);
       } else {
         response = await compositoresApi.create(composerData);
       }
@@ -246,7 +246,7 @@ const AdminComposerForm: React.FC = () => {
         {/* Seção de Documentos para Verificação */}
         {isEditMode && id && (
           <DocumentReviewSection 
-            compositorId={Number(id)}
+            compositorId={id}
             compositorEmail={compositorEmail}
             compositorName={formData.nome || formData.nome_artistico}
             hasManager={gerenteInfo.tem_gerente}

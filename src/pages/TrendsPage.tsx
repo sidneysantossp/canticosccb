@@ -8,7 +8,7 @@ import SEOHead from '@/components/SEO/SEOHead';
 import { apiFetch } from '@/lib/api-helper';
 import { buildAlbumCoverUrl, buildHinoUrl } from '@/lib/media-helper';
 import { usePlayerContext } from '@/contexts/PlayerContext';
-// Backend simples via PHP: consumir via apiFetch para suportar host dinâmico
+import { isSupabaseConfigured, supabaseFetch } from '@/lib/supabaseRest';
 
 interface TrendItem {
   id: string;
@@ -44,11 +44,32 @@ const TrendsPage: React.FC = () => {
   const loadTrends = async () => {
     setIsLoading(true);
     try {
-      // Buscar hinos publicados (ativo=1), limite razoável
-      const res = await apiFetch(`api/hinos/?ativo=1&limit=100`);
-      if (!res.ok) throw new Error('Erro ao listar hinos publicados');
-      const data = await res.json();
-      const arr: any[] = Array.isArray(data) ? data : (data.data || data.hinos || data.items || []);
+      let arr: any[] = [];
+      
+      // Tentar buscar do Supabase primeiro
+      if (isSupabaseConfigured) {
+        try {
+          const supabaseData = await supabaseFetch<any>('hinos', {
+            select: 'id,numero,titulo,compositor_nome,categoria,cover_url,audio_url,duracao,created_at',
+            ativo: 'eq.true',
+            order: 'created_at.desc',
+            limit: '100',
+          });
+          arr = supabaseData || [];
+          console.log('[TrendsPage] Hinos do Supabase:', arr.length);
+        } catch (e) {
+          console.warn('[TrendsPage] Erro Supabase, tentando API antiga:', e);
+        }
+      }
+      
+      // Fallback para API antiga se Supabase não retornar dados
+      if (arr.length === 0) {
+        const res = await apiFetch(`api/hinos/?ativo=1&limit=100`);
+        if (res.ok) {
+          const data = await res.json();
+          arr = Array.isArray(data) ? data : (data.data || data.hinos || data.items || []);
+        }
+      }
 
       // Normalizar e ordenar por created_at desc (mais recentes primeiro)
       const hymns = arr.slice();
@@ -66,7 +87,7 @@ const TrendsPage: React.FC = () => {
         albumId: String(h.album_id || h.id),
         number: h.numero || 0,
         title: h.titulo,
-        artist: h.compositor || 'Artista Desconhecido',
+        artist: h.compositor_nome || h.compositor || 'Artista Desconhecido',
         coverUrl: buildAlbumCoverUrl({ id: String(h.id), cover_url: h.cover_url }),
         duration: h.duracao || '—',
         plays: h.plays || 0,

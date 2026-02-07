@@ -3,9 +3,9 @@ import { supabase } from '@/lib/supabase-auth';
 export async function getUserFavorites(userId: number): Promise<string[]> {
   try {
     const { data, error } = await supabase
-      .from('favoritos')
+      .from('favorites')
       .select('hino_id')
-      .eq('usuario_id', userId);
+      .eq('user_id', userId);
 
     if (error) {
       console.error('Erro ao buscar favoritos:', error);
@@ -23,9 +23,9 @@ export async function addFavorite(userId: number, hymnId: number): Promise<boole
     console.log('💚 addFavorite - Tentando adicionar:', { userId, hymnId });
     
     const { data, error } = await supabase
-      .from('favoritos')
+      .from('favorites')
       .insert({
-        usuario_id: userId,
+        user_id: userId,
         hino_id: hymnId
       })
       .select();
@@ -46,9 +46,9 @@ export async function addFavorite(userId: number, hymnId: number): Promise<boole
 export async function removeFavorite(userId: number, hymnId: number): Promise<boolean> {
   try {
     const { error } = await supabase
-      .from('favoritos')
+      .from('favorites')
       .delete()
-      .eq('usuario_id', userId)
+      .eq('user_id', userId)
       .eq('hino_id', hymnId);
 
     if (error) {

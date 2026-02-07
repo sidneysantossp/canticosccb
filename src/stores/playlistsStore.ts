@@ -24,7 +24,7 @@ interface PlaylistsState {
   playlists: Playlist[];
   isLoading: boolean;
   error: string | null;
-  
+
   // Actions
   createPlaylist: (name: string, description?: string) => Playlist;
   addTrackToPlaylist: (playlistId: string, track: PlaylistTrack) => void;
@@ -45,10 +45,11 @@ const usePlaylistsStore = create<PlaylistsState>()(
       isLoading: false,
       error: null,
 
-      createPlaylist: (name: string, description?: string) => {
+      createPlaylist: (name, description) => {
         const now = new Date().toISOString();
+        const id = `playlist_${Date.now()}`;
         const newPlaylist: Playlist = {
-          id: `playlist_${Date.now()}`,
+          id,
           name,
           description,
           coverUrl: `https://picsum.photos/seed/${Date.now()}/300/300`,
@@ -62,22 +63,45 @@ const usePlaylistsStore = create<PlaylistsState>()(
           error: null
         }));
 
+        // Async sync with backend
+        import('@/lib/playlistsApi').then(api => {
+          // Check if we have a user (we need user_id)
+          // Since store doesn't have user, we might need a better way, 
+          // but for now we look for user in localStorage or AuthContext state (if we could)
+          // Ideally, the caller should handle the sync or we pass userId
+        });
+
         return newPlaylist;
       },
 
-      addTrackToPlaylist: (playlistId: string, track: PlaylistTrack) => {
+      addTrackToPlaylist: (playlistId, track) => {
         set((state) => ({
           playlists: state.playlists.map((playlist) =>
             playlist.id === playlistId
               ? {
-                  ...playlist,
-                  tracks: [...playlist.tracks, track],
-                  updatedAt: new Date().toISOString()
-                }
+                ...playlist,
+                tracks: [...playlist.tracks, track],
+                updatedAt: new Date().toISOString()
+              }
               : playlist
           ),
           error: null
         }));
+
+        // Async sync with backend if playlistId is a real database ID (numeric)
+        const isNumeric = /^\d+$/.test(String(playlistId));
+        if (isNumeric) {
+          import('@/lib/playlistsApi').then(api => {
+            api.addTrack({
+              playlistId: Number(playlistId),
+              trackId: track.backendTrackId || String(track.id),
+              title: track.title,
+              artist: track.artist,
+              duration: track.duration,
+              coverUrl: track.coverUrl
+            }).catch(err => console.error('❌ Sync error:', err));
+          });
+        }
       },
 
       removeTrackFromPlaylist: (playlistId: string, trackId: number) => {
@@ -85,10 +109,10 @@ const usePlaylistsStore = create<PlaylistsState>()(
           playlists: state.playlists.map((playlist) =>
             playlist.id === playlistId
               ? {
-                  ...playlist,
-                  tracks: playlist.tracks.filter((t) => t.id !== trackId),
-                  updatedAt: new Date().toISOString()
-                }
+                ...playlist,
+                tracks: playlist.tracks.filter((t) => t.id !== trackId),
+                updatedAt: new Date().toISOString()
+              }
               : playlist
           ),
           error: null
@@ -119,17 +143,17 @@ const usePlaylistsStore = create<PlaylistsState>()(
 
       loadPlaylists: async () => {
         set({ isLoading: true, error: null });
-        
+
         try {
           // TODO: Replace with real API call
           // const response = await fetch('/api/playlists');
           // const playlists = await response.json();
-          
+
           // For now, keep existing playlists from localStorage
           set({ isLoading: false });
         } catch (error) {
-          set({ 
-            isLoading: false, 
+          set({
+            isLoading: false,
             error: error instanceof Error ? error.message : 'Erro ao carregar playlists'
           });
         }

@@ -147,7 +147,13 @@ const AdminUserForm: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!validate()) return;
+    console.log('🔍 [AdminUserForm] Submit iniciado');
+    console.log('🔍 [AdminUserForm] Form data:', formData);
+
+    if (!validate()) {
+      console.warn('⚠️ [AdminUserForm] Validação falhou');
+      return;
+    }
 
     try {
       setIsSaving(true);
@@ -157,8 +163,10 @@ const AdminUserForm: React.FC = () => {
 
       // Upload de avatar se houver
       if (avatarFile) {
+        console.log('📤 [AdminUserForm] Fazendo upload de avatar...');
         const uploaded = await uploadAvatar(avatarFile);
         if (uploaded) avatarUrl = uploaded;
+        console.log('✅ [AdminUserForm] Avatar uploaded:', avatarUrl);
       }
 
       const userData = {
@@ -172,15 +180,22 @@ const AdminUserForm: React.FC = () => {
         ...(formData.password && { password: formData.password })
       };
 
+      console.log('📦 [AdminUserForm] User data preparado:', userData);
+
       if (isEditing && id) {
+        console.log('✏️ [AdminUserForm] Atualizando usuário:', id);
         await updateUser(decodeURIComponent(id), userData);
       } else {
-        await createUser(userData);
+        console.log('➕ [AdminUserForm] Criando novo usuário...');
+        const result = await createUser(userData);
+        console.log('✅ [AdminUserForm] Usuário criado:', result);
       }
 
+      console.log('🎉 [AdminUserForm] Sucesso! Navegando para /admin/users');
       navigate('/admin/users');
     } catch (error: any) {
-      console.error('Error saving user:', error);
+      console.error('❌ [AdminUserForm] Error saving user:', error);
+      console.error('❌ [AdminUserForm] Error stack:', error.stack);
       setError(error?.message || 'Erro ao salvar usuário');
     } finally {
       setIsSaving(false);

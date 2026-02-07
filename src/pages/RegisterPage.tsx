@@ -1,13 +1,13 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Eye, EyeOff, Mail, Lock, User, ArrowLeft, Check, AlertCircle } from 'lucide-react';
-import { useAuth } from '@/contexts/AuthContextMock';
+import { useAuth } from '@/contexts/AuthContext';
 import { checkEmailExists, googleLogin } from '@/lib/auth-client';
 
 const RegisterPage: React.FC = () => {
   const navigate = useNavigate();
   const { signUp } = useAuth();
-  
+
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -39,7 +39,7 @@ const RegisterPage: React.FC = () => {
               const idToken = response?.credential;
               if (!idToken) throw new Error('Credencial inválida');
               await googleLogin(idToken);
-              window.location.href = '/onboarding';
+              navigate('/onboarding');
             } catch (err) {
               console.error('Google Sign-In error:', err);
               setError('Falha no login com Google. Tente novamente.');
@@ -101,7 +101,7 @@ const RegisterPage: React.FC = () => {
       ...formData,
       [name]: value
     });
-    
+
     // Resetar status do email quando o usuário digitar
     if (name === 'email') {
       setEmailStatus('idle');
@@ -110,14 +110,14 @@ const RegisterPage: React.FC = () => {
 
   const handleEmailBlur = async () => {
     const email = formData.email.trim();
-    
+
     // Validar formato
     if (!email || !email.includes('@')) {
       return;
     }
-    
+
     setEmailStatus('checking');
-    
+
     try {
       const exists = await checkEmailExists(email);
       setEmailStatus(exists ? 'taken' : 'available');
@@ -167,27 +167,30 @@ const RegisterPage: React.FC = () => {
     setIsLoading(true);
 
     try {
-      // Mock de UX (pequeno delay)
-      await new Promise(resolve => setTimeout(resolve, 500));
-
       await signUp(formData.email, formData.password, formData.name);
       navigate('/onboarding');
     } catch (err: any) {
       console.error('❌ Register error:', err);
-      
+      console.error('❌ Register error message:', err?.message);
+      console.error('❌ Register error stack:', err?.stack);
+
       const msg = String(err?.message || '').toLowerCase();
-      
+
       // Mensagens específicas por tipo de erro
-      if (msg.includes('already registered') || msg.includes('user already exists')) {
+      if (msg.includes('already registered') || msg.includes('user already exists') || msg.includes('já está cadastrado')) {
         setError('Este email já está cadastrado. Tente fazer login ou use outro email.');
       } else if (msg.includes('invalid email')) {
         setError('Email inválido. Verifique e tente novamente.');
-      } else if (msg.includes('password')) {
+      } else if (msg.includes('password') && !msg.includes('permissão')) {
         setError('Senha muito fraca. Use pelo menos 6 caracteres com letras e números.');
-      } else if (msg.includes('database error') || msg.includes('500')) {
-        setError('Estamos com instabilidade. Tente novamente em instantes.');
+      } else if (msg.includes('rls') || msg.includes('permissão') || msg.includes('42501')) {
+        setError('Erro de configuração do banco de dados. Por favor, entre em contato com o suporte.');
+      } else if (msg.includes('erro ao criar perfil')) {
+        setError(err.message || 'Erro ao criar perfil. Tente novamente.');
       } else {
-        setError('Erro ao criar conta. Verifique seus dados e tente novamente.');
+        // Sempre mostrar o erro real para facilitar debug
+        const errorMsg = err?.message || 'Erro desconhecido';
+        setError(`Erro: ${errorMsg}`);
       }
     } finally {
       setIsLoading(false);
@@ -197,14 +200,14 @@ const RegisterPage: React.FC = () => {
   const passwordStrength = () => {
     const password = formData.password;
     if (!password) return 0;
-    
+
     let strength = 0;
     if (password.length >= 6) strength++;
     if (password.length >= 8) strength++;
     if (/[a-z]/.test(password) && /[A-Z]/.test(password)) strength++;
     if (/\d/.test(password)) strength++;
     if (/[^a-zA-Z\d]/.test(password)) strength++;
-    
+
     return Math.min(strength, 3);
   };
 
@@ -226,9 +229,9 @@ const RegisterPage: React.FC = () => {
 
         {/* Logo */}
         <div className="text-center mb-4">
-          <img 
-            src={logoSrc} 
-            alt="Cânticos CCB" 
+          <img
+            src={logoSrc}
+            alt="Cânticos CCB"
             className="w-[250px] mx-auto object-contain mb-2"
             referrerPolicy="no-referrer"
           />
@@ -271,13 +274,12 @@ const RegisterPage: React.FC = () => {
                   onChange={handleChange}
                   onBlur={handleEmailBlur}
                   placeholder="seu@email.com"
-                  className={`w-full px-4 py-3 bg-background-tertiary border rounded-lg text-white placeholder-text-muted focus:outline-none focus:ring-2 focus:border-transparent transition-all ${
-                    emailStatus === 'taken' 
-                      ? 'border-red-500 focus:ring-red-500' 
-                      : emailStatus === 'available'
+                  className={`w-full px-4 py-3 bg-background-tertiary border rounded-lg text-white placeholder-text-muted focus:outline-none focus:ring-2 focus:border-transparent transition-all ${emailStatus === 'taken'
+                    ? 'border-red-500 focus:ring-red-500'
+                    : emailStatus === 'available'
                       ? 'border-green-500 focus:ring-green-500'
                       : 'border-gray-700 focus:ring-primary-500'
-                  }`}
+                    }`}
                   required
                 />
                 {emailStatus === 'checking' && (
@@ -296,7 +298,7 @@ const RegisterPage: React.FC = () => {
                   </div>
                 )}
               </div>
-              
+
               {/* Email Status Messages */}
               {emailStatus === 'available' && (
                 <p className="mt-2 text-sm text-green-500 flex items-center gap-1">
@@ -310,8 +312,8 @@ const RegisterPage: React.FC = () => {
                     <AlertCircle className="w-4 h-4" />
                     Este email já está cadastrado
                   </p>
-                  <Link 
-                    to="/login" 
+                  <Link
+                    to="/login"
                     className="text-primary-500 hover:text-primary-400 text-sm font-medium mt-1 inline-block"
                   >
                     Já tem conta? Fazer login →
@@ -349,7 +351,7 @@ const RegisterPage: React.FC = () => {
                   )}
                 </button>
               </div>
-              
+
               {/* Password Strength Indicator */}
               {formData.password && (
                 <div className="mt-2">
@@ -357,9 +359,8 @@ const RegisterPage: React.FC = () => {
                     {[0, 1, 2].map((level) => (
                       <div
                         key={level}
-                        className={`h-1 flex-1 rounded ${
-                          level < strengthLevel ? strengthColors[strengthLevel - 1] : 'bg-gray-700'
-                        } transition-all`}
+                        className={`h-1 flex-1 rounded ${level < strengthLevel ? strengthColors[strengthLevel - 1] : 'bg-gray-700'
+                          } transition-all`}
                       />
                     ))}
                   </div>
@@ -373,7 +374,7 @@ const RegisterPage: React.FC = () => {
                 </div>
               )}
             </div>
-            
+
             {formData.password && (
               <>
                 {/* Confirm Password */}
@@ -414,7 +415,7 @@ const RegisterPage: React.FC = () => {
                 </div>
               </>
             )}
-            
+
             {/* Terms */}
             <div>
               <label className="flex items-start cursor-pointer group">
@@ -442,8 +443,8 @@ const RegisterPage: React.FC = () => {
               <div className="p-3 bg-red-500/10 border border-red-500/50 rounded-lg">
                 <p className="text-red-500 text-sm">{error}</p>
                 {error.includes('já está cadastrado') && (
-                  <Link 
-                    to="/login" 
+                  <Link
+                    to="/login"
                     className="text-primary-500 hover:text-primary-400 text-sm font-medium mt-2 inline-block"
                   >
                     Ir para o login →

@@ -25,6 +25,8 @@ const AdminCategoryForm: React.FC = () => {
     descricao: '',
     cor: '#3b82f6',
     imagem_url: '',
+    meta_title: '',
+    meta_description: '',
     ativo: 1
   });
 
@@ -35,14 +37,15 @@ const AdminCategoryForm: React.FC = () => {
   const [isUploading, setIsUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [dragActive, setDragActive] = useState(false);
+  const [originalSlug, setOriginalSlug] = useState('');
 
   useEffect(() => {
     if (isEditing && id) {
-      loadCategory(parseInt(id));
+      loadCategory(id);
     }
   }, [id, isEditing]);
 
-  const loadCategory = async (categoryId: number) => {
+  const loadCategory = async (categoryId: string) => {
     try {
       setIsLoading(true);
       const response = await categoriasApi.get(categoryId);
@@ -55,8 +58,11 @@ const AdminCategoryForm: React.FC = () => {
           descricao: category.descricao || '',
           cor: '#3b82f6',
           imagem_url: category.imagem_url || '',
+          meta_title: category.meta_title || '',
+          meta_description: category.meta_description || '',
           ativo: category.ativo
         });
+        setOriginalSlug(category.slug);
         setImagePreview(category.imagem_url || '');
       }
     } catch (error: any) {
@@ -121,13 +127,20 @@ const AdminCategoryForm: React.FC = () => {
   const uploadImage = async (file: File): Promise<string | null> => {
     try {
       setIsUploading(true);
-      const response = await uploadApi.cover(file);
-      if (response.data) {
-        return response.data.url;
-      }
-      return null;
+      const timeoutMs = 30000;
+      const timeoutPromise = new Promise<never>((_, reject) => {
+        setTimeout(() => reject(new Error('Timeout no upload da imagem')), timeoutMs);
+      });
+
+      const result = await Promise.race([
+        uploadApi.uploadCover(file),
+        timeoutPromise,
+      ]);
+
+      return (result as any)?.url || null;
     } catch (error) {
       console.error('Erro ao fazer upload da imagem:', error);
+      setError((error as any)?.message || 'Erro ao fazer upload da imagem');
       return null;
     } finally {
       setIsUploading(false);
@@ -148,20 +161,38 @@ const AdminCategoryForm: React.FC = () => {
         if (uploaded) imagemUrl = uploaded;
       }
 
-      const categoryData = {
+      const categoryData: any = {
         nome: formData.nome.trim(),
-        slug: formData.slug.trim(),
         descricao: formData.descricao.trim() || undefined,
         imagem_url: imagemUrl || undefined,
+        meta_title: formData.meta_title.trim() || undefined,
+        meta_description: formData.meta_description.trim() || undefined,
         ativo: formData.ativo
       };
 
+      // Só enviar slug se mudou (evita erro de unique constraint)
+      const newSlug = formData.slug.trim();
+      console.log('🔍 Verificando slug:', { originalSlug, newSlug, isEditing, slugMudou: newSlug !== originalSlug });
+      
+      if (!isEditing || newSlug !== originalSlug) {
+        categoryData.slug = newSlug;
+        console.log('✅ Slug será enviado no update');
+      } else {
+        console.log('⏭️ Slug não mudou, não será enviado');
+      }
+
+      console.log('📝 Dados do formulário:', formData);
+      console.log('📦 Dados a serem salvos:', categoryData);
+      console.log('🔄 Modo:', isEditing ? 'Editar' : 'Criar', 'ID:', id);
+
       let response;
       if (isEditing && id) {
-        response = await categoriasApi.update(parseInt(id), categoryData);
+        response = await categoriasApi.update(id, categoryData);
       } else {
         response = await categoriasApi.create(categoryData);
       }
+
+      console.log('✅ Resposta da API:', response);
 
       if (response.error) {
         throw new Error(response.error);
@@ -276,6 +307,47 @@ const AdminCategoryForm: React.FC = () => {
                   <option value="1">Ativo</option>
                   <option value="0">Inativo</option>
                 </select>
+              </div>
+            </div>
+          </div>
+
+          {/* SEO */}
+          <div className="bg-gray-900/50 border border-gray-800 rounded-xl p-6">
+            <h2 className="text-xl font-bold text-white mb-4">SEO</h2>
+            
+            <div className="space-y-4">
+              <div>
+                <label className="block text-gray-400 text-sm font-semibold mb-2">
+                  Meta Title
+                </label>
+                <input
+                  type="text"
+                  value={formData.meta_title}
+                  onChange={(e) => setFormData({ ...formData, meta_title: e.target.value })}
+                  maxLength={60}
+                  className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-green-600"
+                  placeholder="Ex: Hinos de Louvor - Cânticos CCB"
+                />
+                <p className="text-gray-500 text-xs mt-1">
+                  Título que aparece nos resultados de busca (máx. 60 caracteres)
+                </p>
+              </div>
+
+              <div>
+                <label className="block text-gray-400 text-sm font-semibold mb-2">
+                  Meta Description
+                </label>
+                <textarea
+                  value={formData.meta_description}
+                  onChange={(e) => setFormData({ ...formData, meta_description: e.target.value })}
+                  rows={3}
+                  maxLength={160}
+                  className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-3 text-white resize-none focus:outline-none focus:border-green-600"
+                  placeholder="Ex: Explore nossa coleção de hinos de louvor da Congregação Cristã no Brasil..."
+                />
+                <p className="text-gray-500 text-xs mt-1">
+                  Descrição que aparece nos resultados de busca (máx. 160 caracteres)
+                </p>
               </div>
             </div>
           </div>

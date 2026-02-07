@@ -20,7 +20,29 @@ export async function uploadFile(
   type: 'hinos' | 'albuns' | 'avatars' | 'covers' | 'banners'
 ): Promise<string> {
   try {
-    console.log('📤 Iniciando upload Supabase:', { fileName: file.name, size: file.size, type });
+    console.log('📤 Iniciando upload Supabase (REST API):', { fileName: file.name, size: file.size, type });
+    
+    const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
+    const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
+    
+    if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
+      throw new Error('Configuração do Supabase não encontrada');
+    }
+    
+    // Pegar token do localStorage (mais rápido que getSession)
+    let accessToken = SUPABASE_ANON_KEY;
+    try {
+      const authData = localStorage.getItem('sb-rdogsfrplohxnemvtetn-auth-token');
+      if (authData) {
+        const parsed = JSON.parse(authData);
+        if (parsed?.access_token) {
+          accessToken = parsed.access_token;
+          console.log('✅ Token de autenticação encontrado');
+        }
+      }
+    } catch (e) {
+      console.warn('⚠️ Erro ao ler token, usando anon key');
+    }
     
     // Gerar nome único para o arquivo
     const timestamp = Date.now();
@@ -31,27 +53,48 @@ export async function uploadFile(
     const bucket = 'images';
     const path = `${type}/${uniqueName}`;
     
-    // Upload para Supabase Storage
-    const { data, error } = await supabase.storage
-      .from(bucket)
-      .upload(path, file, {
-        cacheControl: '3600',
-        upsert: false,
-      });
-
-    if (error) {
-      console.error('❌ Erro no upload Supabase:', error);
-      throw new Error(error.message || 'Falha no upload');
-    }
-
-    // Obter URL pública
-    const { data: urlData } = supabase.storage
-      .from(bucket)
-      .getPublicUrl(path);
-
-    console.log('✅ Upload concluído:', urlData.publicUrl);
+    // Upload via REST API com timeout
+    const uploadUrl = `${SUPABASE_URL}/storage/v1/object/${bucket}/${path}`;
+    console.log('🌐 Upload URL:', uploadUrl);
     
-    return urlData.publicUrl;
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 30000);
+    
+    try {
+      const response = await fetch(uploadUrl, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+          'apikey': SUPABASE_ANON_KEY,
+          'Content-Type': file.type,
+          'x-upsert': 'false',
+        },
+        body: file,
+        signal: controller.signal,
+      });
+      
+      clearTimeout(timeoutId);
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('❌ Erro no upload (HTTP):', response.status, errorText);
+        throw new Error(`Upload falhou: ${response.status} - ${errorText}`);
+      }
+      
+      console.log('✅ Upload HTTP concluído:', response.status);
+      
+      // Obter URL pública
+      const publicUrl = `${SUPABASE_URL}/storage/v1/object/public/${bucket}/${path}`;
+      console.log('✅ URL pública gerada:', publicUrl);
+      
+      return publicUrl;
+    } catch (fetchError: any) {
+      clearTimeout(timeoutId);
+      if (fetchError.name === 'AbortError') {
+        throw new Error('Timeout no upload - verifique sua conexão');
+      }
+      throw fetchError;
+    }
   } catch (error: any) {
     console.error('❌ Erro no upload:', error);
     throw new Error(error.message || 'Falha ao enviar arquivo');

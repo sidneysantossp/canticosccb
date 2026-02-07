@@ -12,8 +12,8 @@ const Sidebar: React.FC = () => {
   const navItems = [
     { path: '/', icon: Home, label: 'Início' },
     { path: '/search', icon: Search, label: 'Buscar' },
-    { path: '/categoria/hinos-cantados', icon: Mic, label: 'Hinos Cantados' },
-    { path: '/categoria/hinos-tocados', icon: Music, label: 'Hinos Tocados' },
+    { path: '/categoria/cantados', icon: Mic, label: 'Hinos Cantados' },
+    { path: '/categoria/tocados', icon: Music, label: 'Hinos Tocados' },
     { path: '/library', icon: Library, label: 'Sua Biblioteca' }
   ];
 
@@ -31,7 +31,7 @@ const Sidebar: React.FC = () => {
             onError={(e) => {
               // Fallback para logo local se o link externo falhar
               const target = e.currentTarget as HTMLImageElement;
-              target.src = '/logo-canticos-ccb.png';
+              target.src = 'https://canticosccb.com.br/logo-canticos-ccb.png';
             }}
           />
         </Link>

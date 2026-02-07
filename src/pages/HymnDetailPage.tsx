@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Play, Heart, Share2, ArrowLeft, Music } from 'lucide-react';
-import { supabase } from '@/lib/supabase-auth';
+import { supabaseFetch, isSupabaseConfigured } from '@/lib/supabaseRest';
 import { usePlayerStore } from '@/stores/playerStore';
 import useFavoritesStore from '@/stores/favoritesStore';
 import { usePlayerContext } from '@/contexts/PlayerContext';
@@ -37,16 +37,36 @@ const HymnDetailPage: React.FC = () => {
     
     setIsLoading(true);
     try {
-      const { data, error } = await supabase
-        .from('hinos')
-        .select('id, numero, titulo, compositor_nome, categoria, cover_url, audio_url, letra, duracao')
-        .eq('id', id)
-        .single();
+      if (!isSupabaseConfigured) {
+        console.warn('Supabase not configured');
+        setHymn(null);
+        return;
+      }
 
-      if (error) throw error;
-      setHymn(data);
+      const rows = await supabaseFetch<any>('hinos', {
+        id: `eq.${id}`,
+        select: 'id,numero,titulo,compositor_nome,categoria,cover_url,audio_url,letra,duracao',
+        limit: '1'
+      });
+
+      if (rows.length > 0) {
+        setHymn({
+          id: String(rows[0].id),
+          numero: rows[0].numero,
+          titulo: rows[0].titulo,
+          compositor_nome: rows[0].compositor_nome,
+          categoria: rows[0].categoria,
+          cover_url: rows[0].cover_url,
+          audio_url: rows[0].audio_url,
+          letra: rows[0].letra,
+          duracao: rows[0].duracao
+        });
+      } else {
+        setHymn(null);
+      }
     } catch (error) {
       console.error('Erro ao carregar hino:', error);
+      setHymn(null);
     } finally {
       setIsLoading(false);
     }
@@ -71,10 +91,11 @@ const HymnDetailPage: React.FC = () => {
   const handleFavorite = () => {
     if (!hymn) return;
     
-    if (isFavorite(hymn.id)) {
-      removeFavorite(hymn.id);
+    const hymnIdNum = parseInt(hymn.id);
+    if (isFavorite(hymnIdNum)) {
+      removeFavorite(hymnIdNum);
     } else {
-      addFavorite(hymn.id, 'hymn');
+      addFavorite(hymnIdNum as any, 'hymn' as any);
     }
   };
 
@@ -162,12 +183,12 @@ const HymnDetailPage: React.FC = () => {
               <button
                 onClick={handleFavorite}
                 className={`p-3 rounded-full transition-colors ${
-                  isFavorite(hymn.id)
+                  isFavorite(parseInt(hymn.id))
                     ? 'bg-primary-600 text-white'
                     : 'bg-background-tertiary text-text-muted hover:text-white'
                 }`}
               >
-                <Heart className={`w-6 h-6 ${isFavorite(hymn.id) ? 'fill-current' : ''}`} />
+                <Heart className={`w-6 h-6 ${isFavorite(parseInt(hymn.id)) ? 'fill-current' : ''}`} />
               </button>
 
               <button className="p-3 rounded-full bg-background-tertiary text-text-muted hover:text-white transition-colors">

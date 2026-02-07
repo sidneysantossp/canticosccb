@@ -7,8 +7,8 @@ import { buildAlbumCoverUrl } from '@/lib/media-helper';
 const CategoryGrid: React.FC = () => {
   const [categories, setCategories] = useState<CategoryRecord[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const visibleCategories = categories.slice(0, Math.min(8, categories.length));
-  const showViewMore = categories.length > 8;
+  const visibleCategories = categories.slice(0, Math.min(11, categories.length));
+  const showViewMore = categories.length > 11;
 
   useEffect(() => {
     let isMounted = true;

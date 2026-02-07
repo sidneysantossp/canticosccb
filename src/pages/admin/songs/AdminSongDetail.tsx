@@ -1,30 +1,63 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, Edit, Trash2, Play, Heart, Share2, Download, TrendingUp } from 'lucide-react';
+import { ArrowLeft, Edit, Trash2, Play, Heart, Share2, Download, Music } from 'lucide-react';
+import { getSongById, Song } from '@/lib/admin/songsAdminApi';
 
 const AdminSongDetail: React.FC = () => {
   const navigate = useNavigate();
   const { id } = useParams();
+  const [song, setSong] = useState<Song | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  // Mock data
-  const song = {
-    id: 1,
-    thumbnail: 'https://picsum.photos/seed/detail1/400',
-    title: 'Hino 50 - Saudosa Lembrança',
-    composer: 'Coral CCB',
-    category: 'Adoração',
-    genre: 'Hino',
-    number: '50',
-    duration: '4:32',
-    plays: 125400,
-    likes: 8200,
-    downloads: 3400,
-    shares: 567,
-    uploadDate: '2024-01-15',
-    status: 'approved',
-    lyrics: 'Saudosa lembrança\nDos dias que lá se vão...',
-    tags: ['adoração', 'hino', 'CCB', 'clássico']
+  useEffect(() => {
+    if (!id) return;
+    loadSong();
+  }, [id]);
+
+  const loadSong = async () => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      const data = await getSongById(id!);
+      setSong(data);
+    } catch (err: any) {
+      console.error('Error loading song:', err);
+      setError(err?.message || 'Erro ao carregar hino');
+    } finally {
+      setIsLoading(false);
+    }
   };
+
+  if (isLoading) {
+    return (
+      <div className="p-6 flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-500 mx-auto mb-4"></div>
+          <p className="text-gray-400">Carregando hino...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error || !song) {
+    return (
+      <div className="p-6">
+        <div className="bg-red-900/50 border border-red-500 rounded-lg p-6 text-center">
+          <Music className="w-12 h-12 text-red-400 mx-auto mb-4" />
+          <h2 className="text-xl font-bold text-red-200 mb-2">Hino não encontrado</h2>
+          <p className="text-red-300 mb-4">{error || 'O hino solicitado não existe.'}</p>
+          <button onClick={() => navigate('/admin/songs')} className="px-6 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-lg transition-colors">
+            Voltar para Hinos
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  const songAny = song as any;
+  const stats = songAny?.song_stats || {};
+  const composer = songAny?.composers;
 
   return (
     <div className="p-6 space-y-6">
@@ -43,58 +76,50 @@ const AdminSongDetail: React.FC = () => {
           <div className="bg-gray-900/50 border border-gray-800 rounded-xl p-6">
             <div className="flex gap-6">
               <img
-                src={song.thumbnail}
+                src={song.cover_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(song.title || 'H')}&background=1f2937&color=9ca3af&size=400`}
                 alt={song.title}
                 className="w-48 h-48 rounded-lg object-cover"
               />
               <div className="flex-1">
-                <h2 className="text-2xl font-bold text-white mb-2">{song.title}</h2>
-                <p className="text-gray-400 mb-4">{song.composer}</p>
+                <h2 className="text-2xl font-bold text-white mb-2">
+                  {songAny.number ? `Hino ${songAny.number} - ` : ''}{song.title}
+                </h2>
+                <p className="text-gray-400 mb-4">{composer?.artistic_name || composer?.name || 'Sem compositor'}</p>
                 
                 <div className="flex flex-wrap gap-2 mb-4">
-                  <span className="px-3 py-1 bg-primary-500/20 text-primary-400 text-sm rounded-full">
-                    {song.category}
-                  </span>
-                  <span className="px-3 py-1 bg-blue-500/20 text-blue-400 text-sm rounded-full">
-                    {song.genre}
-                  </span>
-                  <span className="px-3 py-1 bg-green-500/20 text-green-400 text-sm rounded-full">
-                    Aprovado
+                  {songAny?.genres?.name && (
+                    <span className="px-3 py-1 bg-blue-500/20 text-blue-400 text-sm rounded-full">
+                      {songAny.genres.name}
+                    </span>
+                  )}
+                  <span className={`px-3 py-1 text-sm rounded-full ${
+                    song.status === 'published' 
+                      ? 'bg-green-500/20 text-green-400' 
+                      : 'bg-yellow-500/20 text-yellow-400'
+                  }`}>
+                    {song.status === 'published' ? 'Publicado' : 'Rascunho'}
                   </span>
                 </div>
 
                 <div className="flex gap-3">
                   <button
-                    onClick={() => navigate(`/admin/songs/${id}/edit`)}
+                    onClick={() => navigate(`/admin/songs/edit/${id}`)}
                     className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg flex items-center gap-2"
                   >
                     <Edit className="w-4 h-4" />
                     Editar
-                  </button>
-                  <button className="px-4 py-2 bg-red-600/20 hover:bg-red-600/30 text-red-400 rounded-lg flex items-center gap-2">
-                    <Trash2 className="w-4 h-4" />
-                    Remover
                   </button>
                 </div>
               </div>
             </div>
           </div>
 
-          <div className="bg-gray-900/50 border border-gray-800 rounded-xl p-6">
-            <h3 className="text-xl font-bold text-white mb-4">Letra</h3>
-            <pre className="text-gray-300 whitespace-pre-wrap font-sans">{song.lyrics}</pre>
-          </div>
-
-          <div className="bg-gray-900/50 border border-gray-800 rounded-xl p-6">
-            <h3 className="text-xl font-bold text-white mb-4">Tags</h3>
-            <div className="flex flex-wrap gap-2">
-              {song.tags.map((tag) => (
-                <span key={tag} className="px-3 py-1 bg-gray-800 text-white rounded-full text-sm">
-                  #{tag}
-                </span>
-              ))}
+          {songAny.lyrics && (
+            <div className="bg-gray-900/50 border border-gray-800 rounded-xl p-6">
+              <h3 className="text-xl font-bold text-white mb-4">Letra</h3>
+              <pre className="text-gray-300 whitespace-pre-wrap font-sans">{songAny.lyrics}</pre>
             </div>
-          </div>
+          )}
         </div>
 
         <div className="space-y-6">
@@ -106,28 +131,14 @@ const AdminSongDetail: React.FC = () => {
                   <Play className="w-5 h-5 text-green-400" />
                   <span className="text-gray-400">Plays</span>
                 </div>
-                <span className="text-white font-bold">{song.plays.toLocaleString()}</span>
+                <span className="text-white font-bold">{(stats.total_plays || 0).toLocaleString()}</span>
               </div>
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <Heart className="w-5 h-5 text-red-400" />
                   <span className="text-gray-400">Likes</span>
                 </div>
-                <span className="text-white font-bold">{song.likes.toLocaleString()}</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Download className="w-5 h-5 text-blue-400" />
-                  <span className="text-gray-400">Downloads</span>
-                </div>
-                <span className="text-white font-bold">{song.downloads.toLocaleString()}</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Share2 className="w-5 h-5 text-purple-400" />
-                  <span className="text-gray-400">Compartilhamentos</span>
-                </div>
-                <span className="text-white font-bold">{song.shares.toLocaleString()}</span>
+                <span className="text-white font-bold">{(stats.total_likes || 0).toLocaleString()}</span>
               </div>
             </div>
           </div>
@@ -135,25 +146,22 @@ const AdminSongDetail: React.FC = () => {
           <div className="bg-gray-900/50 border border-gray-800 rounded-xl p-6">
             <h3 className="text-white font-semibold mb-4">Informações</h3>
             <div className="space-y-3 text-sm">
+              {songAny.number && (
+                <div>
+                  <p className="text-gray-400 mb-1">Número do Hino</p>
+                  <p className="text-white">{songAny.number}</p>
+                </div>
+              )}
+              {songAny.duration && (
+                <div>
+                  <p className="text-gray-400 mb-1">Duração</p>
+                  <p className="text-white">{songAny.duration}</p>
+                </div>
+              )}
               <div>
-                <p className="text-gray-400 mb-1">Número do Hino</p>
-                <p className="text-white">{song.number}</p>
+                <p className="text-gray-400 mb-1">Criado em</p>
+                <p className="text-white">{song.created_at ? new Date(song.created_at).toLocaleDateString('pt-BR') : '-'}</p>
               </div>
-              <div>
-                <p className="text-gray-400 mb-1">Duração</p>
-                <p className="text-white">{song.duration}</p>
-              </div>
-              <div>
-                <p className="text-gray-400 mb-1">Data de Upload</p>
-                <p className="text-white">{song.uploadDate}</p>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-gray-900/50 border border-gray-800 rounded-xl p-6">
-            <h3 className="text-white font-semibold mb-4">Performance</h3>
-            <div className="h-40 flex items-center justify-center text-gray-400">
-              [Gráfico de Performance]
             </div>
           </div>
         </div>

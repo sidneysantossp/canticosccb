@@ -4,7 +4,7 @@ import { compositoresApi } from '@/lib/api-client';
 import { Link } from 'react-router-dom';
 
 interface Composer {
-  id: number;
+  id: string | number;
   nome: string;
   nome_artistico?: string;
   email?: string;
@@ -46,7 +46,7 @@ const AdminComposersVerified: React.FC = () => {
     }
   };
 
-  const handleRemoveVerification = async (id: number, name: string) => {
+  const handleRemoveVerification = async (id: string | number, name: string) => {
     if (!window.confirm(`Remover verificação de "${name}"?`)) return;
 
     try {

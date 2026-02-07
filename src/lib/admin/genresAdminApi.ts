@@ -1,4 +1,4 @@
-// Mock implementation - Replace with real Supabase queries when backend is ready
+import { supabaseFetch, supabaseInsert, supabaseUpdate, supabaseDelete } from '@/lib/supabaseRest';
 
 export interface Genre {
   id: string;
@@ -19,117 +19,80 @@ export interface CreateGenreData {
   is_active?: boolean;
 }
 
-// Mock database
-let mockGenres: Genre[] = [
-  {
-    id: '1',
-    name: 'Gospel',
-    slug: 'gospel',
-    description: 'M\u00fasica gospel e evang\u00e9lica',
-    color: '#3b82f6',
-    is_active: true,
-    created_at: new Date(Date.now() - 120 * 24 * 60 * 60 * 1000).toISOString(),
-    updated_at: new Date(Date.now() - 120 * 24 * 60 * 60 * 1000).toISOString()
-  },
-  {
-    id: '2',
-    name: 'Louvor',
-    slug: 'louvor',
-    description: 'M\u00fasicas de louvor e adora\u00e7\u00e3o',
-    color: '#8b5cf6',
-    is_active: true,
-    created_at: new Date(Date.now() - 110 * 24 * 60 * 60 * 1000).toISOString(),
-    updated_at: new Date(Date.now() - 110 * 24 * 60 * 60 * 1000).toISOString()
-  },
-  {
-    id: '3',
-    name: 'Adoração',
-    slug: 'adoracao',
-    description: 'M\u00fasicas de adora\u00e7\u00e3o',
-    color: '#ec4899',
-    is_active: true,
-    created_at: new Date(Date.now() - 100 * 24 * 60 * 60 * 1000).toISOString(),
-    updated_at: new Date(Date.now() - 100 * 24 * 60 * 60 * 1000).toISOString()
-  },
-  {
-    id: '4',
-    name: 'Instrumental',
-    slug: 'instrumental',
-    description: 'M\u00fasicas instrumentais sem vocal',
-    color: '#22c55e',
-    is_active: true,
-    created_at: new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString(),
-    updated_at: new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString()
-  },
-  {
-    id: '5',
-    name: 'Contempor\u00e2neo',
-    slug: 'contemporaneo',
-    description: 'M\u00fasica gospel contempor\u00e2nea',
-    color: '#f59e0b',
-    is_active: false,
-    created_at: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(),
-    updated_at: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString()
-  }
-];
+const mapRow = (r: any): Genre => ({
+  id: String(r.id),
+  name: r.name || '',
+  slug: r.slug || '',
+  description: r.description || '',
+  color: r.color || '#3b82f6',
+  is_active: r.is_active !== false,
+  created_at: r.created_at || '',
+  updated_at: r.updated_at || ''
+});
 
 export const getAllGenres = async (): Promise<Genre[]> => {
-  await new Promise(resolve => setTimeout(resolve, 500));
-  return [...mockGenres];
+  try {
+    const rows = await supabaseFetch<any>('genres', { select: '*', order: 'name.asc' });
+    return rows.map(mapRow);
+  } catch (error) {
+    console.error('[getAllGenres] Error:', error);
+    return [];
+  }
 };
 
 export const getGenreById = async (id: string): Promise<Genre | null> => {
-  await new Promise(resolve => setTimeout(resolve, 300));
-  return mockGenres.find(g => g.id === id) || null;
+  try {
+    const rows = await supabaseFetch<any>('genres', { id: `eq.${id}`, select: '*', limit: '1' });
+    return rows.length > 0 ? mapRow(rows[0]) : null;
+  } catch (error) {
+    console.error('[getGenreById] Error:', error);
+    return null;
+  }
 };
 
 export const createGenre = async (data: CreateGenreData): Promise<{ success: boolean; genre?: Genre }> => {
-  await new Promise(resolve => setTimeout(resolve, 500));
-  
-  // Generate slug if not provided
-  const slug = data.slug || data.name.toLowerCase()
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/(^-|-$)/g, '');
-  
-  const newGenre: Genre = {
-    id: String(Date.now()),
-    name: data.name,
-    slug: slug,
-    description: data.description || '',
-    color: data.color || '#3b82f6',
-    is_active: data.is_active !== false,
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString()
-  };
-  mockGenres.push(newGenre);
-  return { success: true, genre: newGenre };
+  try {
+    const slug = data.slug || data.name.toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/(^-|-$)/g, '');
+
+    const result = await supabaseInsert('genres', {
+      name: data.name,
+      slug,
+      description: data.description || '',
+      color: data.color || '#3b82f6',
+      is_active: data.is_active !== false
+    });
+    return { success: true, genre: result as any };
+  } catch (error) {
+    console.error('[createGenre] Error:', error);
+    return { success: false };
+  }
 };
 
 export const updateGenre = async (id: string, data: Partial<Genre>): Promise<{ success: boolean }> => {
-  await new Promise(resolve => setTimeout(resolve, 500));
-  const index = mockGenres.findIndex(g => g.id === id);
-  if (index !== -1) {
-    mockGenres[index] = {
-      ...mockGenres[index],
-      ...data,
-      updated_at: new Date().toISOString()
-    };
+  try {
+    await supabaseUpdate('genres', { id: `eq.${id}` }, data);
     return { success: true };
+  } catch (error) {
+    console.error('[updateGenre] Error:', error);
+    return { success: false };
   }
-  return { success: false };
 };
 
 export const deleteGenre = async (id: string): Promise<{ success: boolean }> => {
-  await new Promise(resolve => setTimeout(resolve, 300));
-  const index = mockGenres.findIndex(g => g.id === id);
-  if (index !== -1) {
-    mockGenres.splice(index, 1);
+  try {
+    await supabaseDelete('genres', { id: `eq.${id}` });
     return { success: true };
+  } catch (error) {
+    console.error('[deleteGenre] Error:', error);
+    return { success: false };
   }
-  return { success: false };
 };
+
+// Stubs for compatibility
 export const getSiteSettings = async (...args: any[]) => ({});
 export const updateSiteSettings = async (...args: any[]) => ({ success: true });
 export const getComments = async (...args: any[]) => [];

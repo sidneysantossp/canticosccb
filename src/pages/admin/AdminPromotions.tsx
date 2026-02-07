@@ -73,71 +73,15 @@ const AdminPromotions: React.FC = () => {
       setIsLoading(true);
       setError(null);
       
-      // Mock data
-      const mockPromotions: Promotion[] = [
-        {
-          id: '1',
-          title: 'Black Friday 2025',
-          description: 'Desconto especial de Black Friday',
-          promotion_type: 'discount',
-          discount_type: 'percentage',
-          discount_value: 50,
-          promo_code: 'BLACKFRIDAY2025',
-          max_uses: 1000,
-          uses_count: 432,
-          start_date: new Date().toISOString().split('T')[0],
-          end_date: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-          is_active: true,
-          clicks_count: 1547,
-          conversions_count: 432,
-          revenue_generated: 21600.00,
-          created_at: new Date().toISOString()
-        },
-        {
-          id: '2',
-          title: 'Primeira Assinatura',
-          description: '30 dias grátis na primeira assinatura',
-          promotion_type: 'trial',
-          discount_type: 'free',
-          discount_value: 30,
-          promo_code: 'BEMVINDO30',
-          uses_count: 287,
-          start_date: new Date().toISOString().split('T')[0],
-          end_date: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-          is_active: true,
-          clicks_count: 823,
-          conversions_count: 287,
-          revenue_generated: 8610.00,
-          created_at: new Date().toISOString()
-        },
-        {
-          id: '3',
-          title: 'Upgrade Premium',
-          description: 'Desconto de R$10 no upgrade',
-          promotion_type: 'upgrade',
-          discount_type: 'fixed',
-          discount_value: 10,
-          promo_code: 'UPGRADE10',
-          max_uses: 500,
-          uses_count: 156,
-          start_date: new Date().toISOString().split('T')[0],
-          end_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-          is_active: false,
-          clicks_count: 456,
-          conversions_count: 156,
-          revenue_generated: 4680.00,
-          created_at: new Date().toISOString()
-        }
-      ];
-
-      setPromotions(mockPromotions);
+      // TODO: Integrar com tabela 'promotions' do Supabase quando disponível
+      setPromotions([]);
       
       setStats({
-        total: mockPromotions.length,
-        active: mockPromotions.filter(p => p.is_active).length,
-        totalClicks: mockPromotions.reduce((sum, p) => sum + p.clicks_count, 0),
-        totalConversions: mockPromotions.reduce((sum, p) => sum + p.conversions_count, 0),
-        totalRevenue: mockPromotions.reduce((sum, p) => sum + p.revenue_generated, 0)
+        total: 0,
+        active: 0,
+        totalClicks: 0,
+        totalConversions: 0,
+        totalRevenue: 0
       });
 
     } catch (err: any) {

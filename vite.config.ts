@@ -74,12 +74,25 @@ export default defineConfig({
       }
     }
   },
+  esbuild: {
+    drop: process.env.NODE_ENV === 'production' ? ['console', 'debugger'] : []
+  },
   build: {
     outDir: 'dist',
     sourcemap: true,
     rollupOptions: {
       output: {
-        manualChunks: undefined
+        manualChunks(id) {
+          if (id.includes('node_modules')) {
+            if (id.includes('react-dom')) return 'vendor-react';
+            if (id.includes('framer-motion')) return 'vendor-framer';
+            if (id.includes('@supabase')) return 'vendor-supabase';
+            if (id.includes('lucide-react')) return 'vendor-icons';
+            return 'vendor';
+          }
+          if (id.includes('/pages/admin/')) return 'admin';
+          if (id.includes('/pages/composer/')) return 'composer';
+        }
       }
     }
   },

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Mail, Check, X, Clock, User, ArrowLeft } from 'lucide-react';
-import { useAuth } from '@/contexts/AuthContextMock';
+import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { compositorGerentesApi } from '@/lib/api-client';
 import SuccessModal from '@/components/ui/SuccessModal';
@@ -22,7 +22,7 @@ const ManagerInvitesPage: React.FC = () => {
   const [invites, setInvites] = useState<Invite[]>([]);
   const [loading, setLoading] = useState(true);
   const [processing, setProcessing] = useState<number | null>(null);
-  
+
   // Estados dos modais
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [showErrorModal, setShowErrorModal] = useState(false);
@@ -42,25 +42,25 @@ const ManagerInvitesPage: React.FC = () => {
     try {
       setLoading(true);
       console.log('📧 [Convites] Buscando usuário:', user.email);
-      
+
       const response: any = await compositorGerentesApi.buscarUsuario(user.email);
       console.log('📧 [Convites] Resposta buscarUsuario:', response);
-      
+
       // A API retorna response.data.id (não user_id)
       if (response.data?.id) {
         // Buscar convites para este usuário
         console.log('📧 [Convites] Buscando convites para user_id:', response.data.id);
-        
+
         const invitesResponse: any = await compositorGerentesApi.listarCompositores(response.data.id);
         console.log('📧 [Convites] Resposta listarCompositores:', invitesResponse);
-        
+
         const dataArray = Array.isArray(invitesResponse.data) ? invitesResponse.data : invitesResponse.data?.compositores || [];
         console.log('📧 [Convites] Array de convites:', dataArray);
-        
+
         // Filtrar apenas pendentes
         const pendingInvites = dataArray.filter((inv: any) => inv.status === 'pendente');
         console.log('📧 [Convites] Convites pendentes:', pendingInvites);
-        
+
         setInvites(pendingInvites);
       } else {
         console.log('❌ [Convites] user_id não encontrado');

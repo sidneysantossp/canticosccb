@@ -1,74 +1,11 @@
 import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { Play, Book, Clock } from 'lucide-react';
 import { usePlayerStore } from '@/stores/playerStore';
 import BibleAudioPlayer from '@/components/bible/BibleAudioPlayer';
 import BibleMobilePlayer from '@/components/bible/BibleMobilePlayer';
 import { getYouTubeAudioUrl } from '@/utils/youtubeApi';
 import { fetchActiveBibleNarrated, type BibleNarrated } from '@/api/bibleNarrated';
-
-// Mock data - em produção, buscar do banco de dados
-const mockBibleData: BibleNarrated[] = [
-  {
-    id: 1,
-    youtube_url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
-    youtube_video_id: "dQw4w9WgXcQ",
-    title: "Gênesis 1 - A Criação",
-    thumbnail_url: "https://img.youtube.com/vi/dQw4w9WgXcQ/maxresdefault.jpg",
-    book_name: "Gênesis 1",
-    description: "No princípio criou Deus os céus e a terra...",
-    content: "<h2>A Criação</h2><p>No princípio criou Deus os céus e a terra. E a terra era sem forma e vazia; e havia trevas sobre a face do abismo; e o Espírito de Deus se movia sobre a face das águas.</p><p>E disse Deus: Haja luz; e houve luz.</p>",
-    duration: 525, // 8:45
-    is_active: true,
-    display_order: 1,
-    created_at: "2024-01-15T10:00:00Z",
-    updated_at: "2024-01-15T10:00:00Z"
-  },
-  {
-    id: 2,
-    youtube_url: "https://www.youtube.com/watch?v=example123",
-    youtube_video_id: "example123",
-    title: "Salmos 23 - O Senhor é Meu Pastor",
-    thumbnail_url: "https://img.youtube.com/vi/example123/maxresdefault.jpg",
-    book_name: "Salmos 23",
-    description: "O SENHOR é o meu pastor; nada me faltará...",
-    content: "<h2>O Senhor é Meu Pastor</h2><p>O SENHOR é o meu pastor; nada me faltará.</p><p>Deitar-me faz em verdes pastos, guia-me mansamente a águas repousantes.</p><p>Refrigera a minha alma; guia-me pelas veredas da justiça, por amor do seu nome.</p>",
-    duration: 200, // 3:20
-    is_active: true,
-    display_order: 2,
-    created_at: "2024-01-16T10:00:00Z",
-    updated_at: "2024-01-16T10:00:00Z"
-  },
-  {
-    id: 3,
-    youtube_url: "https://www.youtube.com/watch?v=example456",
-    youtube_video_id: "example456",
-    title: "João 3 - O Novo Nascimento",
-    thumbnail_url: "https://img.youtube.com/vi/example456/maxresdefault.jpg",
-    book_name: "João 3",
-    description: "E havia entre os fariseus um homem, chamado Nicodemos...",
-    content: "<h2>O Novo Nascimento</h2><p>E havia entre os fariseus um homem, chamado Nicodemos, príncipe dos judeus.</p><p>Este foi ter de noite com Jesus, e disse-lhe: Rabi, bem sabemos que és Mestre, vindo de Deus; porque ninguém pode fazer estes sinais que tu fazes, se Deus não for com ele.</p>",
-    duration: 735, // 12:15
-    is_active: true,
-    display_order: 3,
-    created_at: "2024-01-17T10:00:00Z",
-    updated_at: "2024-01-17T10:00:00Z"
-  },
-  {
-    id: 4,
-    youtube_url: "https://www.youtube.com/watch?v=example789",
-    youtube_video_id: "example789",
-    title: "1 Coríntios 13 - O Amor",
-    thumbnail_url: "https://img.youtube.com/vi/example789/maxresdefault.jpg",
-    book_name: "1 Coríntios 13",
-    description: "Ainda que eu falasse as línguas dos homens e dos anjos...",
-    content: "<h2>O Amor</h2><p>Ainda que eu falasse as línguas dos homens e dos anjos, e não tivesse amor, seria como o metal que soa ou como o sino que tine.</p><p>E ainda que tivesse o dom de profecia, e conhecesse todos os mistérios e toda a ciência, e ainda que tivesse toda a fé, de maneira tal que transportasse os montes, e não tivesse amor, nada seria.</p>",
-    duration: 330, // 5:30
-    is_active: true,
-    display_order: 4,
-    created_at: "2024-01-18T10:00:00Z",
-    updated_at: "2024-01-18T10:00:00Z"
-  }
-];
 
 const BibleSection: React.FC = () => {
   const { play } = usePlayerStore();
@@ -97,8 +34,7 @@ const BibleSection: React.FC = () => {
       setBibleData(data);
     } catch (error) {
       console.error('Erro ao carregar Bíblia Narrada:', error);
-      // Em caso de erro, usar dados mock
-      setBibleData(mockBibleData);
+      setBibleData([]);
     }
   };
 
@@ -132,6 +68,8 @@ const BibleSection: React.FC = () => {
     return `${hours}:${minutes.toString().padStart(2, '0')}:${remainingSeconds.toString().padStart(2, '0')}`;
   };
 
+  if (!bibleData || bibleData.length === 0) return null;
+
   return (
     <section className="mb-12">
       <div className="flex items-center justify-between mb-6">
@@ -144,9 +82,9 @@ const BibleSection: React.FC = () => {
           </p>
         </div>
         <div className="hidden md:block">
-          <button className="text-primary-400 hover:text-primary-300 font-medium transition-colors">
+          <Link to="/biblia-narrada" className="text-primary-400 hover:text-primary-300 font-medium transition-colors">
             Ver todos
-          </button>
+          </Link>
         </div>
       </div>
 
@@ -281,9 +219,9 @@ const BibleSection: React.FC = () => {
 
       {/* Mobile: Ver todos button */}
       <div className="md:hidden mt-6 text-center">
-        <button className="text-primary-400 hover:text-primary-300 font-medium transition-colors">
+        <Link to="/biblia-narrada" className="text-primary-400 hover:text-primary-300 font-medium transition-colors">
           Ver todos os capítulos
-        </button>
+        </Link>
       </div>
 
       {/* Mobile Player */}

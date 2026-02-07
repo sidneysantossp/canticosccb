@@ -39,94 +39,23 @@ const AdminLogos: React.FC = () => {
   }, [logos]);
 
   const loadLogos = async () => {
-    // Timeout de segurança
-    const timeout = setTimeout(() => {
-      setIsLoading(false);
-      setLogos([
-        {
-          id: '1',
-          type: 'favicon',
-          name: 'Favicon',
-          url: 'https://via.placeholder.com/64x64/dc2626/ffffff?text=CCB',
-          width: 64,
-          height: 64,
-          updated_at: new Date().toISOString()
-        },
-        {
-          id: '2',
-          type: 'primary',
-          name: 'Logo Principal (Claro)',
-          url: 'https://canticosccb.com.br/logo-canticos-ccb.png',
-          width: 300,
-          height: 80,
-          updated_at: new Date().toISOString()
-        }
-      ]);
-    }, 2000);
-
     try {
       setIsLoading(true);
       
-      // Tentar carregar do banco
       const data = await Promise.race([
         getAllLogos(),
-        new Promise<null>((_, reject) => setTimeout(() => reject(new Error('Timeout')), 1500))
+        new Promise<null>((_, reject) => setTimeout(() => reject(new Error('Timeout')), 5000))
       ]);
-      
-      clearTimeout(timeout);
       
       if (data && data.length > 0) {
         setLogos(data);
       } else {
-        // Usar dados mock
-        setLogos([
-          {
-            id: '1',
-            type: 'favicon',
-            name: 'Favicon',
-            url: 'https://via.placeholder.com/64x64/dc2626/ffffff?text=CCB',
-            width: 64,
-            height: 64,
-            updated_at: new Date().toISOString()
-          },
-          {
-            id: '2',
-            type: 'primary',
-            name: 'Logo Principal (Claro)',
-            url: 'https://canticosccb.com.br/logo-canticos-ccb.png',
-            width: 300,
-            height: 80,
-            updated_at: new Date().toISOString()
-          }
-        ]);
+        setLogos([]);
       }
     } catch (error) {
-      console.log('Using mock data (database not available)');
-      clearTimeout(timeout);
-      
-      // Usar dados mock
-      setLogos([
-        {
-          id: '1',
-          type: 'favicon',
-          name: 'Favicon',
-          url: 'https://via.placeholder.com/64x64/dc2626/ffffff?text=CCB',
-          width: 64,
-          height: 64,
-          updated_at: new Date().toISOString()
-        },
-        {
-          id: '2',
-          type: 'primary',
-          name: 'Logo Principal (Claro)',
-          url: 'https://canticosccb.com.br/logo-canticos-ccb.png',
-          width: 300,
-          height: 80,
-          updated_at: new Date().toISOString()
-        }
-      ]);
+      console.warn('Erro ao carregar logos:', error);
+      setLogos([]);
     } finally {
-      clearTimeout(timeout);
       setIsLoading(false);
     }
   };

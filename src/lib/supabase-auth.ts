@@ -1,24 +1,39 @@
 /**
  * Cliente de Autenticação - Supabase Auth
- * Substitui completamente o sistema PHP
+ * Usa a tabela "users" que sincroniza com auth.users
  */
 import { createClient } from '@supabase/supabase-js';
 
-const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || 'https://rdogsfrplohxnemvtetn.supabase.co';
-const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJkb2dzZnJwbG9oeG5lbXZ0ZXRuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTk1OTM0OTYsImV4cCI6MjA3NTE2OTQ5Nn0.xCgnffZoXbw2W5eRsArjq2jKBZLLuRRi1Lr8xDPSK2g';
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
+const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
+
+if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
+  console.error('⚠️ Supabase credentials not found in environment variables');
+}
 
 // Cliente Supabase para autenticação
 export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
+// Interface usando a estrutura real da tabela users
 export interface Usuario {
-  id: number;
-  auth_id: string;
-  nome: string;
+  id: string; // UUID
   email: string;
+  name: string;
+  nome?: string; // Alias para compatibilidade
   avatar_url?: string;
-  tipo: 'usuario' | 'compositor' | 'admin';
-  ativo: number;
-  plano?: string;
+  phone?: string;
+  birthdate?: string;
+  location?: string;
+  plan?: string;
+  plano?: string; // Alias para compatibilidade
+  status?: string;
+  email_verified?: boolean;
+  is_admin?: boolean;
+  is_composer?: boolean;
+  is_blocked?: boolean;
+  tipo_usuario?: string;
+  tipo?: 'usuario' | 'compositor' | 'admin'; // Alias para compatibilidade
+  ativo?: number | boolean; // Alias para compatibilidade
   created_at?: string;
   updated_at?: string;
 }
@@ -27,6 +42,17 @@ export interface LoginResponse {
   success: boolean;
   message: string;
   usuario: Usuario;
+}
+
+// Função helper para mapear campos para compatibilidade
+function mapUserForCompatibility(user: any): Usuario {
+  return {
+    ...user,
+    nome: user.name,
+    plano: user.plan || 'free',
+    tipo: user.is_admin ? 'admin' : user.is_composer ? 'compositor' : 'usuario',
+    ativo: user.status !== 'inactive' && !user.is_blocked,
+  };
 }
 
 /**
@@ -42,8 +68,8 @@ export async function login(email: string, senha: string): Promise<LoginResponse
 
     if (authError) {
       console.error('Supabase Auth error:', authError);
-      throw new Error(authError.message === 'Invalid login credentials' 
-        ? 'Email ou senha incorretos' 
+      throw new Error(authError.message === 'Invalid login credentials'
+        ? 'Email ou senha incorretos'
         : authError.message);
     }
 
@@ -51,17 +77,60 @@ export async function login(email: string, senha: string): Promise<LoginResponse
       throw new Error('Usuário não encontrado');
     }
 
-    // 2. Buscar dados do usuário na tabela usuarios
-    const { data: usuario, error: userError } = await supabase
-      .from('usuarios')
+    // 2. Buscar dados do usuário na tabela users (id = auth.user.id)
+    let { data: user, error: userError } = await supabase
+      .from('users')
       .select('*')
-      .eq('auth_id', authData.user.id)
+      .eq('id', authData.user.id)
       .single();
 
-    if (userError || !usuario) {
+    if (userError || !user) {
       console.error('User fetch error:', userError);
-      throw new Error('Perfil de usuário não encontrado');
+
+      // Tentar criar/atualizar o próprio perfil (caso não exista ainda)
+      try {
+        const { data: createdUser, error: createError } = await supabase
+          .from('users')
+          .upsert(
+            {
+              id: authData.user.id,
+              email: authData.user.email!,
+              name: authData.user.user_metadata?.name || authData.user.email?.split('@')[0] || 'Usuário',
+              plan: 'free',
+              status: 'active',
+              is_admin: false,
+              is_composer: false,
+              is_blocked: false,
+              email_verified: !!authData.user.email_confirmed_at,
+            },
+            { onConflict: 'id' }
+          )
+          .select()
+          .single();
+
+        if (!createError && createdUser) {
+          user = createdUser;
+          userError = null;
+        }
+      } catch {}
+
+      // Se ainda falhar, não bloquear o login: retornar um usuário mínimo
+      if (!user) {
+        user = {
+          id: authData.user.id,
+          email: authData.user.email!,
+          name: authData.user.user_metadata?.name || authData.user.email?.split('@')[0] || 'Usuário',
+          plan: 'free',
+          status: 'active',
+          is_admin: false,
+          is_composer: false,
+          is_blocked: false,
+          email_verified: !!authData.user.email_confirmed_at,
+        } as any;
+      }
     }
+
+    const usuario = mapUserForCompatibility(user);
 
     // 3. Salvar no localStorage para compatibilidade
     localStorage.setItem('user', JSON.stringify(usuario));
@@ -82,19 +151,31 @@ export async function login(email: string, senha: string): Promise<LoginResponse
  */
 export async function register(data: { nome: string; email: string; senha: string }): Promise<{ success: boolean; usuario: Usuario }> {
   try {
+    console.log('🔵 Iniciando registro para:', data.email);
+    
     // 1. Criar usuário no Supabase Auth
     const { data: authData, error: authError } = await supabase.auth.signUp({
       email: data.email,
       password: data.senha,
       options: {
         data: {
-          nome: data.nome,
+          name: data.nome,
         },
+        emailRedirectTo: `${window.location.origin}/onboarding`,
       },
     });
 
     if (authError) {
-      console.error('Supabase Auth signup error:', authError);
+      console.error('❌ Supabase Auth signup error:', authError);
+      
+      if (authError.message.includes('already registered')) {
+        throw new Error('Este email já está cadastrado. Tente fazer login.');
+      } else if (authError.message.includes('invalid email')) {
+        throw new Error('Email inválido. Verifique e tente novamente.');
+      } else if (authError.message.includes('password')) {
+        throw new Error('Senha muito fraca. Use pelo menos 6 caracteres.');
+      }
+      
       throw new Error(authError.message);
     }
 
@@ -102,39 +183,118 @@ export async function register(data: { nome: string; email: string; senha: strin
       throw new Error('Erro ao criar usuário');
     }
 
-    // 2. Criar registro na tabela usuarios
-    const { data: usuario, error: userError } = await supabase
-      .from('usuarios')
-      .insert({
-        auth_id: authData.user.id,
-        nome: data.nome,
-        email: data.email,
-        tipo: 'usuario',
-        ativo: 1,
-        plano: 'free',
-      })
-      .select()
-      .single();
+    console.log('✅ Usuário criado no Supabase Auth:', authData.user.id);
 
-    if (userError) {
-      console.error('User insert error:', userError);
-      throw new Error('Erro ao criar perfil de usuário');
+    // 2. Criar/atualizar registro na tabela users
+    let user = null;
+    let userError = null;
+    
+    for (let attempt = 1; attempt <= 3; attempt++) {
+      try {
+        console.log(`🔄 Tentativa ${attempt} de criar perfil na tabela users...`);
+        
+        const result = await supabase
+          .from('users')
+          .upsert({
+            id: authData.user.id, // UUID do auth.users
+            email: data.email,
+            name: data.nome,
+            plan: 'free',
+            status: 'active',
+            is_admin: false,
+            is_composer: false,
+            is_blocked: false,
+            email_verified: false,
+          }, { onConflict: 'id' })
+          .select()
+          .single();
+        
+        user = result.data;
+        userError = result.error;
+        
+        if (!userError && user) {
+          console.log(`✅ Perfil criado na tentativa ${attempt}`);
+          break;
+        }
+        
+        console.log(`⚠️ Tentativa ${attempt} - erro:`, result.error?.message);
+      } catch (e: any) {
+        console.error(`❌ Tentativa ${attempt} falhou:`, e.message);
+        if (attempt < 3) {
+          await new Promise(r => setTimeout(r, 1000));
+        }
+      }
     }
+
+    // Se falhou ao criar, tentar buscar (pode já existir)
+    if (!user) {
+      console.log('🔄 Tentando buscar usuário existente...');
+      const { data: existingUser } = await supabase
+        .from('users')
+        .select('*')
+        .eq('id', authData.user.id)
+        .maybeSingle();
+      
+      if (existingUser) {
+        user = existingUser;
+        console.log('✅ Usuário já existia:', user.email);
+      }
+    }
+
+    if (!user) {
+      console.error('❌ Não foi possível criar/buscar perfil');
+      // Mesmo assim, retornar um objeto mínimo para permitir o registro
+      user = {
+        id: authData.user.id,
+        email: data.email,
+        name: data.nome,
+        plan: 'free',
+        status: 'active',
+        is_admin: false,
+        is_composer: false,
+      };
+    }
+
+    const usuario = mapUserForCompatibility(user);
+    console.log('✅ Registro concluído:', usuario.email);
+
+    // 3. Salvar no localStorage
+    localStorage.setItem('user', JSON.stringify(usuario));
 
     return {
       success: true,
       usuario,
     };
   } catch (error: any) {
-    console.error('Erro no registro:', error);
+    console.error('❌ Erro no registro:', error);
     throw error;
   }
 }
 
 /**
- * Login com Google usando OAuth do Supabase
+ * Login com Google usando ID Token (Google Identity Services)
  */
-export async function googleLogin(): Promise<void> {
+export async function googleLogin(idToken: string): Promise<void> {
+  try {
+    const { error } = await supabase.auth.signInWithIdToken({
+      provider: 'google',
+      token: idToken,
+    });
+
+    if (error) {
+      console.error('Erro no Google ID Token Login:', error);
+      throw error;
+    }
+  } catch (error: any) {
+    console.error('Erro no Google Login:', error);
+    throw error;
+  }
+}
+
+/**
+ * Login com Google usando OAuth do Supabase (Redirect)
+ */
+export async function googleOAuthLogin(): Promise<void> {
   try {
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
@@ -163,38 +323,40 @@ export async function googleLogin(): Promise<void> {
 export async function handleOAuthCallback(): Promise<LoginResponse> {
   try {
     const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-    
+
     if (sessionError || !session?.user) {
       throw new Error('Sessão não encontrada');
     }
 
     // Buscar ou criar usuário
-    let { data: usuario } = await supabase
-      .from('usuarios')
+    let { data: user } = await supabase
+      .from('users')
       .select('*')
-      .eq('auth_id', session.user.id)
+      .eq('id', session.user.id)
       .single();
 
-    if (!usuario) {
+    if (!user) {
       // Criar novo usuário
       const { data: newUser, error: insertError } = await supabase
-        .from('usuarios')
+        .from('users')
         .insert({
-          auth_id: session.user.id,
-          nome: session.user.user_metadata?.full_name || session.user.email?.split('@')[0] || 'Usuário',
+          id: session.user.id,
+          name: session.user.user_metadata?.full_name || session.user.email?.split('@')[0] || 'Usuário',
           email: session.user.email!,
           avatar_url: session.user.user_metadata?.avatar_url,
-          tipo: 'usuario',
-          ativo: 1,
-          plano: 'free',
+          plan: 'free',
+          status: 'active',
+          is_admin: false,
+          is_composer: false,
         })
         .select()
         .single();
 
       if (insertError) throw insertError;
-      usuario = newUser;
+      user = newUser;
     }
 
+    const usuario = mapUserForCompatibility(user);
     localStorage.setItem('user', JSON.stringify(usuario));
 
     return {
@@ -230,7 +392,7 @@ export function isAuthenticated(): boolean {
 export function getCurrentUser(): Usuario | null {
   const userStr = localStorage.getItem('user');
   if (!userStr) return null;
-  
+
   try {
     return JSON.parse(userStr);
   } catch {
@@ -249,16 +411,26 @@ export async function getSession() {
 /**
  * Atualizar dados do usuário
  */
-export async function updateUserProfile(userId: number, data: Partial<Usuario>): Promise<Usuario> {
-  const { data: usuario, error } = await supabase
-    .from('usuarios')
-    .update(data)
+export async function updateUserProfile(userId: string, data: Partial<Usuario>): Promise<Usuario> {
+  // Mapear campos de compatibilidade para campos reais
+  const updateData: any = { ...data };
+  if (data.nome) updateData.name = data.nome;
+  if (data.plano) updateData.plan = data.plano;
+  delete updateData.nome;
+  delete updateData.plano;
+  delete updateData.tipo;
+  delete updateData.ativo;
+
+  const { data: user, error } = await supabase
+    .from('users')
+    .update(updateData)
     .eq('id', userId)
     .select()
     .single();
 
   if (error) throw error;
-  
+
+  const usuario = mapUserForCompatibility(user);
   localStorage.setItem('user', JSON.stringify(usuario));
   return usuario;
 }
@@ -268,12 +440,12 @@ export async function updateUserProfile(userId: number, data: Partial<Usuario>):
  */
 export function isAdmin(): boolean {
   const user = getCurrentUser();
-  return user?.tipo === 'admin';
+  return user?.is_admin === true || user?.tipo === 'admin';
 }
 
 export function isCompositor(): boolean {
   const user = getCurrentUser();
-  return user?.tipo === 'compositor';
+  return user?.is_composer === true || user?.tipo === 'compositor';
 }
 
 /**
@@ -282,13 +454,14 @@ export function isCompositor(): boolean {
 export function onAuthStateChange(callback: (user: Usuario | null) => void) {
   return supabase.auth.onAuthStateChange(async (event, session) => {
     if (session?.user) {
-      const { data: usuario } = await supabase
-        .from('usuarios')
+      const { data: user } = await supabase
+        .from('users')
         .select('*')
-        .eq('auth_id', session.user.id)
+        .eq('id', session.user.id)
         .single();
-      
-      if (usuario) {
+
+      if (user) {
+        const usuario = mapUserForCompatibility(user);
         localStorage.setItem('user', JSON.stringify(usuario));
         callback(usuario);
       } else {

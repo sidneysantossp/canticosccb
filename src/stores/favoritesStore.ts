@@ -4,7 +4,7 @@ import { removeFavorite as apiRemoveFavorite } from '@/lib/favoritesApi';
 import { supabase } from '@/lib/supabase-auth';
 
 export interface FavoriteHino {
-  id: number;
+  id: string | number;
   title: string;
   artist: string;
   album: string;
@@ -18,12 +18,12 @@ interface FavoritesState {
   favorites: FavoriteHino[];
   isLoading: boolean;
   error: string | null;
-  
+
   // Actions
-  addFavorite: (hino: Omit<FavoriteHino, 'likedAt' | 'addedDaysAgo'>, userId?: number) => void;
-  removeFavorite: (id: number, userId?: number) => void;
+  addFavorite: (hino: Omit<FavoriteHino, 'likedAt' | 'addedDaysAgo'>, userId?: string | number) => void;
+  removeFavorite: (id: number, userId?: string | number) => void;
   isFavorite: (id: number) => boolean;
-  loadFavorites: (userId?: number) => Promise<void>;
+  loadFavorites: (userId?: string | number) => Promise<void>;
   clearError: () => void;
 }
 
@@ -36,7 +36,7 @@ const useFavoritesStore = create<FavoritesState>()(
 
       addFavorite: (hino, userId) => {
         console.log('💚 favoritesStore.addFavorite chamado:', { hino, userId });
-        
+
         const now = new Date().toISOString();
         const newFavorite: FavoriteHino = {
           ...hino,
@@ -48,9 +48,9 @@ const useFavoritesStore = create<FavoritesState>()(
           favorites: [newFavorite, ...state.favorites],
           error: null
         }));
-        
+
         console.log('✅ Favorito adicionado ao estado local');
-        
+
         if (userId) {
           const uid = Number(userId) || 0;
           console.log('🔄 Tentando salvar no Supabase:', { uid, hinoId: hino.id });
@@ -81,7 +81,7 @@ const useFavoritesStore = create<FavoritesState>()(
         }));
         if (userId) {
           const uid = Number(userId) || 0;
-          if (uid) apiRemoveFavorite(uid, id).catch(() => {});
+          if (uid) apiRemoveFavorite(uid, id).catch(() => { });
         }
       },
 
@@ -89,47 +89,85 @@ const useFavoritesStore = create<FavoritesState>()(
         return get().favorites.some(fav => fav.id === id);
       },
 
-      loadFavorites: async (userId?: number) => {
+      loadFavorites: async (userId?: string | number) => {
+        console.log('🔄 loadFavorites chamado com userId:', userId);
         set({ isLoading: true, error: null });
+        
         try {
           if (!userId) {
-            set({ isLoading: false });
+            console.log('⚠️ userId não fornecido, abortando carregamento');
+            set({ isLoading: false, favorites: [] });
             return;
           }
+
+          const uid = String(userId);
+          console.log('🔍 Buscando favoritos no Supabase para usuário:', uid);
           
+          // Buscar favoritos com join na tabela hinos
           const { data, error } = await supabase
-            .from('favoritos')
+            .from('favorites')
             .select(`
               id,
               created_at,
-              hinos (
-                id,
-                titulo,
-                compositor_nome,
-                duracao,
-                capa
-              )
+              hino_id,
+              hinos:hino_id ( id, titulo, compositor_nome, duracao, cover_url, categoria )
             `)
-            .eq('usuario_id', userId)
+            .eq('user_id', uid)
             .order('created_at', { ascending: false });
 
-          if (error) throw new Error('Falha ao carregar favoritos');
-          
+          console.log('📊 Resultado da consulta favorites:', { count: data?.length, error });
+
+          if (error) {
+            console.error('❌ Erro na consulta favorites:', error);
+            // Fallback: buscar sem join
+            const { data: fallbackData, error: fallbackError } = await supabase
+              .from('favorites')
+              .select('id, created_at, hino_id')
+              .eq('user_id', uid)
+              .order('created_at', { ascending: false });
+
+            if (fallbackError) {
+              throw new Error(`Falha ao carregar favoritos: ${fallbackError.message}`);
+            }
+
+            const items = fallbackData || [];
+            const mapped = items.map((it: any) => ({
+              id: it.hino_id || it.id,
+              title: 'Hino Favorito',
+              artist: 'Cânticos CCB',
+              album: 'Hinos CCB',
+              duration: '00:00',
+              coverUrl: '',
+              likedAt: String(it.created_at || new Date().toISOString()),
+              addedDaysAgo: 0,
+            }));
+            set({ favorites: mapped, isLoading: false });
+            return;
+          }
+
           const items = data || [];
-          const mapped = items.map((it: any) => ({
-            id: Number(it.hinos?.id || it.id),
-            title: String(it.hinos?.titulo || ''),
-            artist: String(it.hinos?.compositor_nome || ''),
-            album: 'Hinos CCB',
-            duration: String(it.hinos?.duracao || '00:00'),
-            coverUrl: String(it.hinos?.capa || ''),
-            likedAt: String(it.created_at || new Date().toISOString()),
-            addedDaysAgo: 0,
-          }));
+          console.log('📝 Itens retornados:', items.length);
+
+          const mapped = items.map((it: any) => {
+            const hino = it.hinos;
+            return {
+              id: it.hino_id || it.id,
+              title: hino?.titulo || 'Hino Favorito',
+              artist: hino?.compositor_nome || 'Cânticos CCB',
+              album: hino?.categoria || 'Hinos CCB',
+              duration: hino?.duracao || '00:00',
+              coverUrl: hino?.cover_url || '',
+              likedAt: String(it.created_at || new Date().toISOString()),
+              addedDaysAgo: 0,
+            };
+          });
+
+          console.log('✅ Favoritos carregados com sucesso:', mapped.length);
           set({ favorites: mapped, isLoading: false });
         } catch (error: any) {
-          set({ 
-            isLoading: false, 
+          console.error('❌ Erro completo em loadFavorites:', error);
+          set({
+            isLoading: false,
             error: error instanceof Error ? error.message : 'Erro ao carregar favoritos'
           });
         }
@@ -148,7 +186,7 @@ const useFavoritesStore = create<FavoritesState>()(
 export const updateFavoritesDaysAgo = () => {
   const { favorites } = useFavoritesStore.getState();
   const now = new Date();
-  
+
   const updatedFavorites = favorites.map(fav => ({
     ...fav,
     addedDaysAgo: Math.floor((now.getTime() - new Date(fav.likedAt).getTime()) / (1000 * 60 * 60 * 24))

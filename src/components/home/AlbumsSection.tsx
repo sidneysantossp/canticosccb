@@ -1,5 +1,5 @@
 import React, { useRef } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { ChevronLeft, ChevronRight, Play } from 'lucide-react';
 
 interface Album {
@@ -15,6 +15,7 @@ interface AlbumsSectionProps {
 
 const AlbumsSection: React.FC<AlbumsSectionProps> = ({ albums }) => {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const navigate = useNavigate();
 
   // Sem placeholders: ocultar seção quando não houver álbuns reais
   if (!albums || albums.length === 0) return null;
@@ -30,9 +31,7 @@ const AlbumsSection: React.FC<AlbumsSectionProps> = ({ albums }) => {
   const handlePlayAlbum = (e: React.MouseEvent, albumId: string) => {
     e.preventDefault();
     e.stopPropagation();
-    console.log('🎵 Play button - Navegando para álbum:', albumId);
-    // Redirecionar para a página do álbum
-    window.location.href = `/album/${albumId}`;
+    navigate(`/album/${albumId}`);
   };
 
   return (

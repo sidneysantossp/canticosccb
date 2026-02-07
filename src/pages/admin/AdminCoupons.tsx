@@ -71,83 +71,14 @@ const AdminCoupons: React.FC = () => {
       setIsLoading(true);
       setError(null);
       
-      // Mock data
-      const mockCoupons: Coupon[] = [
-        {
-          id: '1',
-          code: 'PRIMEIRACOMPRA',
-          description: '20% off na primeira assinatura',
-          discount_type: 'percentage',
-          discount_value: 20,
-          applies_to: 'premium',
-          max_uses_per_user: 1,
-          uses_count: 487,
-          is_single_use: false,
-          is_active: true,
-          is_public: true,
-          first_purchase_only: true,
-          tags: ['primeira-compra', 'popular'],
-          created_at: new Date().toISOString()
-        },
-        {
-          id: '2',
-          code: 'VIP50',
-          description: 'R$50 de desconto para assinantes VIP',
-          discount_type: 'fixed',
-          discount_value: 50,
-          applies_to: 'premium',
-          max_uses: 100,
-          uses_count: 67,
-          max_uses_per_user: 1,
-          is_single_use: false,
-          is_active: true,
-          is_public: false,
-          first_purchase_only: false,
-          tags: ['vip', 'exclusivo'],
-          created_at: new Date().toISOString()
-        },
-        {
-          id: '3',
-          code: '3MESESGRATIS',
-          description: '3 meses grátis de Premium',
-          discount_type: 'free_months',
-          discount_value: 3,
-          applies_to: 'premium',
-          max_uses: 50,
-          uses_count: 34,
-          max_uses_per_user: 1,
-          is_single_use: false,
-          is_active: true,
-          is_public: true,
-          first_purchase_only: false,
-          tags: ['trial', 'promocional'],
-          created_at: new Date().toISOString()
-        },
-        {
-          id: '4',
-          code: 'AMIGO15',
-          description: '15% off para indicação de amigos',
-          discount_type: 'percentage',
-          discount_value: 15,
-          applies_to: 'all',
-          uses_count: 123,
-          max_uses_per_user: 1,
-          is_single_use: false,
-          is_active: true,
-          is_public: true,
-          first_purchase_only: false,
-          tags: ['referral', 'amigos'],
-          created_at: new Date().toISOString()
-        }
-      ];
-
-      setCoupons(mockCoupons);
+      // TODO: Integrar com tabela 'coupons' do Supabase quando disponível
+      setCoupons([]);
       
       setStats({
-        total: mockCoupons.length,
-        active: mockCoupons.filter(c => c.is_active).length,
-        public: mockCoupons.filter(c => c.is_public).length,
-        totalUses: mockCoupons.reduce((sum, c) => sum + c.uses_count, 0)
+        total: 0,
+        active: 0,
+        public: 0,
+        totalUses: 0
       });
 
     } catch (err: any) {

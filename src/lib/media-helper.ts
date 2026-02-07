@@ -24,115 +24,44 @@ export function sanitizeFilename(filename: string): string {
 export function buildBannerUrl(banner: { image_url?: string } | string): string {
   const raw = typeof banner === 'string' ? banner : (banner?.image_url || '');
   if (!raw) return '';
-
-  // Caso 1: Já é URL http
-  if (raw.startsWith('http')) {
-    try {
-      const u = new URL(raw);
-      const host = typeof window !== 'undefined' ? window.location.hostname : u.hostname;
-      // Se aponta para /media/banners/, reescrever para stream protegido no host atual
-      if (/\/media\/banners\//i.test(u.pathname)) {
-        const file = u.pathname.split('/').pop() || '';
-        return `http://${host}/1canticosccb/api/stream.php?type=banners&file=${encodeURIComponent(file)}`;
-      }
-      // Se já é stream.php (qualquer host), manter como está
-      if (u.pathname.endsWith('/api/stream.php') || /\/api\/stream\.php$/i.test(u.pathname)) {
-        return raw;
-      }
-      return raw; // outros domínios (CDN externa) permanecem
-    } catch {
-      // Se falhar no parse, tentar tratar como filename
-      return getBannerUrl(raw);
-    }
+  
+  // Se já é uma URL completa (http/https), retornar diretamente
+  if (raw.startsWith('http://') || raw.startsWith('https://')) {
+    return raw;
   }
-
-  // Caso 2: Caminho absoluto começando com '/'
+  
+  // Se começa com /, é um caminho relativo
   if (raw.startsWith('/')) {
-    try {
-      const host = typeof window !== 'undefined' ? window.location.hostname : 'localhost';
-      // Se é caminho direto para /media/banners/
-      if (/\/media\/banners\//i.test(raw)) {
-        const file = raw.split('/').pop() || '';
-        return `http://${host}/1canticosccb/api/stream.php?type=banners&file=${encodeURIComponent(file)}`;
-      }
-      // Se já é /api/stream.php
-      if (/^\/api\/stream\.php/i.test(raw)) {
-        const alreadyPrefixed = raw.startsWith('/1canticosccb/');
-        const path = alreadyPrefixed ? raw : `/1canticosccb${raw}`;
-        return `http://${host}${path}`;
-      }
-      // Último caso: tratar como filename
-      const file = raw.split('/').pop() || raw;
-      return `http://${host}/1canticosccb/api/stream.php?type=banners&file=${encodeURIComponent(file)}`;
-    } catch {
-      return getBannerUrl(raw);
-    }
+    return raw;
   }
-
-  // Caso 3: apenas nome do arquivo
-  return getBannerUrl(raw);
+  
+  // Caso contrário, é um nome de arquivo - construir URL do Supabase
+  const filename = raw.split('/').pop() || raw;
+  return getBannerUrl(filename);
 }
 
 /**
  * Gera URL de hino a partir de ID ou objeto
  */
 export function buildHinoUrl(hino: { id: string; audio_url?: string } | string): string {
-  console.log('🔧 buildHinoUrl input:', hino);
-  
   if (typeof hino === 'string') {
     const hasExt = /\.[a-z0-9]+$/i.test(hino);
     const filename = hasExt ? hino : `${hino}.mp3`;
-    const url = getHinoUrl(filename);
-    console.log('🔧 buildHinoUrl (string):', { input: hino, filename, url });
-    return url;
+    return getHinoUrl(filename);
   }
   
-  // Se já tem URL customizada completa, tratar casos
   if (hino.audio_url) {
-    if (hino.audio_url.startsWith('http')) {
-      try {
-        const u = new URL(hino.audio_url);
-        const host = u.hostname;
-        if (host === 'localhost' || host === '127.0.0.1' || host === '::1') {
-          // Converter para URL da API de stream no host atual
-          const fileFromParam = u.searchParams.get('file');
-          const baseName = u.pathname.split('/').pop() || '';
-          const file = fileFromParam || baseName;
-          if (file) {
-            const fixed = getHinoUrl(file);
-            console.log('🔧 buildHinoUrl (regravado de localhost → atual):', { original: hino.audio_url, fixed });
-            return fixed;
-          }
-        }
-      } catch {}
-      console.log('🔧 buildHinoUrl (URL http completa):', hino.audio_url);
-      return hino.audio_url;
-    }
-    if (hino.audio_url.startsWith('/')) {
-      // Em dev, transformar '/api/...' em URL absoluta direto no Apache
-      try {
-        const host = typeof window !== 'undefined' ? window.location.hostname : 'localhost';
-        const protocol = typeof window !== 'undefined' ? window.location.protocol : 'http:';
-        const alreadyPrefixed = hino.audio_url.startsWith('/1canticosccb/');
-        const path = alreadyPrefixed ? hino.audio_url : (hino.audio_url.startsWith('/api/') ? `/1canticosccb${hino.audio_url}` : hino.audio_url);
-        const absolute = `http://${host}${path}`;
-        console.log('🔧 buildHinoUrl (URL absoluta a partir de /):', absolute);
-        return absolute;
-      } catch {
-        return hino.audio_url;
-      }
-    }
+    if (hino.audio_url.startsWith('http')) return hino.audio_url;
+    const filename = hino.audio_url.split('/').pop() || hino.audio_url;
+    return getHinoUrl(filename);
   }
   
-  // Garantir extensão apenas quando não houver nenhuma
-  let filename = hino.audio_url || hino.id;
+  let filename = hino.id;
   if (filename && !/\.[a-z0-9]+$/i.test(filename)) {
     filename = `${filename}.mp3`;
   }
   
-  const url = getHinoUrl(filename);
-  console.log('🔧 buildHinoUrl (object):', { id: hino.id, audio_url: hino.audio_url, filename, url });
-  return url;
+  return getHinoUrl(filename);
 }
 
 /**
@@ -142,53 +71,15 @@ export function buildAlbumCoverUrl(album: { id: string; cover_url?: string } | s
   if (typeof album === 'string') {
     return getAlbumCoverUrl(album);
   }
+  
   const raw = album.cover_url || '';
-
   if (raw) {
-    // Caso 1: URL absoluta
-    if (raw.startsWith('http')) {
-      try {
-        const u = new URL(raw);
-        const host = u.hostname;
-        const typeParam = u.searchParams.get('type');
-        const looksCovers = /(^|\/)covers(\/|$)/i.test(u.pathname) || typeParam === 'covers';
-        if (host === 'localhost' || host === '127.0.0.1' || host === '::1') {
-          // Reescrever para host atual usando stream.php
-          const byParam = u.searchParams.get('file');
-          const baseName = u.pathname.split('/').pop() || '';
-          const file = byParam || baseName;
-          if (file) {
-            if (looksCovers) {
-              const h = typeof window !== 'undefined' ? window.location.hostname : 'localhost';
-              return `http://${h}/1canticosccb/api/stream.php?type=covers&file=${encodeURIComponent(file)}`;
-            }
-            return getAlbumCoverUrl(file);
-          }
-        }
-      } catch {}
-      return raw; // host já válido
-    }
-
-    // Caso 2: Caminho absoluto começando com '/'
-    if (raw.startsWith('/')) {
-      try {
-        const host = typeof window !== 'undefined' ? window.location.hostname : 'localhost';
-        const alreadyPrefixed = raw.startsWith('/1canticosccb/');
-        const looksCovers = /(^|\/)covers(\/|$)/i.test(raw) || /type=covers/i.test(raw);
-        if (looksCovers) {
-          const file = raw.split('/').pop() || '';
-          return `http://${host}/1canticosccb/api/stream.php?type=covers&file=${encodeURIComponent(file)}`;
-        }
-        const path = alreadyPrefixed ? raw : (raw.startsWith('/api/') ? `/1canticosccb${raw}` : raw);
-        return `http://${host}${path}`;
-      } catch {
-        return raw;
-      }
-    }
+    if (raw.startsWith('http')) return raw;
+    const filename = raw.split('/').pop() || raw;
+    return getAlbumCoverUrl(filename);
   }
 
-  const url = getAlbumCoverUrl(raw || album.id);
-  return withFallback ? url : url;
+  return getAlbumCoverUrl(album.id);
 }
 
 /**
@@ -198,52 +89,19 @@ export function buildAvatarUrl(user: { id: string; avatar_url?: string; name?: s
   if (typeof user === 'string') {
     return getAvatarUrl(user);
   }
+  
   const raw = user.avatar_url || '';
-
   if (raw) {
-    if (raw.startsWith('http')) {
-      try {
-        const u = new URL(raw);
-        const host = u.hostname;
-        const isPrivateNet = /^192\.168\./.test(host) || /^10\./.test(host) || /^172\.(1[6-9]|2[0-9]|3[0-1])\./.test(host);
-        if (host === 'localhost' || host === '127.0.0.1' || host === '::1' || isPrivateNet) {
-          const byParam = u.searchParams.get('file');
-          const baseName = u.pathname.split('/').pop() || '';
-          const file = byParam || baseName;
-          if (file) return getAvatarUrl(file);
-        }
-      } catch {}
-      return raw;
-    }
-    if (raw.startsWith('/')) {
-      try {
-        const host = typeof window !== 'undefined' ? window.location.hostname : 'localhost';
-        const protocol = typeof window !== 'undefined' ? window.location.protocol : 'http:';
-        const alreadyPrefixed = raw.startsWith('/1canticosccb/');
-        // Reescrever caminhos diretos para pastas de avatars para stream protegido
-        const looksAvatars = /(^|\/)media_protegida\/avatars(\/|$)/i.test(raw) || /(^|\/)media\/avatars(\/|$)/i.test(raw) || (/(^|\/)avatars(\/|$)/i.test(raw) && !/^\/(api|1canticosccb\/api)\/stream\.php/i.test(raw));
-        if (looksAvatars) {
-          const last = raw.split('/').pop() || '';
-          const file = last.split('?')[0];
-          return `${protocol}//${host}/1canticosccb/api/stream.php?type=avatars&file=${encodeURIComponent(file)}`;
-        }
-        // Se já é /api/stream.php, apenas prefixar corretamente em dev
-        if (/^\/api\/stream\.php/i.test(raw)) {
-          const path = alreadyPrefixed ? raw : `/1canticosccb${raw}`;
-          return `${protocol}//${host}${path}`;
-        }
-        const path = alreadyPrefixed ? raw : raw;
-        return `${protocol}//${host}${path}`;
-      } catch {
-        return raw;
-      }
-    }
+    if (raw.startsWith('http')) return raw;
+    const filename = raw.split('/').pop()?.split('?')[0] || raw;
+    return getAvatarUrl(filename);
   }
 
   if (user.name) {
     return `https://ui-avatars.com/api/?name=${encodeURIComponent(user.name)}&background=1db954&color=fff&size=200`;
   }
-  return getAvatarUrl(raw || user.id);
+  
+  return getAvatarUrl(user.id);
 }
 
 /**

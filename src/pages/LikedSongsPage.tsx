@@ -3,11 +3,11 @@ import { Play, Pause, Heart, Download, MoreHorizontal, Search, SlidersHorizontal
 import { usePlayerStore } from '@/stores/playerStore';
 import useFavoritesStore, { updateFavoritesDaysAgo } from '@/stores/favoritesStore';
 import SEOHead from '@/components/SEO/SEOHead';
-import { useAuth } from '@/contexts/AuthContextMock';
+import { useAuth } from '@/contexts/AuthContext';
 
 const LikedSongsPage: React.FC = () => {
   const { currentTrack, isPlaying, play, pause } = usePlayerStore();
-  const { favorites, removeFavorite, loadFavorites, isLoading } = useFavoritesStore();
+  const { favorites, removeFavorite, loadFavorites, isLoading, error } = useFavoritesStore();
   const { user } = useAuth();
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState<'recent' | 'artist' | 'title'>('recent');
@@ -18,8 +18,19 @@ const LikedSongsPage: React.FC = () => {
 
   // Load favorites on component mount
   useEffect(() => {
-    const uid = (user as any)?.id as number | undefined;
-    loadFavorites(uid);
+    console.log('🎵 LikedSongsPage - useEffect disparado');
+    console.log('👤 User atual:', user);
+    
+    const uid = user?.id;
+    console.log('🆔 UID extraído:', uid);
+    
+    if (uid) {
+      console.log('📥 Carregando favoritos para usuário:', uid);
+      loadFavorites(uid);
+    } else {
+      console.log('⚠️ Nenhum usuário logado, não carregar favoritos');
+    }
+    
     updateFavoritesDaysAgo();
   }, [loadFavorites, user]);
 
@@ -63,8 +74,7 @@ const LikedSongsPage: React.FC = () => {
   };
 
   const handleRemoveLike = (id: number) => {
-    const uid = (user as any)?.id as number | undefined;
-    removeFavorite(id, uid);
+    removeFavorite(id, user?.id);
   };
 
   const handleDownloadClick = () => {
@@ -215,14 +225,36 @@ const LikedSongsPage: React.FC = () => {
             <Heart className="w-16 h-16 text-gray-600 mb-4" />
             <h3 className="text-xl font-semibold text-white mb-2">Nenhum hino favorito</h3>
             <p className="text-text-muted mb-6 max-w-md">
-              Você ainda não adicionou nenhum hino aos seus favoritos. 
+              Você ainda não adicionou nenhum hino aos seus favoritos.
               Explore nossa biblioteca e clique no coração para salvar seus hinos preferidos.
             </p>
-            <button 
+            <button
               onClick={() => window.history.back()}
               className="px-6 py-3 bg-primary-500 text-black font-semibold rounded-full hover:bg-primary-400 transition-colors"
             >
               Explorar Hinos
+            </button>
+          </div>
+        ) : error ? (
+          <div className="flex flex-col items-center justify-center py-12 text-center">
+            <Heart className="w-16 h-16 text-red-600 mb-4" />
+            <h3 className="text-xl font-semibold text-white mb-2">Erro ao carregar favoritos</h3>
+            <p className="text-text-muted mb-6 max-w-md">
+              {error}
+            </p>
+            <button
+              onClick={() => {
+                if (user?.id) loadFavorites(user.id);
+              }}
+              className="px-6 py-3 bg-primary-500 text-black font-semibold rounded-full hover:bg-primary-400 transition-colors mr-3"
+            >
+              Tentar Novamente
+            </button>
+            <button
+              onClick={() => window.history.back()}
+              className="px-6 py-3 bg-gray-700 text-white font-semibold rounded-full hover:bg-gray-600 transition-colors"
+            >
+              Voltar
             </button>
           </div>
         ) : filteredSongs.length > 0 ? (

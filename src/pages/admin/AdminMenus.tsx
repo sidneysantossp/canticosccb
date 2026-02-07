@@ -25,70 +25,12 @@ const AdminMenus: React.FC = () => {
     isActive: true
   });
 
-  const mockMenuItems: MenuItem[] = [
-    {
-      id: '1',
-      label: 'Início',
-      url: '/',
-      icon: 'Home',
-      position: 1,
-      isActive: true
-    },
-    {
-      id: '2',
-      label: 'Hinos',
-      url: '/songs',
-      icon: 'Music',
-      position: 2,
-      isActive: true,
-      children: [
-        { id: '2-1', label: 'Todos os Hinos', url: '/songs', position: 1, isActive: true },
-        { id: '2-2', label: 'Por Categoria', url: '/songs/categories', position: 2, isActive: true },
-        { id: '2-3', label: 'Favoritos', url: '/songs/favorites', position: 3, isActive: true }
-      ]
-    },
-    {
-      id: '3',
-      label: 'Compositores',
-      url: '/composers',
-      icon: 'Users',
-      position: 3,
-      isActive: true
-    },
-    {
-      id: '4',
-      label: 'Playlists',
-      url: '/playlists',
-      icon: 'List',
-      position: 4,
-      isActive: true
-    },
-    {
-      id: '5',
-      label: 'Biblioteca',
-      url: '/library',
-      icon: 'Library',
-      position: 5,
-      isActive: false
-    }
-  ];
-
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
 
   useEffect(() => {
-    // Simulate loading menu items from API
-    const timer = setTimeout(() => {
-      try {
-        // In production, load from API: const menus = await getMenuItems();
-        setMenuItems(mockMenuItems);
-        setIsLoading(false);
-      } catch (err: any) {
-        setError(err?.message || 'Erro ao carregar menus');
-        setIsLoading(false);
-      }
-    }, 500);
-    return () => clearTimeout(timer);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // TODO: Integrar com tabela 'menus' do Supabase quando disponível
+    setMenuItems([]);
+    setIsLoading(false);
   }, []);
 
   const handleOpenModal = (item?: MenuItem) => {

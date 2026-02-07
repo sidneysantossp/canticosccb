@@ -14,58 +14,43 @@ const AdminReportAnalytics: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [selectedPeriod, setSelectedPeriod] = useState('30days');
 
-  // Mock analytics data
-  const mockData: AnalyticsData[] = [
-    { period: 'Últimos 7 dias', plays: 12450, users: 3240, downloads: 890, favorites: 1230 },
-    { period: 'Últimos 30 dias', plays: 54320, users: 12450, downloads: 3450, favorites: 4560 },
-    { period: 'Últimos 90 dias', plays: 165890, users: 34560, downloads: 9870, favorites: 12340 }
-  ];
-
-  const [data] = useState<AnalyticsData[]>(mockData);
+  const [data, setData] = useState<AnalyticsData[]>([]);
 
   useEffect(() => {
-    // Simulate loading analytics data from API
-    const timer = setTimeout(() => {
-      try {
-        // In production, load from API: const analytics = await getReportAnalytics();
-        setIsLoading(false);
-      } catch (err: any) {
-        setError(err?.message || 'Erro ao carregar relatório de analytics');
-        setIsLoading(false);
-      }
-    }, 500);
-    return () => clearTimeout(timer);
+    // TODO: Integrar com API de analytics real quando disponível
+    setData([]);
+    setIsLoading(false);
   }, []);
 
   const stats = [
     {
       label: 'Total de Plays',
-      value: '54.3K',
-      change: '+12.5%',
+      value: '0',
+      change: '+0%',
       icon: Music,
       color: 'text-blue-400',
       bgColor: 'bg-blue-500/20'
     },
     {
       label: 'Usuários Ativos',
-      value: '12.4K',
-      change: '+8.3%',
+      value: '0',
+      change: '+0%',
       icon: Users,
       color: 'text-green-400',
       bgColor: 'bg-green-500/20'
     },
     {
       label: 'Downloads',
-      value: '3.5K',
-      change: '+15.2%',
+      value: '0',
+      change: '+0%',
       icon: Download,
       color: 'text-purple-400',
       bgColor: 'bg-purple-500/20'
     },
     {
       label: 'Favoritos',
-      value: '4.6K',
-      change: '+6.8%',
+      value: '0',
+      change: '+0%',
       icon: TrendingUp,
       color: 'text-yellow-400',
       bgColor: 'bg-yellow-500/20'
@@ -179,25 +164,9 @@ const AdminReportAnalytics: React.FC = () => {
       {/* Top Songs */}
       <div className="bg-gray-900/50 border border-gray-800 rounded-xl p-6">
         <h2 className="text-xl font-bold text-white mb-4">Top 5 Hinos Mais Tocados</h2>
-        <div className="space-y-3">
-          {[
-            { name: 'Hino 1 - Oh! Que Glória', plays: 4520 },
-            { name: 'Hino 5 - Vem, Ó Pródigo', plays: 3890 },
-            { name: 'Hino 10 - Lindo País', plays: 3450 },
-            { name: 'Hino 15 - Ó Cristãos, Vinde Todos', plays: 3120 },
-            { name: 'Hino 20 - Jerusalém Celeste', plays: 2890 }
-          ].map((song, index) => (
-            <div
-              key={index}
-              className="flex items-center justify-between p-3 bg-gray-800/50 rounded-lg"
-            >
-              <div className="flex items-center gap-3">
-                <span className="text-2xl font-bold text-gray-600">#{index + 1}</span>
-                <span className="text-white">{song.name}</span>
-              </div>
-              <span className="text-gray-400">{song.plays.toLocaleString('pt-BR')} plays</span>
-            </div>
-          ))}
+        <div className="text-center py-8 text-gray-400">
+          <Music className="w-12 h-12 mx-auto mb-3 text-gray-600" />
+          <p>Nenhum dado disponível ainda</p>
         </div>
       </div>
     </div>

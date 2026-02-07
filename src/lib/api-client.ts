@@ -299,10 +299,14 @@ export const albunsApi = {
     try {
       const rows = await supabaseFetch<any>('albums', {
         id: `eq.${id}`,
-        select: 'id,title,artist,description,cover_url,total_tracks,release_date,composer_id,created_at,updated_at',
+        select: 'id,title,artist,description,cover_url,total_tracks,release_date,composer_id,is_published,active,created_at,updated_at',
         limit: '1',
       });
-      return { data: rows.length > 0 ? rows[0] : null, error: null };
+      const album = rows.length > 0 ? rows[0] : null;
+      if (album) {
+        album.status = album.is_published ? 'published' : 'draft';
+      }
+      return { data: album, error: null };
     } catch (error: any) {
       return { data: null, error: error.message };
     }
@@ -337,9 +341,52 @@ export const albunsApi = {
     const result = await albunsApi.get(id);
     return result.data;
   },
-  create: async () => ({}),
-  update: async () => ({}),
-  delete: async () => { },
+  create: async (data: any) => {
+    const { supabaseInsert } = await import('./supabaseRest');
+    try {
+      const result = await supabaseInsert('albums', {
+        title: data.titulo || data.title || '',
+        description: data.descricao || data.description || '',
+        cover_url: data.cover_url || '',
+        artist: data.artist || '',
+        is_published: data.is_published !== false,
+        active: data.ativo !== 0,
+      });
+      return { data: result, error: null };
+    } catch (error: any) {
+      console.error('❌ [albunsApi.create] Error:', error);
+      return { data: null, error: error.message };
+    }
+  },
+  update: async (id: number | string, data: any) => {
+    const { supabaseUpdate } = await import('./supabaseRest');
+    try {
+      const updateData: any = {};
+      if (data.titulo !== undefined) updateData.title = data.titulo;
+      if (data.title !== undefined) updateData.title = data.title;
+      if (data.descricao !== undefined) updateData.description = data.descricao;
+      if (data.description !== undefined) updateData.description = data.description;
+      if (data.cover_url !== undefined) updateData.cover_url = data.cover_url;
+      if (data.artist !== undefined) updateData.artist = data.artist;
+      if (data.is_published !== undefined) updateData.is_published = data.is_published;
+      if (data.ativo !== undefined) updateData.active = data.ativo !== 0;
+      if (data.ano !== undefined) updateData.release_year = data.ano;
+
+      await supabaseUpdate('albums', { id: `eq.${id}` }, updateData);
+      return { data: { id }, error: null };
+    } catch (error: any) {
+      console.error('❌ [albunsApi.update] Error:', error);
+      return { data: null, error: error.message };
+    }
+  },
+  delete: async (id: number | string) => {
+    const { supabaseDelete } = await import('./supabaseRest');
+    try {
+      await supabaseDelete('albums', { id: `eq.${id}` });
+    } catch (error: any) {
+      console.error('❌ [albunsApi.delete] Error:', error);
+    }
+  },
 };
 
 export const categoriasApi = {

@@ -1,6 +1,28 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { ArrowLeft, Save, Megaphone, Calendar, Tag as TagIcon } from 'lucide-react';
+import {
+  CampaignInput,
+  createCampaign,
+  getCampaignById,
+  updateCampaign
+} from '@/lib/admin/campaignsAdminApi';
+
+const formatDateTimeLocal = (value?: string): string => {
+  if (!value) return '';
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return '';
+  const offset = date.getTimezoneOffset();
+  const localDate = new Date(date.getTime() - offset * 60000);
+  return localDate.toISOString().slice(0, 16);
+};
+
+const toIsoString = (value?: string): string | undefined => {
+  if (!value) return undefined;
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return undefined;
+  return date.toISOString();
+};
 
 interface Campaign {
   id: string;
@@ -64,9 +86,20 @@ const AdminCampaignForm: React.FC = () => {
   const loadCampaign = async (campaignId: string) => {
     try {
       setIsLoading(true);
-      // TODO: Implementar getCampaignById quando backend estiver pronto
-      // const campaign = await getCampaignById(campaignId);
-      // if (campaign) { setFormData(...); }
+      const campaign = await getCampaignById(campaignId);
+      if (campaign) {
+        setFormData({
+          name: campaign.name,
+          description: campaign.description || '',
+          campaign_type: campaign.campaign_type,
+          target_audience: campaign.target_audience,
+          subject: campaign.subject || '',
+          scheduled_at: formatDateTimeLocal(campaign.scheduled_at),
+          budget: campaign.budget || 0,
+          status: campaign.status,
+          tags: campaign.tags || []
+        });
+      }
     } catch (error: any) {
       console.error('Erro ao carregar campanha:', error);
       setError(error?.message || 'Erro ao carregar campanha');
@@ -92,22 +125,22 @@ const AdminCampaignForm: React.FC = () => {
     setError(null);
 
     try {
-      const campaignData = {
+      const payload: CampaignInput = {
         name: formData.name.trim(),
         description: formData.description.trim() || undefined,
         campaign_type: formData.campaign_type,
         target_audience: formData.target_audience,
         subject: formData.subject.trim() || undefined,
-        scheduled_at: formData.scheduled_at || undefined,
+        scheduled_at: toIsoString(formData.scheduled_at),
         budget: formData.budget || undefined,
         status: formData.status,
         tags: formData.tags
       };
 
       if (isEditing && id) {
-        // await updateCampaign(id, campaignData);
+        await updateCampaign(id, payload);
       } else {
-        // await createCampaign(campaignData);
+        await createCampaign(payload);
       }
 
       navigate('/admin/campaigns');

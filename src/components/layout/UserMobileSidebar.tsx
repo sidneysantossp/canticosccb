@@ -14,7 +14,7 @@ import {
   X,
   Users
 } from 'lucide-react';
-import { useAuth } from '@/contexts/AuthContextMock';
+import { useAuth } from '@/contexts/AuthContext';
 import { compositorGerentesApi } from '@/lib/api-client';
 import { getPremiumVisibility } from '@/lib/admin/premiumAdminApi';
 
@@ -38,7 +38,7 @@ const UserMobileSidebar: React.FC<UserMobileSidebarProps> = ({ isOpen, onClose }
       try {
         const enabled = await getPremiumVisibility();
         setPremiumEnabled(enabled);
-      } catch {}
+      } catch { }
     })();
   }, []);
 
@@ -52,7 +52,7 @@ const UserMobileSidebar: React.FC<UserMobileSidebarProps> = ({ isOpen, onClose }
         const dataArray = Array.isArray(response.data) ? response.data : response.data?.compositores || [];
         const hasActiveManagements = dataArray.some((g: any) => g.status === 'ativo');
         setIsManager(!!hasActiveManagements);
-      } catch {}
+      } catch { }
     };
     checkIfManager();
   }, [user?.id]);
@@ -101,9 +101,8 @@ const UserMobileSidebar: React.FC<UserMobileSidebarProps> = ({ isOpen, onClose }
 
       {/* Bottom Sheet com degradê, abre de baixo para cima */}
       <div
-        className={`fixed bottom-0 left-0 right-0 bg-gradient-to-b from-green-700 via-green-800 to-gray-950 rounded-t-3xl z-50 transform transition-transform duration-300 ease-in-out lg:hidden h-[60vh] overflow-hidden ${
-          isOpen ? 'translate-y-0' : 'translate-y-full'
-        }`}
+        className={`fixed bottom-0 left-0 right-0 bg-gradient-to-b from-green-700 via-green-800 to-gray-950 rounded-t-3xl z-50 transform transition-transform duration-300 ease-in-out lg:hidden h-[80vh] overflow-hidden ${isOpen ? 'translate-y-0' : 'translate-y-full'
+          }`}
       >
         {/* Barra de arraste */}
         <div className="flex justify-center pt-3 pb-2">
@@ -129,7 +128,7 @@ const UserMobileSidebar: React.FC<UserMobileSidebarProps> = ({ isOpen, onClose }
         </div>
 
         {/* Conteúdo scrollável */}
-        <div className="flex-1 overflow-y-auto pb-4">
+        <div className="flex-1 overflow-y-auto pb-24">
           {/* Seções de menu */}
           <nav className="p-4">
             {menuItems.map((section, idx) => (
@@ -145,16 +144,14 @@ const UserMobileSidebar: React.FC<UserMobileSidebarProps> = ({ isOpen, onClose }
                         key={itemIdx}
                         to={item.path}
                         onClick={onClose}
-                        className={`flex items-center gap-4 px-3 py-3 rounded-lg transition-all ${
-                          active
+                        className={`flex items-center gap-4 px-3 py-3 rounded-lg transition-all ${active
                             ? 'bg-white/20 text-white'
                             : 'text-green-100 hover:text-white hover:bg-white/10'
-                        }`}
+                          }`}
                       >
                         <Icon
-                          className={`w-6 h-6 ${
-                            active ? 'text-primary-300' : 'text-green-100'
-                          }`}
+                          className={`w-6 h-6 ${active ? 'text-primary-300' : 'text-green-100'
+                            }`}
                         />
                         <span className="font-medium">{item.label}</span>
                       </Link>

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { ArrowLeft, Save, Upload, Disc } from 'lucide-react';
+import { ArrowLeft, Save, Upload, Disc, Trash2 } from 'lucide-react';
 import { albunsApi, uploadApi, Album, Hino } from '@/lib/api-client';
 import HinoSelector from '@/components/admin/HinoSelector';
 
@@ -28,21 +28,31 @@ const AdminAlbumForm: React.FC = () => {
 
   useEffect(() => {
     if (isEditing && id) {
-      loadAlbum(parseInt(id));
+      loadAlbum(id);
     }
   }, [id, isEditing]);
 
-  const loadAlbum = async (albumId: number) => {
+  const loadAlbum = async (albumId: string) => {
     try {
       setIsLoading(true);
+      setError(null);
+      console.log('🔍 [AdminAlbumForm] Carregando álbum ID:', albumId);
+      
       const response = await albunsApi.get(albumId);
+      console.log('📦 [AdminAlbumForm] Resposta do get:', response);
+
+      if (response.error) {
+        throw new Error(response.error);
+      }
 
       if (response.data) {
         const album = response.data;
+        console.log('✅ [AdminAlbumForm] Álbum carregado:', album);
+        
         setFormData({
-          title: album.title || album.titulo,
+          title: album.title || '',
           artist: album.artist || '',
-          description: album.description || album.descricao || '',
+          description: album.description || '',
           genre: album.genre || '',
           total_tracks: album.total_tracks?.toString() || '',
           release_date: album.release_date || '',
@@ -50,14 +60,16 @@ const AdminAlbumForm: React.FC = () => {
         });
         setCoverPreview(album.cover_url || '');
 
-        // Carregar hinos do álbum
-        const hinosResponse = await albunsApi.listHinos(albumId);
-        if (hinosResponse.data && hinosResponse.data.hinos) {
-          setSelectedHinos(hinosResponse.data.hinos);
-        }
+        // TODO: Carregar hinos do álbum quando a função estiver implementada
+        // const hinosResponse = await albunsApi.listHinos(albumId);
+        // if (hinosResponse.data && hinosResponse.data.hinos) {
+        //   setSelectedHinos(hinosResponse.data.hinos);
+        // }
+      } else {
+        throw new Error('Álbum não encontrado');
       }
     } catch (error: any) {
-      console.error('Erro ao carregar álbum:', error);
+      console.error('❌ [AdminAlbumForm] Erro ao carregar álbum:', error);
       setError(error?.message || 'Erro ao carregar álbum');
     } finally {
       setIsLoading(false);
@@ -104,7 +116,8 @@ const AdminAlbumForm: React.FC = () => {
         descricao: formData.description.trim() || undefined,
         cover_url: coverUrl || undefined,
         ano: formData.release_date ? parseInt(formData.release_date) : undefined,
-        ativo: formData.status === 'published' ? 1 : 0
+        ativo: formData.status === 'published' ? 1 : 0,
+        is_published: formData.status === 'published'
       };
 
       let response;
@@ -243,6 +256,39 @@ const AdminAlbumForm: React.FC = () => {
                 placeholder="Descrição do álbum..."
               />
             </div>
+
+            <div className="mb-4">
+              <label className="block text-gray-400 text-sm font-semibold mb-2">
+                Status
+              </label>
+              <div className="flex gap-3">
+                <button
+                  type="button"
+                  onClick={() => setFormData({ ...formData, status: 'published' })}
+                  className={`flex-1 px-4 py-3 rounded-lg font-semibold text-sm transition-colors ${
+                    formData.status === 'published'
+                      ? 'bg-green-600 text-white'
+                      : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
+                  }`}
+                >
+                  ✅ Publicado
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setFormData({ ...formData, status: 'draft' })}
+                  className={`flex-1 px-4 py-3 rounded-lg font-semibold text-sm transition-colors ${
+                    formData.status === 'draft'
+                      ? 'bg-yellow-600 text-white'
+                      : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
+                  }`}
+                >
+                  📝 Rascunho
+                </button>
+              </div>
+              <p className="text-gray-500 text-xs mt-2">
+                Álbuns publicados aparecem na home e na listagem pública.
+              </p>
+            </div>
           </div>
 
           {/* Capa */}
@@ -295,10 +341,29 @@ const AdminAlbumForm: React.FC = () => {
           <div className="flex gap-3 sticky bottom-6 bg-gray-950/95 backdrop-blur-sm p-4 rounded-lg border border-gray-800">
             <Link
               to="/admin/albuns"
-              className="flex-1 px-6 py-3 rounded-lg bg-gray-800 hover:bg-gray-700 text-white font-semibold text-center transition-colors"
+              className="px-6 py-3 rounded-lg bg-gray-800 hover:bg-gray-700 text-white font-semibold text-center transition-colors"
             >
               Cancelar
             </Link>
+            {isEditing && id && (
+              <button
+                type="button"
+                onClick={async () => {
+                  if (!window.confirm('Tem certeza que deseja excluir este álbum? Esta ação não pode ser desfeita.')) return;
+                  try {
+                    await albunsApi.delete(id);
+                    navigate('/admin/albuns');
+                  } catch (err) {
+                    console.error('Erro ao excluir álbum:', err);
+                    setError('Erro ao excluir álbum');
+                  }
+                }}
+                className="px-6 py-3 rounded-lg bg-red-600/20 hover:bg-red-600/40 text-red-400 font-semibold flex items-center gap-2 transition-colors"
+              >
+                <Trash2 className="w-5 h-5" />
+                Excluir
+              </button>
+            )}
             <button
               type="submit"
               disabled={isSaving}

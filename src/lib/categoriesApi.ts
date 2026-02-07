@@ -1,4 +1,4 @@
-import { apiFetch, getApiUrl } from '@/lib/api-helper';
+import { supabaseFetch, supabaseInsert, supabaseUpdate, supabaseDelete, isSupabaseConfigured } from '@/lib/supabaseRest';
 
 export type CategoryRecord = {
   id: string;
@@ -7,6 +7,8 @@ export type CategoryRecord = {
   background_color?: string;
   description?: string;
   image_url?: string;
+  meta_title?: string;
+  meta_description?: string;
   ativo?: number;
 };
 
@@ -22,47 +24,50 @@ const mockCategories: CategoryRecord[] = [
 function mapCategory(raw: any): CategoryRecord {
   return {
     id: String(raw.id),
-    name: String(raw.nome ?? raw.name ?? ''),
+    name: String(raw.name ?? raw.nome ?? ''),
     slug: String(raw.slug ?? ''),
-    background_color: String(raw.background_color ?? raw.cor ?? '#6366f1'),
-    description: raw.descricao ?? raw.description ?? undefined,
-    image_url: raw.imagem_url ?? raw.image_url ?? undefined,
-    ativo: raw.ativo != null ? Number(raw.ativo) : undefined,
+    background_color: String(raw.background_color ?? raw.color ?? raw.cor ?? '#6366f1'),
+    description: raw.description ?? raw.descricao ?? undefined,
+    image_url: raw.image_url ?? raw.imagem_url ?? undefined,
+    ativo: raw.is_active != null ? (raw.is_active ? 1 : 0) : (raw.ativo != null ? Number(raw.ativo) : 1),
   };
 }
 
 export const getAll = async (params?: { search?: string; page?: number; limit?: number }) => {
-  const query = new URLSearchParams();
-  if (params?.search) query.append('search', params.search);
-  if (params?.page) query.append('page', String(params.page));
-  if (params?.limit) query.append('limit', String(params.limit));
-  
+  if (!isSupabaseConfigured) {
+    console.warn('⚠️ [categoriesApi] Supabase NOT configured - using mock data');
+    return mockCategories;
+  }
+
   try {
-    const res = await apiFetch(`/api/categorias/index.php?${query.toString()}`);
-    if (!res.ok) {
-      console.warn('API failed, using mock data for categories');
+    console.log('🔍 [categoriesApi] Fetching categories from Supabase...');
+    const filters: Record<string, string> = {
+      select: 'id,nome,slug,descricao,imagem_url,ativo',
+      order: 'nome.asc',
+    };
+    
+    if (params?.limit) filters.limit = String(params.limit);
+    if (params?.search) filters['nome'] = `ilike.%${params.search}%`;
+    
+    const rows = await supabaseFetch<any>('categorias', filters);
+    
+    console.log(`✅ [categoriesApi] Supabase returned ${rows.length} categories`);
+    
+    if (rows.length === 0) {
+      console.warn('⚠️ [categoriesApi] No categories in database - using mock data');
       return mockCategories;
     }
-    const json = await res.json().catch(() => ({}));
-    const list = Array.isArray(json)
-      ? json
-      : Array.isArray(json?.categorias)
-        ? json.categorias
-        : Array.isArray(json?.data)
-          ? json.data
-          : [];
     
-    if (list.length === 0) {
-      console.warn('API returned empty data, using mock data for categories');
-      return mockCategories;
-    }
-    
-    return (list as any[]).map(mapCategory);
+    const mapped = rows.map(mapCategory);
+    console.log('📋 [categoriesApi] Categories:', mapped.map(c => c.name).join(', '));
+    return mapped;
   } catch (error) {
-    console.warn('API error, using mock data for categories:', error);
+    console.error('❌ [categoriesApi] Supabase error - using mock data:', error);
     return mockCategories;
   }
 };
+
+export const get = getAll;
 
 export const fetchActiveCategories = async () => {
   const all = await getAll({ limit: 100 });
@@ -70,53 +75,79 @@ export const fetchActiveCategories = async () => {
 };
 
 export const getById = async (id: number | string) => {
-  const res = await apiFetch(`/api/categorias/${encodeURIComponent(String(id))}`);
-  if (!res.ok) return null;
-  const json = await res.json().catch(() => null);
-  return json ? mapCategory(json) : null;
+  if (!isSupabaseConfigured) return null;
+  
+  try {
+    const rows = await supabaseFetch<any>('categorias', { 
+      id: `eq.${id}`,
+      select: 'id,nome,slug,descricao,imagem_url,ativo'
+    });
+    return rows.length > 0 ? mapCategory(rows[0]) : null;
+  } catch (error) {
+    console.error('Error fetching category by ID:', error);
+    return null;
+  }
 };
 
-export const create = async (data: Partial<CategoryRecord>) => {
+export const create = async (data: { name: string; slug: string; background_color?: string; description?: string; image_url?: string }) => {
+  if (!isSupabaseConfigured) {
+    throw new Error('Supabase not configured');
+  }
+
   const payload = {
-    nome: data.name ?? (data as any).nome,
+    nome: data.name,
     slug: data.slug,
-    descricao: data.description ?? (data as any).descricao,
-    imagem_url: data.image_url ?? (data as any).imagem_url,
-    ativo: data.ativo ?? 1,
-  } as any;
-  const res = await fetch(getApiUrl('/api/categorias/index.php'), {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(payload),
-  });
-  if (!res.ok) return { success: false, error: await res.text().catch(() => 'Erro ao criar') } as any;
-  const json = await res.json().catch(() => ({}));
-  return { success: true, data: mapCategory(json) } as any;
+    cor: data.background_color || '#6366f1',
+    descricao: data.description,
+    imagem_url: data.image_url,
+    ativo: 1,
+  };
+
+  const result = await supabaseInsert<any>('categorias', payload);
+  if (!result) throw new Error('Failed to create category');
+  return mapCategory(result);
 };
 
 export const update = async (id: number | string, data: Partial<CategoryRecord>) => {
-  const payload = {
-    nome: data.name ?? (data as any).nome,
-    slug: data.slug,
-    descricao: data.description ?? (data as any).descricao,
-    imagem_url: data.image_url ?? (data as any).imagem_url,
-    ativo: data.ativo,
-  } as any;
-  const res = await fetch(getApiUrl(`/api/categorias/${encodeURIComponent(String(id))}`), {
-    method: 'PUT',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(payload),
-  });
-  if (!res.ok) return { success: false, error: await res.text().catch(() => 'Erro ao atualizar') } as any;
-  const json = await res.json().catch(() => ({}));
-  return { success: true, data: mapCategory(json) } as any;
+  if (!isSupabaseConfigured) {
+    return { success: false, error: 'Supabase not configured' };
+  }
+
+  try {
+    const payload: any = {};
+    if (data.name) payload.nome = data.name;
+    if (data.slug) payload.slug = data.slug;
+    if (data.description !== undefined) payload.descricao = data.description;
+    if (data.image_url !== undefined) payload.imagem_url = data.image_url;
+    if (data.background_color) payload.cor = data.background_color;
+    if (data.ativo !== undefined) payload.ativo = data.ativo;
+    
+    const results = await supabaseUpdate<any>('categorias', { id: `eq.${id}` }, payload);
+    return { success: true, data: results.length > 0 ? mapCategory(results[0]) : null };
+  } catch (error: any) {
+    return { success: false, error: error.message || 'Erro ao atualizar categoria' };
+  }
 };
 
 export const deleteItem = async (id: number | string) => {
-  const res = await fetch(getApiUrl(`/api/categorias/${encodeURIComponent(String(id))}`), {
-    method: 'DELETE',
-  });
-  if (!res.ok) return { success: false, error: await res.text().catch(() => 'Erro ao deletar') } as any;
-  const json = await res.json().catch(() => ({}));
-  return { success: true, data: json } as any;
+  if (!isSupabaseConfigured) {
+    return { success: false, error: 'Supabase not configured' };
+  }
+
+  try {
+    const success = await supabaseDelete('categorias', { id: `eq.${id}` });
+    return { success, data: success ? { id } : null };
+  } catch (error: any) {
+    return { success: false, error: error.message || 'Erro ao deletar categoria' };
+  }
+};
+
+export default {
+  get,
+  getAll,
+  fetchActiveCategories,
+  getById,
+  create,
+  update,
+  deleteItem,
 };

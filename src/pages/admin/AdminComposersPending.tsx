@@ -4,7 +4,7 @@ import { compositoresApi, documentReviewsApi } from '@/lib/api-client';
 import { Link } from 'react-router-dom';
 
 interface PendingComposer {
-  id: number;
+  id: string | number;
   nome: string;
   nome_artistico: string;
   email: string;

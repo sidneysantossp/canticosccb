@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { FileText, CheckCircle, XCircle, AlertCircle } from 'lucide-react';
 import { documentReviewsApi, type DocumentReview } from '@/lib/api-client';
-import { useAuth } from '@/contexts/AuthContextMock';
+import { useAuth } from '@/contexts/AuthContext';
+import { getDocumentStorageUrl } from '@/lib/documentStorage';
 
 interface DocumentReviewSectionProps {
   compositorId: number;
@@ -15,19 +16,7 @@ interface DocumentReviewSectionProps {
 
 // Helper para construir URL da imagem do documento
 const getDocumentImageUrl = (imagePath: string): string => {
-  // Se já for uma URL completa, retornar como está
-  if (imagePath.startsWith('http://') || imagePath.startsWith('https://')) {
-    return imagePath;
-  }
-  
-  // Se for um caminho de /media_protegida/, usar a API de streaming
-  if (imagePath.startsWith('/media_protegida/')) {
-    const fileName = imagePath.split('/').pop() || '';
-    return `/api/stream.php?type=documents&file=${encodeURIComponent(fileName)}`;
-  }
-  
-  // Caso contrário, retornar o caminho original
-  return imagePath;
+  return getDocumentStorageUrl(imagePath);
 };
 
 export const DocumentReviewSection: React.FC<DocumentReviewSectionProps> = ({
@@ -56,15 +45,15 @@ export const DocumentReviewSection: React.FC<DocumentReviewSectionProps> = ({
     try {
       setLoading(true);
       console.log('🔍 [Documentos] Carregando documentos para compositor:', compositorId);
-      
+
       const response = await documentReviewsApi.getByCompositor(compositorId);
       console.log('🔍 [Documentos] Resposta da API:', response);
-      
+
       if (response.error) {
         console.error('❌ [Documentos] Erro na resposta:', response.error);
         throw new Error(response.error);
       }
-      
+
       if (response.data) {
         const docs = response.data.documents || [];
         console.log('✅ [Documentos] Documentos carregados:', docs.length, docs);
@@ -109,7 +98,7 @@ export const DocumentReviewSection: React.FC<DocumentReviewSectionProps> = ({
 
       // Recarregar documentos
       await loadDocuments();
-      
+
       // Notificar mudança de aprovação
       if (onApprovalChange) {
         onApprovalChange();
@@ -126,12 +115,12 @@ export const DocumentReviewSection: React.FC<DocumentReviewSectionProps> = ({
 
   const handleSubmitNotes = () => {
     if (!currentDocId) return;
-    
+
     if (modalType === 'reject' && !notes.trim()) {
       alert('Você precisa informar o motivo da rejeição');
       return;
     }
-    
+
     handleReview(currentDocId, modalType === 'approve' ? 'approved' : 'rejected', notes || undefined);
   };
 
@@ -303,18 +292,18 @@ export const DocumentReviewSection: React.FC<DocumentReviewSectionProps> = ({
             <h3 className="text-xl font-bold text-white mb-4">
               {modalType === 'approve' ? 'Aprovar Documento' : 'Rejeitar Documento'}
             </h3>
-            
+
             <div className="mb-4">
               <label className="block text-sm font-medium text-gray-300 mb-2">
-                {modalType === 'approve' 
-                  ? 'Adicionar notas (opcional):' 
+                {modalType === 'approve'
+                  ? 'Adicionar notas (opcional):'
                   : 'Motivo da rejeição (obrigatório):'}
               </label>
               <textarea
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
-                placeholder={modalType === 'approve' 
-                  ? 'Ex: Documento aprovado, dados conferidos' 
+                placeholder={modalType === 'approve'
+                  ? 'Ex: Documento aprovado, dados conferidos'
                   : 'Ex: Documento ilegível, favor reenviar'}
                 rows={4}
                 className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-primary-500 resize-none"
@@ -333,11 +322,10 @@ export const DocumentReviewSection: React.FC<DocumentReviewSectionProps> = ({
               <button
                 onClick={handleSubmitNotes}
                 disabled={reviewingId !== null}
-                className={`flex-1 px-4 py-2 rounded-lg font-medium transition-colors disabled:opacity-50 ${
-                  modalType === 'approve'
+                className={`flex-1 px-4 py-2 rounded-lg font-medium transition-colors disabled:opacity-50 ${modalType === 'approve'
                     ? 'bg-green-600 hover:bg-green-700 text-white'
                     : 'bg-red-600 hover:bg-red-700 text-white'
-                }`}
+                  }`}
               >
                 {reviewingId !== null ? 'Processando...' : 'Confirmar'}
               </button>

@@ -3,36 +3,18 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { ArrowLeft, Upload, Music, Image as ImageIcon, Save, X, FileAudio, Clock } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { albunsApi, uploadApi, hinosApi, categoriasApi, compositoresApi, type Hino } from '@/lib/api-client';
+import { getSignedSupabaseUrl } from '@/lib/supabaseMedia';
 import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
 import '@/styles/quill-custom.css';
 
-// Helper: assina URL do stream.php para preview (edit mode)
+// Helper: garante que a URL de áudio utiliza Supabase Storage assinado
 const getSignedPreviewUrl = async (original: string): Promise<string> => {
-  try {
-    if (!original) return '';
-    if (original.startsWith('blob:') || original.startsWith('data:')) return original;
-    const host = typeof window !== 'undefined' ? window.location.hostname : 'localhost';
-    const u = new URL(original, window.location.origin);
-    let file = '';
-    const type = 'hinos';
-    if (u.pathname.includes('/api/stream.php')) {
-      file = u.searchParams.get('file') || '';
-    } else {
-      const base = u.pathname.split('/').pop() || '';
-      if (/\.(mp3|m4a|wav)$/i.test(base)) file = base;
-      else if (/^[a-z0-9._-]+\.(mp3|m4a|wav)$/i.test(original)) file = original;
-    }
-    if (!file) return original;
-    const signUrl = `http://${host}/1canticosccb/api/media/sign.php?type=${encodeURIComponent(type)}&file=${encodeURIComponent(file)}`;
-    const resp = await fetch(signUrl);
-    if (!resp.ok) return original;
-    const j = await resp.json();
-    if (!j?.ok || !j.sig || !j.exp) return original;
-    return `http://${host}/1canticosccb/api/stream.php?type=${type}&file=${encodeURIComponent(file)}&sig=${j.sig}&exp=${j.exp}`;
-  } catch {
+  if (!original) return '';
+  if (original.startsWith('blob:') || original.startsWith('data:')) {
     return original;
   }
+  return getSignedSupabaseUrl(original, 'hinos');
 };
 
 interface FormData {

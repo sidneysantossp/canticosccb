@@ -1,12 +1,12 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { 
-  User, 
-  Edit3, 
-  Music, 
-  Heart, 
-  Clock, 
-  Users, 
+import {
+  User,
+  Edit3,
+  Music,
+  Heart,
+  Clock,
+  Users,
   Settings,
   Camera,
   Mail,
@@ -17,7 +17,7 @@ import {
   MoreHorizontal,
   Loader2
 } from 'lucide-react';
-import { useAuth } from '@/contexts/AuthContextMock';
+import { useAuth } from '@/contexts/AuthContext';
 import { usePlayerStore } from '@/stores/playerStore';
 import { usePlayerContext } from '@/contexts/PlayerContext';
 import { getProfileDashboardData, type FollowedComposer, type UserPlaylist } from '@/lib/profileDashboardApi';
@@ -68,9 +68,9 @@ const ProfilePage: React.FC = () => {
         return;
       }
 
-      console.log('ProfilePage - Loading data (agregado)...', { 
-        userId: user?.id, 
-        isComposer: profile?.is_composer 
+      console.log('ProfilePage - Loading data (agregado)...', {
+        userId: user?.id,
+        isComposer: profile?.is_composer
       });
 
       try {
@@ -83,6 +83,13 @@ const ProfilePage: React.FC = () => {
         setComposerData(data.composerProfile || null);
       } catch (error) {
         console.error('❌ Erro crítico ao carregar dados:', error);
+        // Fallback: usar dados dos stores locais quando Supabase falha
+        setStats({
+          playlistsCount: playlists.length,
+          favoritesCount: favorites.length,
+          hoursListened: 0,
+          followersCount: 0
+        });
       } finally {
         setIsLoading(false);
       }
@@ -112,7 +119,7 @@ const ProfilePage: React.FC = () => {
       console.log('🎵 Contagem de playlists atualizada:', playlists.length);
     }
   }, [playlists]);
-  
+
   const statsDisplay = [
     { label: 'Playlists Criadas', value: stats.playlistsCount.toString(), icon: Music },
     { label: 'Meus Favoritos', value: stats.favoritesCount.toString(), icon: Heart },
@@ -130,25 +137,25 @@ const ProfilePage: React.FC = () => {
   // Função para upload de avatar
   const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     console.log('📸 ProfilePage - handleAvatarUpload triggered');
-    
+
     // Para compositores, redirecionar para a página de perfil do compositor
     if (profile?.is_composer) {
       navigate('/composer/profile');
       return;
     }
-    
+
     const file = e.target.files?.[0];
     console.log('📸 File selected:', file ? {
       name: file.name,
       size: file.size,
       type: file.type
     } : 'No file');
-    
+
     if (!file) {
       console.warn('⚠️ No file selected');
       return;
     }
-    
+
     if (!user?.id) {
       console.error('❌ No user ID');
       return;
@@ -157,7 +164,7 @@ const ProfilePage: React.FC = () => {
     try {
       setIsUploadingAvatar(true);
       console.log('📸 Starting upload for user:', user.id);
-      
+
       const avatarUrl = await uploadUserAvatar(user.id, file);
 
       console.log('✅ Avatar uploaded successfully:', avatarUrl);
@@ -195,7 +202,7 @@ const ProfilePage: React.FC = () => {
       <div className="flex items-center justify-center h-64">
         <div className="text-center">
           <p className="text-text-muted mb-4">Você precisa estar logado para ver o perfil</p>
-          <Link 
+          <Link
             to="/login"
             className="bg-primary-500 text-black px-6 py-2 rounded-full font-semibold hover:bg-primary-400 transition-colors"
           >
@@ -216,7 +223,7 @@ const ProfilePage: React.FC = () => {
           <div className="relative">
             <div className="w-32 h-32 rounded-full bg-white/20 flex items-center justify-center overflow-hidden">
               {(avatarTempUrl || composerData?.avatar_url || profile?.avatar_url) ? (
-                <img 
+                <img
                   src={
                     avatarTempUrl || buildAvatarUrl({
                       id: String(user.id),
@@ -238,7 +245,7 @@ const ProfilePage: React.FC = () => {
                 <User className="w-16 h-16 text-white/80" />
               )}
             </div>
-            <button 
+            <button
               onClick={() => {
                 if (profile?.is_composer) {
                   navigate('/composer/profile');
@@ -256,7 +263,7 @@ const ProfilePage: React.FC = () => {
                 <Camera className="w-4 h-4 text-white" />
               )}
             </button>
-            
+
             {/* Hidden Input */}
             <input
               ref={avatarInputRef}
@@ -278,7 +285,7 @@ const ProfilePage: React.FC = () => {
               <h1 className="text-3xl font-bold">
                 {composerData?.artistic_name || composerData?.nome || (profile as any)?.nome || user.nome || user.email}
               </h1>
-              <button 
+              <button
                 onClick={() => {
                   if (profile?.is_composer) {
                     navigate('/composer/profile');
@@ -292,7 +299,7 @@ const ProfilePage: React.FC = () => {
                 <Edit3 className="w-5 h-5" />
               </button>
             </div>
-            
+
             <div className="flex flex-col sm:flex-row items-start sm:items-center gap-1 sm:gap-4 text-white/80 mb-4">
               <div className="flex items-center gap-1">
                 <Mail className="w-4 h-4" />
@@ -301,10 +308,10 @@ const ProfilePage: React.FC = () => {
               <div className="flex items-center gap-1">
                 <Calendar className="w-4 h-4" />
                 <span className="text-sm">
-                  Membro desde { (composerData?.created_at || (profile as any)?.created_at || (user as any)?.created_at)
+                  Membro desde {(composerData?.created_at || (profile as any)?.created_at || (user as any)?.created_at)
                     ? new Date((composerData?.created_at || (profile as any)?.created_at || (user as any)?.created_at) as string)
-                        .toLocaleDateString('pt-BR', { month: 'short', year: 'numeric' })
-                    : '—' }
+                      .toLocaleDateString('pt-BR', { month: 'short', year: 'numeric' })
+                    : '—'}
                 </span>
               </div>
               {composerData?.location && (
@@ -357,11 +364,10 @@ const ProfilePage: React.FC = () => {
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
-                activeTab === tab.id
+              className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${activeTab === tab.id
                   ? 'border-primary-400 text-primary-400'
                   : 'border-transparent text-text-muted hover:text-white hover:border-gray-300'
-              }`}
+                }`}
             >
               {tab.label}
             </button>
@@ -382,12 +388,12 @@ const ProfilePage: React.FC = () => {
                     <div key={play.id} className="bg-background-secondary rounded-lg p-4 hover:bg-background-tertiary transition-colors group">
                       <div className="flex items-center gap-3">
                         <div className="relative">
-                          <img 
-                            src={play.hymn?.cover_url || 'https://placehold.co/48x48/1a1a1a/green?text=CCB'} 
+                          <img
+                            src={play.hymn?.cover_url || 'https://placehold.co/48x48/1a1a1a/green?text=CCB'}
                             alt={play.hymn?.title}
                             className="w-12 h-12 rounded object-cover"
                           />
-                          <button 
+                          <button
                             onClick={() => {
                               if (play.hymn) {
                                 play(play.hymn as any);
@@ -428,8 +434,8 @@ const ProfilePage: React.FC = () => {
                       className="bg-background-secondary rounded-lg p-4 hover:bg-background-tertiary transition-colors group"
                     >
                       <div className="relative mb-4">
-                        <img 
-                          src={playlist.cover_url || 'https://placehold.co/200x200/1a1a1a/green?text=Playlist'} 
+                        <img
+                          src={(playlist as any).coverUrl || (playlist as any).cover_url || 'https://placehold.co/200x200/1a1a1a/green?text=Playlist'}
                           alt={playlist.name}
                           className="w-full aspect-square rounded-lg object-cover"
                         />
@@ -438,7 +444,7 @@ const ProfilePage: React.FC = () => {
                         </button>
                       </div>
                       <h4 className="font-semibold text-white mb-1 truncate">{playlist.name}</h4>
-                      <p className="text-sm text-text-muted">{playlist.hymns?.length || 0} {(playlist.hymns?.length || 0) === 1 ? 'hino' : 'hinos'}</p>
+                      <p className="text-sm text-text-muted">{(playlist as any).tracks?.length || (playlist as any).hymns?.length || 0} {((playlist as any).tracks?.length || (playlist as any).hymns?.length || 0) === 1 ? 'hino' : 'hinos'}</p>
                     </Link>
                   ))}
                 </div>
@@ -447,8 +453,8 @@ const ProfilePage: React.FC = () => {
                   <Music className="w-12 h-12 text-gray-600 mx-auto mb-3" />
                   <p className="text-gray-400">Nenhuma playlist criada ainda</p>
                   <p className="text-sm text-gray-500 mt-2">Crie sua primeira playlist e organize seus hinos favoritos</p>
-                  <Link 
-                    to="/library" 
+                  <Link
+                    to="/library"
                     className="inline-block mt-4 px-6 py-2 bg-green-600 text-white rounded-full hover:bg-green-500 transition-colors"
                   >
                     Criar Playlist
@@ -479,8 +485,8 @@ const ProfilePage: React.FC = () => {
                     className="bg-background-secondary rounded-lg p-4 hover:bg-background-tertiary transition-colors group"
                   >
                     <div className="relative mb-4">
-                      <img 
-                        src={playlist.cover_url || 'https://placehold.co/200x200/1a1a1a/green?text=Playlist'} 
+                      <img
+                        src={(playlist as any).coverUrl || (playlist as any).cover_url || 'https://placehold.co/200x200/1a1a1a/green?text=Playlist'}
                         alt={playlist.name}
                         className="w-full aspect-square rounded-lg object-cover"
                       />
@@ -489,7 +495,7 @@ const ProfilePage: React.FC = () => {
                       </button>
                     </div>
                     <h4 className="font-semibold text-white mb-1 truncate">{playlist.name}</h4>
-                    <p className="text-sm text-text-muted line-clamp-2">{playlist.description || `${playlist.hymns?.length || 0} ${(playlist.hymns?.length || 0) === 1 ? 'hino' : 'hinos'}`}</p>
+                    <p className="text-sm text-text-muted line-clamp-2">{playlist.description || `${(playlist as any).tracks?.length || (playlist as any).hymns?.length || 0} ${((playlist as any).tracks?.length || (playlist as any).hymns?.length || 0) === 1 ? 'hino' : 'hinos'}`}</p>
                   </Link>
                 ))}
               </div>
@@ -498,8 +504,8 @@ const ProfilePage: React.FC = () => {
                 <Music className="w-16 h-16 text-gray-600 mx-auto mb-4" />
                 <h4 className="text-xl font-semibold text-white mb-2">Nenhuma playlist ainda</h4>
                 <p className="text-gray-400 mb-6">Crie playlists personalizadas com seus hinos favoritos</p>
-                <Link 
-                  to="/library" 
+                <Link
+                  to="/library"
                   className="inline-block px-6 py-3 bg-green-600 text-white rounded-full hover:bg-green-500 transition-colors font-semibold"
                 >
                   Criar Minha Primeira Playlist
@@ -544,8 +550,8 @@ const ProfilePage: React.FC = () => {
                       <div className="flex-1">
                         <p className="text-white">{getActivityMessage()}</p>
                         <p className="text-sm text-text-muted mt-1">
-                          {new Date(activity.created_at).toLocaleDateString('pt-BR', { 
-                            day: 'numeric', 
+                          {new Date(activity.created_at).toLocaleDateString('pt-BR', {
+                            day: 'numeric',
                             month: 'short',
                             hour: '2-digit',
                             minute: '2-digit'
@@ -561,8 +567,8 @@ const ProfilePage: React.FC = () => {
                 <Music className="w-16 h-16 text-gray-600 mx-auto mb-4" />
                 <h4 className="text-xl font-semibold text-white mb-2">Nenhuma atividade ainda</h4>
                 <p className="text-gray-400 mb-6">Suas atividades como curtidas, playlists criadas e compartilhamentos aparecerão aqui</p>
-                <Link 
-                  to="/" 
+                <Link
+                  to="/"
                   className="inline-block px-6 py-3 bg-green-600 text-white rounded-full hover:bg-green-500 transition-colors font-semibold"
                 >
                   Explorar Hinos
@@ -583,8 +589,8 @@ const ProfilePage: React.FC = () => {
                     to={`/compositor/${composer.id}`}
                     className="bg-background-secondary rounded-lg p-6 text-center hover:bg-background-tertiary transition-colors group"
                   >
-                    <img 
-                      src={composer.photo_url || 'https://placehold.co/96x96/1a1a1a/green?text=Compositor'} 
+                    <img
+                      src={composer.photo_url || 'https://placehold.co/96x96/1a1a1a/green?text=Compositor'}
                       alt={composer.artistic_name || composer.name}
                       className="w-24 h-24 rounded-full mx-auto mb-4 object-cover border-2 border-primary-400"
                     />
@@ -606,8 +612,8 @@ const ProfilePage: React.FC = () => {
                 <Music className="w-16 h-16 text-gray-600 mx-auto mb-4" />
                 <h4 className="text-xl font-semibold text-white mb-2">Você ainda não segue ninguém</h4>
                 <p className="text-gray-400 mb-6">Siga seus compositores favoritos para receber atualizações sobre novos hinos</p>
-                <Link 
-                  to="/compositores" 
+                <Link
+                  to="/compositores"
                   className="inline-block px-6 py-3 bg-green-600 text-white rounded-full hover:bg-green-500 transition-colors font-semibold"
                 >
                   Descobrir Compositores

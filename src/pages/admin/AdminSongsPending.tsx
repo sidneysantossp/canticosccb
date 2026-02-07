@@ -142,7 +142,7 @@ const AdminSongsPending: React.FC = () => {
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-3">
                       <img
-                        src={song.cover_url || 'https://via.placeholder.com/80'}
+                        src={song.cover_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(song.title || 'H')}&background=1f2937&color=9ca3af&size=80`}
                         alt={song.title}
                         className="w-12 h-12 rounded object-cover"
                       />

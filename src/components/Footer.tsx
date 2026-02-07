@@ -18,7 +18,7 @@ const Footer: React.FC = () => {
                   onError={(e) => {
                     // Fallback para logo local se o link externo falhar
                     const target = e.currentTarget as HTMLImageElement;
-                    target.src = '/logo-canticos-ccb.png';
+                    target.src = 'https://canticosccb.com.br/logo-canticos-ccb.png';
                   }}
                 />
               </Link>
@@ -33,13 +33,13 @@ const Footer: React.FC = () => {
               </p>
               {/* Social icons */}
               <div className="flex items-center gap-3 mt-4">
-                <a href="#" aria-label="Instagram" className="p-2 rounded-full bg-white/10 hover:bg-white/20 transition-colors">
+                <a href="https://www.instagram.com/canticosccb" target="_blank" rel="noopener noreferrer" aria-label="Instagram" className="p-2 rounded-full bg-white/10 hover:bg-white/20 transition-colors">
                   <Instagram className="w-5 h-5 text-white" />
                 </a>
-                <a href="#" aria-label="Facebook" className="p-2 rounded-full bg-white/10 hover:bg-white/20 transition-colors">
+                <a href="https://www.facebook.com/canticosccb" target="_blank" rel="noopener noreferrer" aria-label="Facebook" className="p-2 rounded-full bg-white/10 hover:bg-white/20 transition-colors">
                   <Facebook className="w-5 h-5 text-white" />
                 </a>
-                <a href="#" aria-label="YouTube" className="p-2 rounded-full bg-white/10 hover:bg-white/20 transition-colors">
+                <a href="https://www.youtube.com/@canticosccb" target="_blank" rel="noopener noreferrer" aria-label="YouTube" className="p-2 rounded-full bg-white/10 hover:bg-white/20 transition-colors">
                   <Youtube className="w-5 h-5 text-white" />
                 </a>
               </div>
@@ -51,12 +51,12 @@ const Footer: React.FC = () => {
             <h4 className="text-white font-semibold mb-4">Hinos</h4>
             <ul className="space-y-3">
               <li>
-                <Link to="/hinos-cantados" className="text-text-muted hover:text-white transition-colors text-sm">
+                <Link to="/categoria/cantados" className="text-text-muted hover:text-white transition-colors text-sm">
                   Hinos Cantados
                 </Link>
               </li>
               <li>
-                <Link to="/hinos-tocados" className="text-text-muted hover:text-white transition-colors text-sm">
+                <Link to="/categoria/tocados" className="text-text-muted hover:text-white transition-colors text-sm">
                   Hinos Tocados
                 </Link>
               </li>

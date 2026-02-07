@@ -119,7 +119,7 @@ const AdminCollections: React.FC = () => {
           >
             <div className="relative aspect-square">
               <img
-                src={collection.cover_url || 'https://via.placeholder.com/300x300?text=Sem+Capa'}
+                src={collection.cover_url || `https://ui-avatars.com/api/?name=${encodeURIComponent((collection as any).title || 'C')}&background=1f2937&color=9ca3af&size=300`}
                 alt={collection.title || collection.titulo}
                 className="w-full h-full object-cover"
               />

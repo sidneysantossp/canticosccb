@@ -20,11 +20,13 @@ import {
   Settings,
   Loader2
 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { compositoresApi } from '@/lib/api-client';
 import { uploadComposerAvatar, uploadComposerBanner } from '@/lib/uploadHelpers';
 
 const ComposerProfile: React.FC = () => {
+  const navigate = useNavigate();
   const { user, profile } = useAuth();
   const [activeTab, setActiveTab] = useState<'profile' | 'social' | 'preferences'>('profile');
   const [isLoading, setIsLoading] = useState(false);
@@ -562,7 +564,7 @@ const ComposerProfile: React.FC = () => {
                   <div className="border-t border-gray-700"></div>
                   <button
                     onClick={() => {
-                      window.location.href = '/settings';
+                      navigate('/settings');
                       setShowMenu(false);
                     }}
                     className="w-full px-4 py-3 text-left text-white hover:bg-background-hover transition-colors flex items-center gap-3"

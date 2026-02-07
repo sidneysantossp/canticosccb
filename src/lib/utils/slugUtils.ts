@@ -201,7 +201,7 @@ export const generateShareUrl = (canonicalUrl: string, platform: 'facebook' | 't
   const encodedUrl = encodeURIComponent(canonicalUrl);
   
   const shareUrls = {
-    facebook: `https://www.facebook.com/sharer/sharer.php?u=${encodedUrl}`,
+    facebook: `https://www.facebook.com/sharer.php?u=${encodedUrl}`,
     twitter: `https://twitter.com/intent/tweet?url=${encodedUrl}`,
     whatsapp: `https://wa.me/?text=${encodedUrl}`,
     telegram: `https://t.me/share/url?url=${encodedUrl}`

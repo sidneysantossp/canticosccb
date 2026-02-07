@@ -66,73 +66,15 @@ const AdminImport: React.FC = () => {
       setIsLoading(true);
       setError(null);
       
-      // Mock data
-      const mockImports: Import[] = [
-        {
-          id: '1',
-          name: 'Importação de Hinos 2025',
-          description: 'Importação em massa de novos hinos',
-          import_type: 'hymns',
-          file_name: 'hinos_2025.csv',
-          file_size: 256000,
-          file_type: 'csv',
-          status: 'completed',
-          total_rows: 500,
-          processed_rows: 500,
-          successful_rows: 487,
-          failed_rows: 13,
-          started_at: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
-          completed_at: new Date(Date.now() - 60 * 60 * 1000).toISOString(),
-          duration_seconds: 900,
-          created_at: new Date(Date.now() - 3 * 60 * 60 * 1000).toISOString()
-        },
-        {
-          id: '2',
-          name: 'Importação de Compositores',
-          description: 'Base de dados de compositores históricos',
-          import_type: 'composers',
-          file_name: 'compositores.xlsx',
-          file_size: 128000,
-          file_type: 'xlsx',
-          status: 'completed',
-          total_rows: 150,
-          processed_rows: 150,
-          successful_rows: 150,
-          failed_rows: 0,
-          started_at: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
-          completed_at: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000 + 15 * 60 * 1000).toISOString(),
-          duration_seconds: 900,
-          created_at: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString()
-        },
-        {
-          id: '3',
-          name: 'Importação de Letras',
-          description: 'Letras de hinos faltantes',
-          import_type: 'lyrics',
-          file_name: 'letras_hinos.json',
-          file_size: 512000,
-          file_type: 'json',
-          status: 'processing',
-          total_rows: 300,
-          processed_rows: 156,
-          successful_rows: 145,
-          failed_rows: 11,
-          started_at: new Date(Date.now() - 30 * 60 * 1000).toISOString(),
-          created_at: new Date(Date.now() - 40 * 60 * 1000).toISOString()
-        }
-      ];
-
-      setImports(mockImports);
-      
-      const totalRows = mockImports.reduce((sum, i) => sum + i.total_rows, 0);
-      const successfulRows = mockImports.reduce((sum, i) => sum + i.successful_rows, 0);
+      // TODO: Integrar com tabela 'imports' do Supabase quando disponível
+      setImports([]);
 
       setStats({
-        total: mockImports.length,
-        completed: mockImports.filter(i => i.status === 'completed').length,
-        processing: mockImports.filter(i => i.status === 'processing').length,
-        totalRows,
-        successRate: totalRows > 0 ? (successfulRows / totalRows) * 100 : 0
+        total: 0,
+        completed: 0,
+        processing: 0,
+        totalRows: 0,
+        successRate: 0
       });
 
     } catch (err: any) {

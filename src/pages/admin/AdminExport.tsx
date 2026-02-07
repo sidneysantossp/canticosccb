@@ -71,85 +71,14 @@ const AdminExport: React.FC = () => {
       setIsLoading(true);
       setError(null);
       
-      // Mock data
-      const mockExports: Export[] = [
-        {
-          id: '1',
-          name: 'Exportação de Hinos - Janeiro 2025',
-          description: 'Todos os hinos cadastrados em janeiro',
-          export_type: 'hymns',
-          format: 'xlsx',
-          file_name: 'hinos_janeiro_2025.xlsx',
-          file_size: 456000,
-          file_url: '/exports/hinos_janeiro_2025.xlsx',
-          download_count: 3,
-          status: 'completed',
-          total_records: 500,
-          processed_records: 500,
-          started_at: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
-          completed_at: new Date(Date.now() - 60 * 60 * 1000).toISOString(),
-          expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
-          created_at: new Date(Date.now() - 3 * 60 * 60 * 1000).toISOString()
-        },
-        {
-          id: '2',
-          name: 'Relatório de Usuários Premium',
-          description: 'Lista completa de assinantes premium',
-          export_type: 'users',
-          format: 'csv',
-          file_name: 'usuarios_premium.csv',
-          file_size: 128000,
-          file_url: '/exports/usuarios_premium.csv',
-          download_count: 1,
-          status: 'completed',
-          total_records: 250,
-          processed_records: 250,
-          started_at: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(),
-          completed_at: new Date(Date.now() - 24 * 60 * 60 * 1000 + 10 * 60 * 1000).toISOString(),
-          expires_at: new Date(Date.now() + 6 * 24 * 60 * 60 * 1000).toISOString(),
-          created_at: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()
-        },
-        {
-          id: '3',
-          name: 'Exportação de Playlists',
-          description: 'Todas as playlists editoriais',
-          export_type: 'playlists',
-          format: 'json',
-          file_name: 'playlists_editoriais.json',
-          file_size: 89000,
-          file_url: '/exports/playlists_editoriais.json',
-          download_count: 0,
-          status: 'completed',
-          total_records: 45,
-          processed_records: 45,
-          started_at: new Date(Date.now() - 3 * 60 * 60 * 1000).toISOString(),
-          completed_at: new Date(Date.now() - 3 * 60 * 60 * 1000 + 5 * 60 * 1000).toISOString(),
-          expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
-          created_at: new Date(Date.now() - 3 * 60 * 60 * 1000).toISOString()
-        },
-        {
-          id: '4',
-          name: 'Relatório de Analytics',
-          description: 'Dados de analytics do último mês',
-          export_type: 'analytics',
-          format: 'xlsx',
-          status: 'processing',
-          total_records: 1000,
-          processed_records: 567,
-          download_count: 0,
-          started_at: new Date(Date.now() - 15 * 60 * 1000).toISOString(),
-          expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
-          created_at: new Date(Date.now() - 20 * 60 * 1000).toISOString()
-        }
-      ];
-
-      setExports(mockExports);
+      // TODO: Integrar com tabela 'exports' do Supabase quando disponível
+      setExports([]);
       
       setStats({
-        total: mockExports.length,
-        completed: mockExports.filter(e => e.status === 'completed').length,
-        processing: mockExports.filter(e => e.status === 'processing').length,
-        totalDownloads: mockExports.reduce((sum, e) => sum + e.download_count, 0)
+        total: 0,
+        completed: 0,
+        processing: 0,
+        totalDownloads: 0
       });
 
     } catch (err: any) {

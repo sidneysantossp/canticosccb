@@ -1,3 +1,4 @@
+import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Heart, Shuffle, SkipBack, Play, Pause, SkipForward, Repeat, Repeat1, Share2, FileText, ChevronUp, Music, Plus, Copyright } from 'lucide-react';
 import { usePlayerStore } from '@/stores/playerStore';
@@ -53,6 +54,7 @@ export default function FullScreenPlayer({ isOpen, onClose }: FullScreenPlayerPr
     playbackContext,
   } = usePlayerStore();
 
+  const navigate = useNavigate();
   const { isFavorite, addFavorite, removeFavorite } = useFavoritesStore();
   const { playlists, addTrackToPlaylist, upsertPlaylist, removeTrackFromPlaylist } = usePlaylistsStore();
   const { createClaim } = useCopyrightClaimsStore();
@@ -988,7 +990,7 @@ export default function FullScreenPlayer({ isOpen, onClose }: FullScreenPlayerPr
         isOpen={showLoginModal}
         onClose={() => setShowLoginModal(false)}
         onConfirm={() => {
-          window.location.href = '/login';
+          navigate('/login');
         }}
         title=""
         message="Para continuar com esta ação você precisa estar logado. Deseja fazer login agora?"

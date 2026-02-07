@@ -92,7 +92,7 @@ const AdminUsers: React.FC = () => {
 
   const handleToggleBlock = async (id: string, currentBlocked: boolean) => {
     try {
-      await usuariosApi.update(parseInt(id), { ativo: currentBlocked ? 1 : 0 });
+      await usuariosApi.update(id, { ativo: currentBlocked ? 1 : 0 });
       loadUsers();
     } catch (error) {
       console.error('Error toggling block:', error);
@@ -101,7 +101,7 @@ const AdminUsers: React.FC = () => {
 
   const handleToggleAdmin = async (id: string, currentAdmin: boolean) => {
     try {
-      await usuariosApi.update(parseInt(id), { tipo: currentAdmin ? 'usuario' : 'admin' });
+      await usuariosApi.update(id, { tipo: currentAdmin ? 'usuario' : 'admin' });
       loadUsers();
     } catch (error) {
       console.error('Error toggling admin:', error);
@@ -112,7 +112,7 @@ const AdminUsers: React.FC = () => {
     if (!window.confirm(`Tem certeza que deseja deletar o usuário ${email}?`)) return;
 
     try {
-      await usuariosApi.delete(parseInt(id));
+      await usuariosApi.delete(id);
       loadUsers();
     } catch (error) {
       console.error('Error deleting user:', error);

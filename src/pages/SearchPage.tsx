@@ -5,7 +5,7 @@ import { usePlayerStore } from '@/stores/playerStore';
 import SEOHead from '@/components/SEO/SEOHead';
 import { generateWebsiteSchema } from '@/utils/schemaGenerator';
 import { advancedSearch, type HymnSearchResult, type ComposerSearchResult, type AlbumSearchResult, type PlaylistSearchResult } from '@/lib/mockApis';
-import { useAuth } from '@/contexts/AuthContextMock';
+import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/lib/supabase-auth';
 
 const SearchPage: React.FC = () => {
@@ -101,9 +101,9 @@ const SearchPage: React.FC = () => {
       try {
         const type =
           activeFilter === 'songs' ? 'hymns' :
-          activeFilter === 'artists' ? 'composers' :
-          activeFilter === 'albums' ? 'albums' :
-          activeFilter === 'playlists' ? 'playlists' : 'all';
+            activeFilter === 'artists' ? 'composers' :
+              activeFilter === 'albums' ? 'albums' :
+                activeFilter === 'playlists' ? 'playlists' : 'all';
         const { hymns: h, composers: c, albums: a, playlists: p } = await advancedSearch({ query: searchQuery, type, limit: 50 });
         if (!isMounted) return;
         setHymns(h);
@@ -154,25 +154,25 @@ const SearchPage: React.FC = () => {
         canonical="/search"
         schemaData={schema}
       />
-      
+
       <div className="p-6 min-h-screen">
         {/* Search Bar */}
         <div className="max-w-2xl mx-auto mb-8">
-        <div className="relative">
-          <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-text-muted w-5 h-5" />
-          <input
-            type="text"
-            placeholder="Digite um título, número, compositor, álbum ou playlist"
-            value={searchQuery}
-            onChange={(e) => handleSearch(e.target.value)}
-            className="w-full pl-12 pr-12 py-3 bg-background-tertiary border border-gray-700 rounded-full text-text-primary placeholder-text-muted focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-          />
-          {searchQuery && (
-            <button onClick={handleClearSearch} className="absolute right-4 top-1/2 transform -translate-y-1/2 p-1 rounded-full hover:bg-background-hover transition-colors">
-              <X className="w-5 h-5 text-text-muted hover:text-white" />
-            </button>
-          )}
-        </div>
+          <div className="relative">
+            <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-text-muted w-5 h-5" />
+            <input
+              type="text"
+              placeholder="Digite um título, número, compositor, álbum ou playlist"
+              value={searchQuery}
+              onChange={(e) => handleSearch(e.target.value)}
+              className="w-full pl-12 pr-12 py-3 bg-background-tertiary border border-gray-700 rounded-full text-text-primary placeholder-text-muted focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+            />
+            {searchQuery && (
+              <button onClick={handleClearSearch} className="absolute right-4 top-1/2 transform -translate-y-1/2 p-1 rounded-full hover:bg-background-hover transition-colors">
+                <X className="w-5 h-5 text-text-muted hover:text-white" />
+              </button>
+            )}
+          </div>
         </div>
 
         {/* Filter Tabs */}
@@ -209,8 +209,8 @@ const SearchPage: React.FC = () => {
                 <h2 className="text-2xl font-bold text-white mb-6">Hinos</h2>
                 <div className="space-y-2">
                   {hymns.map((song) => (
-                    <Link 
-                      key={song.id} 
+                    <Link
+                      key={song.id}
                       to={`/hino/${song.id}`}
                       className="flex items-center gap-4 p-3 rounded-lg hover:bg-background-hover transition-colors group w-full"
                     >

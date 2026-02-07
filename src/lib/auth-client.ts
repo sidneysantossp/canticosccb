@@ -5,19 +5,19 @@
 export * from './supabase-auth';
 export { default } from './supabase-auth';
 
+import { supabase } from './supabase-auth';
+
 // Funções de compatibilidade que faltavam
 export async function checkEmailExists(email: string): Promise<boolean> {
-  const { supabase } = await import('./supabase-auth');
-  const { data } = await supabase
-    .from('usuarios')
+  const { data, error } = await supabase
+    .from('users')
     .select('id')
     .eq('email', email)
-    .single();
-  return !!data;
+    .maybeSingle();
+  return !!data && !error;
 }
 
 export async function changePassword(data: { email: string; senha_atual: string; senha_nova: string }): Promise<{ success: boolean; message: string }> {
-  const { supabase } = await import('./supabase-auth');
   const { error } = await supabase.auth.updateUser({
     password: data.senha_nova
   });

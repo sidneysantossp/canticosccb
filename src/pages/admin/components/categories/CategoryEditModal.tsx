@@ -173,7 +173,7 @@ const CategoryEditModal: React.FC<Props> = ({
                       alt="Preview"
                       className="w-full h-32 object-cover rounded-lg"
                       onError={(e) => {
-                        (e.currentTarget as HTMLImageElement).src = 'https://via.placeholder.com/400x200?text=Erro';
+                        (e.currentTarget as HTMLImageElement).src = 'data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22400%22 height=%22200%22%3E%3Crect fill=%22%231a1a1a%22 width=%22400%22 height=%22200%22/%3E%3Ctext fill=%22%23666%22 x=%2250%25%22 y=%2250%25%22 text-anchor=%22middle%22 dy=%22.3em%22 font-size=%2214%22%3EErro%3C/text%3E%3C/svg%3E';
                       }}
                     />
                     <div className="flex gap-2">

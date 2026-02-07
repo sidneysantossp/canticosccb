@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { usePlayerStore } from '@/stores/playerStore';
-import { useAuth } from '@/contexts/AuthContextMock';
+import { useAuth } from '@/contexts/AuthContext';
+import { getSignedSupabaseUrl } from '@/lib/supabaseMedia';
 
 export const useAudioPlayer = () => {
   const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -11,7 +12,7 @@ export const useAudioPlayer = () => {
   const latestPrefsRef = useRef<{ autoplay: boolean; gaplessPlayback: boolean; crossfade: boolean } | null>(null);
   const latestVolumeRef = useRef<number>(1);
   const { user } = useAuth();
-  
+
   const {
     currentTrack,
     isPlaying,
@@ -54,8 +55,8 @@ export const useAudioPlayer = () => {
     if (!audioRef.current) {
       try {
         audioRef.current = new Audio();
-        try { (audioRef.current as any).crossOrigin = 'anonymous'; } catch {}
-        try { audioRef.current.setAttribute('crossorigin', 'anonymous'); } catch {}
+        try { (audioRef.current as any).crossOrigin = 'anonymous'; } catch { }
+        try { audioRef.current.setAttribute('crossorigin', 'anonymous'); } catch { }
         audioRef.current.preload = 'auto';
         (audioRef.current as any).playsInline = true;
         audioRef.current.defaultMuted = false;
@@ -64,25 +65,25 @@ export const useAudioPlayer = () => {
         // iOS: adicionar ao DOM para garantir que o áudio funcione
         audioRef.current.style.display = 'none';
         document.body.appendChild(audioRef.current);
-      } catch {}
+      } catch { }
     }
     // Garante volume inicial não-zero
-    try { 
+    try {
       audioRef.current.volume = 1.0;
       audioRef.current.muted = false;
-    } catch {}
+    } catch { }
 
     if (audioRef.current && !listenersAttachedRef.current) {
       const audio = audioRef.current;
 
       const onLoadedData = () => {
         setIsLoading(false);
-        console.log('✅ Áudio carregado:', {
-          duration: audio.duration,
-          volume: audio.volume,
-          muted: audio.muted,
-          src: audio.src
-        });
+      };
+
+      const onLoadedMetadata = () => {
+        if (audio.duration && !isNaN(audio.duration) && isFinite(audio.duration)) {
+          usePlayerStore.getState().setDuration(audio.duration);
+        }
       };
 
       const onError = (e: Event) => {
@@ -123,7 +124,7 @@ export const useAudioPlayer = () => {
 
       const onEnded = () => {
         // Restaura volume após crossfade
-        try { audio.volume = latestVolumeRef.current; } catch {}
+        try { audio.volume = latestVolumeRef.current; } catch { }
         const uid = (user as any)?.id;
         const hid = trackIdRef.current;
         const started = startedAtRef.current;
@@ -132,13 +133,7 @@ export const useAudioPlayer = () => {
           if (durationSec >= 1) {
             const hinoId = Number(hid) || parseInt(String(hid), 10) || 0;
             if (hinoId) {
-              const isLocalhost = typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
-              const API_BASE_URL = isLocalhost ? '/api' : ((import.meta as any)?.env?.VITE_API_BASE_URL || 'https://canticosccb.com.br/api');
-              fetch(`${API_BASE_URL}/analytics/play.php`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ usuario_id: Number(uid), hino_id: hinoId, started_at: new Date(started).toISOString().slice(0,19).replace('T',' '), ended_at: new Date().toISOString().slice(0,19).replace('T',' '), duration_sec: durationSec })
-              }).catch(() => {});
+              // O registro de plays agora é tratado centralmente pelo PlayerProvider.
             }
           }
         }
@@ -151,6 +146,7 @@ export const useAudioPlayer = () => {
       };
 
       audio.addEventListener('loadeddata', onLoadedData);
+      audio.addEventListener('loadedmetadata', onLoadedMetadata);
       audio.addEventListener('error', onError);
       audio.addEventListener('timeupdate', onTimeUpdate);
       audio.addEventListener('playing', onPlaying);
@@ -162,6 +158,7 @@ export const useAudioPlayer = () => {
         audio.pause();
         audio.src = '';
         audio.removeEventListener('loadeddata', onLoadedData);
+        audio.removeEventListener('loadedmetadata', onLoadedMetadata);
         audio.removeEventListener('error', onError);
         audio.removeEventListener('timeupdate', onTimeUpdate);
         audio.removeEventListener('playing', onPlaying);
@@ -182,26 +179,14 @@ export const useAudioPlayer = () => {
 
     if (currentTrack?.audioUrl) {
       let audioUrl = currentTrack.audioUrl;
-      
+
       // Validar URL
       if (!audioUrl || audioUrl.trim() === '' || audioUrl === 'undefined' || audioUrl === 'null') {
         console.error('❌ URL de áudio inválida:', audioUrl);
         setIsLoading(false);
         return;
       }
-      
-      // Se for URL do stream.php, verificar se tem extensão .mp3
-      if (audioUrl.includes('stream.php') && !audioUrl.includes('.mp3')) {
-        console.warn('⚠️ URL do stream.php sem extensão .mp3, adicionando...');
-        const urlObj = new URL(audioUrl, window.location.origin);
-        const file = urlObj.searchParams.get('file');
-        if (file && !file.endsWith('.mp3')) {
-          urlObj.searchParams.set('file', file + '.mp3');
-          audioUrl = urlObj.toString();
-          console.log('🔧 URL corrigida:', audioUrl);
-        }
-      }
-      
+
       const prepareAndLoad = async () => {
         setIsLoading(true);
         const audio = audioRef.current || new Audio();
@@ -212,30 +197,7 @@ export const useAudioPlayer = () => {
         trackIdRef.current = resolvedId;
 
         try {
-          if (audioUrl.includes('stream.php')) {
-            try {
-              const u = new URL(audioUrl, window.location.origin);
-              const hasSig = u.searchParams.has('sig') && u.searchParams.has('exp');
-              if (!hasSig) {
-                const type = u.searchParams.get('type') || 'hinos';
-                const file = u.searchParams.get('file') || '';
-                if (file) {
-                  const host = window.location.hostname;
-                  const signUrl = `http://${host}/1canticosccb/api/media/sign.php?type=${encodeURIComponent(type)}&file=${encodeURIComponent(file)}`;
-                  const resp = await fetch(signUrl);
-                  if (resp.ok) {
-                    const j = await resp.json();
-                    if (j?.ok && j.sig && j.exp) {
-                      u.searchParams.set('sig', j.sig);
-                      u.searchParams.set('exp', String(j.exp));
-                      audioUrl = u.toString();
-                      console.log('🔐 URL assinada:', audioUrl);
-                    }
-                  }
-                }
-              }
-            } catch {}
-          }
+          audioUrl = await getSignedSupabaseUrl(audioUrl, 'hinos');
 
           console.log('🎵 Carregando URL no Audio element:', audioUrl);
           if (audio.src && audio.src !== audioUrl) {
@@ -262,7 +224,7 @@ export const useAudioPlayer = () => {
   useEffect(() => {
     const audio = audioRef.current;
     if (!audio || !audio.src) return;
-    
+
     if (isPlaying) {
       console.log('▶️ Tentando reproduzir áudio...', {
         src: audio.src,
@@ -270,30 +232,30 @@ export const useAudioPlayer = () => {
         networkState: audio.networkState,
         error: audio.error
       });
-      
+
       // Aguardar um tick para garantir que o src foi carregado
       const playAttempt = () => {
         // Garantir que não está muted antes de tocar
         audio.muted = false;
         audio.volume = 1.0; // Volume máximo no mobile
-        
+
         // iOS: forçar volume via setAttribute também
         try {
           audio.setAttribute('volume', '1.0');
           audio.removeAttribute('muted');
-        } catch {}
-        
-        console.log('🔊 Antes de play():', { 
-          volume: audio.volume, 
+        } catch { }
+
+        console.log('🔊 Antes de play():', {
+          volume: audio.volume,
           muted: audio.muted,
           paused: audio.paused,
           ended: audio.ended,
           currentTime: audio.currentTime,
           duration: audio.duration
         });
-        
+
         const playPromise = audio.play();
-        
+
         if (playPromise !== undefined) {
           playPromise.catch(error => {
             console.error('❌ Erro ao reproduzir:', {
@@ -304,7 +266,7 @@ export const useAudioPlayer = () => {
               networkState: audio.networkState,
               audioError: audio.error
             });
-            
+
             if (error.name === 'NotAllowedError') {
               console.warn('⚠️ Autoplay bloqueado - aguardando interação do usuário');
               pause();
@@ -316,7 +278,7 @@ export const useAudioPlayer = () => {
               console.warn('⚠️ Play interrompido - tentando novamente...');
               setTimeout(() => {
                 if (audioRef.current && usePlayerStore.getState().isPlaying) {
-                  audioRef.current.play().catch(() => {});
+                  audioRef.current.play().catch(() => { });
                 }
               }, 100);
             } else {
@@ -332,7 +294,7 @@ export const useAudioPlayer = () => {
           });
         }
       };
-      
+
       // Se readyState < 2, aguardar loadeddata
       if (audio.readyState < 2) {
         const onCanPlay = () => {
@@ -355,7 +317,7 @@ export const useAudioPlayer = () => {
   useEffect(() => {
     const handleVisibilityChange = () => {
       if (!document.hidden && audioRef.current && isPlaying && audioRef.current.paused) {
-        audioRef.current.play().catch(() => {});
+        audioRef.current.play().catch(() => { });
       }
     };
     document.addEventListener('visibilitychange', handleVisibilityChange);

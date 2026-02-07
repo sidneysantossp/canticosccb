@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { ArrowLeft, Play, Pause, Heart, Music, ListPlus, Share2, Plus } from 'lucide-react';
 import { buildAlbumCoverUrl } from '@/lib/media-helper';
-import { supabase } from '@/lib/supabase-auth';
+import { supabaseFetch, isSupabaseConfigured } from '@/lib/supabaseRest';
 import { getAll as getAllCategories } from '@/lib/categoriesApi';
 import { usePlayerStore } from '@/stores/playerStore';
 import useFavoritesStore from '@/stores/favoritesStore';
@@ -18,6 +18,8 @@ interface Category {
   description?: string;
   background_color: string;
   image_url?: string;
+  meta_title?: string;
+  meta_description?: string;
 }
 
 interface Song {
@@ -70,24 +72,28 @@ const CategoryPage: React.FC = () => {
         description: found?.description,
         background_color: found?.background_color || '#6366f1',
         image_url: found?.image_url,
+        meta_title: found?.meta_title,
+        meta_description: found?.meta_description,
       });
 
       // 2) Buscar hinos dessa categoria no Supabase
-      const { data, error } = await supabase
-        .from('hinos')
-        .select('*')
-        .eq('categoria', resolvedName)
-        .eq('ativo', 1)
-        .limit(50);
+      if (!isSupabaseConfigured) {
+        setSongs([]);
+        return;
+      }
 
-      if (error) throw new Error('Falha ao carregar hinos da categoria');
-      const list = data || [];
+      const list = await supabaseFetch<any>('hinos', {
+        categoria: `ilike.%${resolvedName}%`,
+        ativo: 'eq.true',
+        select: 'id,numero,titulo,compositor_nome,categoria,cover_url,audio_url,duracao,plays_count',
+        limit: '50'
+      });
 
       const formattedSongs: Song[] = list.map((h: any) => ({
         id: String(h.id),
         title: String(h.titulo || 'Hino'),
         number: h.numero != null ? Number(h.numero) : undefined,
-        artist: String(h.compositor || 'Compositor Desconhecido'),
+        artist: String(h.compositor_nome || 'Compositor Desconhecido'),
         duration: formatDuration(h.duracao),
         cover_url: h.cover_url || undefined,
         audio_url: h.audio_url || undefined,
@@ -193,11 +199,18 @@ const CategoryPage: React.FC = () => {
   };
 
   const handleToggleFavorite = (song: Song) => {
+    console.log('🎵 handleToggleFavorite chamado:', song.title);
     const songId = parseInt(song.id);
     const uid = user?.id ? Number(user.id) : undefined;
-    if (isFavorite(songId)) {
+    const isFav = isFavorite(songId);
+    
+    console.log('📊 Estado:', { songId, uid, isFavorite: isFav });
+    
+    if (isFav) {
+      console.log('❌ Removendo favorito...');
       removeFavorite(songId, uid);
     } else {
+      console.log('✅ Adicionando favorito...');
       addFavorite({
         id: songId,
         title: song.title,
@@ -222,7 +235,6 @@ const CategoryPage: React.FC = () => {
   };
 
   const handleAddCategoryToPlaylist = () => {
-    if (songs.length === 0) return;
     const tracks = songs.map((song) => ({
       id: song.id,
       title: song.number ? `Hino ${song.number} - ${song.title}` : song.title,
@@ -275,8 +287,8 @@ const CategoryPage: React.FC = () => {
   return (
     <>
       <SEOHead
-        title={`${category.name} - Cânticos CCB`}
-        description={category.description || `Explore hinos da categoria ${category.name}`}
+        title={category.meta_title || `${category.name} - Cânticos CCB`}
+        description={category.meta_description || category.description || `Explore hinos da categoria ${category.name}`}
       />
 
       <div className="min-h-screen bg-background-primary">

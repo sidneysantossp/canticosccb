@@ -110,6 +110,11 @@ const HomePage: React.FC = () => {
   
   console.log('ðŸŽµ Popular Hinos:', popularHinos.length, 'items');
 
+  // Scroll to top quando a página carregar
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
+
   // Sem mock visual para álbuns/hinos
   
   // Carregar dados da API
@@ -129,6 +134,7 @@ const HomePage: React.FC = () => {
         
         console.log('ðŸ  HomePage - Data received:', data);
         console.log('ðŸŽ¯ HomePage - Banners count:', data.banners?.length || 0);
+        console.log('ðŸŽ¯ HomePage - Banners data:', data.banners);
         
         setHomeData(data);
       } catch (error) {
@@ -186,22 +192,50 @@ const HomePage: React.FC = () => {
   useEffect(() => {
     const loadRecentPublished = async () => {
       try {
-        let normalized: PopularHino[] = [];
-        normalized = await supabaseFetch<SupabaseHymnRow>('hinos', {
+        const rows = await supabaseFetch<SupabaseHymnRow>('hinos', {
           select: 'id,numero,titulo,compositor_nome,categoria,cover_url,audio_url,duracao,created_at',
           ativo: 'eq.true',
-          status: 'eq.published',
           order: 'created_at.desc',
           limit: '12',
-        }).then(rows => rows.map(mapSupabasePopularHino));
-        setHomepageTrends(normalized);
+        });
+        if (rows.length > 0) {
+          setHomepageTrends(rows.map(mapSupabasePopularHino));
+        }
       } catch (error) {
         console.error('❌ Error loading recent hymns:', error);
-        setHomepageTrends([]);
       }
     };
     loadRecentPublished();
   }, []);
+
+  // Fallback: usar hinos do homeData quando supabaseFetch retorna vazio
+  useEffect(() => {
+    if (homepageTrends.length === 0 && !isLoading) {
+      const allHymns = [
+        ...(homeData.hymnsCantados || []),
+        ...(homeData.hymnsTocados || []),
+        ...(homeData.hymnsAvulsos || []),
+      ];
+      if (allHymns.length > 0) {
+        setHomepageTrends(allHymns.map((h, i) => ({
+          id: h.id,
+          number: h.number,
+          title: h.title,
+          artist: h.composer_name || 'Cânticos CCB',
+          category: h.category || 'Cantados',
+          duration: h.duration || '00:00',
+          plays: 0,
+          isLiked: false,
+          coverUrl: h.cover_url || '',
+          audioUrl: h.audio_url || '',
+          createdAt: h.created_at || new Date().toISOString(),
+          rank: i + 1,
+          previousRank: i + 1,
+          trending: 'stable' as const,
+        })));
+      }
+    }
+  }, [isLoading, homeData, homepageTrends.length]);
   
   // Calculate items to show based on screen size - always even numbers and multiples of 3
   const getItemsToShow = () => {
@@ -243,11 +277,20 @@ const HomePage: React.FC = () => {
     : [];
   
   console.log('ðŸ’¿ Albums (final):', albums.length, 'items');
+
+  const normalizeCategory = (value: string | undefined | null) =>
+    String(value ?? '')
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .toLowerCase();
   
   // Converter hinos cantados do backend (apenas categoria Cantados)
   console.log('ðŸŽµ homeData.hymnsCantados:', homeData.hymnsCantados?.length || 0, homeData.hymnsCantados);
   const hinosCantados = (homeData.hymnsCantados || [])
-    .filter((h) => (h.category || '').toLowerCase() === 'cantados')
+    .filter((h) => {
+      const normalized = normalizeCategory(h.category);
+      return normalized === 'cantados' || normalized.includes('cantados');
+    })
     .map(hymn => ({
       id: hymn.id,
       number: hymn.number,
@@ -262,7 +305,10 @@ const HomePage: React.FC = () => {
   // Converter hinos tocados do backend (apenas categoria Tocados)
   console.log('ðŸŽ¹ homeData.hymnsTocados:', homeData.hymnsTocados?.length || 0, homeData.hymnsTocados);
   const hinosTocados = (homeData.hymnsTocados || [])
-    .filter((h) => (h.category || '').toLowerCase() === 'tocados')
+    .filter((h) => {
+      const normalized = normalizeCategory(h.category);
+      return normalized === 'tocados' || normalized.includes('tocados');
+    })
     .map(hymn => ({
       id: hymn.id,
       number: hymn.number,
@@ -277,7 +323,10 @@ const HomePage: React.FC = () => {
   // Converter hinos avulsos do backend (apenas categoria Avulsos)
   console.log('ðŸŽ¼ homeData.hymnsAvulsos:', homeData.hymnsAvulsos?.length || 0, homeData.hymnsAvulsos);
   const hinosAvulsos = (homeData.hymnsAvulsos || [])
-    .filter((h) => (h.category || '').toLowerCase() === 'avulsos')
+    .filter((h) => {
+      const normalized = normalizeCategory(h.category);
+      return normalized === 'avulsos' || normalized.includes('avulsos');
+    })
     .map(hymn => ({
       id: hymn.id,
       number: hymn.number,
@@ -437,9 +486,6 @@ const HomePage: React.FC = () => {
         onTogglePlay={handleTogglePlay}
         isFavorited={isFavorited}
         onToggleFavorite={(hymnId: string) => toggleFavorite(hymnId, () => setShowLoginModal(true))}
-        getTrendingArrow={getTrendingArrow}
-        getRankChange={getRankChange}
-        getTrendingIcon={getTrendingIcon}
       />
 
       {/* Albums Section */}

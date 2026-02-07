@@ -1,4 +1,4 @@
-import { supabase } from '@/lib/supabase';
+import { supabase } from '@/lib/supabase-auth';
 import { registerPlay as registerPlaySupabase } from '@/lib/supabaseApi';
 
 /**

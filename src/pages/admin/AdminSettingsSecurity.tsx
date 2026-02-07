@@ -87,61 +87,15 @@ const AdminSettingsSecurity: React.FC = () => {
       setIsLoading(true);
       setError(null);
       
-      // Mock data
-      const mockBlockedIPs: BlockedIP[] = [
-        {
-          id: '1',
-          ip_address: '10.0.0.50',
-          reason: 'Múltiplas tentativas de login falhadas',
-          blocked_at: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
-          is_permanent: false,
-          attempts_count: 5
-        },
-        {
-          id: '2',
-          ip_address: '192.168.100.200',
-          reason: 'Atividade suspeita detectada',
-          blocked_at: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(),
-          is_permanent: true,
-          attempts_count: 10
-        }
-      ];
-
-      const mockLogs: SecurityLog[] = [
-        {
-          id: '1',
-          event_type: 'brute_force_attempt',
-          ip_address: '10.0.0.50',
-          description: 'Múltiplas tentativas de login detectadas',
-          severity: 'high',
-          created_at: new Date(Date.now() - 1 * 60 * 60 * 1000).toISOString()
-        },
-        {
-          id: '2',
-          event_type: 'ip_blocked',
-          ip_address: '10.0.0.50',
-          description: 'IP bloqueado por atividade suspeita',
-          severity: 'critical',
-          created_at: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString()
-        },
-        {
-          id: '3',
-          event_type: 'login_failed',
-          ip_address: '192.168.1.100',
-          description: 'Tentativa de login com senha incorreta',
-          severity: 'medium',
-          created_at: new Date(Date.now() - 3 * 60 * 60 * 1000).toISOString()
-        }
-      ];
-
-      setBlockedIPs(mockBlockedIPs);
-      setSecurityLogs(mockLogs);
+      // TODO: Integrar com tabela de segurança do Supabase quando disponível
+      setBlockedIPs([]);
+      setSecurityLogs([]);
       
       setStats({
-        totalAttempts: 1247,
-        failedAttempts: 83,
-        blockedIPs: 2,
-        criticalAlerts: 3
+        totalAttempts: 0,
+        failedAttempts: 0,
+        blockedIPs: 0,
+        criticalAlerts: 0
       });
 
     } catch (err: any) {

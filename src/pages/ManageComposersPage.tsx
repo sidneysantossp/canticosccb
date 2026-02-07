@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Users, ArrowRight, Music, Mail } from 'lucide-react';
-import { useAuth } from '@/contexts/AuthContextMock';
+import { useAuth } from '@/contexts/AuthContext';
 import { compositorGerentesApi } from '@/lib/api-client';
 
 interface ManagedComposer {
@@ -28,7 +28,7 @@ const ManageComposersPage: React.FC = () => {
     try {
       setLoading(true);
       const response: any = await compositorGerentesApi.listarCompositores(user.id);
-      
+
       if (response.data) {
         const dataArray = Array.isArray(response.data) ? response.data : response.data.compositores || [];
         // Filtrar apenas os ativos
@@ -48,10 +48,10 @@ const ManageComposersPage: React.FC = () => {
     // Salvar no localStorage
     localStorage.setItem('managingComposerId', String(composer.compositor_id));
     localStorage.setItem('managingComposerName', composer.compositor_nome_artistico || composer.compositor_nome);
-    
+
     // Redirecionar para dashboard do compositor
     navigate('/composer/dashboard');
-    
+
     // Recarregar para aplicar mudanças
     window.location.href = '/composer/dashboard';
   };

@@ -14,6 +14,7 @@ import '@/styles/globals.css';
 
 // Public Pages
 import HomePage from '@/pages/HomePage';
+import HomeAlternativePage from '@/pages/HomeAlternativePage';
 import LoginPage from '@/pages/LoginPage';
 import RegisterPage from '@/pages/RegisterPage';
 import OnboardingPage from '@/pages/OnboardingPage';
@@ -32,6 +33,20 @@ import TermsOfUsePage from '@/pages/TermsOfUsePage';
 import PrivacyPolicyPage from '@/pages/PrivacyPolicyPage';
 import DisclaimerPage from '@/pages/DisclaimerPage';
 import HymnDetailPage from '@/pages/HymnDetailPage';
+import AboutPage from '@/pages/AboutPage';
+import CookiesPolicyPage from '@/pages/CookiesPolicyPage';
+import ContentClaimPage from '@/pages/ContentClaimPage';
+import LGPDPage from '@/pages/LGPDPage';
+import PremiumPage from '@/pages/PremiumPage';
+import InstrumentaisPage from '@/pages/InstrumentaisPage';
+import BibliaNarradaPage from '@/pages/BibliaNarradaPage';
+import PlaylistsPage from '@/pages/PlaylistsPage';
+import RadioPage from '@/pages/RadioPage';
+import CompositorCadastroPage from '@/pages/CompositorCadastroPage';
+import CompositorPublicarPage from '@/pages/CompositorPublicarPage';
+import AjudaPage from '@/pages/AjudaPage';
+import ContatoPage from '@/pages/ContatoPage';
+import NotFoundPage from '@/pages/NotFoundPage';
 
 // User Pages
 import ProfilePage from '@/pages/ProfilePage';
@@ -66,7 +81,8 @@ import ComposerOnboarding from '@/pages/composer/ComposerOnboarding';
 
 // Admin Pages
 // import AdminDashboard from '@/pages/admin/AdminDashboard';
-import AdminDashboard from '@/pages/admin/AdminDashboardSimple'; // Versão simplificada para debug
+import AdminDashboard from '@/pages/admin/AdminDashboard';
+// import AdminDashboardSimple from '@/pages/admin/AdminDashboardSimple';
 import AdminApprovals from '@/pages/admin/approvals/AdminApprovals';
 import AdminUsers from '@/pages/admin/AdminUsers';
 import AdminUserEdit from '@/pages/admin/AdminUserEdit';
@@ -150,14 +166,15 @@ const AppContent: React.FC = () => {
         <Route path="/cadastro" element={<RegisterPage />} />
         <Route path="/onboarding" element={<OnboardingPage />} />
         <Route path="/auth/callback" element={<AuthCallbackPage />} />
-        
+
         <Route path="/forgot-password" element={<ForgotPasswordPage />} />
-        
+
         {/* Public Routes - With Layout */}
         <Route path="/" element={<Layout />}>
           {/* Home */}
           <Route index element={<HomePage />} />
-          
+          <Route path="home-alt" element={<HomeAlternativePage />} />
+
           {/* Browse */}
           <Route path="buscar" element={<SearchPage />} />
           <Route path="search" element={<SearchPage />} />
@@ -176,13 +193,28 @@ const AppContent: React.FC = () => {
           <Route path="tendencias" element={<TrendsPage />} />
           <Route path="trends" element={<TrendsPage />} />
           <Route path="recem-chegados" element={<TrendsPage />} />
-          
+
           {/* Legal */}
           <Route path="termos" element={<TermsOfUsePage />} />
           <Route path="privacidade" element={<PrivacyPolicyPage />} />
           <Route path="privacy" element={<PrivacyPolicyPage />} />
           <Route path="disclaimer" element={<DisclaimerPage />} />
-          
+          <Route path="sobre" element={<AboutPage />} />
+          <Route path="about" element={<AboutPage />} />
+          <Route path="cookies" element={<CookiesPolicyPage />} />
+          <Route path="reivindicacao-de-conteudo" element={<ContentClaimPage />} />
+          <Route path="content-claim" element={<ContentClaimPage />} />
+          <Route path="lgpd" element={<LGPDPage />} />
+          <Route path="premium" element={<PremiumPage />} />
+          <Route path="instrumentais" element={<InstrumentaisPage />} />
+          <Route path="biblia-narrada" element={<BibliaNarradaPage />} />
+          <Route path="playlists" element={<PlaylistsPage />} />
+          <Route path="radio" element={<RadioPage />} />
+          <Route path="compositor/cadastro" element={<CompositorCadastroPage />} />
+          <Route path="compositor/publicar" element={<CompositorPublicarPage />} />
+          <Route path="ajuda" element={<AjudaPage />} />
+          <Route path="contato" element={<ContatoPage />} />
+
           {/* User Routes - Protected */}
           <Route path="perfil" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
           <Route path="perfil/editar" element={<ProtectedRoute><EditProfilePage /></ProtectedRoute>} />
@@ -206,9 +238,7 @@ const AppContent: React.FC = () => {
           <Route path="playlist/criar" element={<ProtectedRoute><CreatePlaylistPage /></ProtectedRoute>} />
           <Route path="manage-composers" element={<ProtectedRoute><ManageComposersPage /></ProtectedRoute>} />
           <Route path="manager-invites" element={<ProtectedRoute><ManagerInvitesPage /></ProtectedRoute>} />
-          <Route path="subscription" element={<ProtectedRoute><SubscriptionPage /></ProtectedRoute>} />
-          <Route path="playlist/criar" element={<ProtectedRoute><CreatePlaylistPage /></ProtectedRoute>} />
-          
+
           {/* Composer Routes - Protected + Verified Composer Only */}
           <Route path="composer" element={<ProtectedComposerRoute><ComposerDashboard /></ProtectedComposerRoute>} />
           <Route path="composer/dashboard" element={<ProtectedComposerRoute><ComposerDashboard /></ProtectedComposerRoute>} />
@@ -250,22 +280,22 @@ const AppContent: React.FC = () => {
           <Route path="composer/trending" element={<ProtectedComposerRoute><TrendsPage /></ProtectedComposerRoute>} />
           <Route path="composer/liked" element={<ProtectedComposerRoute><LikedSongsPage /></ProtectedComposerRoute>} />
           <Route path="composer/history" element={<ProtectedComposerRoute><HistoryPage /></ProtectedComposerRoute>} />
-          
+
           {/* Admin Routes - Protected + Admin Role */}
           <Route path="admin" element={<ProtectedRoute requireAdmin><AdminDashboard /></ProtectedRoute>} />
           <Route path="admin/approvals" element={<ProtectedRoute requireAdmin><AdminApprovals /></ProtectedRoute>} />
-          
+
           {/* Users Management */}
           <Route path="admin/usuarios" element={<ProtectedRoute requireAdmin><AdminUsers /></ProtectedRoute>} />
           <Route path="admin/users" element={<ProtectedRoute requireAdmin><AdminUsers /></ProtectedRoute>} />
           <Route path="admin/users/criar" element={<ProtectedRoute requireAdmin><AdminUserForm /></ProtectedRoute>} />
           <Route path="admin/users/create" element={<ProtectedRoute requireAdmin><AdminUserForm /></ProtectedRoute>} />
-          <Route path="admin/users/editar/:id" element={<ProtectedRoute requireAdmin><AdminUserForm /></ProtectedRoute>} />
-          <Route path="admin/users/edit/:id" element={<ProtectedRoute requireAdmin><AdminUserForm /></ProtectedRoute>} />
+          <Route path="admin/users/editar/:id" element={<ProtectedRoute requireAdmin><AdminUserEdit /></ProtectedRoute>} />
+          <Route path="admin/users/edit/:id" element={<ProtectedRoute requireAdmin><AdminUserEdit /></ProtectedRoute>} />
           <Route path="admin/usuarios/editar/:id" element={<ProtectedRoute requireAdmin><AdminUserEdit /></ProtectedRoute>} />
           <Route path="admin/usuarios/premium" element={<ProtectedRoute requireAdmin><AdminUsersPremium /></ProtectedRoute>} />
           <Route path="admin/users/premium" element={<ProtectedRoute requireAdmin><AdminUsersPremium /></ProtectedRoute>} />
-          
+
           {/* Composers Management */}
           <Route path="admin/compositores" element={<ProtectedRoute requireAdmin><AdminComposers /></ProtectedRoute>} />
           <Route path="admin/composers" element={<ProtectedRoute requireAdmin><AdminComposers /></ProtectedRoute>} />
@@ -279,7 +309,7 @@ const AppContent: React.FC = () => {
           <Route path="admin/compositor/editar/:id" element={<ProtectedRoute requireAdmin><AdminComposerForm /></ProtectedRoute>} />
           <Route path="admin/composer/edit/:id" element={<ProtectedRoute requireAdmin><AdminComposerForm /></ProtectedRoute>} />
           <Route path="admin/composers/edit/:id" element={<ProtectedRoute requireAdmin><AdminComposerForm /></ProtectedRoute>} />
-          
+
           {/* Content Management */}
           <Route path="admin/hinos" element={<ProtectedRoute requireAdmin><AdminHymns /></ProtectedRoute>} />
           <Route path="admin/hymns" element={<ProtectedRoute requireAdmin><AdminHymns /></ProtectedRoute>} />
@@ -322,7 +352,7 @@ const AppContent: React.FC = () => {
           <Route path="admin/playlists/create" element={<ProtectedRoute requireAdmin><AdminPlaylistForm /></ProtectedRoute>} />
           <Route path="admin/playlists/editar/:id" element={<ProtectedRoute requireAdmin><AdminPlaylistForm /></ProtectedRoute>} />
           <Route path="admin/playlists/edit/:id" element={<ProtectedRoute requireAdmin><AdminPlaylistForm /></ProtectedRoute>} />
-          
+
           {/* Promotions */}
           <Route path="admin/banners" element={<ProtectedRoute requireAdmin><AdminBanners /></ProtectedRoute>} />
           <Route path="admin/banners/criar" element={<ProtectedRoute requireAdmin><AdminBannerForm /></ProtectedRoute>} />
@@ -359,7 +389,7 @@ const AppContent: React.FC = () => {
           <Route path="admin/coupons/create" element={<ProtectedRoute requireAdmin><AdminCouponForm /></ProtectedRoute>} />
           <Route path="admin/coupons/editar/:id" element={<ProtectedRoute requireAdmin><AdminCouponForm /></ProtectedRoute>} />
           <Route path="admin/coupons/edit/:id" element={<ProtectedRoute requireAdmin><AdminCouponForm /></ProtectedRoute>} />
-          
+
           {/* Analytics & Reports */}
           <Route path="admin/analytics" element={<ProtectedRoute requireAdmin><AdminAnalytics /></ProtectedRoute>} />
           {/* <Route path="admin/relatorios" element={<ProtectedRoute requireAdmin><AdminReports /></ProtectedRoute>} /> */}
@@ -370,7 +400,7 @@ const AppContent: React.FC = () => {
           <Route path="admin/tema" element={<ProtectedRoute requireAdmin><AdminTheme /></ProtectedRoute>} />
           <Route path="admin/menus" element={<ProtectedRoute requireAdmin><AdminMenus /></ProtectedRoute>} />
           <Route path="admin/seo" element={<ProtectedRoute requireAdmin><AdminSEO /></ProtectedRoute>} />
-          
+
           {/* Moderation */}
           <Route path="admin/comentarios" element={<ProtectedRoute requireAdmin><AdminComments /></ProtectedRoute>} />
           <Route path="admin/comments" element={<ProtectedRoute requireAdmin><AdminComments /></ProtectedRoute>} />
@@ -382,7 +412,7 @@ const AppContent: React.FC = () => {
           <Route path="admin/reports/custom" element={<ProtectedRoute requireAdmin><AdminCustomReports /></ProtectedRoute>} />
           <Route path="admin/royalties" element={<ProtectedRoute requireAdmin><AdminRoyalties /></ProtectedRoute>} />
           <Route path="admin/composers/royalties" element={<ProtectedRoute requireAdmin><AdminRoyalties /></ProtectedRoute>} />
-          
+
           {/* Settings */}
           <Route path="admin/settings/general" element={<ProtectedRoute requireAdmin><AdminSettingsGeneral /></ProtectedRoute>} />
           <Route path="admin/settings/users" element={<ProtectedRoute requireAdmin><AdminSettingsUsers /></ProtectedRoute>} />
@@ -391,13 +421,13 @@ const AppContent: React.FC = () => {
           <Route path="admin/settings/email" element={<ProtectedRoute requireAdmin><AdminSettingsEmail /></ProtectedRoute>} />
           <Route path="admin/settings/security" element={<ProtectedRoute requireAdmin><AdminSettingsSecurity /></ProtectedRoute>} />
           <Route path="admin/settings/integrations" element={<ProtectedRoute requireAdmin><AdminSettingsIntegrations /></ProtectedRoute>} />
-          
+
           {/* Customization - Temporariamente desabilitado */}
           {/* <Route path="admin/seo" element={<ProtectedRoute requireAdmin><AdminSEO /></ProtectedRoute>} /> */}
           {/* <Route path="admin/menus" element={<ProtectedRoute requireAdmin><AdminMenus /></ProtectedRoute>} /> */}
           {/* <Route path="admin/tema" element={<ProtectedRoute requireAdmin><AdminTheme /></ProtectedRoute>} /> */}
           {/* <Route path="admin/logos" element={<ProtectedRoute requireAdmin><AdminLogos /></ProtectedRoute>} /> */}
-          
+
           {/* System - Temporariamente desabilitado */}
           <Route path="admin/backup" element={<ProtectedRoute requireAdmin><AdminBackup /></ProtectedRoute>} />
           <Route path="admin/backup/criar" element={<ProtectedRoute requireAdmin><AdminBackupForm /></ProtectedRoute>} />
@@ -417,6 +447,9 @@ const AppContent: React.FC = () => {
           <Route path="admin/bible-narrated/create" element={<ProtectedRoute requireAdmin><AdminBibleNarratedForm /></ProtectedRoute>} />
           <Route path="admin/bible-narrated/editar/:id" element={<ProtectedRoute requireAdmin><AdminBibleNarratedForm /></ProtectedRoute>} />
           <Route path="admin/bible-narrated/edit/:id" element={<ProtectedRoute requireAdmin><AdminBibleNarratedForm /></ProtectedRoute>} />
+
+          {/* 404 - Catch All */}
+          <Route path="*" element={<NotFoundPage />} />
         </Route>
       </Routes>
     </>

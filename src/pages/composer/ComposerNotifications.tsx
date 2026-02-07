@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNotifications } from '@/contexts/NotificationsContext';
+import { supabaseFetch, supabaseUpdate, supabaseDelete, isSupabaseConfigured } from '@/lib/supabaseRest';
 import { Bell, ExternalLink, Inbox, X, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import ConfirmModal from '@/components/ConfirmModal';
@@ -30,18 +31,34 @@ const ComposerNotifications: React.FC = () => {
   const [notificationToDelete, setNotificationToDelete] = useState<number | null>(null);
 
   const fetchNotifications = async (page: number = 1) => {
-    if (!user?.id) return;
+    if (!user?.id || !isSupabaseConfigured) return;
     
     try {
       setLoading(true);
       const offset = (page - 1) * ITEMS_PER_PAGE;
-      const res = await fetch(`/api/notificacoes/index.php?usuario_id=${user.id}&limit=${ITEMS_PER_PAGE}&offset=${offset}`);
+      const rows = await supabaseFetch<any>('notificacoes', {
+        usuario_id: `eq.${user.id}`,
+        select: 'id,titulo,mensagem,tipo,link,lida,created_at',
+        order: 'created_at.desc',
+        limit: String(ITEMS_PER_PAGE),
+        offset: String(offset)
+      });
       
-      if (!res.ok) throw new Error('Erro ao carregar notificações');
+      const countRows = await supabaseFetch<any>('notificacoes', {
+        usuario_id: `eq.${user.id}`,
+        select: 'id'
+      });
       
-      const data = await res.json();
-      setNotifications(data.notificacoes || []);
-      setTotalNotifications(data.total || 0);
+      setNotifications(rows.map((row: any) => ({
+        id: row.id,
+        titulo: row.titulo,
+        mensagem: row.mensagem,
+        tipo: row.tipo,
+        link: row.link,
+        lida: row.lida,
+        created_at: row.created_at
+      })));
+      setTotalNotifications(countRows.length);
     } catch (err: any) {
       console.error('Erro ao carregar notificações:', err);
       setError(err.message);
@@ -51,21 +68,17 @@ const ComposerNotifications: React.FC = () => {
   };
 
   const markAsRead = async (id: number) => {
+    if (!isSupabaseConfigured) return;
+    
     try {
       const notification = notifications.find(n => n.id === id);
       const wasUnread = notification && !notification.lida;
 
-      const res = await fetch(`/api/notificacoes/${id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ lida: 1 })
-      });
+      await supabaseUpdate('notificacoes', { id: `eq.${id}` }, { lida: true });
       
-      if (res.ok) {
-        setNotifications(prev => prev.map(n => n.id === id ? { ...n, lida: 1 } : n));
-        if (wasUnread) {
-          decrementCount();
-        }
+      setNotifications(prev => prev.map(n => n.id === id ? { ...n, lida: 1 } : n));
+      if (wasUnread) {
+        decrementCount();
       }
     } catch (err) {
       console.error('Erro ao marcar como lida:', err);
@@ -85,15 +98,12 @@ const ComposerNotifications: React.FC = () => {
   };
 
   const deleteNotification = async () => {
-    if (!notificationToDelete) return;
+    if (!notificationToDelete || !isSupabaseConfigured) return;
 
     try {
-      const res = await fetch(`/api/notificacoes/delete.php?id=${notificationToDelete}`, {
-        method: 'DELETE'
-      });
+      const success = await supabaseDelete('notificacoes', { id: `eq.${notificationToDelete}` });
       
-      if (res.ok) {
-        // Remover da lista local
+      if (success) {
         setNotifications(prev => prev.filter(n => n.id !== notificationToDelete));
         setTotalNotifications(prev => prev - 1);
         

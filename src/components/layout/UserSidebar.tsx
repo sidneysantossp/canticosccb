@@ -16,7 +16,7 @@ import {
   Grid
 } from 'lucide-react';
 import { getLogoByType } from '@/lib/mockApis';
-import { useAuth } from '@/contexts/AuthContextMock';
+import { useAuth } from '@/contexts/AuthContext';
 import { compositorGerentesApi } from '@/lib/api-client';
 import { getPremiumVisibility } from '@/lib/admin/premiumAdminApi';
 
@@ -35,13 +35,13 @@ const UserSidebar: React.FC = () => {
       try {
         const enabled = await getPremiumVisibility();
         setPremiumEnabled(enabled);
-      } catch {}
+      } catch { }
     })();
   }, []);
 
   const checkIfManager = async () => {
     if (!user?.id) return;
-    
+
     try {
       const response: any = await compositorGerentesApi.listarCompositores(user.id);
       const dataArray = Array.isArray(response.data) ? response.data : response.data?.compositores || [];
@@ -85,7 +85,7 @@ const UserSidebar: React.FC = () => {
       items: [
         { icon: Heart, label: 'Meus Favoritos', path: '/favoritos' },
         { icon: ListMusic, label: 'Minhas Playlists', path: '/library' },
-        
+
       ]
     }
   ];
@@ -118,23 +118,20 @@ const UserSidebar: React.FC = () => {
                   <Link
                     key={itemIdx}
                     to={item.path}
-                    className={`relative flex items-center gap-4 px-3 py-3 rounded-lg transition-all group ${
-                      active
+                    className={`relative flex items-center gap-4 px-3 py-3 rounded-lg transition-all group ${active
                         ? 'bg-background-secondary text-white'
                         : 'text-gray-400 hover:text-white hover:bg-background-secondary/50'
-                    }`}
+                      }`}
                   >
                     <Icon
-                      className={`w-6 h-6 ${
-                        active ? 'text-primary-500' : 'text-gray-400 group-hover:text-white'
-                      }`}
+                      className={`w-6 h-6 ${active ? 'text-primary-500' : 'text-gray-400 group-hover:text-white'
+                        }`}
                     />
                     <span className="font-medium">{item.label}</span>
                     {/* Indicador ativo/hover (barra direita) */}
                     <span
-                      className={`absolute right-0 top-1/2 -translate-y-1/2 w-1 h-5 rounded-l ${
-                        active ? 'bg-yellow-500' : 'bg-yellow-500/0 group-hover:bg-yellow-500/60'
-                      }`}
+                      className={`absolute right-0 top-1/2 -translate-y-1/2 w-1 h-5 rounded-l ${active ? 'bg-yellow-500' : 'bg-yellow-500/0 group-hover:bg-yellow-500/60'
+                        }`}
                     />
                   </Link>
                 );

@@ -23,6 +23,7 @@ interface PlayerStore extends PlayerState {
   stop: () => void;
   playNext: () => void;
   onTrackEnd: (() => void) | null;
+  setDuration: (duration: number) => void;
   setOnTrackEnd: (callback: (() => void) | null) => void;
   setPlaybackContext: (ctx: PlaybackContext | null) => void;
 }
@@ -48,7 +49,7 @@ export const usePlayerStore = create<PlayerStore>((set, get) => ({
       currentTrack: track,
       isPlaying: true,
       currentTime: 0,
-      duration: 225, // Mock duration - 3:45
+      duration: 0,
       history: [track, ...history.slice(0, 49)] // Keep last 50 tracks
     });
   },
@@ -165,6 +166,10 @@ export const usePlayerStore = create<PlayerStore>((set, get) => ({
         currentTime: 0
       });
     }
+  },
+
+  setDuration: (duration: number) => {
+    set({ duration });
   },
 
   setOnTrackEnd: (callback: (() => void) | null) => {

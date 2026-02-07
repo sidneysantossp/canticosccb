@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Bell, Check, X, Clock, Mail, ExternalLink } from 'lucide-react';
-import { useAuth } from '@/contexts/AuthContextMock';
+import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import useNotificationsStore from '@/stores/notificationsStore';
 
@@ -18,7 +18,7 @@ const NotificationsPage: React.FC = () => {
   const navigate = useNavigate();
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(true);
-  
+
   // Acessar store para sincronizar contador
   const notificationsStore = useNotificationsStore();
 
@@ -35,24 +35,24 @@ const NotificationsPage: React.FC = () => {
 
     try {
       setLoading(true);
-      
+
       // Buscar notificações reais da API
-      const baseUrl = window.location.hostname === 'localhost' 
-        ? 'http://localhost:80/1canticosccb/api' 
+      const baseUrl = window.location.hostname === 'localhost'
+        ? 'http://localhost:80/1canticosccb/api'
         : '/api';
-      
+
       const url = `${baseUrl}/notificacoes?usuario_id=${user.id}&limit=50`;
       console.log('📡 Buscando notificações:', url);
-      
+
       const response = await fetch(url);
       const data = await response.json();
-      
+
       console.log('📥 Response:', { status: response.status, data });
-      
+
       if (!response.ok) {
         throw new Error(data.error || 'Erro ao carregar notificações');
       }
-      
+
       // Mapear dados da API para o formato do componente
       const notificacoesFormatadas: Notification[] = (data.notificacoes || []).map((n: any) => ({
         id: n.id,
@@ -62,9 +62,9 @@ const NotificationsPage: React.FC = () => {
         lida: Boolean(n.lida),
         criado_em: n.created_at
       }));
-      
+
       setNotifications(notificacoesFormatadas);
-      
+
       // Sincronizar com store Zustand
       notificationsStore.clearAll();
       notificacoesFormatadas.forEach(notif => {
@@ -76,7 +76,7 @@ const NotificationsPage: React.FC = () => {
           });
         }
       });
-      
+
     } catch (error) {
       console.error('Erro ao carregar notificações:', error);
     } finally {
@@ -86,28 +86,28 @@ const NotificationsPage: React.FC = () => {
 
   const markAsRead = async (notificationId: number) => {
     try {
-      const baseUrl = window.location.hostname === 'localhost' 
-        ? 'http://localhost:80/1canticosccb/api' 
+      const baseUrl = window.location.hostname === 'localhost'
+        ? 'http://localhost:80/1canticosccb/api'
         : '/api';
-      
+
       const response = await fetch(`${baseUrl}/notificacoes/${notificationId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ lida: 1 })
       });
-      
+
       if (!response.ok) {
         throw new Error('Erro ao atualizar notificação');
       }
-      
+
       // Atualizar estado local
       setNotifications(prev =>
         prev.map(n => n.id === notificationId ? { ...n, lida: true } : n)
       );
-      
+
       // Sincronizar com store Zustand
       notificationsStore.clearAll();
-      const updatedNotifications = notifications.map(n => 
+      const updatedNotifications = notifications.map(n =>
         n.id === notificationId ? { ...n, lida: true } : n
       );
       updatedNotifications.forEach(notif => {
@@ -128,7 +128,7 @@ const NotificationsPage: React.FC = () => {
     try {
       // TODO: Implementar API real
       setNotifications(prev => prev.map(n => ({ ...n, lida: true })));
-      
+
       // Sincronizar com store Zustand - zerar contador
       notificationsStore.clearAll();
     } catch (error) {
@@ -196,20 +196,18 @@ const NotificationsPage: React.FC = () => {
             {notifications.map((notification) => (
               <div
                 key={notification.id}
-                className={`bg-gray-900 border rounded-xl p-5 transition-all ${
-                  notification.lida
+                className={`bg-gray-900 border rounded-xl p-5 transition-all ${notification.lida
                     ? 'border-gray-800 opacity-70'
                     : 'border-primary-500/50 bg-primary-500/5'
-                }`}
+                  }`}
               >
                 <div className="flex items-start gap-4">
                   {/* Ícone */}
                   <div
-                    className={`w-10 h-10 rounded-full flex items-center justify-center ${
-                      notification.tipo === 'convite'
+                    className={`w-10 h-10 rounded-full flex items-center justify-center ${notification.tipo === 'convite'
                         ? 'bg-blue-500/20'
                         : 'bg-gray-700'
-                    }`}
+                      }`}
                   >
                     {notification.tipo === 'convite' ? (
                       <Mail className="w-5 h-5 text-blue-400" />

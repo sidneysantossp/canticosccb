@@ -1,10 +1,15 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { Plus, Edit, Trash2, CheckCircle, XCircle, Mic2, AlertCircle } from 'lucide-react';
 import { compositoresApi, type Compositor } from '@/lib/api-client';
 import { Avatar } from '@/components/ui/Avatar';
 
+let renderCount = 0;
+
 const AdminComposers: React.FC = () => {
+  renderCount++;
+  console.log(`🔄 [AdminComposers] Component render #${renderCount}`);
+  
   const [composers, setComposers] = useState<Compositor[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -13,24 +18,28 @@ const AdminComposers: React.FC = () => {
   const [totalCount, setTotalCount] = useState(0);
   const [pendingCount, setPendingCount] = useState(0);
 
-  useEffect(() => {
-    loadComposers();
-  }, [currentPage]);
-
-  const loadComposers = async () => {
+  const loadComposers = useCallback(async () => {
     try {
       setIsLoading(true);
       setError(null);
+      console.log('🔍 [AdminComposers] Loading composers, page:', currentPage);
+      
       const response = await compositoresApi.list({ page: currentPage, limit: 20 });
+      console.log('📦 [AdminComposers] API response:', response);
       
       if (response.error) {
+        console.error('❌ [AdminComposers] API error:', response.error);
         throw new Error(response.error);
       }
       
       if (response.data) {
-        // A API retorna 'compositores' não 'data'
         const apiData = response.data as any;
+        console.log('📊 [AdminComposers] API data:', apiData);
+        
         const composersList = apiData.compositores || [];
+        console.log('👥 [AdminComposers] Composers list:', composersList);
+        console.log('📈 [AdminComposers] Total:', apiData.total, 'Pages:', apiData.pages);
+        
         setComposers(composersList);
         setTotalPages(apiData.pages || 1);
         setTotalCount(apiData.total || 0);
@@ -38,18 +47,29 @@ const AdminComposers: React.FC = () => {
         // Contar pendentes
         const pending = composersList.filter((c: Compositor) => !c.verificado).length;
         setPendingCount(pending);
+        
+        console.log('✅ [AdminComposers] State updated - composers:', composersList.length, 'pending:', pending);
+      } else {
+        console.warn('⚠️ [AdminComposers] No data in response');
       }
     } catch (error: any) {
-      console.error('Error loading composers:', error);
+      console.error('❌ [AdminComposers] Error loading composers:', error);
       setError(error?.message || 'Erro ao carregar compositores');
     } finally {
       setIsLoading(false);
+      console.log('🏁 [AdminComposers] Loading finished');
     }
-  };
+  }, [currentPage]);
+
+  useEffect(() => {
+    console.log('🔄 [AdminComposers] useEffect triggered, currentPage:', currentPage);
+    loadComposers();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentPage]);
 
   const handleToggleApproved = async (id: string, currentVerificado: boolean) => {
     try {
-      await compositoresApi.update(parseInt(id), { verificado: currentVerificado ? 0 : 1 });
+      await compositoresApi.update(id, { verificado: currentVerificado ? 0 : 1 });
       loadComposers();
     } catch (error) {
       console.error('Error toggling approved:', error);
@@ -60,7 +80,7 @@ const AdminComposers: React.FC = () => {
     if (!window.confirm(`Tem certeza que deseja deletar o compositor ${nome}?`)) return;
     
     try {
-      await compositoresApi.delete(parseInt(id));
+      await compositoresApi.delete(id);
       loadComposers();
     } catch (error) {
       console.error('Error deleting composer:', error);

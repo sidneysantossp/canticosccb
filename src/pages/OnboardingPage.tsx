@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { Music2, Check, Music, Download, Heart } from 'lucide-react';
-import { useAuth } from '@/contexts/AuthContextMock';
+import { useAuth } from '@/contexts/AuthContext';
 
 const OnboardingPage: React.FC = () => {
   const navigate = useNavigate();
@@ -29,15 +29,15 @@ const OnboardingPage: React.FC = () => {
         <div className="inline-flex items-center justify-center w-32 h-32 bg-primary-500 rounded-full mb-8 animate-pulse">
           <Check className="w-16 h-16 text-black" />
         </div>
-        
+
         <h1 className="text-5xl font-bold text-white mb-4">
           Bem-vindo, {user?.nome || 'Usuário'}!
         </h1>
-        
+
         <p className="text-gray-400 text-xl mb-8">
           Sua conta foi criada com sucesso! 🎉
         </p>
-        
+
         <div className="grid grid-cols-3 gap-4 max-w-xl mx-auto mb-8">
           <div className="p-6 bg-gray-800/50 rounded-xl backdrop-blur-sm">
             <Music className="w-10 h-10 mb-3 text-primary-400 mx-auto" />
@@ -52,7 +52,7 @@ const OnboardingPage: React.FC = () => {
             <p className="text-sm text-gray-300">Suas playlists</p>
           </div>
         </div>
-        
+
         <button
           onClick={handleContinue}
           disabled={!isReady}
@@ -60,8 +60,8 @@ const OnboardingPage: React.FC = () => {
         >
           {isReady ? 'Começar a ouvir →' : 'Carregando...'}
         </button>
-        
-        
+
+
       </div>
     </div>
   );

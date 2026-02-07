@@ -166,7 +166,7 @@ const AdminHymns: React.FC = () => {
                   <td className="px-4 py-3 text-white font-semibold">{hymn.numero}</td>
                   <td className="px-4 py-3">
                     <img
-                      src={hymn.cover_url || 'https://via.placeholder.com/64?text=' + hymn.numero}
+                      src={hymn.cover_url || `https://ui-avatars.com/api/?name=${hymn.numero}&background=1f2937&color=9ca3af&size=64`}
                       alt={hymn.titulo}
                       className="w-12 h-12 rounded-lg object-cover"
                     />
