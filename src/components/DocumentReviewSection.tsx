@@ -5,7 +5,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { getDocumentStorageUrl } from '@/lib/documentStorage';
 
 interface DocumentReviewSectionProps {
-  compositorId: number;
+  compositorId: number | string;
   compositorEmail?: string;
   compositorName?: string;
   hasManager?: boolean;

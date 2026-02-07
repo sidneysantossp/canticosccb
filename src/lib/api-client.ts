@@ -829,15 +829,45 @@ export const documentReviewsApi = {
   getByCompositor: async (compositorId: string | number) => {
     try {
       const { supabaseFetch } = await import('./supabaseRest');
-      const rows = await supabaseFetch<any>('document_reviews', {
+      const rows = await supabaseFetch<any>('composer_documents', {
         composer_id: `eq.${compositorId}`,
         select: '*',
         order: 'created_at.desc',
       });
-      return { data: { documents: rows }, error: null };
+      // Map composer_documents columns to the shape DocumentReviewSection expects
+      const mapped = (rows || []).map((row: any) => ({
+        id: row.id,
+        composer_id: row.composer_id,
+        document_type: row.document_type || 'documento',
+        document_number: row.document_number,
+        expected_name: row.expected_name || '',
+        extracted_name: row.extracted_name || '',
+        image_path: row.document_image || row.image_path || '',
+        status: row.status || 'pending',
+        admin_notes: row.admin_notes || '',
+        reviewed_by: row.reviewed_by || null,
+        reviewed_at: row.reviewed_at || null,
+        created_at: row.created_at || new Date().toISOString(),
+      }));
+      return { data: { documents: mapped }, error: null };
     } catch (error: any) {
       console.warn('[documentReviewsApi.getByCompositor] Error:', error?.message);
       return { data: { documents: [] }, error: error?.message };
+    }
+  },
+  review: async (documentId: number | string, data: { status: string; admin_notes?: string; reviewed_by?: string }) => {
+    try {
+      const { supabaseUpdate } = await import('./supabaseRest');
+      const result = await supabaseUpdate('composer_documents', { id: `eq.${documentId}` }, {
+        status: data.status,
+        admin_notes: data.admin_notes || null,
+        reviewed_by: data.reviewed_by || null,
+        reviewed_at: new Date().toISOString(),
+      });
+      return { data: result, error: null };
+    } catch (error: any) {
+      console.error('[documentReviewsApi.review] Error:', error?.message);
+      return { data: null, error: error?.message || 'Erro ao revisar documento' };
     }
   },
   create: async () => ({}),
@@ -975,8 +1005,17 @@ export interface Compositor {
 }
 
 export interface DocumentReview {
-  id: string;
+  id: number;
+  composer_id: string | number;
+  document_type: string;
+  document_number?: string;
+  expected_name?: string;
+  extracted_name?: string;
+  image_path: string;
   status: string;
+  admin_notes?: string;
+  reviewed_by?: string;
+  reviewed_at?: string;
   created_at: string;
 }
 
