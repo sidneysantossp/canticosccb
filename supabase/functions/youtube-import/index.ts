@@ -74,10 +74,18 @@ function extractVideoId(url: string): string | null {
 }
 
 async function getVideoMetadata(videoId: string) {
-  // Usar YouTube Data API v3
-  const apiKey = Deno.env.get('YOUTUBE_API_KEY')
+  // Buscar YouTube API Key do Supabase (site_config)
+  const supabaseUrl = Deno.env.get('SUPABASE_URL') || ''
+  const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || Deno.env.get('SUPABASE_ANON_KEY') || ''
+  
+  const configRes = await fetch(
+    `${supabaseUrl}/rest/v1/site_config?config_key=eq.youtube_api_key&select=config_value&limit=1`,
+    { headers: { apikey: supabaseKey, Authorization: `Bearer ${supabaseKey}` } }
+  )
+  const configRows = await configRes.json()
+  const apiKey = configRows?.[0]?.config_value || ''
   if (!apiKey) {
-    throw new Error('YouTube API Key não configurada')
+    throw new Error('YouTube API Key não configurada. Configure em Configurações > Integrações.')
   }
 
   const url = `https://www.googleapis.com/youtube/v3/videos?part=snippet,contentDetails&id=${videoId}&key=${apiKey}`
