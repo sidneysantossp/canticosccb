@@ -789,12 +789,28 @@ export const usuariosApi = {
     }
   },
   delete: async (id: string | number) => {
-    const { supabaseDelete } = await import('./supabaseRest');
+    const { supabaseDelete, supabaseUpdate } = await import('./supabaseRest');
     try {
-      await supabaseDelete('users', { id: `eq.${id}` });
+      console.log('🗑️ [usuariosApi.delete] Attempting to delete user ID:', id);
+      const result = await supabaseDelete('users', { id: `eq.${id}` });
+      if (!result) {
+        // Hard delete failed (likely RLS) — try soft delete
+        console.warn('⚠️ [usuariosApi.delete] Hard delete failed, trying soft delete...');
+        const softResult = await supabaseUpdate('users', { id: `eq.${id}` }, {
+          status: 'deleted',
+          is_blocked: true,
+        });
+        if (!softResult || (Array.isArray(softResult) && softResult.length === 0)) {
+          throw new Error('Não foi possível excluir o usuário. Verifique as permissões do banco de dados.');
+        }
+        console.log('✅ [usuariosApi.delete] Soft delete successful');
+        return { success: true, error: null };
+      }
+      console.log('✅ [usuariosApi.delete] Hard delete successful');
       return { success: true, error: null };
     } catch (error: any) {
-      return { success: false, error: error.message };
+      console.error('❌ [usuariosApi.delete] Error:', error);
+      return { success: false, error: error.message || 'Erro ao excluir usuário' };
     }
   },
 };

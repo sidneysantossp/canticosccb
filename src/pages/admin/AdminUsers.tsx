@@ -112,10 +112,16 @@ const AdminUsers: React.FC = () => {
     if (!window.confirm(`Tem certeza que deseja deletar o usuário ${email}?`)) return;
 
     try {
-      await usuariosApi.delete(id);
-      loadUsers();
-    } catch (error) {
+      const result = await usuariosApi.delete(id);
+      if (result.success) {
+        alert('Usuário excluído com sucesso!');
+        loadUsers();
+      } else {
+        alert(`Erro ao excluir usuário: ${result.error || 'Erro desconhecido'}`);
+      }
+    } catch (error: any) {
       console.error('Error deleting user:', error);
+      alert(`Erro ao excluir usuário: ${error?.message || 'Erro desconhecido'}`);
     }
   };
 
