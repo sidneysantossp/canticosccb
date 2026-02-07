@@ -51,11 +51,173 @@ export const hinosApi = {
       return { data: [], error: error.message };
     }
   },
-  getAll: async () => [],
-  getById: async () => null,
-  create: async () => ({}),
-  update: async () => ({}),
-  delete: async () => { },
+  getAll: async () => {
+    const { supabaseFetch } = await import('./supabaseRest');
+    try {
+      const rows = await supabaseFetch<any>('hinos', {
+        select: '*',
+        order: 'created_at.desc',
+      });
+      return rows;
+    } catch (error: any) {
+      console.error('Error fetching all hymns:', error);
+      return [];
+    }
+  },
+  get: async (id: string | number) => {
+    const { supabaseFetch } = await import('./supabaseRest');
+    try {
+      const rows = await supabaseFetch<any>('hinos', {
+        id: `eq.${id}`,
+        select: '*',
+        limit: '1',
+      });
+      
+      if (rows.length > 0) {
+        const hino = rows[0];
+        
+        // Buscar categorias relacionadas
+        try {
+          const categoriasRows = await supabaseFetch<any>('hino_categorias', {
+            hino_id: `eq.${id}`,
+            select: 'categoria_id,nome',
+          });
+          
+          // Buscar nomes das categorias
+          if (categoriasRows.length > 0) {
+            const categoriaIds = categoriasRows.map(r => r.categoria_id).join(',');
+            const categorias = await supabaseFetch<any>('categorias', {
+              id: `in.(${categoriaIds})`,
+              select: 'nome',
+            });
+            
+            hino.categorias = categorias.map(c => c.nome);
+            hino.categoria = hino.categorias[0] || ''; // Manter compatibilidade
+          }
+        } catch (e) {
+          console.warn('Error fetching hymn categories:', e);
+          hino.categorias = hino.categoria ? [hino.categoria] : [];
+        }
+        
+        return { data: hino, error: null };
+      }
+      return { data: null, error: 'Hino não encontrado' };
+    } catch (error: any) {
+      console.error('Error fetching hymn:', error);
+      return { data: null, error: error.message };
+    }
+  },
+  create: async (data: any) => {
+    const { supabaseInsert, supabaseFetch } = await import('./supabaseRest');
+    try {
+      // Inserir hino sem categorias primeiro
+      const hinoData = {
+        numero: data.numero,
+        titulo: data.titulo,
+        categoria: data.categorias?.[0] || '',
+        compositor: data.compositor,
+        cover_url: data.cover_url,
+        audio_url: data.audio_url,
+        duracao: data.duracao,
+        letra: data.letra,
+        ativo: data.ativo,
+        status: 'published',
+      };
+      
+      const result = await supabaseInsert('hinos', hinoData);
+      
+      if (result && result.length > 0 && data.categorias && data.categorias.length > 0) {
+        // Inserir relacionamentos com categorias
+        const hinoId = result[0].id;
+        
+        // Buscar IDs das categorias pelos nomes
+        const categoriaNames = data.categorias.join("','");
+        const categorias = await supabaseFetch<any>('categorias', {
+          nome: `in.('${categoriaNames}')`,
+          select: 'id,nome',
+        });
+        
+        // Inserir relacionamentos
+        for (const cat of categorias) {
+          try {
+            await supabaseInsert('hino_categorias', {
+              hino_id: hinoId,
+              categoria_id: cat.id,
+            });
+          } catch (e) {
+            console.warn('Error inserting hymn-category relation:', e);
+          }
+        }
+      }
+      
+      return { data: result, error: null };
+    } catch (error: any) {
+      console.error('Error creating hymn:', error);
+      return { data: null, error: error.message };
+    }
+  },
+  update: async (id: string | number, data: any) => {
+    const { supabaseUpdate, supabaseDelete, supabaseInsert, supabaseFetch } = await import('./supabaseRest');
+    try {
+      // Atualizar hino
+      const updateData: any = {
+        numero: data.numero,
+        titulo: data.titulo,
+        categoria: data.categorias?.[0] || '',
+        compositor: data.compositor,
+        cover_url: data.cover_url,
+        audio_url: data.audio_url,
+        duracao: data.duracao,
+        letra: data.letra,
+        ativo: data.ativo,
+      };
+      
+      const result = await supabaseUpdate('hinos', { id: `eq.${id}` }, updateData);
+      
+      // Atualizar categorias se fornecidas
+      if (data.categorias && Array.isArray(data.categorias)) {
+        // Remover relacionamentos antigos
+        await supabaseDelete('hino_categorias', { hino_id: `eq.${id}` });
+        
+        // Adicionar novos relacionamentos
+        if (data.categorias.length > 0) {
+          // Buscar IDs das categorias pelos nomes
+          const categoriaNames = data.categorias.join("','");
+          const categorias = await supabaseFetch<any>('categorias', {
+            nome: `in.('${categoriaNames}')`,
+            select: 'id,nome',
+          });
+          
+          // Inserir novos relacionamentos
+          for (const cat of categorias) {
+            try {
+              await supabaseInsert('hino_categorias', {
+                hino_id: id,
+                categoria_id: cat.id,
+              });
+            } catch (e) {
+              console.warn('Error inserting hymn-category relation:', e);
+            }
+          }
+        }
+      }
+      
+      return { data: result, error: null };
+    } catch (error: any) {
+      console.error('Error updating hymn:', error);
+      return { data: null, error: error.message };
+    }
+  },
+  delete: async (id: string | number) => {
+    const { supabaseDelete } = await import('./supabaseRest');
+    try {
+      await supabaseDelete('hinos', { id: `eq.${id}` });
+      return { success: true, error: null };
+    } catch (error: any) {
+      console.error('Error deleting hymn:', error);
+      return { success: false, error: error.message };
+    }
+  },
 };
 
 export const compositoresApi = {

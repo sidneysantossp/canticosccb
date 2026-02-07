@@ -95,6 +95,7 @@ import AdminComposerForm from '@/pages/admin/AdminComposerForm';
 import AdminAlbumForm from '@/pages/admin/AdminAlbumForm';
 import AdminHymns from '@/pages/admin/AdminHymns';
 import AdminHymnForm from '@/pages/admin/AdminHymnForm';
+import AdminYoutubeImport from '@/pages/admin/AdminYoutubeImport';
 import AdminSongs from '@/pages/admin/AdminSongs';
 import AdminSongsPending from '@/pages/admin/songs/AdminSongsPending';
 import AdminSongDetails from '@/pages/admin/songs/AdminSongDetails';
@@ -315,6 +316,7 @@ const AppContent: React.FC = () => {
           <Route path="admin/hymns" element={<ProtectedRoute requireAdmin><AdminHymns /></ProtectedRoute>} />
           <Route path="admin/hino/criar" element={<ProtectedRoute requireAdmin><AdminHymnForm /></ProtectedRoute>} />
           <Route path="admin/hino/editar/:id" element={<ProtectedRoute requireAdmin><AdminHymnForm /></ProtectedRoute>} />
+          <Route path="admin/hino/importar-youtube" element={<ProtectedRoute requireAdmin><AdminYoutubeImport /></ProtectedRoute>} />
           <Route path="admin/musicas" element={<ProtectedRoute requireAdmin><AdminSongs /></ProtectedRoute>} />
           <Route path="admin/songs" element={<ProtectedRoute requireAdmin><AdminSongs /></ProtectedRoute>} />
           <Route path="admin/songs/:id" element={<ProtectedRoute requireAdmin><AdminSongDetails /></ProtectedRoute>} />

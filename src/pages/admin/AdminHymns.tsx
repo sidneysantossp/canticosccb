@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Music, Plus, Search, Edit, Trash2, Play } from 'lucide-react';
+import { Music, Plus, Search, Edit, Trash2, Play, Youtube } from 'lucide-react';
 import { hinosApi } from '@/lib/api-client';
 
 interface Hymn {
@@ -110,13 +110,22 @@ const AdminHymns: React.FC = () => {
           <h1 className="text-3xl font-bold text-white">Hinos</h1>
           <p className="text-gray-400 mt-1">{filteredHymns.length} hinos encontrados</p>
         </div>
-        <Link
-          to="/admin/hino/criar"
-          className="flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-semibold transition-colors"
-        >
-          <Plus className="w-5 h-5" />
-          Novo Hino
-        </Link>
+        <div className="flex gap-2">
+          <Link
+            to="/admin/hino/criar"
+            className="flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-semibold transition-colors"
+          >
+            <Plus className="w-5 h-5" />
+            Novo Hino
+          </Link>
+          <Link
+            to="/admin/hino/importar-youtube"
+            className="flex items-center gap-2 bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg font-semibold transition-colors"
+          >
+            <Youtube className="w-5 h-5" />
+            Importar do YouTube
+          </Link>
+        </div>
       </div>
 
       {/* Filtros */}

@@ -1,15 +1,22 @@
-import React, { useState, useEffect, useMemo } from 'react';
-import { useNavigate, useParams, Link } from 'react-router-dom';
-import ReactQuill from 'react-quill';
-import 'react-quill/dist/quill.snow.css';
-import '@/styles/quill-custom.css';
-import { ArrowLeft, Save, Music, Upload, Image as ImageIcon, FileAudio, Clock } from 'lucide-react';
-import { hinosApi, uploadApi, categoriasApi, type Categoria } from '@/lib/api-client';
+import React, { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
+import { ArrowLeft, Save, Music, Upload, Clock } from 'lucide-react'
+import { Link } from 'react-router-dom'
+import { hinosApi, uploadApi, categoriasApi, type Categoria } from '@/lib/api-client'
+import YoutubeImportForm from '@/components/admin/YoutubeImportForm'
+import ReactQuill from 'react-quill'
+import 'react-quill/dist/quill.snow.css'
+import '@/styles/quill-custom.css'
 
-const AdminHymnForm: React.FC = () => {
-  const navigate = useNavigate();
-  const { id } = useParams<{ id: string }>();
-  const isEditing = Boolean(id);
+interface YoutubeMetadata {
+  videoId: string
+  titulo: string
+  duracao: string
+  thumbnailUrl: string
+}
+
+const AdminYoutubeImport: React.FC = () => {
+  const navigate = useNavigate()
   
   const [formData, setFormData] = useState({
     numero: 0,
@@ -20,20 +27,21 @@ const AdminHymnForm: React.FC = () => {
     audio_url: '',
     duracao: '',
     letra: '',
-    ativo: 1
-  });
+    ativo: 1,
+    youtube_source: '' // Campo oculto para rastreamento interno
+  })
 
-  const [coverFile, setCoverFile] = useState<File | null>(null);
-  const [audioFile, setAudioFile] = useState<File | null>(null);
-  const [coverPreview, setCoverPreview] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [categories, setCategories] = useState<Categoria[]>([]);
-  const [loadingCategories, setLoadingCategories] = useState<boolean>(false);
+  const [youtubeMetadata, setYoutubeMetadata] = useState<YoutubeMetadata | null>(null)
+  const [coverFile, setCoverFile] = useState<File | null>(null)
+  const [audioFile, setAudioFile] = useState<File | null>(null)
+  const [coverPreview, setCoverPreview] = useState('')
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [categories, setCategories] = useState<Categoria[]>([])
+  const [loadingCategories, setLoadingCategories] = useState<boolean>(false)
 
   // Configuração do editor Quill
-  const modules = useMemo(() => ({
+  const modules = {
     toolbar: [
       [{ 'header': [1, 2, 3, false] }],
       ['bold', 'italic', 'underline', 'strike'],
@@ -42,7 +50,7 @@ const AdminHymnForm: React.FC = () => {
       ['link'],
       ['clean']
     ],
-  }), []);
+  }
 
   const formats = [
     'header',
@@ -50,195 +58,168 @@ const AdminHymnForm: React.FC = () => {
     'list', 'bullet',
     'align',
     'link'
-  ];
+  ]
 
-  useEffect(() => {
-    if (isEditing && id) {
-      loadHino(id);
-    }
-    loadCategories();
-  }, [id, isEditing]);
-
-  const loadHino = async (hinoId: string) => {
-    try {
-      setIsLoading(true);
-      const response = await hinosApi.get(hinoId);
-
-      if (response.data) {
-        const hino = response.data;
-        setFormData({
-          numero: hino.numero || 0,
-          titulo: hino.titulo || '',
-          categorias: hino.categorias || (hino.categoria ? [hino.categoria] : []),
-          compositor: hino.compositor || '',
-          cover_url: hino.cover_url || '',
-          audio_url: hino.audio_url || '',
-          duracao: hino.duracao || '',
-          letra: hino.letra || '',
-          ativo: hino.ativo !== undefined ? hino.ativo : 1
-        });
-        setCoverPreview(hino.cover_url || '');
-      }
-    } catch (error: any) {
-      console.error('Erro ao carregar hino:', error);
-      setError(error?.message || 'Erro ao carregar hino');
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  React.useEffect(() => {
+    loadCategories()
+  }, [])
 
   const loadCategories = async () => {
     try {
-      setLoadingCategories(true);
-      const res = await categoriasApi.list({ limit: 1000 });
+      setLoadingCategories(true)
+      const res = await categoriasApi.list({ limit: 1000 })
       if (res.data) {
-        const payload: any = res.data;
-        const arr = payload.categorias || payload.data || payload;
-        setCategories(Array.isArray(arr) ? arr : []);
+        const payload: any = res.data
+        const arr = payload.categorias || payload.data || payload
+        setCategories(Array.isArray(arr) ? arr : [])
       } else {
-        setCategories([]);
+        setCategories([])
       }
     } catch (e) {
-      console.error('Erro ao carregar categorias:', e);
-      setCategories([]);
+      console.error('Erro ao carregar categorias:', e)
+      setCategories([])
     } finally {
-      setLoadingCategories(false);
+      setLoadingCategories(false)
     }
-  };
+  }
+
+  const handleYoutubeImport = (metadata: YoutubeMetadata) => {
+    setYoutubeMetadata(metadata)
+    setFormData(prev => ({
+      ...prev,
+      titulo: metadata.titulo,
+      duracao: metadata.duracao,
+      cover_url: metadata.thumbnailUrl,
+      youtube_source: metadata.videoId // Armazenar apenas o ID
+    }))
+    setCoverPreview(metadata.thumbnailUrl)
+  }
 
   const handleCoverChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
+    const file = e.target.files?.[0]
     if (file) {
-      setCoverFile(file);
-      const reader = new FileReader();
-      reader.onloadend = () => setCoverPreview(reader.result as string);
-      reader.readAsDataURL(file);
+      setCoverFile(file)
+      const reader = new FileReader()
+      reader.onloadend = () => setCoverPreview(reader.result as string)
+      reader.readAsDataURL(file)
     }
-  };
+  }
 
   const handleAudioChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
+    const file = e.target.files?.[0]
     if (file) {
-      setAudioFile(file);
+      setAudioFile(file)
       // Extrair duração automaticamente
       try {
-        const url = URL.createObjectURL(file);
-        const audio = new Audio();
-        audio.src = url;
+        const url = URL.createObjectURL(file)
+        const audio = new Audio()
+        audio.src = url
         audio.addEventListener('loadedmetadata', () => {
           if (!isNaN(audio.duration)) {
-            const total = Math.floor(audio.duration);
-            const mm = String(Math.floor(total / 60)).padStart(2, '0');
-            const ss = String(total % 60).padStart(2, '0');
-            setFormData((prev) => ({ ...prev, duracao: `${mm}:${ss}` }));
+            const total = Math.floor(audio.duration)
+            const mm = String(Math.floor(total / 60)).padStart(2, '0')
+            const ss = String(total % 60).padStart(2, '0')
+            setFormData((prev) => ({ ...prev, duracao: `${mm}:${ss}` }))
           }
-          URL.revokeObjectURL(url);
-        }, { once: true });
+          URL.revokeObjectURL(url)
+        }, { once: true })
       } catch {}
     }
-  };
+  }
 
   const uploadCover = async (file: File): Promise<string | null> => {
     try {
-      const response = await uploadApi.cover(file);
-      if (response.data) {
-        return response.data.url;
+      const response = await uploadApi.uploadCover(file)
+      if (response.url) {
+        return response.url
       }
-      return null;
+      return null
     } catch (error) {
-      console.error('Erro ao fazer upload da capa:', error);
-      return null;
+      console.error('Erro ao fazer upload da capa:', error)
+      return null
     }
-  };
+  }
 
   const uploadAudio = async (file: File): Promise<string | null> => {
     try {
-      const response = await uploadApi.audio(file);
-      if (response.data) {
-        return response.data.url;
+      const response = await uploadApi.uploadAudio(file)
+      if (response.url) {
+        return response.url
       }
-      return null;
+      return null
     } catch (error) {
-      console.error('Erro ao fazer upload do áudio:', error);
-      return null;
+      console.error('Erro ao fazer upload do áudio:', error)
+      return null
     }
-  };
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsSubmitting(true);
-    setError(null);
+    e.preventDefault()
+    setIsSubmitting(true)
+    setError(null)
+
     // Validação mínima
     if (!formData.titulo || !String(formData.titulo).trim()) {
-      setIsSubmitting(false);
-      setError('Título é obrigatório.');
-      return;
+      setIsSubmitting(false)
+      setError('Título é obrigatório.')
+      return
     }
     
     if (formData.categorias.length === 0) {
-      setIsSubmitting(false);
-      setError('Selecione pelo menos uma categoria.');
-      return;
+      setIsSubmitting(false)
+      setError('Selecione pelo menos uma categoria.')
+      return
+    }
+
+    if (!youtubeMetadata && !audioFile) {
+      setIsSubmitting(false)
+      setError('Importe um vídeo do YouTube ou faça upload de um arquivo de áudio.')
+      return
     }
 
     try {
-      let coverUrl = formData.cover_url;
-      let audioUrl = formData.audio_url;
+      let coverUrl = formData.cover_url
+      let audioUrl = formData.audio_url
 
       // Upload de capa se houver
       if (coverFile) {
-        const uploaded = await uploadCover(coverFile);
-        if (uploaded) coverUrl = uploaded;
+        const uploaded = await uploadCover(coverFile)
+        if (uploaded) coverUrl = uploaded
       }
 
       // Upload de áudio se houver
       if (audioFile) {
-        const uploaded = await uploadAudio(audioFile);
-        if (uploaded) audioUrl = uploaded;
+        const uploaded = await uploadAudio(audioFile)
+        if (uploaded) audioUrl = uploaded
       }
 
       const hinoData = {
         numero: formData.numero || undefined,
         titulo: formData.titulo.trim(),
         categorias: formData.categorias,
-        categoria: formData.categorias[0] || '', // Manter compatibilidade com campo antigo
+        categoria: formData.categorias[0] || '',
         compositor: formData.compositor.trim() || undefined,
         cover_url: coverUrl || undefined,
         audio_url: audioUrl || undefined,
         duracao: formData.duracao || undefined,
         letra: formData.letra || undefined,
-        ativo: formData.ativo
-      };
-
-      let response;
-      if (isEditing && id) {
-        response = await hinosApi.update(id, hinoData);
-      } else {
-        response = await hinosApi.create(hinoData);
+        ativo: formData.ativo,
+        youtube_source: formData.youtube_source || undefined // Campo interno
       }
+
+      const response = await hinosApi.create(hinoData)
 
       if (response.error) {
-        throw new Error(response.error);
+        throw new Error(response.error)
       }
 
-      navigate('/admin/hinos');
+      navigate('/admin/hinos')
     } catch (error: any) {
-      console.error('Erro ao salvar hino:', error);
-      setError(error?.message || 'Erro ao salvar hino');
+      console.error('Erro ao salvar hino:', error)
+      setError(error?.message || 'Erro ao salvar hino')
     } finally {
-      setIsSubmitting(false);
+      setIsSubmitting(false)
     }
-  };
-
-  if (isLoading) {
-    return (
-      <div className="min-h-screen bg-gray-950 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-500 mx-auto mb-4"></div>
-          <p className="text-gray-400">Carregando hino...</p>
-        </div>
-      </div>
-    );
   }
 
   return (
@@ -254,9 +235,11 @@ const AdminHymnForm: React.FC = () => {
           </Link>
           <div>
             <h1 className="text-3xl font-bold text-white">
-              {isEditing ? 'Editar Hino' : 'Novo Hino'}
+              Importar Hino do YouTube
             </h1>
-            <p className="text-gray-400 mt-1">Preencha as informações do hino</p>
+            <p className="text-gray-400 mt-1">
+              Importe um hino diretamente do YouTube e complete as informações
+            </p>
           </div>
         </div>
 
@@ -267,11 +250,17 @@ const AdminHymnForm: React.FC = () => {
         )}
 
         <form onSubmit={handleSubmit} className="space-y-6">
+          {/* YouTube Import */}
+          <YoutubeImportForm 
+            onImport={handleYoutubeImport}
+            isLoading={isSubmitting}
+          />
+
           {/* Informações Básicas */}
           <div className="bg-gray-900/50 border border-gray-800 rounded-xl p-6">
             <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
               <Music className="w-5 h-5" />
-              Informações Básicas
+              Informações do Hino
             </h2>
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
@@ -310,6 +299,9 @@ const AdminHymnForm: React.FC = () => {
                 placeholder="Ex: Coro Celeste"
                 required
               />
+              {youtubeMetadata && (
+                <p className="text-green-400 text-xs mt-1">✓ Importado do YouTube</p>
+              )}
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -365,6 +357,26 @@ const AdminHymnForm: React.FC = () => {
                 />
               </div>
             </div>
+
+            <div className="mb-4">
+              <label className="block text-gray-400 text-sm font-semibold mb-2 flex items-center gap-2">
+                <Clock className="w-4 h-4" />
+                Duração
+              </label>
+              <input
+                type="text"
+                value={formData.duracao}
+                onChange={(e) => setFormData({ ...formData, duracao: e.target.value })}
+                className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-green-600"
+                placeholder="3:45"
+              />
+              {youtubeMetadata && (
+                <p className="text-green-400 text-xs mt-1">✓ Importado do YouTube</p>
+              )}
+              <p className="text-gray-500 text-xs mt-1">
+                Formato: mm:ss (ex: 3:45)
+              </p>
+            </div>
           </div>
 
           {/* Arquivos e Mídia */}
@@ -377,10 +389,7 @@ const AdminHymnForm: React.FC = () => {
             <div className="space-y-4">
               {/* Capa */}
               <div>
-                <label className="block text-gray-400 text-sm font-semibold mb-2 flex items-center gap-2">
-                  <ImageIcon className="w-4 h-4" />
-                  Capa do Hino
-                </label>
+                <label className="block text-gray-400 text-sm font-semibold mb-2">Capa do Hino</label>
                 <div className="flex items-start gap-6">
                   {coverPreview ? (
                     <img
@@ -398,7 +407,7 @@ const AdminHymnForm: React.FC = () => {
                     <label className="flex flex-col items-center justify-center h-32 bg-gray-800/50 border-2 border-dashed border-gray-700 rounded-lg cursor-pointer hover:border-green-600 transition-colors">
                       <Upload className="w-8 h-8 text-gray-400 mb-2" />
                       <span className="text-gray-400 text-sm">
-                        {coverFile ? coverFile.name : 'Arraste uma imagem ou clique para selecionar'}
+                        {coverFile ? coverFile.name : youtubeMetadata ? 'Thumbnail importada - clique para alterar' : 'Arraste uma imagem ou clique para selecionar'}
                       </span>
                       <span className="text-gray-500 text-xs mt-1">
                         PNG, JPG (máx. 5MB)
@@ -410,20 +419,20 @@ const AdminHymnForm: React.FC = () => {
                         className="hidden"
                       />
                     </label>
+                    {youtubeMetadata && (
+                      <p className="text-green-400 text-xs mt-1">✓ Thumbnail importada do YouTube</p>
+                    )}
                   </div>
                 </div>
               </div>
 
               {/* Áudio */}
               <div>
-                <label className="block text-gray-400 text-sm font-semibold mb-2 flex items-center gap-2">
-                  <FileAudio className="w-4 h-4" />
-                  Arquivo de Áudio
-                </label>
+                <label className="block text-gray-400 text-sm font-semibold mb-2">Arquivo de Áudio</label>
                 <label className="flex flex-col items-center justify-center h-24 bg-gray-800/50 border-2 border-dashed border-gray-700 rounded-lg cursor-pointer hover:border-green-600 transition-colors">
-                  <FileAudio className="w-8 h-8 text-gray-400 mb-2" />
+                  <Upload className="w-8 h-8 text-gray-400 mb-2" />
                   <span className="text-gray-400 text-sm">
-                    {audioFile ? audioFile.name : formData.audio_url ? 'Áudio já enviado - clique para alterar' : 'Selecionar arquivo de áudio'}
+                    {audioFile ? audioFile.name : youtubeMetadata ? 'Áudio será processado - ou faça upload manual' : 'Selecionar arquivo de áudio'}
                   </span>
                   <span className="text-gray-500 text-xs mt-1">
                     MP3, WAV (máx. 50MB)
@@ -435,24 +444,11 @@ const AdminHymnForm: React.FC = () => {
                     className="hidden"
                   />
                 </label>
-              </div>
-
-              {/* Duração */}
-              <div>
-                <label className="block text-gray-400 text-sm font-semibold mb-2 flex items-center gap-2">
-                  <Clock className="w-4 h-4" />
-                  Duração
-                </label>
-                <input
-                  type="text"
-                  value={formData.duracao}
-                  onChange={(e) => setFormData({ ...formData, duracao: e.target.value })}
-                  className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-green-600"
-                  placeholder="3:45"
-                />
-                <p className="text-gray-500 text-xs mt-1">
-                  Formato: mm:ss (ex: 3:45)
-                </p>
+                {youtubeMetadata && (
+                  <p className="text-yellow-400 text-xs mt-1">
+                    ⚠️ O áudio do YouTube será processado automaticamente (função em desenvolvimento)
+                  </p>
+                )}
               </div>
             </div>
           </div>
@@ -501,7 +497,7 @@ const AdminHymnForm: React.FC = () => {
               ) : (
                 <>
                   <Save className="w-5 h-5" />
-                  <span>{isEditing ? 'Salvar Alterações' : 'Criar Hino'}</span>
+                  <span>Salvar Hino</span>
                 </>
               )}
             </button>
@@ -509,7 +505,7 @@ const AdminHymnForm: React.FC = () => {
         </form>
       </div>
     </div>
-  );
-};
+  )
+}
 
-export default AdminHymnForm;
+export default AdminYoutubeImport
