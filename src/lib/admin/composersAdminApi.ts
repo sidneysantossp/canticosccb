@@ -160,19 +160,28 @@ export const deleteComposer = async (id: string): Promise<{ success: boolean }> 
     // 2. Deletar registro do compositor
     await supabaseDelete('composers', { id: `eq.${id}` });
 
-    // 3. Desativar o usuário associado (via RPC com SECURITY DEFINER para bypass de RLS)
+    // 3. Desativar o usuário associado
     if (composerEmail) {
       try {
         const { supabase } = await import('@/lib/supabase-auth');
+        // Tentar RPC primeiro
         const { data: rpcResult, error: rpcError } = await supabase.rpc('admin_deactivate_user_by_email', {
           p_email: composerEmail,
         });
-        if (rpcError) {
-          console.warn('⚠️ [composersAdminApi] RPC deactivate failed:', rpcError.message);
-        } else if (rpcResult && !rpcResult.success) {
-          console.warn('⚠️ [composersAdminApi] Deactivate failed:', rpcResult.error);
+        if (!rpcError && rpcResult?.success) {
+          console.log('✅ [composersAdminApi] User deactivated via RPC:', composerEmail);
         } else {
-          console.log('✅ [composersAdminApi] Associated user deactivated via RPC:', composerEmail);
+          // Fallback: update direto (admin RLS policy)
+          console.warn('⚠️ [composersAdminApi] RPC failed, trying direct update');
+          const { error: updateError } = await supabase
+            .from('users')
+            .update({ is_composer: false, is_blocked: true, status: 'inactive' })
+            .eq('email', composerEmail);
+          if (updateError) {
+            console.warn('⚠️ [composersAdminApi] Direct update also failed:', updateError.message);
+          } else {
+            console.log('✅ [composersAdminApi] User deactivated via direct update:', composerEmail);
+          }
         }
       } catch (e) {
         console.warn('⚠️ [composersAdminApi] Error deactivating user:', e);

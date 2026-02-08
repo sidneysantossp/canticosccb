@@ -428,19 +428,27 @@ export const compositoresApi = {
       await supabaseDelete('composers', { id: `eq.${id}` });
       console.log('✅ [compositoresApi.delete] Composer record deleted');
 
-      // 3. Desativar o usuário associado (via RPC com SECURITY DEFINER para bypass de RLS)
+      // 3. Desativar o usuário associado
       if (composerEmail) {
         try {
+          // Tentar RPC primeiro
           const { data: rpcResult, error: rpcError } = await supabase.rpc('admin_deactivate_user_by_email', {
             p_email: composerEmail,
           });
-
-          if (rpcError) {
-            console.warn('⚠️ [compositoresApi.delete] RPC deactivate failed:', rpcError.message);
-          } else if (rpcResult && !rpcResult.success) {
-            console.warn('⚠️ [compositoresApi.delete] Deactivate failed:', rpcResult.error);
+          if (!rpcError && rpcResult?.success) {
+            console.log('✅ [compositoresApi.delete] User deactivated via RPC');
           } else {
-            console.log('✅ [compositoresApi.delete] Associated user deactivated via RPC');
+            // Fallback: update direto (admin RLS policy)
+            console.warn('⚠️ [compositoresApi.delete] RPC failed, trying direct update');
+            const { error: updateError } = await supabase
+              .from('users')
+              .update({ is_composer: false, is_blocked: true, status: 'inactive' })
+              .eq('email', composerEmail);
+            if (updateError) {
+              console.warn('⚠️ [compositoresApi.delete] Direct update also failed:', updateError.message);
+            } else {
+              console.log('✅ [compositoresApi.delete] User deactivated via direct update');
+            }
           }
         } catch (e) {
           console.warn('⚠️ [compositoresApi.delete] Error deactivating user:', e);
@@ -828,23 +836,58 @@ export const usuariosApi = {
   delete: async (id: string | number) => {
     const { supabase } = await import('./supabase-auth');
     try {
-      console.log('🗑️ [usuariosApi.delete] Calling admin_delete_user RPC for ID:', id);
+      console.log('🗑️ [usuariosApi.delete] Attempting delete for user ID:', id);
 
-      const { data, error } = await supabase.rpc('admin_delete_user', {
-        p_target_user_id: id,
-      });
-
-      console.log('🗑️ [usuariosApi.delete] RPC response:', data, error);
-
-      if (error) {
-        throw new Error(error.message);
+      // Estratégia 1: RPC admin_delete_user (SECURITY DEFINER, bypass RLS)
+      try {
+        const { data: rpcData, error: rpcError } = await supabase.rpc('admin_delete_user', {
+          p_target_user_id: id,
+        });
+        console.log('🗑️ [usuariosApi.delete] RPC response:', rpcData, rpcError);
+        if (!rpcError && rpcData?.success) {
+          console.log('✅ [usuariosApi.delete] Deleted via RPC');
+          return { success: true, error: null };
+        }
+        if (rpcError) console.warn('⚠️ RPC admin_delete_user failed:', rpcError.message);
+        if (rpcData && !rpcData.success) console.warn('⚠️ RPC returned:', rpcData.error);
+      } catch (rpcEx) {
+        console.warn('⚠️ RPC admin_delete_user not available:', rpcEx);
       }
 
-      if (data && !data.success) {
-        throw new Error(data.error || 'Erro ao excluir usuário');
+      // Estratégia 2: Soft delete via RPC admin_update_user
+      try {
+        const { data: rpcData2, error: rpcError2 } = await supabase.rpc('admin_update_user', {
+          p_target_user_id: id,
+          p_data: { is_blocked: true, status: 'inactive' },
+        });
+        console.log('🗑️ [usuariosApi.delete] admin_update_user response:', rpcData2, rpcError2);
+        if (!rpcError2 && rpcData2?.success) {
+          console.log('✅ [usuariosApi.delete] Soft deleted via admin_update_user RPC');
+          return { success: true, error: null };
+        }
+        if (rpcError2) console.warn('⚠️ RPC admin_update_user failed:', rpcError2.message);
+      } catch (rpcEx2) {
+        console.warn('⚠️ RPC admin_update_user not available:', rpcEx2);
       }
 
-      console.log('✅ [usuariosApi.delete] User deleted successfully via RPC');
+      // Estratégia 3: Direct update via Supabase JS (depende de admin RLS policy)
+      const { data: updateData, error: updateError } = await supabase
+        .from('users')
+        .update({ is_blocked: true, status: 'inactive' })
+        .eq('id', id)
+        .select('id');
+
+      console.log('🗑️ [usuariosApi.delete] Direct update result:', updateData, updateError);
+
+      if (updateError) {
+        throw new Error(`Falha ao excluir: ${updateError.message}`);
+      }
+      if (!updateData || updateData.length === 0) {
+        // Supabase retornou sucesso mas 0 linhas afetadas = RLS bloqueou
+        throw new Error('Sem permissão para excluir este usuário. Execute as funções RPC no SQL Editor do Supabase.');
+      }
+
+      console.log('✅ [usuariosApi.delete] Soft delete successful via direct update');
       return { success: true, error: null };
     } catch (error: any) {
       console.error('❌ [usuariosApi.delete] Error:', error);

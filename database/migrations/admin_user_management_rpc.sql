@@ -137,28 +137,36 @@ BEGIN
 END;
 $$;
 
--- 4. Adicionar políticas RLS para admins (complementar)
+-- 4. Helper function para verificar admin SEM acionar RLS (evita recursão infinita)
+CREATE OR REPLACE FUNCTION public.is_admin()
+RETURNS BOOLEAN
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+BEGIN
+  RETURN EXISTS (
+    SELECT 1 FROM public.users WHERE id = auth.uid() AND is_admin = true
+  );
+END;
+$$;
+
+-- 5. Adicionar políticas RLS para admins (usando helper function)
 
 -- Admins podem ver todos os usuários
 DROP POLICY IF EXISTS "Admins can view all users" ON public.users;
 CREATE POLICY "Admins can view all users" ON public.users
-  FOR SELECT USING (
-    EXISTS (SELECT 1 FROM public.users u WHERE u.id = auth.uid() AND u.is_admin = true)
-  );
+  FOR SELECT USING (public.is_admin());
 
 -- Admins podem atualizar qualquer usuário
 DROP POLICY IF EXISTS "Admins can update all users" ON public.users;
 CREATE POLICY "Admins can update all users" ON public.users
-  FOR UPDATE USING (
-    EXISTS (SELECT 1 FROM public.users u WHERE u.id = auth.uid() AND u.is_admin = true)
-  );
+  FOR UPDATE USING (public.is_admin());
 
 -- Admins podem deletar qualquer usuário
 DROP POLICY IF EXISTS "Admins can delete all users" ON public.users;
 CREATE POLICY "Admins can delete all users" ON public.users
-  FOR DELETE USING (
-    EXISTS (SELECT 1 FROM public.users u WHERE u.id = auth.uid() AND u.is_admin = true)
-  );
+  FOR DELETE USING (public.is_admin());
 
 -- Atualizar CHECK constraint para permitir status 'deleted'
 ALTER TABLE public.users DROP CONSTRAINT IF EXISTS users_status_check;
