@@ -1,15 +1,29 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { Link } from 'react-router-dom';
-import { Megaphone, ChevronLeft, ChevronRight, Calendar } from 'lucide-react';
+import { Megaphone, ChevronLeft, ChevronRight, Calendar, Check } from 'lucide-react';
 import { noticesApi, PlatformNotice } from '@/lib/noticesApi';
 
 const ITEMS_PER_PAGE = 15;
+const READ_NOTICES_KEY = 'canticos_read_notices';
+
+const getReadNotices = (): Set<string> => {
+  try {
+    const stored = localStorage.getItem(READ_NOTICES_KEY);
+    if (stored) return new Set(JSON.parse(stored));
+  } catch {}
+  return new Set();
+};
+
+const saveReadNotices = (ids: Set<string>) => {
+  localStorage.setItem(READ_NOTICES_KEY, JSON.stringify([...ids]));
+};
 
 const AvisosPage: React.FC = () => {
   const [notices, setNotices] = useState<PlatformNotice[]>([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(true);
+  const [readIds, setReadIds] = useState<Set<string>>(getReadNotices);
 
   const totalPages = Math.ceil(total / ITEMS_PER_PAGE);
 
@@ -29,6 +43,21 @@ const AvisosPage: React.FC = () => {
       setLoading(false);
     }
   };
+
+  const toggleRead = useCallback((e: React.MouseEvent, noticeId: string) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setReadIds(prev => {
+      const next = new Set(prev);
+      if (next.has(noticeId)) {
+        next.delete(noticeId);
+      } else {
+        next.add(noticeId);
+      }
+      saveReadNotices(next);
+      return next;
+    });
+  }, []);
 
   const formatDate = (dateStr: string) => {
     return new Date(dateStr).toLocaleDateString('pt-BR', {
@@ -81,24 +110,54 @@ const AvisosPage: React.FC = () => {
       {/* Notices List */}
       {!loading && notices.length > 0 && (
         <div className="space-y-4">
-          {notices.map((notice) => (
-            <Link
-              key={notice.id}
-              to={`/avisos/${notice.id}`}
-              className="block bg-background-secondary hover:bg-background-secondary/80 border border-gray-800 hover:border-green-500/30 rounded-xl p-6 transition-all group"
-            >
-              <h2 className="text-lg font-semibold text-white group-hover:text-green-400 transition-colors mb-2">
-                {notice.title}
-              </h2>
-              <p className="text-text-muted text-sm leading-relaxed mb-3">
-                {getExcerpt(notice.content)}
-              </p>
-              <div className="flex items-center gap-2 text-xs text-gray-500">
-                <Calendar className="w-3.5 h-3.5" />
-                <span>{formatDate(notice.published_at)}</span>
+          {notices.map((notice) => {
+            const isRead = readIds.has(notice.id);
+            return (
+              <div key={notice.id} className="relative">
+                {/* Checkbox */}
+                <button
+                  onClick={(e) => toggleRead(e, notice.id)}
+                  className={`absolute top-3 left-3 z-10 w-6 h-6 rounded-md border-2 flex items-center justify-center transition-all ${
+                    isRead
+                      ? 'bg-green-500 border-green-500'
+                      : 'bg-transparent border-gray-500 hover:border-green-400'
+                  }`}
+                  title={isRead ? 'Marcar como não lido' : 'Marcar como lido'}
+                >
+                  {isRead && <Check className="w-4 h-4 text-black" />}
+                </button>
+
+                <Link
+                  to={`/avisos/${notice.id}`}
+                  className={`block bg-background-secondary hover:bg-background-secondary/80 rounded-xl p-6 pl-12 transition-all group ${
+                    isRead
+                      ? 'border border-gray-800'
+                      : 'border border-green-500/40 shadow-[0_0_15px_-3px_rgba(16,185,129,0.2)]'
+                  }`}
+                >
+                  <h2 className={`text-lg font-semibold group-hover:text-green-400 transition-colors mb-2 ${
+                    isRead ? 'text-gray-400' : 'text-white'
+                  }`}>
+                    {notice.title}
+                  </h2>
+                  <p className={`text-sm leading-relaxed mb-3 ${
+                    isRead ? 'text-gray-500' : 'text-text-muted'
+                  }`}>
+                    {getExcerpt(notice.content)}
+                  </p>
+                  <div className="flex items-center gap-2 text-xs text-gray-500">
+                    <Calendar className="w-3.5 h-3.5" />
+                    <span>{formatDate(notice.published_at)}</span>
+                    {!isRead && (
+                      <span className="ml-2 px-2 py-0.5 bg-green-500/10 text-green-400 rounded-full text-[10px] font-semibold uppercase">
+                        Novo
+                      </span>
+                    )}
+                  </div>
+                </Link>
               </div>
-            </Link>
-          ))}
+            );
+          })}
         </div>
       )}
 

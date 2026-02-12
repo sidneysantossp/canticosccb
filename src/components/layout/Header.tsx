@@ -233,7 +233,7 @@ const Header: React.FC = () => {
         </div>
 
         {/* Right Side */}
-        <div className="flex items-center space-x-4 lg:ml-auto">
+        <div className="flex items-center space-x-1 md:space-x-4 lg:ml-auto">
           {/* Avisos Button - Desktop */}
           <Link
             to="/avisos"
