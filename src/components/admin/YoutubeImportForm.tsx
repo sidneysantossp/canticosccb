@@ -1,5 +1,6 @@
 import React, { useState } from 'react'
 import { Youtube, Import, Loader, AlertCircle } from 'lucide-react'
+import youtubeImport from '@/pages/api/youtube-import'
 
 interface YoutubeMetadata {
   videoId: string
@@ -32,9 +33,6 @@ const YoutubeImportForm: React.FC<YoutubeImportFormProps> = ({
     setError(null)
 
     try {
-      // Importar a função de API
-      const { default: youtubeImport } = await import('@/pages/api/youtube-import')
-      
       const result = await youtubeImport(youtubeUrl)
 
       if (!result.success) {
