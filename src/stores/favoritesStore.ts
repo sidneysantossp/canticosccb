@@ -21,8 +21,8 @@ interface FavoritesState {
 
   // Actions
   addFavorite: (hino: Omit<FavoriteHino, 'likedAt' | 'addedDaysAgo'>, userId?: string | number) => void;
-  removeFavorite: (id: number, userId?: string | number) => void;
-  isFavorite: (id: number) => boolean;
+  removeFavorite: (id: string | number, userId?: string | number) => void;
+  isFavorite: (id: string | number) => boolean;
   loadFavorites: (userId?: string | number) => Promise<void>;
   clearError: () => void;
 }
@@ -76,7 +76,7 @@ const useFavoritesStore = create<FavoritesState>()(
 
       removeFavorite: (id, userId) => {
         set((state) => ({
-          favorites: state.favorites.filter(fav => fav.id !== id),
+          favorites: state.favorites.filter(fav => String(fav.id) !== String(id)),
           error: null
         }));
         if (userId) {
@@ -86,7 +86,7 @@ const useFavoritesStore = create<FavoritesState>()(
       },
 
       isFavorite: (id) => {
-        return get().favorites.some(fav => fav.id === id);
+        return get().favorites.some(fav => String(fav.id) === String(id));
       },
 
       loadFavorites: async (userId?: string | number) => {

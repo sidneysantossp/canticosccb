@@ -395,7 +395,7 @@ const LikedSongsPage: React.FC = () => {
               <Search className="w-12 h-12 text-text-muted" />
             </div>
             <h3 className="text-xl font-bold text-white mb-2">
-              Nenhuma música encontrada
+              Nenhum hino encontrado
             </h3>
             <p className="text-text-muted mb-6">
               Tente buscar com outras palavras-chave

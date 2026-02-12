@@ -13,7 +13,7 @@ const AjudaPage: React.FC = () => {
 
   const faq = [
     { q: 'Como criar uma conta?', a: 'Clique em "Cadastrar" no menu superior e preencha seus dados. Você também pode se cadastrar usando sua conta Google.' },
-    { q: 'Como publicar minhas composições?', a: 'Cadastre-se como compositor através da página "Sou Compositor" e, após aprovação, acesse o painel do compositor para enviar suas músicas.' },
+    { q: 'Como publicar minhas composições?', a: 'Cadastre-se como compositor através da página "Sou Compositor" e, após aprovação, acesse o painel do compositor para enviar seus hinos.' },
     { q: 'A plataforma é gratuita?', a: 'Sim! A plataforma é gratuita para ouvintes. Compositores também podem publicar gratuitamente.' },
     { q: 'Como reportar conteúdo inadequado?', a: 'Utilize a página de Reivindicação de Conteúdo ou entre em contato conosco pelo formulário de contato.' },
     { q: 'Como funciona o plano Premium?', a: 'O plano Premium oferece benefícios como downloads offline, qualidade superior de áudio e experiência sem interrupções.' },

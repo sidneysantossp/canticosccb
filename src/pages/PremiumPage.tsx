@@ -105,7 +105,7 @@ const PremiumPage: React.FC = () => {
       <SEOHead
         title={seoTitle}
         description={seoDescription}
-        keywords="premium ccb, assinatura hinos, música sem anúncios, download offline, qualidade premium"
+        keywords="premium ccb, assinatura hinos, hinos sem anúncios, download offline, qualidade premium"
         canonical="/premium"
         ogImage="/images/og-premium.jpg"
       />
@@ -121,7 +121,7 @@ const PremiumPage: React.FC = () => {
           </div>
           
           <h1 className="text-5xl md:text-7xl font-black text-white mb-6">
-            Liberte sua música
+            Liberte seus hinos
           </h1>
           <p className="text-xl md:text-2xl text-text-muted max-w-3xl mx-auto mb-8">
             Desfrute de áudio de alta qualidade, downloads ilimitados e muito mais com o Premium

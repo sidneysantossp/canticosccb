@@ -40,16 +40,16 @@ const ComposerMobileSidebar: React.FC<ComposerMobileSidebarProps> = ({ isOpen, o
     {
       category: 'Conteúdo',
       items: [
-        { icon: Music, label: 'Minhas Músicas', path: '/composer/songs' },
+        { icon: Music, label: 'Meus Hinos', path: '/composer/songs' },
         { icon: Disc, label: 'Meus Álbuns', path: '/composer/albums' },
-        { icon: Upload, label: 'Upload de Música', path: '/composer/songs/upload' },
+        { icon: Upload, label: 'Upload de Hino', path: '/composer/songs/upload' },
         { icon: Plus, label: 'Criar Álbum', path: '/composer/albums/create' }
       ]
     },
     {
       category: 'Performance',
       items: [
-        { icon: TrendingUp, label: 'Músicas em Alta', path: '/composer/trending' },
+        { icon: TrendingUp, label: 'Hinos em Alta', path: '/composer/trending' },
         { icon: Heart, label: 'Mais Curtidas', path: '/composer/liked' },
         
       ]

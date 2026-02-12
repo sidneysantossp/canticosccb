@@ -20,8 +20,22 @@ export async function uploadFile(
   type: 'hinos' | 'albuns' | 'avatars' | 'covers' | 'banners'
 ): Promise<string> {
   try {
-    console.log('📤 Iniciando upload Supabase (REST API):', { fileName: file.name, size: file.size, type });
-    
+    const sizeMB = (file.size / (1024 * 1024)).toFixed(2);
+    console.log(`📤 Iniciando upload Supabase (REST API): ${file.name} (${sizeMB} MB) tipo: ${type}`);
+
+    // Limites de tamanho por tipo
+    const maxSizes: Record<string, number> = {
+      avatars: 5,   // 5 MB
+      covers: 10,   // 10 MB
+      banners: 10,  // 10 MB
+      albuns: 10,   // 10 MB
+      hinos: 500,   // 500 MB (áudio)
+    };
+    const maxMB = maxSizes[type] || 50;
+    if (file.size > maxMB * 1024 * 1024) {
+      throw new Error(`Arquivo muito grande (${sizeMB} MB). Máximo permitido: ${maxMB} MB`);
+    }
+
     const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
     const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
     
@@ -29,19 +43,21 @@ export async function uploadFile(
       throw new Error('Configuração do Supabase não encontrada');
     }
     
-    // Pegar token do localStorage (mais rápido que getSession)
+    // Pegar token via getSession com timeout de 3s
     let accessToken = SUPABASE_ANON_KEY;
     try {
-      const authData = localStorage.getItem('sb-rdogsfrplohxnemvtetn-auth-token');
-      if (authData) {
-        const parsed = JSON.parse(authData);
-        if (parsed?.access_token) {
-          accessToken = parsed.access_token;
-          console.log('✅ Token de autenticação encontrado');
-        }
+      console.log('🔑 Obtendo sessão...');
+      const sessionPromise = supabase.auth.getSession();
+      const timeoutPromise = new Promise<null>((resolve) => setTimeout(() => resolve(null), 3000));
+      const result = await Promise.race([sessionPromise, timeoutPromise]);
+      if (result && (result as any)?.data?.session?.access_token) {
+        accessToken = (result as any).data.session.access_token;
+        console.log('✅ Token de autenticação encontrado');
+      } else {
+        console.warn('⚠️ Sem sessão ativa ou timeout, usando anon key');
       }
     } catch (e) {
-      console.warn('⚠️ Erro ao ler token, usando anon key');
+      console.warn('⚠️ Erro ao obter sessão, usando anon key');
     }
     
     // Gerar nome único para o arquivo
@@ -57,23 +73,38 @@ export async function uploadFile(
     const uploadUrl = `${SUPABASE_URL}/storage/v1/object/${bucket}/${path}`;
     console.log('🌐 Upload URL:', uploadUrl);
     
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 30000);
-    
+    const doUpload = async (token: string): Promise<Response> => {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 30000); // 30s timeout
+      try {
+        const response = await fetch(uploadUrl, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'apikey': SUPABASE_ANON_KEY,
+            'Content-Type': file.type,
+            'x-upsert': 'true',
+          },
+          body: file,
+          signal: controller.signal,
+        });
+        clearTimeout(timeoutId);
+        return response;
+      } catch (err) {
+        clearTimeout(timeoutId);
+        throw err;
+      }
+    };
+
     try {
-      const response = await fetch(uploadUrl, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${accessToken}`,
-          'apikey': SUPABASE_ANON_KEY,
-          'Content-Type': file.type,
-          'x-upsert': 'false',
-        },
-        body: file,
-        signal: controller.signal,
-      });
+      console.log('📤 Enviando arquivo...');
+      let response = await doUpload(accessToken);
       
-      clearTimeout(timeoutId);
+      // Se falhar com token do usuário, tentar com anon key
+      if (!response.ok && accessToken !== SUPABASE_ANON_KEY) {
+        console.warn(`⚠️ Upload falhou com user token (${response.status}), tentando com anon key...`);
+        response = await doUpload(SUPABASE_ANON_KEY);
+      }
       
       if (!response.ok) {
         const errorText = await response.text();
@@ -89,9 +120,8 @@ export async function uploadFile(
       
       return publicUrl;
     } catch (fetchError: any) {
-      clearTimeout(timeoutId);
       if (fetchError.name === 'AbortError') {
-        throw new Error('Timeout no upload - verifique sua conexão');
+        throw new Error('Timeout no upload (30s) - verifique sua conexão');
       }
       throw fetchError;
     }

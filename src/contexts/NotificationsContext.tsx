@@ -1,6 +1,6 @@
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 import { useAuth } from './AuthContext';
-import { isSupabaseConfigured, supabaseFetch } from '@/lib/supabaseRest';
+import { supabase } from '@/lib/supabase-auth';
 
 interface NotificationsContextType {
   unreadCount: number;
@@ -19,31 +19,47 @@ export const useNotifications = () => useContext(NotificationsContext);
 export const NotificationsProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { user } = useAuth();
   const [unreadCount, setUnreadCount] = useState(0);
+  const composerIdRef = useRef<string | null>(null);
+
+  // Resolver compositor_id uma vez
+  useEffect(() => {
+    const resolve = async () => {
+      if (!user?.id) { composerIdRef.current = null; return; }
+      try {
+        const { data: rows, error: err } = await supabase
+          .from('composers')
+          .select('id')
+          .eq('user_id', user.id)
+          .limit(1);
+
+        if (!err && rows && rows.length > 0) {
+          composerIdRef.current = String(rows[0].id);
+        } else {
+          composerIdRef.current = null;
+        }
+      } catch {
+        composerIdRef.current = null;
+      }
+    };
+    resolve();
+  }, [user?.id]);
 
   const refreshCount = useCallback(async () => {
-    if (!user?.id || !isSupabaseConfigured) {
-      setUnreadCount(0);
-      return;
-    }
-
-    // Validar se user.id é um UUID válido (formato: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx)
-    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-    if (!uuidRegex.test(String(user.id))) {
-      // User ID não é UUID válido (provavelmente vem da API antiga), ignorar notificações silenciosamente
-      setUnreadCount(0);
-      return;
-    }
+    if (!user?.id) { setUnreadCount(0); return; }
 
     try {
-      const rows = await supabaseFetch<{ read?: boolean }>('notifications', {
-        user_id: `eq.${user.id}`,
-        read: 'eq.false',
-        select: 'id,read'
-      });
-      const unread = rows.filter((row) => !row.read).length;
-      setUnreadCount(unread);
-    } catch (err) {
-      // Silenciosamente ignorar erros de notificações (não crítico)
+      const orParts: string[] = [];
+      if (composerIdRef.current) orParts.push(`composer_id.eq.${composerIdRef.current}`);
+      orParts.push(`user_id.eq.${user.id}`);
+
+      const { count, error } = await supabase
+        .from('notifications')
+        .select('id', { count: 'exact', head: true })
+        .or(orParts.join(','))
+        .eq('is_read', false);
+
+      if (!error) setUnreadCount(count ?? 0);
+    } catch {
       setUnreadCount(0);
     }
   }, [user?.id]);
@@ -52,19 +68,16 @@ export const NotificationsProvider: React.FC<{ children: React.ReactNode }> = ({
     setUnreadCount(prev => Math.max(0, prev - 1));
   }, []);
 
-  // Carregar contagem inicial
+  // Carregar contagem inicial (aguardar composerId resolver)
   useEffect(() => {
-    refreshCount();
-  }, [refreshCount]);
+    const timer = setTimeout(() => refreshCount(), 1000);
+    return () => clearTimeout(timer);
+  }, [user?.id, refreshCount]);
 
   // Atualizar a cada 30 segundos
   useEffect(() => {
     if (!user?.id) return;
-
-    const interval = setInterval(() => {
-      refreshCount();
-    }, 30000); // 30 segundos
-
+    const interval = setInterval(() => refreshCount(), 30000);
     return () => clearInterval(interval);
   }, [user?.id, refreshCount]);
 

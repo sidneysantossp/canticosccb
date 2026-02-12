@@ -60,7 +60,7 @@ interface RecentActivity {
   timestamp: string;
 }
 
-const fetchOverview = async (params: { composerId?: number; usuarioId?: number; period: '7d'|'30d'|'90d'|'1y' }): Promise<ComposerStats> => {
+const fetchOverview = async (params: { composerId?: string | number; usuarioId?: string | number; period: '7d'|'30d'|'90d'|'1y' }): Promise<ComposerStats> => {
   const { usuarioId, period } = params;
   if (!usuarioId) throw new Error('usuarioId required');
   
@@ -73,20 +73,24 @@ const fetchOverview = async (params: { composerId?: number; usuarioId?: number; 
     monthlyPlays: 0,
     monthlyLikes: 0,
     monthlyDownloads: 0,
-    monthlyFollowers: 0,
+    monthlyFollowers: overview.monthlyFollowers,
     playsGrowth: 0,
-    followersGrowth: 0,
+    followersGrowth: overview.followers > 0 && overview.monthlyFollowers > 0
+      ? Math.round((overview.monthlyFollowers / overview.followers) * 100)
+      : 0,
     revenueGrowth: 0,
-    totalSongs: 0,
-    totalAlbums: 0,
+    totalSongs: overview.totalSongs,
+    totalAlbums: overview.totalAlbums,
     revenue: 0,
     monthlyListeners: 0,
     averageListenTime: overview.averageListenTimeSeconds / 60,
-    saveRate: 0,
+    saveRate: overview.totalSongs > 0 && overview.likes > 0
+      ? Math.round((overview.likes / overview.plays) * 100) || 0
+      : 0,
   };
 };
 
-const fetchHighlights = async (params: { composerId?: number; usuarioId?: number; limit: number }): Promise<TopSong[]> => {
+const fetchHighlights = async (params: { composerId?: string | number; usuarioId?: string | number; limit: number }): Promise<TopSong[]> => {
   const { usuarioId, limit } = params;
   if (!usuarioId) return [];
   
@@ -101,7 +105,7 @@ const fetchHighlights = async (params: { composerId?: number; usuarioId?: number
   }));
 };
 
-const fetchRecentActivities = async (params: { composerId?: number; usuarioId?: number }): Promise<RecentActivity[]> => {
+const fetchRecentActivities = async (params: { composerId?: string | number; usuarioId?: string | number }): Promise<RecentActivity[]> => {
   return [];
 };
 
@@ -125,7 +129,7 @@ const ComposerDashboard: React.FC = () => {
       console.warn('⚠️ No user ID found!');
       setIsLoading(false); // Stop loading if no user
     }
-  }, [user?.id]);
+  }, [user?.id, timeRange]);
 
   // Realtime: notificação de novo seguidor (disabled - mock mode)
   useEffect(() => {
@@ -439,7 +443,7 @@ const ComposerDashboard: React.FC = () => {
                 <img
                   src={song.coverUrl}
                   alt={song.title}
-                  className="w-14 h-14 rounded"
+                  className="w-14 h-14 rounded object-cover"
                 />
                 <div className="flex-1 min-w-0">
                   <h3 className="text-white font-medium truncate">{song.title}</h3>

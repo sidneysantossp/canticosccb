@@ -148,13 +148,13 @@ export const usePlayerStore = create<PlayerStore>((set, get) => ({
         isPlaying: true
       });
     } else if (repeat === 'one' && currentTrack) {
-      // Se repeat one, toca a mesma música
+      // Se repeat one, toca o mesmo hino
       set({
         currentTime: 0,
         isPlaying: true
       });
     } else if (repeat === 'all' && currentTrack) {
-      // Se repeat all e não tem fila, volta ao início da mesma música
+      // Se repeat all e não tem fila, volta ao início do mesmo hino
       set({
         currentTime: 0,
         isPlaying: true

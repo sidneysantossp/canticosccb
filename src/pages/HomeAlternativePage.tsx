@@ -366,8 +366,8 @@ const HomeAlternativePage: React.FC = () => {
     <>
       <SEOHead
         title="Início - Tema Alternativo"
-        description="Plataforma de música religiosa da Congregação Cristã no Brasil. Ouça hinos clássicos, louvor e adoração. Descubra compositores e crie suas playlists."
-        keywords="ccb, congregação cristã, hinos, música religiosa, louvor, adoração, playlist gospel"
+        description="Plataforma de hinos da Congregação Cristã no Brasil. Ouça hinos clássicos, louvor e adoração. Descubra compositores e crie suas playlists."
+        keywords="ccb, congregação cristã, hinos, hinos religiosos, louvor, adoração, playlist gospel"
         canonical="/home-alt"
         ogImage="/images/og-home.jpg"
         schemaData={schemas}

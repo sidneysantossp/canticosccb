@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { ArrowLeft, Upload, Music, Image as ImageIcon, Save, X, FileAudio, Clock } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
-import { albunsApi, uploadApi, hinosApi, categoriasApi, compositoresApi, type Hino } from '@/lib/api-client';
+import { uploadApi, hinosApi, compositoresApi, type Hino } from '@/lib/api-client';
 import { getSignedSupabaseUrl } from '@/lib/supabaseMedia';
 import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
@@ -42,6 +42,8 @@ const ComposerCreateSong: React.FC = () => {
     album_id: '',
     key: '',
     tempo: '',
+    duration: '',
+    category_id: '',
     status: 'draft'
   });
 
@@ -58,6 +60,7 @@ const ComposerCreateSong: React.FC = () => {
   const [successCover, setSuccessCover] = useState<string | undefined>(undefined);
 
   const [loading, setLoading] = useState(false);
+  const [myComposerId, setMyComposerId] = useState<string | null>(null);
   const [isLoadingData, setIsLoadingData] = useState(true);
   const [loadingAlbums, setLoadingAlbums] = useState(false);
   const [loadingCategories, setLoadingCategories] = useState(false);
@@ -102,70 +105,93 @@ const ComposerCreateSong: React.FC = () => {
       setLoadingAlbums(true);
 
       // 1) Resolver compositor_id do usuário logado
-      let myComposerId: number | null = null;
+      let resolvedComposerId: string | null = null;
       try {
         if (user?.id) {
-          const comp = await compositoresApi.getByUsuarioId(user.id);
+          const comp = await compositoresApi.getByUsuarioId(user.id, (user as any)?.email);
           const cdata: any = (comp as any)?.data || comp;
-          if (cdata?.id) myComposerId = Number(cdata.id);
+          if (cdata?.id) resolvedComposerId = String(cdata.id);
         }
       } catch {}
+      setMyComposerId(resolvedComposerId);
 
-      // 2) Buscar álbuns do backend já filtrando por compositor_id (estrito)
-      if (myComposerId == null) {
+      // 2) Buscar álbuns via Supabase client (gerencia JWT automaticamente)
+      const { supabase } = await import('@/lib/supabase-auth');
+      if (resolvedComposerId == null) {
         setAlbums([]);
       } else {
-        const albumsData = await albunsApi.list({ limit: 1000, compositor_id: myComposerId });
-      // Normalizar múltiplos formatos possíveis
-      let arr: any[] = [];
-      try {
-        const raw: any = albumsData as any;
-        if (Array.isArray(raw?.albuns)) arr = raw.albuns;
-        else if (Array.isArray(raw?.data?.albuns)) arr = raw.data.albuns;
-        else if (Array.isArray(raw?.data?.data)) arr = raw.data.data;
-        else if (Array.isArray(raw?.data)) arr = raw.data;
-        else if (Array.isArray(raw)) arr = raw;
-      } catch {}
-
-      // 3) Garantir no cliente que só fiquem os do meu compositor_id
-      const filtered: any[] = arr.filter((a: any) => String(a.compositor_id) === String(myComposerId));
-      setAlbums(filtered);
+        const { data: albumRows } = await supabase
+          .from('albums')
+          .select('id,title,artist,description,cover_url,total_tracks,release_date,composer_id')
+          .eq('composer_id', resolvedComposerId)
+          .order('created_at', { ascending: false })
+          .limit(1000);
+        console.log('📀 [LoadAlbums] loaded:', albumRows?.length || 0);
+        setAlbums(albumRows || []);
       }
-      // Carregar categorias do admin
+
+      // 3) Carregar categorias via Supabase client
       setLoadingCategories(true);
-      const catsRes = await categoriasApi.list({ limit: 1000 });
-      // Debug auxiliar
-      console.log('Categorias API payload →', catsRes);
-      if ((catsRes as any).error) {
+      let loadedCategories: any[] = [];
+      const { data: catRows, error: catError } = await supabase
+        .from('categorias')
+        .select('id,nome,slug,descricao,imagem_url,ativo')
+        .order('nome', { ascending: true })
+        .limit(1000);
+      if (catError) {
+        console.warn('📀 [LoadCategories] Error:', catError);
         setCategories([]);
-      } else if (catsRes.data) {
-        const payload: any = catsRes.data;
-        let arr: any[] = [];
-        if (Array.isArray(payload)) {
-          arr = payload;
-        } else if (Array.isArray(payload.data)) {
-          arr = payload.data; // PaginatedResponse.data
-        } else if (payload.data && Array.isArray(payload.data.data)) {
-          arr = payload.data.data; // Caso raro: data dentro de data
-        } else if (Array.isArray(payload.categorias)) {
-          arr = payload.categorias; // Outro formato possível
-        }
-        setCategories(arr);
       } else {
-        setCategories([]);
+        loadedCategories = catRows || [];
+        console.log('📀 [LoadCategories] loaded:', loadedCategories.length);
+        setCategories(loadedCategories);
       }
       // Se for edição, carregar dados do hino
       if (isEditMode && id) {
         try {
-          const songRes = await hinosApi.get(Number(id));
+          const songRes = await hinosApi.get(id);
           const song: any = (songRes as any)?.data || songRes;
+          console.log('📀 [EditSong] Dados do hino carregados:', song);
+          console.log('📀 [EditSong] song.categoria:', JSON.stringify(song?.categoria), '| song.categorias:', JSON.stringify(song?.categorias));
           if (song && song.id) {
+            // 1) Buscar álbum do hino via tabela album_hinos
+            let hinoAlbumId = '';
+            try {
+              const { data: albumHinoRows } = await supabase
+                .from('album_hinos')
+                .select('album_id')
+                .eq('hino_id', song.id)
+                .limit(1);
+              if (albumHinoRows && albumHinoRows.length > 0) {
+                hinoAlbumId = String(albumHinoRows[0].album_id);
+              }
+            } catch (e) {
+              console.warn('Erro ao buscar álbum do hino:', e);
+            }
+
+            // 2) Resolver category_id pelo nome da categoria (usar variável local, não state)
+            let hinoCategoryId = '';
+            const categoriaNome = song.categoria || (song.categorias && song.categorias[0]) || '';
+            if (categoriaNome) {
+              const matchedCat = loadedCategories.find(
+                (c: any) => (c.nome || c.name || '').toLowerCase() === categoriaNome.toLowerCase()
+              );
+              if (matchedCat) {
+                hinoCategoryId = String(matchedCat.id);
+              }
+            }
+
+            // 3) Preencher formulário com todos os dados
+            console.log('📀 [EditSong] hinoAlbumId:', hinoAlbumId, '| hinoCategoryId:', hinoCategoryId);
+            console.log('📀 [EditSong] categoriaNome:', categoriaNome, '| loadedCategories:', loadedCategories.map(c => ({ id: c.id, nome: c.nome })));
+            console.log('📀 [EditSong] albums loaded:', albums.length, '| categories loaded:', loadedCategories.length);
             setFormData(prev => ({
               ...prev,
               title: song.titulo || '',
               number: song.numero ? String(song.numero) : '',
               lyrics: song.letra || '',
-              // category_id não é inferível a partir de nome; deixamos em branco
+              album_id: hinoAlbumId,
+              category_id: hinoCategoryId,
               duration: song.duracao || prev.duration,
             }));
             if (song.cover_url) setCoverPreview(song.cover_url);
@@ -178,7 +204,9 @@ const ComposerCreateSong: React.FC = () => {
               }
             }
           }
-        } catch {}
+        } catch (e) {
+          console.error('Erro ao carregar dados do hino para edição:', e);
+        }
       }
     } catch (error) {
       console.error('Erro ao carregar dados:', error);
@@ -267,7 +295,10 @@ const ComposerCreateSong: React.FC = () => {
       }
 
       // 2) Categoria como nome (tabela 'hinos' guarda texto)
-      const categoriaNome = categories.find(c => String(c.id) === String(formData.category_id))?.nome || undefined;
+      const categoriaNome = formData.category_id
+        ? categories.find(c => String(c.id) === String(formData.category_id))?.nome
+        : undefined;
+      console.log('📀 [handleSubmit] category_id:', formData.category_id, '| categoriaNome:', categoriaNome, '| album_id:', formData.album_id);
 
       // 3) Compositor (usar nome do usuário logado)
       const compositorNome = (user as any)?.nome || (user as any)?.name || undefined;
@@ -302,8 +333,44 @@ const ComposerCreateSong: React.FC = () => {
         ativo: formData.status === 'published' ? 1 : 0,
       };
 
+      // Vincular ao compositor_id para que o hino apareça nos álbuns
+      if (myComposerId) songData.compositor_id = myComposerId;
+
       if (isEditMode && id) {
-        await hinosApi.update(Number(id), songData);
+        console.log('📀 [handleSubmit] Updating hino id:', id, 'payload:', songData);
+        const updateResult = await hinosApi.update(id, songData);
+        console.log('📀 [handleSubmit] hinosApi.update result:', updateResult);
+        if (updateResult.error) {
+          throw new Error(updateResult.error);
+        }
+
+        // Atualizar relações via Supabase client
+        try {
+          const { supabase } = await import('@/lib/supabase-auth');
+
+          // album_hinos
+          await supabase.from('album_hinos').delete().eq('hino_id', id);
+          if (formData.album_id) {
+            await supabase.from('album_hinos').insert({
+              album_id: formData.album_id,
+              hino_id: id,
+              position: 999,
+              track_number: 999,
+            });
+          }
+
+          // hino_categorias
+          await supabase.from('hino_categorias').delete().eq('hino_id', id);
+          if (formData.category_id) {
+            await supabase.from('hino_categorias').insert({
+              hino_id: id,
+              categoria_id: formData.category_id,
+            });
+          }
+        } catch (e) {
+          console.warn('Erro ao atualizar relações album_hinos/hino_categorias:', e);
+        }
+
         setSuccessTitle(songData.titulo || 'Hino');
         setSuccessCover(coverUrl || coverPreview || undefined);
         setShowSuccessModal(true);
@@ -312,7 +379,35 @@ const ComposerCreateSong: React.FC = () => {
           navigate('/composer/songs');
         }, 1800);
       } else {
-        await hinosApi.create(songData);
+        const createResult = await hinosApi.create(songData);
+        console.log('📀 [CreateSong] create result:', createResult);
+        if (createResult.error) throw new Error(createResult.error);
+        if (!createResult.data) throw new Error('Falha ao salvar hino no banco. Verifique as políticas RLS da tabela hinos.');
+
+        // Vincular ao álbum e categoria se selecionados
+        const newHinoId = (createResult.data as any)?.id;
+        if (newHinoId) {
+          try {
+            const { supabase } = await import('@/lib/supabase-auth');
+            if (formData.album_id) {
+              await supabase.from('album_hinos').insert({
+                album_id: formData.album_id,
+                hino_id: newHinoId,
+                position: 999,
+                track_number: 999,
+              });
+            }
+            if (formData.category_id) {
+              await supabase.from('hino_categorias').insert({
+                hino_id: newHinoId,
+                categoria_id: formData.category_id,
+              });
+            }
+          } catch (e) {
+            console.warn('Erro ao vincular hino ao álbum/categoria:', e);
+          }
+        }
+
         // Mostrar modal de sucesso com blur e dados do hino
         setSuccessTitle(songData.titulo || 'Hino');
         setSuccessCover(coverUrl || coverPreview || undefined);
@@ -323,9 +418,10 @@ const ComposerCreateSong: React.FC = () => {
           navigate('/composer/songs');
         }, 2200);
       }
-    } catch (error) {
-      console.error('Error creating song:', error);
-      alert('Erro ao criar hino');
+    } catch (error: any) {
+      console.error('Error saving song:', error);
+      const msg = error?.message || String(error) || 'Erro desconhecido';
+      setError(`Erro ao salvar hino: ${msg}`);
     } finally {
       setLoading(false);
     }
@@ -378,7 +474,7 @@ const ComposerCreateSong: React.FC = () => {
               <span className="text-gray-400 text-sm">
                 {audioFile ? audioFile.name : 'Selecionar arquivo de áudio'}
               </span>
-              <span className="text-gray-500 text-xs mt-1">MP3, WAV (máx. 50MB)</span>
+              <span className="text-gray-500 text-xs mt-1">MP3, WAV (máx. 5GB)</span>
               <input type="file" accept="audio/*" onChange={handleAudioUpload} className="hidden" />
             </label>
             {/* Preview do Áudio */}

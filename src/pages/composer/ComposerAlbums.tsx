@@ -10,7 +10,9 @@ import {
   Edit,
   Trash2,
   Eye,
-  Share2
+  EyeOff,
+  Share2,
+  Globe
 } from 'lucide-react';
 import { albunsApi, compositoresApi } from '@/lib/api-client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -23,180 +25,80 @@ const ComposerAlbums: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const lastNonEmptyAlbumsRef = useRef<any[]>([]);
 
+  const togglePublish = async (albumId: string, currentStatus: string) => {
+    const newPublished = currentStatus !== 'published';
+    try {
+      const res = await albunsApi.update(albumId, { is_published: newPublished });
+      if (res.error) {
+        alert('Erro ao atualizar status: ' + res.error);
+        return;
+      }
+      setAlbums(prev => prev.map(a =>
+        a.id === albumId ? { ...a, status: newPublished ? 'published' : 'draft' } : a
+      ));
+    } catch (e: any) {
+      alert('Erro ao atualizar status: ' + (e?.message || e));
+    }
+  };
+
   // Carregar álbuns do banco de dados
   useEffect(() => {
     const loadAlbums = async () => {
       console.log('🔄 Carregando álbuns...');
       try {
         setLoading(true);
-        // Tentar já filtrar no backend por compositor/usuário
-        let resolvedCompositorId: number | string | undefined = undefined;
-        try {
-          if (user?.id) {
-            const comp0 = await compositoresApi.getByUsuarioId(user.id);
-            const c0: any = (comp0 as any)?.data || comp0;
-            if (c0?.id) resolvedCompositorId = String(c0.id);
-          }
-        } catch {}
-        const response = await albunsApi.list({ page: 1, limit: 1000 } as any);
-        console.log(' Resposta completa da API:', response);
-        
-        // A API retorna { "albuns": [...], "total": 9, ... }
-        const raw: any = response as any;
-        console.log(' Raw response completa:', raw);
-        
-        let albumsData = [];
-        
-        // A API retorna { "albuns": [...], "total": 9, ... }
-        if (Array.isArray(raw?.albuns)) {
-          albumsData = raw.albuns;
-          console.log(' Dados extraídos de raw.albuns');
-        } else if (Array.isArray(raw?.data?.albuns)) {
-          albumsData = raw.data.albuns;
-          console.log(' Dados extraídos de raw.data.albuns');
-        } else if (Array.isArray(raw?.data)) {
-          albumsData = raw.data;
-          console.log(' Dados extraídos de raw.data');
-        } else {
-          console.log(' Nenhuma estrutura de array encontrada');
-          console.log(' Estrutura disponível:', Object.keys(raw || {}));
-        }
 
-        console.log(' Albums data extraído:', albumsData.length, albumsData);
-        console.log(' Quantidade total de álbuns:', albumsData.length);
-        
-        // Debug: Mostrar compositor_id de cada álbum
-        albumsData.forEach((album, index) => {
-          console.log(` Álbum ${index + 1}:`, {
-            id: album.id,
-            titulo: album.titulo,
-            compositor_id: album.compositor_id,
-            tipo: typeof album.compositor_id
-          });
-        });
-        
-        // Descobrir compositor_id real do usuário logado
+        // 1. Resolver compositor_id do usuário logado
         let compositorId: string | number | null = null;
-        let compositorNome: string | null = null;
         if (user?.id) {
           try {
-            const comp = await compositoresApi.getByUsuarioId(user.id);
+            const comp = await compositoresApi.getByUsuarioId(user.id, (user as any)?.email);
             const cdata: any = (comp as any)?.data || comp;
             compositorId = cdata?.id ?? null;
-            compositorNome = cdata?.nome || cdata?.nome_artistico || null;
-            console.log(' Compositor resolvido:', { compositorId, compositorNome });
+            console.log('🎵 Compositor resolvido:', { compositorId, nome: cdata?.nome });
           } catch (e) {
             console.warn('Não foi possível resolver compositor pelo usuario_id');
           }
         }
 
-        // FILTRAR APENAS ÁLBUNS DO COMPOSITOR LOGADO
-        let myAlbums = albumsData;
+        // 2. Buscar álbuns (filtrar server-side se possível)
+        const response = await albunsApi.list({ page: 1, limit: 1000, compositor_id: compositorId ? String(compositorId) : undefined } as any);
+        const raw: any = response as any;
+
+        let albumsData: any[] = [];
+        if (Array.isArray(raw?.albuns)) {
+          albumsData = raw.albuns;
+        } else if (Array.isArray(raw?.data?.albuns)) {
+          albumsData = raw.data.albuns;
+        } else if (Array.isArray(raw?.data)) {
+          albumsData = raw.data;
+        }
+
+        console.log('📀 Total álbuns no banco:', albumsData.length);
+
+        // 3. Filtrar APENAS álbuns do compositor logado (sem fallbacks agressivos)
+        let myAlbums: any[] = [];
         if (compositorId != null) {
-          myAlbums = albumsData.filter((album: any) => String(album.compositor_id) === String(compositorId));
+          myAlbums = albumsData.filter((album: any) => String(album.composer_id) === String(compositorId));
         }
 
-        // Fallback adicional: após criar um álbum, mostrar pelo id/título gravado localmente
-        if (myAlbums.length === 0) {
-          const lastId = localStorage.getItem('lastAlbumId');
-          const lastTitle = localStorage.getItem('lastAlbumTitle');
-          const lastPrev = localStorage.getItem('lastAlbumIdPrev');
-          const myIdsRaw = localStorage.getItem('myAlbumIds');
-          const myIds: string[] = (() => { try { return JSON.parse(myIdsRaw || '[]') } catch { return [] } })();
-          if (lastId || lastTitle) {
-            const byLast = albumsData.filter((a: any) =>
-              (lastId && String(a.id) === String(lastId)) ||
-              (lastTitle && String(a.titulo || a.title || '').toLowerCase().trim() === String(lastTitle).toLowerCase().trim())
-            );
-            if (byLast.length > 0) {
-              console.log('✅ Fallback exibindo último álbum criado:', byLast.map((a: any) => a.id));
-              myAlbums = byLast;
-            }
-          }
+        console.log('👤 Meus álbuns (compositor_id=' + compositorId + '):', myAlbums.length);
 
-          // Fallback por IDs persistidos do usuário
-          if (myAlbums.length === 0 && myIds.length > 0) {
-            const byIds = albumsData.filter((a: any) => myIds.includes(String(a.id)) || (lastPrev && String(a.id) === String(lastPrev)));
-            if (byIds.length > 0) {
-              console.log('✅ Fallback por myAlbumIds:', byIds.map((a: any) => a.id));
-              myAlbums = byIds;
-            }
-          }
-        }
-
-        // Fallback 2: scan por hinos do compositor (para álbuns antigos com compositor_id = NULL)
-        if (myAlbums.length === 0 && compositorNome) {
-          try {
-            console.log('🧭 Executando fallback de varredura por hinos do compositor:', compositorNome);
-            const allResp = await albunsApi.list({ page: 1, limit: 200 } as any);
-            const rawAll: any = allResp as any;
-            let allData: any[] = [];
-            if (Array.isArray(rawAll?.albuns)) allData = rawAll.albuns;
-            else if (Array.isArray(rawAll?.data?.albuns)) allData = rawAll.data.albuns;
-            else if (Array.isArray(rawAll?.data)) allData = rawAll.data;
-
-            const limited = allData.slice(0, 60);
-            const matches: any[] = [];
-            const expect = String(compositorNome).toLowerCase();
-            for (const a of limited) {
-              try {
-                const hr = await albunsApi.listHinos(a.id);
-                const rawH: any = hr as any;
-                const list = Array.isArray(rawH?.data?.hinos)
-                  ? rawH.data.hinos
-                  : Array.isArray(rawH?.hinos)
-                  ? rawH.hinos
-                  : Array.isArray(rawH?.data)
-                  ? rawH.data
-                  : [];
-                const hasMine = list.some((h: any) => String(h.compositor || '').toLowerCase().includes(expect));
-                if (hasMine) matches.push(a);
-              } catch (e) {}
-            }
-            if (matches.length > 0) {
-              console.log('✅ Fallback por hinos encontrou álbuns:', matches.map((m: any) => m.id));
-              myAlbums = matches;
-            }
-          } catch (scanErr) {
-            console.warn('Fallback por hinos falhou:', scanErr);
-          }
-        }
-        
-        console.log('👤 ID do usuário logado:', user?.id, '(tipo:', typeof user?.id, ')');
-        console.log('🎵 Meus álbuns (filtrados):', myAlbums.length);
-        
-        
-        console.log('🎯 Final - myAlbums antes da normalização:', myAlbums.length, myAlbums);
-        
-        // Normalizar dados para o formato esperado pela UI (usando apenas meus álbuns)
+        // 4. Normalizar dados para o formato esperado pela UI
         const normalizedAlbums = myAlbums.map(album => ({
           id: album.id,
-          title: album.titulo || album.title,
+          title: album.title || album.titulo || '',
           coverUrl: album.cover_url || album.coverUrl || 'https://via.placeholder.com/300',
           songCount: (album.total_hinos ?? album.total_tracks ?? album.hinos_count ?? 0),
-          releaseDate: album.ano ? `${album.ano}-01-01` : (album.created_at || new Date().toISOString().split('T')[0]),
-          status: album.ativo ? 'published' : 'draft',
+          releaseDate: album.release_date || album.created_at || new Date().toISOString().split('T')[0],
+          status: (album.is_published !== false) ? 'published' : 'draft',
           plays: (album.total_plays ?? album.plays ?? 0),
           likes: (album.total_likes ?? album.likes ?? 0)
         }));
-        
-        console.log(' Final - normalizedAlbums:', normalizedAlbums.length, normalizedAlbums);
-        // Evitar sumir após segundo carregamento: se vier vazio, mantém o último não-vazio
-        if (normalizedAlbums.length > 0) {
-          setAlbums(normalizedAlbums);
-          lastNonEmptyAlbumsRef.current = normalizedAlbums;
-        } else {
-          console.log('🛑 Resposta vazia ignorada – mantendo último estado não-vazio');
-          if (lastNonEmptyAlbumsRef.current.length > 0) {
-            setAlbums(lastNonEmptyAlbumsRef.current);
-          }
-        }
+
+        setAlbums(normalizedAlbums);
       } catch (error) {
         console.error('Erro ao carregar álbuns:', error);
-        // Mantém último estado não-vazio em caso de erro para evitar flicker
-        if (lastNonEmptyAlbumsRef.current.length > 0) {
-          setAlbums(lastNonEmptyAlbumsRef.current);
-        }
       } finally {
         setLoading(false);
       }
@@ -443,9 +345,17 @@ const ComposerAlbums: React.FC = () => {
                     <Play className="w-6 h-6 ml-0.5" />
                   </button>
                 </div>
-                {album.status === 'draft' && (
-                  <div className="absolute top-3 right-3 px-3 py-1 bg-orange-500 text-white text-xs font-semibold rounded-full">
-                    Rascunho
+                {album.status === 'draft' ? (
+                  <button
+                    onClick={(e) => { e.preventDefault(); togglePublish(album.id, album.status); }}
+                    className="absolute top-3 right-3 px-3 py-1 bg-orange-500 text-white text-xs font-semibold rounded-full hover:bg-green-500 transition-colors cursor-pointer"
+                    title="Clique para publicar"
+                  >
+                    Rascunho → Publicar
+                  </button>
+                ) : (
+                  <div className="absolute top-3 right-3 px-3 py-1 bg-green-500/80 text-white text-xs font-semibold rounded-full">
+                    Publicado
                   </div>
                 )}
               </div>
@@ -477,6 +387,17 @@ const ComposerAlbums: React.FC = () => {
                     <Edit className="w-4 h-4" />
                     Editar
                   </Link>
+                  <button
+                    onClick={() => togglePublish(album.id, album.status)}
+                    className={`flex items-center justify-center px-3 py-2 rounded-lg transition-colors ${
+                      album.status === 'published'
+                        ? 'bg-green-500/20 text-green-400 hover:bg-orange-500/20 hover:text-orange-400'
+                        : 'bg-orange-500/20 text-orange-400 hover:bg-green-500/20 hover:text-green-400'
+                    }`}
+                    title={album.status === 'published' ? 'Despublicar' : 'Publicar'}
+                  >
+                    {album.status === 'published' ? <EyeOff className="w-4 h-4" /> : <Globe className="w-4 h-4" />}
+                  </button>
                   <button className="flex items-center justify-center px-3 py-2 bg-background-tertiary text-white rounded-lg hover:bg-background-hover transition-colors">
                     <Share2 className="w-4 h-4" />
                   </button>
@@ -544,6 +465,17 @@ const ComposerAlbums: React.FC = () => {
                       >
                         <Edit className="w-4 h-4" />
                       </Link>
+                      <button
+                        onClick={() => togglePublish(album.id, album.status)}
+                        className={`p-2 transition-colors ${
+                          album.status === 'published'
+                            ? 'text-green-400 hover:text-orange-400'
+                            : 'text-orange-400 hover:text-green-400'
+                        }`}
+                        title={album.status === 'published' ? 'Despublicar' : 'Publicar'}
+                      >
+                        {album.status === 'published' ? <EyeOff className="w-4 h-4" /> : <Globe className="w-4 h-4" />}
+                      </button>
                       <button className="p-2 text-text-muted hover:text-white transition-colors">
                         <Share2 className="w-4 h-4" />
                       </button>

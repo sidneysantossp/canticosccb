@@ -38,8 +38,7 @@ const BannerCTA: React.FC = () => {
             </h2>
             
             <p className="text-lg text-white/90 mb-8 leading-relaxed">
-              Faça parte da nossa irmandade de compositores. Envie seus hinos e 
-              alcance milhares de irmãos em todo o Brasil.
+              Venha fazer parte da família CCB compartilhando suas Composições com milhares de pessoas. Traga seus Álbuns, Hinos Avulsos e Tocatas.
             </p>
             
             <div className="flex flex-col sm:flex-row gap-4">

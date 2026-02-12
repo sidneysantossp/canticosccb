@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { 
   ArrowLeft, 
@@ -13,7 +13,7 @@ import {
   Trash2
 } from 'lucide-react';
 import AlertModal from '@/components/ui/AlertModal';
-import { albunsApi, uploadApi, hinosApi, compositoresApi } from '@/lib/api-client';
+import { albunsApi, hinosApi, compositoresApi } from '@/lib/api-client';
 import { useAuth } from '@/contexts/AuthContext';
 
 interface AlbumFormData {
@@ -53,40 +53,57 @@ const ComposerCreateAlbum: React.FC = () => {
   const [errorMessage, setErrorMessage] = useState<string>('');
   const [showErrorModal, setShowErrorModal] = useState(false);
 
-  const genres = [
-    'Hino Clássico',
-    'Louvor',
-    'Adoração',
-    'Instrumental',
-    'Coral',
-    'Oração',
-    'Evangélico',
-    'Contemporâneo',
-    'Tradicional'
-  ];
+  const [genres, setGenres] = useState<string[]>([]);
+
+  // Carregar gêneros do banco de dados
+  useEffect(() => {
+    const loadGenres = async () => {
+      try {
+        const { getAllGenres } = await import('@/lib/admin/genresAdminApi');
+        const allGenres = await getAllGenres();
+        const activeGenres = allGenres.filter(g => g.is_active).map(g => g.name);
+        setGenres(activeGenres.length > 0 ? activeGenres : []);
+      } catch (e) {
+        console.warn('Erro ao carregar gêneros:', e);
+      }
+    };
+    loadGenres();
+  }, []);
 
   // Carregar hinos do compositor (publicados e rascunhos)
   React.useEffect(() => {
     const load = async () => {
       if (!user?.id) return;
       try {
-        // obter nome confiável do compositor
-        let composerName = (user as any)?.nome || (user as any)?.name || '';
+        // 1. Resolver compositor_id e nome do compositor logado
+        let compositorId: string | null = null;
+        let composerName = '';
         try {
-          const comp = await compositoresApi.getByUsuarioId(user.id);
+          const comp = await compositoresApi.getByUsuarioId(user.id, (user as any)?.email);
           const cdata: any = comp?.data;
-          if (cdata?.nome) composerName = cdata.nome;
-          else if (cdata?.nome_artistico) composerName = cdata.nome_artistico;
+          if (cdata?.id) compositorId = String(cdata.id);
+          composerName = cdata?.nome_artistico || cdata?.nome || '';
         } catch {}
 
-        const res = await hinosApi.list({ compositor: composerName, limit: 1000 });
+        console.log('🎵 [CreateAlbum] Buscando hinos do compositor:', { compositorId, composerName });
+
+        // 2. Buscar todos os hinos e filtrar pelo compositor_id OU compositor_nome
+        const res = await hinosApi.list({ limit: 1000 });
         const raw: any = res.data;
         const arr: any[] = Array.isArray(raw) ? raw : (raw?.data || raw?.hinos || raw?.items || []);
-        const mine = (arr || []).filter((h: any) => (h.compositor || '').toLowerCase() === composerName.toLowerCase());
-        const mapped = mine.map((h: any) => ({ id: String(h.id), title: h.titulo, duration: h.duracao || '-' }));
+
+        // Filtrar APENAS por compositor_id (sem fallback por nome)
+        // Só mostra hinos que o próprio compositor fez upload
+        const mine = compositorId
+          ? (arr || []).filter((h: any) => h.compositor_id && String(h.compositor_id) === String(compositorId))
+          : [];
+
+        console.log('🎵 [CreateAlbum] Hinos encontrados:', mine.length, 'de', arr.length, 'total');
+
+        const mapped = mine.map((h: any) => ({ id: String(h.id), title: h.titulo || h.title || 'Sem título', duration: h.duracao || '-' }));
         setAvailableSongs(mapped);
       } catch (e) {
-        console.warn('Não foi possível carregar seus hinos para o álbum');
+        console.warn('Não foi possível carregar seus hinos para o álbum:', e);
         setAvailableSongs([]);
       }
     };
@@ -209,15 +226,32 @@ const ComposerCreateAlbum: React.FC = () => {
     setUploadProgress(10);
     
     try {
-      // 1. Upload da capa
+      // 1. Upload da capa via Supabase client (gerencia JWT automaticamente)
       let coverUrl = '';
       if (formData.coverImage) {
         setUploadProgress(30);
-        const uploadResult = await uploadApi.cover(formData.coverImage);
-        if (uploadResult.data?.url) {
-          coverUrl = uploadResult.data.url;
-        } else if (uploadResult.error) {
-          throw new Error(uploadResult.error);
+        console.log('📀 [CreateAlbum] Uploading cover via Supabase client...');
+        try {
+          const { supabase } = await import('@/lib/supabase-auth');
+          const file = formData.coverImage;
+          const ext = file.name.split('.').pop() || 'jpg';
+          const path = `covers/${Date.now()}_${Math.random().toString(36).substring(7)}.${ext}`;
+
+          const { error: upErr } = await supabase.storage
+            .from('images')
+            .upload(path, file, { contentType: file.type, upsert: false });
+
+          if (upErr) {
+            console.error('📀 [CreateAlbum] Storage upload error:', upErr);
+            throw new Error(upErr.message);
+          }
+
+          const { data: pubData } = supabase.storage.from('images').getPublicUrl(path);
+          coverUrl = pubData?.publicUrl || '';
+          console.log('📀 [CreateAlbum] Cover uploaded:', coverUrl);
+        } catch (uploadErr: any) {
+          console.error('📀 [CreateAlbum] Upload failed:', uploadErr);
+          throw new Error('Falha no upload da capa: ' + (uploadErr?.message || uploadErr));
         }
       }
 
@@ -225,13 +259,13 @@ const ComposerCreateAlbum: React.FC = () => {
 
       // 2. Criar álbum no banco
       // Resolver compositor_id real pelo usuario_id
-      let resolvedCompositorId: number | undefined = undefined;
+      let resolvedCompositorId: string | undefined = undefined;
       let resolvedCompositorNome: string | undefined = undefined;
       try {
         if (user?.id) {
-          const comp = await compositoresApi.getByUsuarioId(user.id);
+          const comp = await compositoresApi.getByUsuarioId(user.id, (user as any)?.email);
           const cdata: any = comp?.data || comp;
-          if (cdata?.id) resolvedCompositorId = Number(cdata.id);
+          if (cdata?.id) resolvedCompositorId = String(cdata.id);
           if (cdata?.nome || cdata?.nome_artistico) resolvedCompositorNome = (cdata?.nome || cdata?.nome_artistico);
         }
       } catch {}
@@ -288,12 +322,12 @@ const ComposerCreateAlbum: React.FC = () => {
         const createdData: any = rawAny?.data?.data || rawAny?.data || rawAny;
         const createdId = createdData?.id ?? createdData?.album_id;
         if (createdId) {
-          const hinoIds = formData.songs.map(s => parseInt(s.id));
+          const hinoIds = formData.songs.map(s => s.id);
           if (hinoIds.length > 0) {
-            const addRes = await albunsApi.addHinos(Number(createdId), hinoIds);
+            const addRes = await albunsApi.addHinos(createdId, hinoIds);
             if (addRes.error) throw new Error(addRes.error);
-            const ordem = formData.songs.map((s, idx) => ({ hino_id: parseInt(s.id), ordem: idx + 1 }));
-            const ordRes = await albunsApi.updateOrdem(Number(createdId), ordem);
+            const ordem = formData.songs.map((s, idx) => ({ hino_id: s.id, ordem: idx + 1 }));
+            const ordRes = await albunsApi.updateOrdem(createdId, ordem);
             if (ordRes.error) throw new Error(ordRes.error);
           }
         }

@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useRef } from 'react';
+import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { Search, Menu, User, Heart, LogOut, ChevronDown, Mic, Shield, Music, Bell } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
@@ -16,16 +16,34 @@ const Header: React.FC = () => {
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [showResults, setShowResults] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
-  const [showMobileMenu, setShowMobileMenu] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
   const searchTimeout = useRef<NodeJS.Timeout | null>(null);
-  
+  const headerRef = useRef<HTMLElement | null>(null);
+
   const { user, profile, signOut, isAdmin, isComposer } = useAuth();
   const { isMenuOpen, openMenu, closeMenu } = useMobileMenu();
   const { unreadCount } = useNotifications();
   const premiumEnabled = usePremiumEnabled();
   const navigate = useNavigate();
   const location = useLocation();
+
+  // Fechar dropdowns ao clicar fora do header (sem overlay bloqueante)
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (headerRef.current && !headerRef.current.contains(e.target as Node)) {
+        setShowResults(false);
+        setShowUserMenu(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  // Fechar dropdowns ao mudar de rota
+  useEffect(() => {
+    setShowResults(false);
+    setShowUserMenu(false);
+  }, [location.pathname]);
 
   // Debug: Log profile data e flags de autorização
   React.useEffect(() => {
@@ -105,7 +123,6 @@ const Header: React.FC = () => {
     
     try {
       setShowUserMenu(false);
-      setShowMobileMenu(false);
       
       console.log('🚪 Logout - Calling signOut...');
       
@@ -137,7 +154,7 @@ const Header: React.FC = () => {
   };
 
   return (
-    <header className="sticky top-0 z-50 bg-background-primary shadow-lg" style={{ boxShadow: '0 6px 25px -2px rgba(0, 0, 0, 0.6)' }}>
+    <header ref={headerRef} className="sticky top-0 z-50 bg-background-primary shadow-lg" style={{ boxShadow: '0 6px 25px -2px rgba(0, 0, 0, 0.6)' }}>
       <div className="flex items-center justify-between lg:justify-start pl-3 pr-6 lg:pl-6 py-4">
         {/* Logo */}
         <Link to="/" className="flex items-center lg:w-[240px] lg:shrink-0">
@@ -220,7 +237,7 @@ const Header: React.FC = () => {
           {/* Notification Bell - Desktop */}
           {user && (
             <Link
-              to={isComposer ? "/composer/notifications" : "/notifications"}
+              to={isComposerPanel ? "/composer/notifications" : "/notifications"}
               className="hidden md:inline-flex items-center justify-center relative p-2.5 rounded-full hover:bg-green-500/10 transition-colors group"
               title="Notificações"
             >
@@ -410,7 +427,7 @@ const Header: React.FC = () => {
           {/* Notification Bell - Mobile */}
           {user && (
             <Link
-              to={isComposer ? "/composer/notifications" : "/notifications"}
+              to={isComposerPanel ? "/composer/notifications" : "/notifications"}
               className="lg:hidden relative p-2 rounded-full hover:bg-green-500/10 transition-colors group"
               title="Notificações"
             >
@@ -462,112 +479,7 @@ const Header: React.FC = () => {
         </>
       )}
 
-      {/* Mobile Fullscreen Menu (Antigo - pode manter ou remover) */}
-      {showMobileMenu && (
-        <>
-          <div
-            className="fixed inset-0 bg-black/30 backdrop-blur-sm z-50 md:hidden flex items-end"
-            onClick={() => setShowMobileMenu(false)}
-          >
-            <div 
-              className="w-full bg-gradient-to-b from-green-900 to-black rounded-t-3xl h-[calc(100vh-64px)] overflow-y-auto"
-              onClick={(e) => e.stopPropagation()}
-            >
-              {/* Header do Menu */}
-              <div className="p-4 border-b border-white/10">
-              {user ? (
-                <div className="flex items-center gap-3">
-                  <img
-                    src={buildAvatarUrl({
-                      id: String((user as any)?.id || ''),
-                      avatar_url: (profile as any)?.avatar_url || '',
-                      name: (profile as any)?.nome || (profile as any)?.name || user?.email || 'Usuário'
-                    })}
-                    alt={(profile as any)?.nome || (profile as any)?.name || 'User'}
-                    className="w-12 h-12 rounded-full object-cover"
-                    referrerPolicy="no-referrer"
-                    onError={(e) => {
-                      const img = e.currentTarget as HTMLImageElement;
-                      img.style.display = 'none';
-                      const fallback = document.createElement('div');
-                      fallback.className = 'w-12 h-12 rounded-full bg-background-tertiary flex items-center justify-center';
-                      fallback.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-text-muted"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>';
-                      img.parentElement?.insertBefore(fallback, img);
-                    }}
-                  />
-                  <div className="flex-1">
-                    <p className="text-white font-semibold">{(profile as any)?.nome || user.email?.split('@')[0] || 'Usuário'}</p>
-                    <p className="text-gray-300 text-sm">{user.email}</p>
-                  </div>
-                </div>
-              ) : (
-                <div className="text-center space-y-3">
-                  <p className="text-gray-300 mb-3">Faça login para continuar</p>
-                  <Link
-                    to="/login"
-                    className="inline-flex items-center justify-center w-full rounded-full bg-white border-2 border-white text-black px-6 py-2 font-semibold hover:bg-gray-100 transition-colors"
-                    onClick={() => setShowMobileMenu(false)}
-                  >
-                    Entrar
-                  </Link>
-                  <Link
-                    to="/register"
-                    className="inline-flex items-center justify-center w-full rounded-full border-2 border-green-500 text-green-500 px-6 py-2 font-semibold hover:bg-green-500/10 transition-colors"
-                    onClick={() => setShowMobileMenu(false)}
-                  >
-                    Registrar
-                  </Link>
-                </div>
-              )}
-            </div>
 
-            {/* Menu Items */}
-            {user && (
-              <div className="p-2">
-                <Link
-                  to="/profile"
-                  className="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-background-hover transition-colors"
-                  onClick={() => setShowMobileMenu(false)}
-                >
-                  <User className="w-5 h-5 text-primary-500" />
-                  <span className="text-text-primary">Meu Perfil</span>
-                </Link>
-                <Link
-                  to="/favoritos"
-                  className="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-background-hover transition-colors"
-                  onClick={() => setShowMobileMenu(false)}
-                >
-                  <Heart className="w-5 h-5 text-primary-500" />
-                  <span className="text-text-primary">Meus Favoritos</span>
-                </Link>
-                <hr className="my-2 border-gray-700" />
-                <button
-                  onClick={() => {
-                    handleLogout();
-                    setShowMobileMenu(false);
-                  }}
-                  className="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-background-hover transition-colors w-full text-left"
-                >
-                  <LogOut className="w-5 h-5 text-red-400" />
-                  <span className="text-red-400">Sair</span>
-                </button>
-              </div>
-            )}
-            </div>
-          </div>
-        </>
-      )}
-
-      {/* Click outside to close dropdowns */}
-      {(showResults || showUserMenu) && (
-        <div
-          className="fixed inset-0 z-40"
-          onClick={() => {
-            setShowResults(false);
-            setShowUserMenu(false);
-          }}
-        />
-      )}
     </header>
   );
 };

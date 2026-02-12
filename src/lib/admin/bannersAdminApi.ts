@@ -1,4 +1,4 @@
-import { supabaseFetch, supabaseInsert, supabaseUpdate, supabaseDelete, isSupabaseConfigured, getSupabaseStorageUrl } from '@/lib/supabaseRest';
+import { supabaseFetch, supabaseInsert, supabaseUpdate, supabaseDelete, isSupabaseConfigured, getSupabaseStorageUrl, supabaseUploadFile } from '@/lib/supabaseRest';
 
 export type BannerType = 'hero' | 'promotional' | 'contextual' | 'announcement' | 'featured';
 
@@ -36,7 +36,7 @@ export const getAllBanners = async (params?: { type?: BannerType; active?: boole
 
   try {
     const filters: Record<string, string> = {
-      select: 'id,title,description,image_url,link_url,link_type,link_id,type,position,is_active,gradient_overlay,created_at,updated_at',
+      select: '*',
       order: 'position.asc'
     };
     
@@ -44,23 +44,24 @@ export const getAllBanners = async (params?: { type?: BannerType; active?: boole
     if (typeof params?.active === 'boolean') filters.is_active = `eq.${params.active}`;
     
     const rows = await supabaseFetch<any>('banners', filters);
+    console.log('🎯 [bannersAdminApi] Raw rows from Supabase:', rows.length, rows);
     return rows.map((row: any) => ({
       id: String(row.id),
-      title: row.title,
-      description: row.description,
-      image_url: row.image_url,
-      link_url: row.link_url,
-      link_type: row.link_type,
-      link_id: row.link_id,
-      type: row.type,
-      position: row.position,
-      is_active: row.is_active,
-      gradient_overlay: row.gradient_overlay,
-      created_at: row.created_at,
-      updated_at: row.updated_at,
+      title: row.title || '',
+      description: row.description || '',
+      image_url: row.image_url || '',
+      link_url: row.link_url || '',
+      link_type: row.link_type || row.type || '',
+      link_id: row.link_id ? String(row.link_id) : '',
+      type: row.type || 'hero',
+      position: row.position ?? 0,
+      is_active: row.is_active ?? true,
+      gradient_overlay: row.gradient_overlay || '',
+      created_at: row.created_at || '',
+      updated_at: row.updated_at || '',
     }));
   } catch (error) {
-    console.error('Error fetching banners:', error);
+    console.error('❌ Error fetching banners:', error);
     return [];
   }
 };
@@ -123,8 +124,15 @@ export const toggleBannerActive = async (id: string, newStatus: boolean): Promis
 export const uploadBannerImage = async (file: File): Promise<string> => {
   if (!isSupabaseConfigured) throw new Error('Supabase not configured');
 
-  const fileName = `banner-${Date.now()}-${file.name}`;
-  return getSupabaseStorageUrl('banners', fileName);
+  const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
+  const fileName = `banner-${Date.now()}-${safeName}`;
+  
+  const uploadedPath = await supabaseUploadFile('banners', fileName, file);
+  if (!uploadedPath) {
+    throw new Error('Falha ao fazer upload da imagem do banner');
+  }
+  
+  return getSupabaseStorageUrl('banners', uploadedPath);
 };
 
 export const getAll = getAllBanners;

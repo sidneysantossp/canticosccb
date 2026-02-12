@@ -54,7 +54,7 @@ const Player: React.FC<PlayerProps> = ({ isHidden = false }) => {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [showVolumeSlider]);
 
-  // Simular progresso da música e auto-stop no final
+  // Simular progresso do hino e auto-stop no final
   React.useEffect(() => {
     let interval: NodeJS.Timeout;
 
@@ -287,7 +287,7 @@ const Player: React.FC<PlayerProps> = ({ isHidden = false }) => {
                 <button
                   onClick={() => setRepeat(repeat === 'none' ? 'all' : repeat === 'all' ? 'one' : 'none')}
                   className={`text-gray-400 hover:text-white transition-colors ${repeat !== 'none' ? 'text-green-500' : ''}`}
-                  title={repeat === 'none' ? 'Repetir: Desligado' : repeat === 'one' ? 'Repetir: Uma Música' : 'Repetir: Todas'}
+                  title={repeat === 'none' ? 'Repetir: Desligado' : repeat === 'one' ? 'Repetir: Um Hino' : 'Repetir: Todas'}
                 >
                   {repeat === 'one' ? (
                     <Repeat1 className="w-5 h-5" />

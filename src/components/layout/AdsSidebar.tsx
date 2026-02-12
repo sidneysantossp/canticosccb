@@ -24,7 +24,7 @@ const AdsSidebar: React.FC<AdsSidebarProps> = ({ type = 'user' }) => {
   const composerAds = [
     {
       id: 1,
-      title: 'Impulsione Suas Músicas',
+      title: 'Impulsione Seus Hinos',
       description: 'Alcance milhares de ouvintes com nosso plano de promoção',
       icon: TrendingUp,
       bgColor: 'from-primary-900/40 to-primary-600/20',
@@ -104,7 +104,7 @@ const AdsSidebar: React.FC<AdsSidebarProps> = ({ type = 'user' }) => {
           <h4 className="text-white font-semibold mb-2 text-sm">💡 Dica do Dia</h4>
           <p className="text-gray-400 text-xs leading-relaxed">
             {type === 'composer' 
-              ? 'Adicione tags relevantes às suas músicas para aumentar a descoberta por novos ouvintes.'
+              ? 'Adicione tags relevantes aos seus hinos para aumentar a descoberta por novos ouvintes.'
               : 'Crie playlists temáticas para organizar melhor seus hinos favoritos.'
             }
           </p>

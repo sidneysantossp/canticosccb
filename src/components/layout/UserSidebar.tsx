@@ -81,7 +81,7 @@ const UserSidebar: React.FC = () => {
       ]
     }] : []),
     {
-      category: 'Minha Música',
+      category: 'Meus Hinos',
       items: [
         { icon: Heart, label: 'Meus Favoritos', path: '/favoritos' },
         { icon: ListMusic, label: 'Minhas Playlists', path: '/library' },

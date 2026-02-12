@@ -81,7 +81,7 @@ const UserMobileSidebar: React.FC<UserMobileSidebarProps> = ({ isOpen, onClose }
       ]
     }] : []),
     {
-      category: 'Minha Música',
+      category: 'Meus Hinos',
       items: [
         { icon: Heart, label: 'Meus Favoritos', path: '/favoritos' },
         { icon: ListMusic, label: 'Minhas Playlists', path: '/library' }

@@ -9,7 +9,7 @@ const AboutPage: React.FC = () => {
     { icon: Users, label: 'Usuários Ativos', value: '2.5M+' },
     { icon: Music, label: 'Hinos Disponíveis', value: '1.200+' },
     { icon: Globe, label: 'Países', value: '50+' },
-    { icon: Heart, label: 'Músicas Curtidas', value: '100M+' }
+    { icon: Heart, label: 'Hinos Curtidos', value: '100M+' }
   ];
 
   const values = [
@@ -20,7 +20,7 @@ const AboutPage: React.FC = () => {
     {
       icon: Heart,
       title: 'Nossa Visão',
-      description: 'Ser a plataforma referência para hinos cristãos, unindo tradição e tecnologia para edificar vidas através da música.'
+      description: 'Ser a plataforma referência para hinos cristãos, unindo tradição e tecnologia para edificar vidas através dos hinos.'
     },
     {
       icon: Award,
@@ -55,7 +55,7 @@ const AboutPage: React.FC = () => {
             Sobre Nós
           </h1>
           <p className="text-xl text-text-muted max-w-2xl mx-auto">
-            Conectando corações através da música sagrada desde 2020
+            Conectando corações através dos hinos sagrados desde 2020
           </p>
         </div>
       </div>
@@ -88,7 +88,7 @@ const AboutPage: React.FC = () => {
               Ao longo dos anos, evoluímos de uma simples coleção digital para uma plataforma completa de streaming, oferecendo recursos como playlists personalizadas, modo offline, letras sincronizadas e muito mais. Hoje, servimos milhões de usuários ao redor do mundo.
             </p>
             <p>
-              Nossa missão vai além da tecnologia. Buscamos criar uma irmandade unida pela fé e pela música, onde cada hino conta uma história e toca corações. Continuamos inovando, mas sempre com respeito à tradição que nos inspira.
+              Nossa missão vai além da tecnologia. Buscamos criar uma irmandade unida pela fé e pelos hinos, onde cada hino conta uma história e toca corações. Continuamos inovando, mas sempre com respeito à tradição que nos inspira.
             </p>
           </div>
         </div>
@@ -143,7 +143,7 @@ const AboutPage: React.FC = () => {
             Faça Parte da Nossa História
           </h2>
           <p className="text-white/90 text-lg mb-8">
-            Junte-se a milhões de pessoas que compartilham a fé através da música
+            Junte-se a milhões de pessoas que compartilham a fé através dos hinos
           </p>
           <button className="px-8 py-4 bg-white text-primary-600 font-bold rounded-full hover:bg-gray-100 transition-all transform hover:scale-105">
             Começar Agora

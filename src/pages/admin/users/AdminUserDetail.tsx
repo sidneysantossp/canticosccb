@@ -113,7 +113,7 @@ const AdminUserDetail: React.FC = () => {
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <Music className="w-5 h-5 text-red-400" />
-                    <span className="text-gray-400">Músicas Curtidas</span>
+                    <span className="text-gray-400">Hinos Curtidos</span>
                   </div>
                   <span className="text-white font-bold">{user.likedSongs}</span>
                 </div>

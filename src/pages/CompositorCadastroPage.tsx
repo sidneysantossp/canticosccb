@@ -21,7 +21,7 @@ const CompositorCadastroPage: React.FC = () => {
   };
 
   const beneficios = [
-    { icon: Music, title: 'Publique suas composições', desc: 'Compartilhe suas músicas com milhares de ouvintes da CCB.' },
+    { icon: Music, title: 'Publique suas composições', desc: 'Compartilhe seus hinos com milhares de ouvintes da CCB.' },
     { icon: BarChart3, title: 'Acompanhe suas métricas', desc: 'Veja reproduções, seguidores e analytics detalhados.' },
     { icon: Shield, title: 'Proteção de direitos', desc: 'Gerencie direitos autorais e reivindicações de conteúdo.' },
   ];

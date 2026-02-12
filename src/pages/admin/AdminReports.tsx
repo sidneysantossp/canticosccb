@@ -106,7 +106,7 @@ const AdminReports: React.FC = () => {
     };
 
     const labels = {
-      song: 'Música',
+      song: 'Hino',
       composer: 'Compositor',
       comment: 'Comentário'
     };
@@ -202,7 +202,7 @@ const AdminReports: React.FC = () => {
             className="bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 text-white"
           >
             <option value="all">Todos os tipos</option>
-            <option value="song">Músicas</option>
+            <option value="song">Hinos</option>
             <option value="composer">Compositores</option>
             <option value="comment">Comentários</option>
           </select>

@@ -122,13 +122,13 @@ export default function PendingClaimNotification() {
   const handleContinue = () => {
     if (pendingClaim) {
       // Usar alert temporário para mostrar que funcionou
-      alert(`Continuando reivindicação para "${pendingClaim.songTitle}".\n\nEm uma implementação real, isso abriria o player com a música e o formulário de reivindicação.`);
+      alert(`Continuando reivindicação para "${pendingClaim.songTitle}".\n\nEm uma implementação real, isso abriria o player com o hino e o formulário de reivindicação.`);
       
       // TODO: Implementar navegação real
       // Opções:
       // 1. window.location.href = `/player?song=${pendingClaim.songId}&openClaim=true`;
       // 2. Usar react-router: navigate(`/player?song=${pendingClaim.songId}&openClaim=true`);
-      // 3. Chamar função do player store para tocar música específica
+      // 3. Chamar função do player store para tocar hino específico
       
       handleClose();
     }
@@ -188,7 +188,7 @@ export default function PendingClaimNotification() {
 
           {/* Message */}
           <p className="text-xs opacity-90 mb-4">
-            Você estava reivindicando direitos autorais desta música. Deseja continuar?
+            Você estava reivindicando direitos autorais deste hino. Deseja continuar?
           </p>
 
           {/* Buttons */}

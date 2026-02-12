@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { ArrowLeft, Save, Upload, Disc, Trash2 } from 'lucide-react';
-import { albunsApi, uploadApi, Album, Hino } from '@/lib/api-client';
+import { albunsApi, uploadApi, compositoresApi, categoriasApi, Album, Hino } from '@/lib/api-client';
 import HinoSelector from '@/components/admin/HinoSelector';
 
 const AdminAlbumForm: React.FC = () => {
@@ -25,12 +25,44 @@ const AdminAlbumForm: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [composers, setComposers] = useState<{ id: string; name: string }[]>([]);
+  const [categories, setCategories] = useState<{ id: string | number; nome: string }[]>([]);
+  const [artistSearch, setArtistSearch] = useState('');
+  const [showArtistDropdown, setShowArtistDropdown] = useState(false);
 
   useEffect(() => {
     if (isEditing && id) {
       loadAlbum(id);
     }
   }, [id, isEditing]);
+
+  useEffect(() => {
+    const loadOptions = async () => {
+      try {
+        const [compResult, catResult] = await Promise.all([
+          compositoresApi.list({ limit: 500 }),
+          categoriasApi.list({ limit: 500 }),
+        ]);
+        const compList = compResult?.data?.compositores || compResult?.data?.data || [];
+        setComposers(
+          (Array.isArray(compList) ? compList : []).map((c: any) => ({
+            id: String(c.id),
+            name: c.artistic_name || c.nome_artistico || c.name || c.nome || '',
+          })).filter((c: any) => c.name).sort((a: any, b: any) => a.name.localeCompare(b.name))
+        );
+        const catList = catResult?.data || [];
+        setCategories(
+          (Array.isArray(catList) ? catList : []).map((c: any) => ({
+            id: c.id,
+            nome: c.nome || c.name || '',
+          })).filter((c: any) => c.nome).sort((a: any, b: any) => a.nome.localeCompare(b.nome))
+        );
+      } catch (e) {
+        console.warn('[AdminAlbumForm] Erro ao carregar opções:', e);
+      }
+    };
+    loadOptions();
+  }, []);
 
   const loadAlbum = async (albumId: string) => {
     try {
@@ -60,11 +92,30 @@ const AdminAlbumForm: React.FC = () => {
         });
         setCoverPreview(album.cover_url || '');
 
-        // TODO: Carregar hinos do álbum quando a função estiver implementada
-        // const hinosResponse = await albunsApi.listHinos(albumId);
-        // if (hinosResponse.data && hinosResponse.data.hinos) {
-        //   setSelectedHinos(hinosResponse.data.hinos);
-        // }
+        // Carregar hinos do álbum
+        try {
+          const { supabaseFetch } = await import('@/lib/supabaseRest');
+          const albumHinos = await supabaseFetch<any>('album_hinos', {
+            album_id: `eq.${albumId}`,
+            select: 'hino_id,position',
+            order: 'position.asc',
+          });
+          if (albumHinos.length > 0) {
+            const hinoIds = albumHinos.map((ah: any) => ah.hino_id);
+            const hinos = await supabaseFetch<any>('hinos', {
+              id: `in.(${hinoIds.join(',')})`,
+              select: 'id,numero,titulo,compositor_nome,compositor_id,duracao',
+            });
+            // Ordenar conforme a ordem do album_hinos e mapear compositor
+            const ordered = hinoIds
+              .map((hid: string) => hinos.find((h: any) => h.id === hid))
+              .filter(Boolean)
+              .map((h: any) => ({ ...h, compositor: h.compositor_nome || '' }));
+            setSelectedHinos(ordered);
+          }
+        } catch (e) {
+          console.warn('[AdminAlbumForm] Erro ao carregar hinos do álbum:', e);
+        }
       } else {
         throw new Error('Álbum não encontrado');
       }
@@ -113,6 +164,8 @@ const AdminAlbumForm: React.FC = () => {
 
       const albumData = {
         titulo: formData.title.trim(),
+        artist: formData.artist.trim() || undefined,
+        genre: formData.genre || undefined,
         descricao: formData.description.trim() || undefined,
         cover_url: coverUrl || undefined,
         ano: formData.release_date ? parseInt(formData.release_date) : undefined,
@@ -120,30 +173,55 @@ const AdminAlbumForm: React.FC = () => {
         is_published: formData.status === 'published'
       };
 
-      let response;
-      let albumId: number;
+      let albumId: string | number = id || '';
 
-      if (isEditing && id) {
-        response = await albunsApi.update(parseInt(id), albumData);
-        albumId = parseInt(id);
-      } else {
-        response = await albunsApi.create(albumData);
-        albumId = response.data?.id;
+      // 1. Salvar dados do álbum
+      console.log('💾 [handleSubmit] Salvando álbum...', albumData);
+      try {
+        if (isEditing && id) {
+          const response = await albunsApi.update(id, albumData);
+          console.log('💾 [handleSubmit] Update result:', response);
+          albumId = id;
+        } else {
+          const response = await albunsApi.create(albumData);
+          console.log('💾 [handleSubmit] Create result:', response);
+          if (response.error) throw new Error(response.error);
+          albumId = response.data?.id;
+        }
+      } catch (albumErr: any) {
+        console.error('❌ [handleSubmit] Erro ao salvar dados do álbum:', albumErr);
+        // Continuar para salvar hinos mesmo se o update falhar parcialmente
+        if (!isEditing) {
+          throw albumErr; // Só bloqueia se for criação (precisa do ID)
+        }
       }
 
-      if (response.error) {
-        throw new Error(response.error);
-      }
-
-      // Salvar hinos do álbum
-      if (albumId && selectedHinos.length > 0) {
-        const hinoIds = selectedHinos.map(h => h.id);
-        await albunsApi.addHinos(albumId, hinoIds);
+      // 2. Salvar hinos do álbum
+      if (albumId) {
+        console.log(`💾 [handleSubmit] Salvando ${selectedHinos.length} hinos para álbum ${albumId}`);
+        if (selectedHinos.length > 0) {
+          const hinoIds = selectedHinos.map(h => h.id);
+          console.log('💾 [handleSubmit] Hino IDs:', hinoIds);
+          const hinosResult = await albunsApi.addHinos(albumId, hinoIds);
+          console.log('💾 [handleSubmit] addHinos result:', hinosResult);
+          if (hinosResult.error) {
+            setError(`Álbum salvo, mas erro ao salvar hinos: ${hinosResult.error}`);
+            setIsSaving(false);
+            return;
+          }
+        } else if (isEditing) {
+          try {
+            const { supabaseDelete } = await import('@/lib/supabaseRest');
+            await supabaseDelete('album_hinos', { album_id: `eq.${albumId}` });
+          } catch (e) {
+            console.warn('⚠️ Erro ao limpar hinos do álbum:', e);
+          }
+        }
       }
 
       navigate('/admin/albuns');
     } catch (error: any) {
-      console.error('Erro ao salvar álbum:', error);
+      console.error('❌ [handleSubmit] Erro geral:', error);
       setError(error?.message || 'Erro ao salvar álbum');
     } finally {
       setIsSaving(false);
@@ -203,17 +281,52 @@ const AdminAlbumForm: React.FC = () => {
                 />
               </div>
 
-              <div>
+              <div className="relative">
                 <label className="block text-gray-400 text-sm font-semibold mb-2">
                   Artista
                 </label>
                 <input
                   type="text"
                   value={formData.artist}
-                  onChange={(e) => setFormData({ ...formData, artist: e.target.value })}
+                  onChange={(e) => {
+                    setFormData({ ...formData, artist: e.target.value });
+                    setArtistSearch(e.target.value);
+                    setShowArtistDropdown(true);
+                  }}
+                  onFocus={() => setShowArtistDropdown(true)}
+                  onBlur={() => setTimeout(() => setShowArtistDropdown(false), 200)}
                   className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-green-600"
-                  placeholder="Congregação Cristã"
+                  placeholder="Buscar artista..."
+                  autoComplete="off"
                 />
+                {showArtistDropdown && (
+                  <div className="absolute z-50 w-full mt-1 max-h-60 overflow-y-auto bg-gray-800 border border-gray-700 rounded-lg shadow-xl">
+                    {composers
+                      .filter((c) =>
+                        !artistSearch || c.name.toLowerCase().includes(artistSearch.toLowerCase())
+                      )
+                      .map((c) => (
+                        <button
+                          key={c.id}
+                          type="button"
+                          onMouseDown={(e) => e.preventDefault()}
+                          onClick={() => {
+                            setFormData({ ...formData, artist: c.name });
+                            setArtistSearch('');
+                            setShowArtistDropdown(false);
+                          }}
+                          className="w-full text-left px-4 py-2.5 text-sm text-gray-200 hover:bg-gray-700 hover:text-white transition-colors"
+                        >
+                          {c.name}
+                        </button>
+                      ))}
+                    {composers.filter((c) =>
+                      !artistSearch || c.name.toLowerCase().includes(artistSearch.toLowerCase())
+                    ).length === 0 && (
+                      <div className="px-4 py-3 text-sm text-gray-500">Nenhum artista encontrado</div>
+                    )}
+                  </div>
+                )}
               </div>
             </div>
 
@@ -222,13 +335,18 @@ const AdminAlbumForm: React.FC = () => {
                 <label className="block text-gray-400 text-sm font-semibold mb-2">
                   Gênero
                 </label>
-                <input
-                  type="text"
+                <select
                   value={formData.genre}
                   onChange={(e) => setFormData({ ...formData, genre: e.target.value })}
-                  className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-green-600"
-                  placeholder="Hinos Cantados"
-                />
+                  className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-green-600 appearance-none"
+                >
+                  <option value="">Selecione um gênero</option>
+                  {categories.map((cat) => (
+                    <option key={cat.id} value={cat.nome}>
+                      {cat.nome}
+                    </option>
+                  ))}
+                </select>
               </div>
 
               <div>

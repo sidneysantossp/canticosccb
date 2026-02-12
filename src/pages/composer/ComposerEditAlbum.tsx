@@ -54,28 +54,33 @@ const ComposerEditAlbum: React.FC = () => {
   const [availableSongs, setAvailableSongs] = useState<Array<{ id: string; title: string; duration: string }>>([]);
   const [albumSongs, setAlbumSongs] = useState<Array<{ id: string; title: string; duration: string }>>([]);
 
-  const genres = [
-    'Hino Clássico',
-    'Louvor',
-    'Adoração',
-    'Instrumental',
-    'Coral',
-    'Oração',
-    'Evangélico',
-    'Contemporâneo',
-    'Tradicional'
-  ];
+  const [genres, setGenres] = useState<string[]>([]);
+
+  // Carregar gêneros do banco de dados
+  useEffect(() => {
+    const loadGenres = async () => {
+      try {
+        const { getAllGenres } = await import('@/lib/admin/genresAdminApi');
+        const allGenres = await getAllGenres();
+        const activeGenres = allGenres.filter(g => g.is_active).map(g => g.name);
+        setGenres(activeGenres.length > 0 ? activeGenres : []);
+      } catch (e) {
+        console.warn('Erro ao carregar gêneros:', e);
+      }
+    };
+    loadGenres();
+  }, []);
 
   // Resolver compositor atual do usuário logado
   const [composerName, setComposerName] = useState<string>('');
-  const [composerId, setComposerId] = useState<number | null>(null);
+  const [composerId, setComposerId] = useState<string | null>(null);
   useEffect(() => {
     const loadComposer = async () => {
       try {
         if (!user?.id) return;
-        const resp = await compositoresApi.getByUsuarioId(user.id);
+        const resp = await compositoresApi.getByUsuarioId(user.id, (user as any)?.email);
         const cdata: any = (resp as any)?.data || resp;
-        if (cdata?.id) setComposerId(Number(cdata.id));
+        if (cdata?.id) setComposerId(String(cdata.id));
         const name = cdata?.nome_artistico || cdata?.nome || '';
         setComposerName(name || '');
       } catch (e) {
@@ -134,7 +139,7 @@ const ComposerEditAlbum: React.FC = () => {
       
       setIsLoading(true);
       try {
-        const response = await albunsApi.get(parseInt(id));
+        const response = await albunsApi.get(id);
         
         if (response.error || !response.data) {
           throw new Error(response.error || 'Erro ao carregar álbum');
@@ -142,14 +147,15 @@ const ComposerEditAlbum: React.FC = () => {
 
         const album = response.data;
         
+        const releaseYear = album.release_date ? album.release_date.substring(0, 4) : (album.ano?.toString() || '');
         setFormData({
-          title: album.titulo || '',
-          description: album.descricao || '',
-          releaseYear: album.ano?.toString() || '',
-          genre: '', // Não temos gênero na API ainda
+          title: album.title || album.titulo || '',
+          description: album.description || album.descricao || '',
+          releaseYear,
+          genre: '',
           coverImage: null,
           coverImageUrl: album.cover_url || '',
-          songs: [] // Carregar hinos depois
+          songs: []
         });
         
         if (album.cover_url) {
@@ -241,7 +247,7 @@ const ComposerEditAlbum: React.FC = () => {
 
   const addSongToAlbum = (song: { id: string; title: string; duration: string }) => {
     if (formData.songs.find(s => s.id === song.id)) {
-      alert('Esta música já está no álbum.');
+      alert('Este hino já está no álbum.');
       return;
     }
     setFormData(prev => ({
@@ -290,7 +296,7 @@ const ComposerEditAlbum: React.FC = () => {
       return;
     }
     if (formData.songs.length === 0) {
-      alert('Por favor, adicione pelo menos uma música ao álbum.');
+      alert('Por favor, adicione pelo menos um hino ao álbum.');
       return;
     }
 
@@ -322,34 +328,34 @@ const ComposerEditAlbum: React.FC = () => {
         compositor_id: composerId ?? null,
       };
       console.log('📝 [EditAlbum] Update payload:', payload);
-      const upRes = await albunsApi.update(parseInt(id), payload);
+      const upRes = await albunsApi.update(id, payload);
       console.log('📝 [EditAlbum] Update album response:', upRes);
       if (upRes.error) throw new Error(upRes.error);
       setUploadProgress(60);
 
-      // 3) Sincronizar músicas (add/remove)
-      const currentIds = albumSongs.map(s => parseInt(s.id));
-      const targetIds = formData.songs.map(s => parseInt(s.id));
+      // 3) Sincronizar hinos (add/remove)
+      const currentIds = albumSongs.map(s => s.id);
+      const targetIds = formData.songs.map(s => s.id);
       const toAdd = targetIds.filter(h => !currentIds.includes(h));
       const toRemove = currentIds.filter(h => !targetIds.includes(h));
       console.log('🔁 [EditAlbum] Sync hinos', { currentIds, targetIds, toAdd, toRemove });
 
       if (toAdd.length > 0) {
-        const addRes = await albunsApi.addHinos(parseInt(id), toAdd);
+        const addRes = await albunsApi.addHinos(id, toAdd);
         console.log('➕ [EditAlbum] addHinos result:', addRes);
         if (addRes.error) throw new Error(addRes.error);
       }
 
       for (const hid of toRemove) {
-        const rem = await albunsApi.removeHino(parseInt(id), hid);
+        const rem = await albunsApi.removeHino(id, hid);
         console.log('➖ [EditAlbum] removeHino result:', hid, rem);
         if (rem.error) throw new Error(rem.error);
       }
       setUploadProgress(80);
 
       // 4) Atualizar ordem
-      const ordem = formData.songs.map((s, idx) => ({ hino_id: parseInt(s.id), ordem: idx + 1 }));
-      const ordRes = await albunsApi.updateOrdem(parseInt(id), ordem);
+      const ordem = formData.songs.map((s, idx) => ({ hino_id: s.id, ordem: idx + 1 }));
+      const ordRes = await albunsApi.updateOrdem(id, ordem);
       console.log('↕ [EditAlbum] updateOrdem result:', ordRes);
       if (ordRes.error) throw new Error(ordRes.error);
       setUploadProgress(100);
@@ -581,14 +587,14 @@ const ComposerEditAlbum: React.FC = () => {
                 </div>
               </div>
 
-              {/* Adicionar Músicas */}
+              {/* Adicionar Hinos */}
               <div className="bg-background-secondary rounded-xl p-6">
-                <h2 className="text-xl font-bold text-white mb-2">Músicas do Álbum</h2>
+                <h2 className="text-xl font-bold text-white mb-2">Hinos do Álbum</h2>
                 <p className="text-text-muted text-sm mb-6">
-                  Adicione músicas e arraste para reordenar as faixas
+                  Adicione hinos e arraste para reordenar as faixas
                 </p>
 
-                {/* Músicas do Álbum */}
+                {/* Hinos do Álbum */}
                 {formData.songs.length > 0 ? (
                   <div className="space-y-2 mb-6">
                     {formData.songs.map((song, index) => (
@@ -624,17 +630,17 @@ const ComposerEditAlbum: React.FC = () => {
                 ) : (
                   <div className="text-center py-12 border-2 border-dashed border-gray-700 rounded-lg mb-6">
                     <Music className="w-12 h-12 text-text-muted mx-auto mb-3" />
-                    <p className="text-white font-medium mb-1">Nenhuma música adicionada</p>
+                    <p className="text-white font-medium mb-1">Nenhum hino adicionado</p>
                     <p className="text-text-muted text-sm">
-                      Adicione músicas da lista abaixo
+                      Adicione hinos da lista abaixo
                     </p>
                   </div>
                 )}
 
-                {/* Músicas Disponíveis */}
+                {/* Hinos Disponíveis */}
                 <div>
                   <h3 className="text-white font-semibold mb-3">
-                    Minhas Músicas ({availableSongs.length - formData.songs.length} disponíveis)
+                    Meus Hinos ({availableSongs.length - formData.songs.length} disponíveis)
                   </h3>
                   <div className="space-y-2 max-h-64 overflow-y-auto">
                     {availableSongs
@@ -670,7 +676,7 @@ const ComposerEditAlbum: React.FC = () => {
                     <div>
                       <p className="text-yellow-500 font-medium">Campos obrigatórios pendentes</p>
                       <p className="text-text-muted text-sm mt-1">
-                        Preencha o título, adicione uma capa e pelo menos uma música.
+                        Preencha o título, adicione uma capa e pelo menos um hino.
                       </p>
                     </div>
                   </div>

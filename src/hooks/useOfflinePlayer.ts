@@ -324,7 +324,7 @@ export const useOfflinePlayer = () => {
   const handlePrevious = useCallback(() => {
     if (playlist.length === 0) return;
 
-    // Se está tocando há mais de 3 segundos, reiniciar música atual
+    // Se está tocando há mais de 3 segundos, reiniciar hino atual
     if (state.currentTime > 3) {
       seek(0);
       return;
@@ -381,7 +381,7 @@ export const useOfflinePlayer = () => {
       const removedIndex = prev.findIndex(track => track.id === trackId);
       
       if (removedIndex === currentIndex) {
-        // Se removeu a música atual, tocar a próxima
+        // Se removeu o hino atual, tocar o próximo
         if (newPlaylist.length > 0) {
           const nextIndex = Math.min(currentIndex, newPlaylist.length - 1);
           setCurrentIndex(nextIndex);
@@ -391,7 +391,7 @@ export const useOfflinePlayer = () => {
           setState(prev => ({ ...prev, currentTrack: null }));
         }
       } else if (removedIndex < currentIndex) {
-        // Ajustar índice se removeu uma música anterior
+        // Ajustar índice se removeu um hino anterior
         setCurrentIndex(prev => prev - 1);
       }
       

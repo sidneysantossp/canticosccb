@@ -545,10 +545,26 @@ const ComposerOnboarding: React.FC = () => {
         });
       }
 
-      // 2. Upload document images if available
+      // 2. Upload document images if available (fallback to base64 if storage fails)
       let documentImagePath: string | null = null;
+      let documentBackPath: string | null = null;
       if (formData.documentFront) {
+        console.log('📄 Uploading document front...');
         documentImagePath = await uploadDocumentImage(formData.documentFront);
+        if (!documentImagePath && documents.length > 0) {
+          console.warn('📄 Storage upload failed, using base64 fallback for front');
+          documentImagePath = documents[0].frontImage;
+        }
+        console.log('📄 Document front path:', documentImagePath ? 'OK' : 'FAILED');
+      }
+      if (formData.documentBack) {
+        console.log('📄 Uploading document back...');
+        documentBackPath = await uploadDocumentImage(formData.documentBack);
+        if (!documentBackPath && documents.length > 0) {
+          console.warn('📄 Storage upload failed, using base64 fallback for back');
+          documentBackPath = documents[0].backImage;
+        }
+        console.log('📄 Document back path:', documentBackPath ? 'OK' : 'FAILED');
       }
 
       // 3. Criar conta via Supabase Auth (garante hash de senha correto)
@@ -605,6 +621,8 @@ const ComposerOnboarding: React.FC = () => {
         documento_tipo: formData.documentType,
         documento_numero: formData.documentNumber || '',
         documento_imagem: documentImagePath || undefined,
+        documento_imagem_verso: documentBackPath || undefined,
+        user_id: userId,
       });
 
       console.log('✅ Compositor registrado:', composerResult);

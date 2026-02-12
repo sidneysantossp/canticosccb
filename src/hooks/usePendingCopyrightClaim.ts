@@ -41,10 +41,10 @@ export function usePendingCopyrightClaim() {
             </div>
           `;
           
-          // Adicionar evento de clique para navegar para a música
+          // Adicionar evento de clique para navegar para o hino
           notification.addEventListener('click', (e) => {
             if ((e.target as HTMLElement).tagName !== 'BUTTON') {
-              // Aqui você pode implementar a navegação para a música específica
+              // Aqui você pode implementar a navegação para o hino específico
               // Por exemplo: window.location.href = `/hino/${claimData.songId}`;
               alert(`Navegando para "${claimData.songTitle}"...`);
               notification.remove();

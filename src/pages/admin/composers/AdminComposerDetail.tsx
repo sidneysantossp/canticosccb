@@ -20,7 +20,7 @@ const AdminComposerDetail: React.FC = () => {
     totalPlays: 125400,
     followers: 8200,
     royalties: 5234.50,
-    biography: 'Compositor há mais de 10 anos, dedica sua música à glória de Deus...',
+    biography: 'Compositor há mais de 10 anos, dedica seus hinos à glória de Deus...',
     location: 'São Paulo, SP',
     social: {
       instagram: '@joaosilva',

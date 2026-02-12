@@ -33,57 +33,104 @@ export type TopFan = {
 
 export type FollowerGrowthPoint = { date: string; count: number };
 
-export async function getFollowerStats(usuarioId: number): Promise<FollowerStats> {
-  if (!isSupabaseConfigured) {
-    return { total: 0, thisMonth: 0, growth: 0, engagement: 0, averagePlays: 0 };
-  }
+export async function getFollowerStats(usuarioId: string | number): Promise<FollowerStats> {
+  const empty: FollowerStats = { total: 0, thisMonth: 0, growth: 0, engagement: 0, averagePlays: 0 };
+  if (!isSupabaseConfigured) return empty;
 
   try {
-    const data = await supabaseRPC<any>('get_follower_stats', { p_usuario_id: usuarioId });
+    // Resolver composer_id a partir do user_id
+    const composerRows = await supabaseFetch<any>('composers', {
+      user_id: `eq.${usuarioId}`,
+      select: 'id',
+      limit: '1'
+    });
+    const compositorId = composerRows?.[0]?.id;
+    if (!compositorId) return empty;
+
+    const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
+
+    const [allFollowers, recentFollowers] = await Promise.all([
+      supabaseFetch<any>('user_follows', {
+        composer_id: `eq.${compositorId}`,
+        select: 'id'
+      }).catch(() => []),
+      supabaseFetch<any>('user_follows', {
+        composer_id: `eq.${compositorId}`,
+        created_at: `gte.${thirtyDaysAgo}`,
+        select: 'id'
+      }).catch(() => []),
+    ]);
+
+    const total = allFollowers.length;
+    const thisMonth = recentFollowers.length;
     return {
-      total: data.total || 0,
-      thisMonth: data.this_month || 0,
-      growth: data.growth || 0,
-      engagement: data.engagement || 0,
-      averagePlays: data.average_plays || 0,
+      total,
+      thisMonth,
+      growth: total > 0 ? Math.round((thisMonth / total) * 100) : 0,
+      engagement: 0,
+      averagePlays: 0,
     };
   } catch (error) {
     console.error('Error fetching follower stats:', error);
-    return { total: 0, thisMonth: 0, growth: 0, engagement: 0, averagePlays: 0 };
+    return empty;
   }
 }
 
-export async function getFollowers(usuarioId: number, limit = 50, offset = 0, search = '', filter: 'all'|'recent'|'active' = 'all'): Promise<Follower[]> {
+export async function getFollowers(usuarioId: string | number, limit = 50, offset = 0, search = '', filter: 'all'|'recent'|'active' = 'all'): Promise<Follower[]> {
   if (!isSupabaseConfigured) return [];
 
   try {
+    // Resolver composer_id a partir do user_id
+    const composerRows = await supabaseFetch<any>('composers', {
+      user_id: `eq.${usuarioId}`,
+      select: 'id',
+      limit: '1'
+    });
+    const compositorId = composerRows?.[0]?.id;
+    if (!compositorId) return [];
+
     const filters: Record<string, string> = {
-      composer_id: `eq.${usuarioId}`,
-      select: 'id,user_id,created_at,users(name,email,avatar_url)',
+      composer_id: `eq.${compositorId}`,
+      select: 'id,user_id,created_at',
       limit: String(limit),
       offset: String(offset),
       order: 'created_at.desc'
     };
 
     const rows = await supabaseFetch<any>('user_follows', filters);
-    return rows.map((row: any) => ({
-      id: String(row.id),
-      name: row.users?.name || 'Usuário',
-      email: row.users?.email,
-      avatar_url: row.users?.avatar_url,
-      followedAt: row.created_at,
-      totalPlays: 0,
-      isActive: true,
-      location: null,
-      favoriteSong: null,
-    }));
+
+    // Buscar dados dos usuários
+    const userIds = rows.map((r: any) => r.user_id).filter(Boolean);
+    let usersMap: Record<string, any> = {};
+    if (userIds.length > 0) {
+      const users = await supabaseFetch<any>('users', {
+        id: `in.(${userIds.join(',')})`,
+        select: 'id,name,email,avatar_url'
+      }).catch(() => []);
+      usersMap = (users || []).reduce((acc: any, u: any) => { acc[u.id] = u; return acc; }, {});
+    }
+
+    return rows.map((row: any) => {
+      const u = usersMap[row.user_id] || {};
+      return {
+        id: String(row.id),
+        name: u.name || 'Usuário',
+        email: u.email,
+        avatar_url: u.avatar_url,
+        followedAt: row.created_at,
+        totalPlays: 0,
+        isActive: true,
+        location: null,
+        favoriteSong: null,
+      };
+    });
   } catch (error) {
     console.error('Error fetching followers:', error);
     return [];
   }
 }
 
-export async function getTopFans(usuarioId: number, limit = 3): Promise<TopFan[]> {
+export async function getTopFans(usuarioId: string | number, limit = 3): Promise<TopFan[]> {
   if (!isSupabaseConfigured) return [];
 
   try {
@@ -107,7 +154,7 @@ export async function getTopFans(usuarioId: number, limit = 3): Promise<TopFan[]
   }
 }
 
-export async function getFollowerGrowth(usuarioId: number, days = 30): Promise<FollowerGrowthPoint[]> {
+export async function getFollowerGrowth(usuarioId: string | number, days = 30): Promise<FollowerGrowthPoint[]> {
   if (!isSupabaseConfigured) return [];
 
   try {

@@ -2,15 +2,17 @@ import React, { useState, useEffect } from 'react';
 import { Bell, Check, X, Clock, Mail, ExternalLink } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
+import { supabase } from '@/lib/supabase-auth';
 import useNotificationsStore from '@/stores/notificationsStore';
 
 interface Notification {
-  id: number;
-  tipo: 'convite' | 'geral';
+  id: string;
+  tipo: string;
   titulo: string;
   mensagem: string;
   lida: boolean;
   criado_em: string;
+  link?: string | null;
 }
 
 const NotificationsPage: React.FC = () => {
@@ -23,44 +25,36 @@ const NotificationsPage: React.FC = () => {
   const notificationsStore = useNotificationsStore();
 
   useEffect(() => {
-    loadNotifications();
-  }, [user]);
+    if (user?.id) {
+      loadNotifications();
+    } else {
+      setLoading(false);
+    }
+  }, [user?.id]);
 
   const loadNotifications = async () => {
-    console.log('🔍 loadNotifications - user:', user);
-    if (!user?.id) {
-      console.log('❌ Sem user.id, abortando');
-      return;
-    }
+    if (!user?.id) return;
 
     try {
       setLoading(true);
 
-      // Buscar notificações reais da API
-      const baseUrl = window.location.hostname === 'localhost'
-        ? 'http://localhost:80/1canticosccb/api'
-        : '/api';
+      const { data: rows, error: fetchErr } = await supabase
+        .from('notifications')
+        .select('id,title,message,type,link,is_read,created_at')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false })
+        .limit(50);
 
-      const url = `${baseUrl}/notificacoes?usuario_id=${user.id}&limit=50`;
-      console.log('📡 Buscando notificações:', url);
+      if (fetchErr) throw fetchErr;
 
-      const response = await fetch(url);
-      const data = await response.json();
-
-      console.log('📥 Response:', { status: response.status, data });
-
-      if (!response.ok) {
-        throw new Error(data.error || 'Erro ao carregar notificações');
-      }
-
-      // Mapear dados da API para o formato do componente
-      const notificacoesFormatadas: Notification[] = (data.notificacoes || []).map((n: any) => ({
+      const notificacoesFormatadas: Notification[] = (rows || []).map((n: any) => ({
         id: n.id,
-        tipo: n.tipo,
-        titulo: n.titulo,
-        mensagem: n.mensagem,
-        lida: Boolean(n.lida),
-        criado_em: n.created_at
+        tipo: n.type || 'geral',
+        titulo: n.title || '',
+        mensagem: n.message || '',
+        lida: Boolean(n.is_read),
+        criado_em: n.created_at,
+        link: n.link,
       }));
 
       setNotifications(notificacoesFormatadas);
@@ -84,23 +78,13 @@ const NotificationsPage: React.FC = () => {
     }
   };
 
-  const markAsRead = async (notificationId: number) => {
+  const markAsRead = async (notificationId: string) => {
     try {
-      const baseUrl = window.location.hostname === 'localhost'
-        ? 'http://localhost:80/1canticosccb/api'
-        : '/api';
+      await supabase
+        .from('notifications')
+        .update({ is_read: true })
+        .eq('id', notificationId);
 
-      const response = await fetch(`${baseUrl}/notificacoes/${notificationId}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ lida: 1 })
-      });
-
-      if (!response.ok) {
-        throw new Error('Erro ao atualizar notificação');
-      }
-
-      // Atualizar estado local
       setNotifications(prev =>
         prev.map(n => n.id === notificationId ? { ...n, lida: true } : n)
       );
@@ -126,10 +110,15 @@ const NotificationsPage: React.FC = () => {
 
   const markAllAsRead = async () => {
     try {
-      // TODO: Implementar API real
-      setNotifications(prev => prev.map(n => ({ ...n, lida: true })));
+      if (!user?.id) return;
 
-      // Sincronizar com store Zustand - zerar contador
+      await supabase
+        .from('notifications')
+        .update({ is_read: true })
+        .eq('user_id', user.id)
+        .eq('is_read', false);
+
+      setNotifications(prev => prev.map(n => ({ ...n, lida: true })));
       notificationsStore.clearAll();
     } catch (error) {
       console.error('Erro ao marcar todas como lidas:', error);

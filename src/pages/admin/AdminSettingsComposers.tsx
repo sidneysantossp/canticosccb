@@ -292,7 +292,7 @@ const AdminSettingsComposers: React.FC = () => {
               <Award className="w-6 h-6 text-purple-400" />
             </div>
             <div>
-              <p className="text-gray-400 text-sm">Total Músicas</p>
+              <p className="text-gray-400 text-sm">Total Hinos</p>
               <p className="text-white text-2xl font-bold">{stats.totalSongs}</p>
             </div>
           </div>
@@ -390,7 +390,7 @@ const AdminSettingsComposers: React.FC = () => {
                 <th className="text-left py-3 px-4 text-gray-300 font-medium">Compositor</th>
                 <th className="text-left py-3 px-4 text-gray-300 font-medium">Status</th>
                 <th className="text-left py-3 px-4 text-gray-300 font-medium">Verificação</th>
-                <th className="text-left py-3 px-4 text-gray-300 font-medium">Músicas</th>
+                <th className="text-left py-3 px-4 text-gray-300 font-medium">Hinos</th>
                 <th className="text-left py-3 px-4 text-gray-300 font-medium">Reproduções</th>
                 <th className="text-left py-3 px-4 text-gray-300 font-medium">Royalties</th>
                 <th className="text-left py-3 px-4 text-gray-300 font-medium">Ações</th>

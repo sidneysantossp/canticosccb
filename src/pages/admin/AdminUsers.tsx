@@ -3,6 +3,8 @@ import { useNavigate, Link } from 'react-router-dom';
 import { Search, Shield, Ban, Trash2, Users, UserCheck, UserX, Edit, Plus } from 'lucide-react';
 import { usuariosApi, type Usuario } from '@/lib/api-client';
 import { useRealtimeUsers } from '@/hooks/useRealtimeUsers';
+import ConfirmModal from '@/components/ConfirmModal';
+import AlertModal from '@/components/ui/AlertModal';
 
 interface UsersFilters {
   search: string;
@@ -25,6 +27,9 @@ const AdminUsers: React.FC = () => {
     status: 'all'
   });
   const [searchInput, setSearchInput] = useState('');
+  const [deleteModal, setDeleteModal] = useState<{ isOpen: boolean; userId: string; email: string }>({ isOpen: false, userId: '', email: '' });
+  const [alertModal, setAlertModal] = useState<{ isOpen: boolean; title: string; message: string; type: 'success' | 'error' }>({ isOpen: false, title: '', message: '', type: 'success' });
+  const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
     loadUsers();
@@ -108,29 +113,32 @@ const AdminUsers: React.FC = () => {
     }
   };
 
-  const handleDelete = async (id: string, email: string) => {
-    if (!window.confirm(`Tem certeza que deseja deletar o usuário ${email}?`)) return;
+  const handleDelete = (id: string, email: string) => {
+    setDeleteModal({ isOpen: true, userId: id, email });
+  };
 
+  const confirmDelete = async () => {
+    const { userId, email } = deleteModal;
+    setDeleteModal({ isOpen: false, userId: '', email: '' });
+    setIsDeleting(true);
     try {
-      const result = await usuariosApi.delete(id);
+      const result = await usuariosApi.delete(userId);
       if (result.success) {
-        alert('Usuário excluído com sucesso!');
+        setAlertModal({ isOpen: true, title: 'Sucesso', message: 'Usuário excluído com sucesso!', type: 'success' });
         loadUsers();
       } else {
-        alert(`Erro ao excluir usuário: ${result.error || 'Erro desconhecido'}`);
+        setAlertModal({ isOpen: true, title: 'Erro', message: result.error || 'Erro desconhecido ao excluir usuário.', type: 'error' });
       }
     } catch (error: any) {
       console.error('Error deleting user:', error);
-      alert(`Erro ao excluir usuário: ${error?.message || 'Erro desconhecido'}`);
+      setAlertModal({ isOpen: true, title: 'Erro', message: error?.message || 'Erro desconhecido ao excluir usuário.', type: 'error' });
+    } finally {
+      setIsDeleting(false);
     }
   };
 
   const handleEditUser = (userId: string) => {
-    console.log('🔍 Editando usuário:', userId);
-    const url = `/admin/users/edit/${encodeURIComponent(userId)}`;
-    console.log('📍 Navegando para:', url);
-    alert(`Tentando abrir: ${url}`);
-    navigate(url);
+    navigate(`/admin/users/edit/${encodeURIComponent(userId)}`);
   };
 
   const renderRow = (user: Usuario) => {
@@ -433,6 +441,28 @@ const AdminUsers: React.FC = () => {
           </div>
         )}
       </div>
+      {/* Modal de Confirmação de Exclusão */}
+      <ConfirmModal
+        isOpen={deleteModal.isOpen}
+        onClose={() => setDeleteModal({ isOpen: false, userId: '', email: '' })}
+        onConfirm={confirmDelete}
+        title="Excluir Usuário"
+        message={`Tem certeza que deseja excluir o usuário ${deleteModal.email}? Esta ação não pode ser desfeita.`}
+        confirmText="Excluir"
+        cancelText="Cancelar"
+        type="danger"
+      />
+
+      {/* Modal de Resultado */}
+      <AlertModal
+        isOpen={alertModal.isOpen}
+        onClose={() => setAlertModal({ ...alertModal, isOpen: false })}
+        title={alertModal.title}
+        message={alertModal.message}
+        type={alertModal.type === 'success' ? 'success' : 'error'}
+        buttonText="OK"
+        buttonColor={alertModal.type === 'success' ? 'green' : 'red'}
+      />
     </div>
   );
 };

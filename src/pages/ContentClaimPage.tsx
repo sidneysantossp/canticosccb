@@ -37,7 +37,7 @@ const ContentClaimPage: React.FC = () => {
     if (!canSubmit) return;
     setSubmitting(true);
     try {
-      // Mapeia para o fluxo existente (dados mínimos quando não há música aberta)
+      // Mapeia para o fluxo existente (dados mínimos quando não há hino aberto)
       const created = createClaim({
         songId: 0,
         songTitle: 'Conteúdo informado via URL pública',

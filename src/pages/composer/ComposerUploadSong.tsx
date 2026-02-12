@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { 
   ArrowLeft, 
@@ -11,6 +11,9 @@ import {
   Play,
   Pause
 } from 'lucide-react';
+import AlertModal from '@/components/ui/AlertModal';
+import { useAuth } from '@/contexts/AuthContext';
+import { hinosApi, uploadApi, compositoresApi } from '@/lib/api-client';
 
 interface SongFormData {
   title: string;
@@ -26,9 +29,12 @@ interface SongFormData {
 
 const ComposerUploadSong: React.FC = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const audioInputRef = useRef<HTMLInputElement>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
   const audioPreviewRef = useRef<HTMLAudioElement>(null);
+  const [compositorId, setCompositorId] = useState<string | null>(null);
+  const [compositorNome, setCompositorNome] = useState<string>('');
 
   const [formData, setFormData] = useState<SongFormData>({
     title: '',
@@ -51,27 +57,54 @@ const ComposerUploadSong: React.FC = () => {
   const [audioDuration, setAudioDuration] = useState<number>(0);
   const [audioPreviewUrl, setAudioPreviewUrl] = useState<string>('');
   const [imagePreviewUrl, setImagePreviewUrl] = useState<string>('');
+  const [modalOpen, setModalOpen] = useState(false);
+  const [modalTitle, setModalTitle] = useState('');
+  const [modalMessage, setModalMessage] = useState('');
+  const [modalType, setModalType] = useState<'success' | 'error' | 'info' | 'warning'>('info');
+  const [modalCallback, setModalCallback] = useState<(() => void) | null>(null);
+  const [genres, setGenres] = useState<string[]>([]);
 
-  const genres = [
-    'Hino Clássico',
-    'Louvor',
-    'Adoração',
-    'Instrumental',
-    'Coral',
-    'Oração',
-    'Evangélico',
-    'Contemporâneo',
-    'Tradicional'
-  ];
+  // Resolver compositor_id do usuário logado
+  useEffect(() => {
+    const loadCompositor = async () => {
+      if (!user?.id) return;
+      try {
+        const comp = await compositoresApi.getByUsuarioId(user.id, (user as any)?.email);
+        const cdata: any = comp?.data;
+        console.log('🎵 [UploadSong] Compositor resolvido:', cdata);
+        if (cdata?.id) setCompositorId(String(cdata.id));
+        setCompositorNome(cdata?.nome_artistico || cdata?.nome || (user as any)?.nome || '');
+      } catch (e) {
+        console.warn('⚠️ [UploadSong] Compositor não encontrado pelo user_id, usando nome do user:', e);
+        setCompositorNome((user as any)?.nome || (user as any)?.name || '');
+      }
+    };
+    loadCompositor();
+  }, [user?.id]);
+
+  // Carregar gêneros do banco de dados
+  useEffect(() => {
+    const loadGenres = async () => {
+      try {
+        const { getAllGenres } = await import('@/lib/admin/genresAdminApi');
+        const allGenres = await getAllGenres();
+        const activeGenres = allGenres.filter(g => g.is_active).map(g => g.name);
+        setGenres(activeGenres.length > 0 ? activeGenres : []);
+      } catch (e) {
+        console.warn('Erro ao carregar gêneros:', e);
+      }
+    };
+    loadGenres();
+  }, []);
 
   const handleInputChange = (field: keyof SongFormData, value: any) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
   const validateAudioFile = (file: File): { valid: boolean; error?: string } => {
-    const maxSize = 50 * 1024 * 1024; // 50MB
+    const maxSize = 5 * 1024 * 1024 * 1024; // 5GB
     if (file.size > maxSize) {
-      return { valid: false, error: 'Arquivo muito grande. Máximo 50MB.' };
+      return { valid: false, error: 'Arquivo muito grande. Máximo 5GB.' };
     }
 
     const allowedTypes = ['audio/mpeg', 'audio/wav', 'audio/flac', 'audio/mp3'];
@@ -100,7 +133,11 @@ const ComposerUploadSong: React.FC = () => {
     const validation = validateAudioFile(file);
     
     if (!validation.valid) {
-      alert(validation.error);
+      setModalTitle('Erro no arquivo');
+      setModalMessage(validation.error || 'Arquivo inválido');
+      setModalType('error');
+      setModalCallback(null);
+      setModalOpen(true);
       return;
     }
 
@@ -121,7 +158,11 @@ const ComposerUploadSong: React.FC = () => {
     const validation = validateImageFile(file);
     
     if (!validation.valid) {
-      alert(validation.error);
+      setModalTitle('Erro no arquivo');
+      setModalMessage(validation.error || 'Arquivo inválido');
+      setModalType('error');
+      setModalCallback(null);
+      setModalOpen(true);
       return;
     }
 
@@ -192,32 +233,96 @@ const ComposerUploadSong: React.FC = () => {
     e.preventDefault();
     
     if (!formData.audioFile) {
-      alert('Por favor, faça upload do arquivo de áudio.');
+      setModalTitle('Campo obrigatório');
+      setModalMessage('Por favor, faça upload do arquivo de áudio.');
+      setModalType('warning');
+      setModalCallback(null);
+      setModalOpen(true);
       return;
     }
 
     if (!formData.title) {
-      alert('Por favor, preencha o título da música.');
+      setModalTitle('Campo obrigatório');
+      setModalMessage('Por favor, preencha o título do hino.');
+      setModalType('warning');
+      setModalCallback(null);
+      setModalOpen(true);
       return;
     }
 
     setIsUploading(true);
-    
-    // Simulação de upload (substituir por integração real com backend)
-    const interval = setInterval(() => {
-      setUploadProgress(prev => {
-        if (prev >= 100) {
-          clearInterval(interval);
-          setTimeout(() => {
-            setIsUploading(false);
-            alert('Música enviada com sucesso!');
-            navigate('/composer/songs');
-          }, 500);
-          return 100;
-        }
-        return prev + 10;
-      });
-    }, 300);
+    setUploadProgress(0);
+
+    try {
+      // 1. Upload do áudio
+      setUploadProgress(10);
+      let audioUrl = '';
+      if (formData.audioFile) {
+        const audioResult = await uploadApi.audio(formData.audioFile);
+        if (audioResult.error) throw new Error(audioResult.error);
+        audioUrl = audioResult.data?.url || '';
+      }
+
+      setUploadProgress(50);
+
+      // 2. Upload da capa (se houver)
+      let coverUrl = '';
+      if (formData.coverImage) {
+        const coverResult = await uploadApi.cover(formData.coverImage);
+        if (coverResult.error) throw new Error(coverResult.error);
+        coverUrl = coverResult.data?.url || '';
+      }
+
+      setUploadProgress(75);
+
+      // 3. Formatar duração
+      const durationStr = audioDuration > 0 ? formatDuration(audioDuration) : undefined;
+
+      // 4. Criar hino no banco
+      const hinoData: any = {
+        titulo: formData.title.trim(),
+        audio_url: audioUrl,
+        cover_url: coverUrl || undefined,
+        compositor: compositorNome || undefined,
+        categoria: formData.genre || undefined,
+        duracao: durationStr,
+        letra: formData.lyrics || undefined,
+        ativo: 1,
+        status: 'published',
+      };
+
+      if (compositorId) hinoData.compositor_id = compositorId;
+
+      console.log('📀 [UploadSong] compositorId:', compositorId, '| compositorNome:', compositorNome);
+      console.log('📀 [UploadSong] hinoData:', hinoData);
+
+      const result = await hinosApi.create(hinoData);
+      console.log('📀 [UploadSong] create result:', result);
+
+      if (result.error) throw new Error(result.error);
+      if (!result.data) throw new Error('Falha ao salvar hino no banco de dados. Tente novamente.');
+
+      setUploadProgress(100);
+
+      setTimeout(() => {
+        setIsUploading(false);
+        setModalTitle('Hino enviado');
+        setModalMessage('Hino enviado com sucesso!');
+        setModalType('success');
+        setModalCallback(() => () => navigate('/composer/songs'));
+        setModalOpen(true);
+      }, 300);
+
+    } catch (error: any) {
+      console.error('❌ Erro ao enviar hino:', error);
+      setIsUploading(false);
+      setUploadProgress(0);
+      setModalTitle('Erro no envio');
+      setModalMessage(error.message || 'Erro ao enviar o hino. Tente novamente.');
+      setModalType('error');
+      setModalCallback(null);
+      setModalOpen(true);
+    }
   };
 
   const isFormValid = formData.title && formData.audioFile;
@@ -232,9 +337,9 @@ const ComposerUploadSong: React.FC = () => {
             className="inline-flex items-center gap-2 text-text-muted hover:text-white transition-colors mb-4"
           >
             <ArrowLeft className="w-5 h-5" />
-            Voltar para Músicas
+            Voltar para Hinos
           </Link>
-          <h1 className="text-3xl font-bold text-white">Enviar Nova Música</h1>
+          <h1 className="text-3xl font-bold text-white">Enviar Novo Hino</h1>
           <p className="text-text-muted mt-2">
             Preencha os dados e faça upload do arquivo de áudio
           </p>
@@ -270,7 +375,7 @@ const ComposerUploadSong: React.FC = () => {
                   ou clique para selecionar
                 </p>
                 <p className="text-text-muted text-xs">
-                  Formatos aceitos: MP3, WAV, FLAC (máx. 50MB)
+                  Formatos aceitos: MP3, WAV, FLAC (máx. 5GB)
                 </p>
                 <input
                   ref={audioInputRef}
@@ -338,7 +443,7 @@ const ComposerUploadSong: React.FC = () => {
             
             <div>
               <label className="block text-white font-medium mb-2">
-                Título da Música *
+                Título do Hino *
               </label>
               <input
                 type="text"
@@ -396,9 +501,9 @@ const ComposerUploadSong: React.FC = () => {
             </div>
           </div>
 
-          {/* Capa da Música */}
+          {/* Capa do Hino */}
           <div className="bg-background-secondary rounded-xl p-6">
-            <h2 className="text-xl font-bold text-white mb-4">Capa da Música</h2>
+            <h2 className="text-xl font-bold text-white mb-4">Capa do Hino</h2>
             
             {!formData.coverImage ? (
               <div
@@ -473,7 +578,7 @@ const ComposerUploadSong: React.FC = () => {
               <textarea
                 value={formData.lyrics}
                 onChange={(e) => handleInputChange('lyrics', e.target.value)}
-                placeholder="Cole a letra completa da música aqui..."
+                placeholder="Cole a letra completa do hino aqui..."
                 rows={10}
                 className="w-full px-4 py-3 bg-background-tertiary border border-gray-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-primary-500"
               />
@@ -553,7 +658,7 @@ const ComposerUploadSong: React.FC = () => {
             {isUploading && (
               <div className="mb-6">
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-white font-medium">Enviando música...</span>
+                  <span className="text-white font-medium">Enviando hino...</span>
                   <span className="text-primary-400">{uploadProgress}%</span>
                 </div>
                 <div className="w-full h-2 bg-background-tertiary rounded-full overflow-hidden">
@@ -579,12 +684,25 @@ const ComposerUploadSong: React.FC = () => {
                 disabled={!isFormValid || isUploading}
                 className="flex-1 px-6 py-3 bg-primary-500 text-white rounded-lg hover:bg-primary-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {isUploading ? 'Enviando...' : 'Publicar Música'}
+                {isUploading ? 'Enviando...' : 'Publicar Hino'}
               </button>
             </div>
           </div>
         </form>
       </div>
+      {/* AlertModal padrão da plataforma */}
+      <AlertModal
+        isOpen={modalOpen}
+        onClose={() => {
+          setModalOpen(false);
+          if (modalCallback) modalCallback();
+        }}
+        title={modalTitle}
+        message={modalMessage}
+        type={modalType}
+        buttonText="OK"
+        buttonColor={modalType === 'success' ? 'green' : modalType === 'error' ? 'red' : 'amber'}
+      />
     </div>
   );
 };

@@ -38,7 +38,7 @@ const ComposerManagers: React.FC = () => {
   const [inviteEmail, setInviteEmail] = useState('');
   const [inviteNotes, setInviteNotes] = useState('');
   const [sending, setSending] = useState(false);
-  const [compositorId, setCompositorId] = useState<number | null>(null);
+  const [compositorId, setCompositorId] = useState<string | null>(null);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [showErrorModal, setShowErrorModal] = useState(false);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
@@ -69,26 +69,35 @@ const ComposerManagers: React.FC = () => {
 
   const loadCompositorId = async () => {
     if (!user?.id) {
+      setLoading(false);
       return;
     }
 
     try {
       const { data, error } = await supabase
-        .from('compositores')
+        .from('composers')
         .select('id')
-        .eq('usuario_id', user.id)
-        .single();
+        .eq('user_id', user.id)
+        .limit(1);
 
       if (error) {
         console.error('Erro ao buscar compositor:', error);
         setCompositorId(null);
+        setLoading(false);
         return;
       }
 
-      setCompositorId(data?.id ?? null);
+      const found = data?.[0];
+      if (found?.id) {
+        setCompositorId(String(found.id));
+      } else {
+        setCompositorId(null);
+        setLoading(false);
+      }
     } catch (error) {
       console.error('Erro inesperado ao buscar compositor:', error);
       setCompositorId(null);
+      setLoading(false);
     }
   };
 
@@ -101,41 +110,45 @@ const ComposerManagers: React.FC = () => {
     try {
       setLoadingInvites(true);
       const { data: invites, error } = await supabase
-        .from('compositor_gerentes')
-        .select('id, compositor_id, status, notas, convidado_em')
-        .eq('gerente_usuario_id', user.id)
-        .eq('status', 'pendente')
-        .order('convidado_em', { ascending: false });
+        .from('composer_managers')
+        .select('id, composer_id, status, created_at')
+        .eq('manager_user_id', user.id)
+        .eq('status', 'pending')
+        .order('created_at', { ascending: false });
 
       if (error) {
         throw error;
       }
 
-      const composerIds = Array.from(new Set((invites || []).map((invite) => invite.compositor_id).filter(Boolean)));
-      let composerMap: Record<number, PendingInvite['compositor']> = {};
+      const composerIds = Array.from(new Set((invites || []).map((invite: any) => invite.composer_id).filter(Boolean)));
+      let composerMap: Record<string, PendingInvite['compositor']> = {};
 
       if (composerIds.length > 0) {
         const { data: composers } = await supabase
-          .from('compositores')
-          .select('id,nome,nome_artistico')
+          .from('composers')
+          .select('id,name,artistic_name')
           .in('id', composerIds);
 
-        composerMap = (composers || []).reduce((acc, composer) => {
+        composerMap = (composers || []).reduce((acc: any, composer: any) => {
           if (composer && composer.id) {
-            acc[composer.id] = {
+            acc[String(composer.id)] = {
               id: composer.id,
-              nome: composer.nome ?? undefined,
-              nome_artistico: composer.nome_artistico ?? undefined,
+              nome: composer.name ?? undefined,
+              nome_artistico: composer.artistic_name ?? undefined,
             };
           }
           return acc;
-        }, {} as Record<number, PendingInvite['compositor']>);
+        }, {} as Record<string, PendingInvite['compositor']>);
       }
 
       setPendingInvites(
-        (invites || []).map((invite) => ({
-          ...invite,
-          compositor: composerMap[invite.compositor_id] ?? null,
+        (invites || []).map((invite: any) => ({
+          id: invite.id,
+          compositor_id: invite.composer_id,
+          status: invite.status === 'pending' ? 'pendente' : invite.status,
+          notas: null,
+          convidado_em: invite.created_at,
+          compositor: composerMap[String(invite.composer_id)] ?? null,
         }))
       );
     } catch (error) {
@@ -152,34 +165,34 @@ const ComposerManagers: React.FC = () => {
     try {
       setLoading(true);
       const { data: rows, error } = await supabase
-        .from('compositor_gerentes')
-        .select('id,status,convidado_em,aceito_em,gerente_usuario_id')
-        .eq('compositor_id', compositorId)
-        .order('convidado_em', { ascending: false });
+        .from('composer_managers')
+        .select('id,status,created_at,accepted_at,manager_user_id')
+        .eq('composer_id', compositorId)
+        .order('created_at', { ascending: false });
 
       if (error) throw error;
 
-      const managerIds = Array.from(new Set((rows || []).map((row) => row.gerente_usuario_id)));
-      let users: { id: number; nome?: string; email?: string }[] = [];
+      const managerIds = Array.from(new Set((rows || []).map((row: any) => row.manager_user_id)));
+      let usersData: { id: string; name?: string; email?: string }[] = [];
 
       if (managerIds.length > 0) {
         const res = await supabase
-          .from('usuarios')
-          .select('id,nome,email')
+          .from('users')
+          .select('id,name,email')
           .in('id', managerIds);
-        users = res.data || [];
+        usersData = res.data || [];
       }
 
-      const normalized = (rows || []).map((row) => {
-        const userInfo = users.find((u) => u.id === row.gerente_usuario_id);
+      const normalized = (rows || []).map((row: any) => {
+        const userInfo = usersData.find((u) => u.id === row.manager_user_id);
         return {
           id: row.id,
-          gerente_usuario_id: row.gerente_usuario_id,
-          nome: userInfo?.nome || 'Gerente',
+          gerente_usuario_id: row.manager_user_id,
+          nome: userInfo?.name || 'Gerente',
           email: userInfo?.email || '',
-          status: row.status,
-          convidado_em: row.convidado_em,
-          aceito_em: row.aceito_em ?? undefined,
+          status: row.status === 'active' ? 'ativo' : row.status === 'pending' ? 'pendente' : row.status === 'rejected' ? 'recusado' : row.status === 'removed' ? 'removido' : row.status,
+          convidado_em: row.created_at,
+          aceito_em: row.accepted_at ?? undefined,
         };
       });
 
@@ -195,8 +208,8 @@ const ComposerManagers: React.FC = () => {
   const handleAcceptInvite = async (inviteId: number) => {
     try {
       const { error } = await supabase
-        .from('compositor_gerentes')
-        .update({ status: 'ativo', aceito_em: new Date().toISOString() })
+        .from('composer_managers')
+        .update({ status: 'active', accepted_at: new Date().toISOString() })
         .eq('id', inviteId);
 
       if (error) throw error;
@@ -218,8 +231,8 @@ const ComposerManagers: React.FC = () => {
   const handleRejectInvite = async (inviteId: number) => {
     try {
       const { error } = await supabase
-        .from('compositor_gerentes')
-        .update({ status: 'recusado' })
+        .from('composer_managers')
+        .update({ status: 'rejected' })
         .eq('id', inviteId);
 
       if (error) throw error;
@@ -251,25 +264,50 @@ const ComposerManagers: React.FC = () => {
 
     try {
       setSending(true);
-      const { data: managerUser, error: userError } = await supabase
-        .from('usuarios')
-        .select('id,nome,email')
+      const { data: managerUsers, error: userError } = await supabase
+        .from('users')
+        .select('id,name,email')
         .eq('email', inviteEmail)
-        .single();
+        .limit(1);
 
-      if (userError || !managerUser) {
-        throw userError ?? new Error('Usuario nao encontrado');
+      if (userError) throw userError;
+      const managerUser = managerUsers?.[0];
+      if (!managerUser) {
+        throw new Error('Usuario nao encontrado. Somente usuarios que ja possuem cadastro na plataforma podem ser adicionados como gerentes de conta.');
       }
 
-      const { error: insertError } = await supabase.from('compositor_gerentes').insert({
-        compositor_id: compositorId,
-        gerente_usuario_id: managerUser.id,
-        status: 'pendente',
-        notas: inviteNotes || null,
-        convidado_em: new Date().toISOString(),
+      const { error: insertError } = await supabase.from('composer_managers').insert({
+        composer_id: compositorId,
+        manager_user_id: managerUser.id,
+        status: 'pending',
       });
 
       if (insertError) throw insertError;
+
+      // Criar notificação para o usuário convidado
+      try {
+        // Buscar nome do compositor para a notificação
+        const { data: composerData } = await supabase
+          .from('composers')
+          .select('name,artistic_name')
+          .eq('id', compositorId)
+          .limit(1);
+        const composerName = composerData?.[0]?.artistic_name || composerData?.[0]?.name || 'Um compositor';
+
+        await supabase.from('notifications').insert({
+          user_id: managerUser.id,
+          composer_id: compositorId,
+          type: 'convite',
+          title: '📩 Convite para Gerenciar Conta',
+          message: `${composerName} convidou você para ser gerente da conta. Acesse "Gerenciar Gestores" para aceitar ou recusar.`,
+          link: '/composer/managers',
+          read: false,
+          is_read: false,
+          metadata: { invite_type: 'manager', composer_name: composerName },
+        });
+      } catch (notifErr) {
+        console.warn('⚠️ Falha ao criar notificação do convite:', notifErr);
+      }
 
       setModalTitle('Convite Enviado');
       setModalMessage('O convite foi enviado com sucesso! O gestor recebera uma notificacao.');
@@ -298,7 +336,7 @@ const ComposerManagers: React.FC = () => {
 
     try {
       const { error } = await supabase
-        .from('compositor_gerentes')
+        .from('composer_managers')
         .delete()
         .eq('id', managerToRemove);
 

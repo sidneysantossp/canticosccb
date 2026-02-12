@@ -247,14 +247,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const signIn = async (email: string, password: string) => {
     try {
-      const { error } = await authClient.supabase.auth.signInWithPassword({
+      console.log('🔑 [signIn] Tentando signInWithPassword...');
+      const { data, error } = await authClient.supabase.auth.signInWithPassword({
         email,
         password,
       });
       if (error) {
-        // Fallback: se Auth retorna erro 500 (schema), tentar login via REST API
+        console.error('🔑 [signIn] Erro do Supabase Auth:', error.message, 'status:', error.status);
+
+        // Se Auth retorna 500 (RLS quebrando schema), usar fallback REST
         if (error.message?.includes('Database error querying schema') || error.status === 500) {
-          console.warn('⚠️ Auth 500 - tentando fallback via REST API...');
+          console.warn('⚠️ Auth 500 - usando fallback REST para login...');
+
+          // Buscar usuário via REST (funciona com anon key)
           const { data: dbUser, error: dbError } = await authClient.supabase
             .from('users')
             .select('*')
@@ -265,7 +270,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             throw new Error('Email ou senha incorretos.');
           }
 
-          // Criar sessão local (sem token JWT real, mas permite navegar)
+          // Marcar como sessão fallback (sem JWT)
           const usuarioCompat: User = {
             id: String(dbUser.id),
             email: dbUser.email,
@@ -276,6 +281,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           };
 
           localStorage.setItem('user', JSON.stringify(usuarioCompat));
+          localStorage.setItem('auth_fallback', 'true');
           setUser(usuarioCompat);
           setProfile({
             ...usuarioCompat,
@@ -284,10 +290,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             is_composer: dbUser.is_composer === true,
           });
           console.log('✅ Fallback login OK:', dbUser.name, '| admin:', dbUser.is_admin);
-          return; // Login via fallback bem-sucedido
+          console.warn('⚠️ ATENÇÃO: Login sem JWT. Operações admin usarão REST API.');
+          return;
         }
-        throw new Error(error.message);
+
+        throw new Error(
+          error.message === 'Invalid login credentials'
+            ? 'Email ou senha incorretos.'
+            : error.message
+        );
       }
+      console.log('✅ [signIn] Login OK, session:', !!data?.session, 'user:', data?.user?.email);
+      localStorage.removeItem('auth_fallback');
     } catch (error: any) {
       console.error('Sign-in error:', error?.message || error);
       throw error;

@@ -45,7 +45,7 @@ const PlayerControls: React.FC<Props> = ({
           {isAlbumTheme && <div className="absolute -top-1 -right-1 w-2 h-2 bg-purple-400 rounded-full" />}
         </button>
 
-        <button onClick={onPrevious} className="p-3 text-white hover:scale-110 transition-transform" title={isAlbumTheme ? 'Faixa anterior' : 'Música anterior'}>
+        <button onClick={onPrevious} className="p-3 text-white hover:scale-110 transition-transform" title={isAlbumTheme ? 'Faixa anterior' : 'Hino anterior'}>
           <SkipBack className="w-7 h-7 fill-current" />
         </button>
 
@@ -53,14 +53,14 @@ const PlayerControls: React.FC<Props> = ({
           {isPlaying ? <Pause className="w-8 h-8 text-black fill-current" /> : <Play className="w-8 h-8 text-black fill-current ml-1" />}
         </motion.button>
 
-        <button onClick={onNext} className="p-3 text-white hover:scale-110 transition-transform" title={isAlbumTheme ? 'Próxima faixa' : 'Próxima música'}>
+        <button onClick={onNext} className="p-3 text-white hover:scale-110 transition-transform" title={isAlbumTheme ? 'Próxima faixa' : 'Próximo hino'}>
           <SkipForward className="w-7 h-7 fill-current" />
         </button>
 
         <button
           onClick={onRepeatToggle}
           className={`p-2 rounded-full transition-colors relative ${storeRepeat === 'none' ? 'text-gray-400 hover:text-white' : 'text-green-500'}`}
-          title={isAlbumTheme ? `Repetir: ${storeRepeat === 'none' ? 'Desligado' : storeRepeat === 'one' ? 'Faixa atual' : 'Todo o álbum'}` : `Repetir: ${storeRepeat === 'none' ? 'Desligado' : storeRepeat === 'one' ? 'Música atual' : 'Toda a playlist'}`}
+          title={isAlbumTheme ? `Repetir: ${storeRepeat === 'none' ? 'Desligado' : storeRepeat === 'one' ? 'Faixa atual' : 'Todo o álbum'}` : `Repetir: ${storeRepeat === 'none' ? 'Desligado' : storeRepeat === 'one' ? 'Hino atual' : 'Toda a playlist'}`}
         >
           {storeRepeat === 'one' ? <Repeat1 className="w-5 h-5" /> : <Repeat className="w-5 h-5" />}
           {isAlbumTheme && storeRepeat !== 'none' && <div className="absolute -top-1 -right-1 w-2 h-2 bg-purple-400 rounded-full" />}
@@ -69,7 +69,7 @@ const PlayerControls: React.FC<Props> = ({
 
       <div className="space-y-3 pt-4 border-t border-white/10">
         <div className="flex items-center gap-2 flex-wrap">
-          <button onClick={onAddToPlaylist} className="flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 hover:bg-white/20 transition-colors" title={isAlbumTheme ? 'Adicionar faixa à playlist' : 'Adicionar música à playlist'}>
+          <button onClick={onAddToPlaylist} className="flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 hover:bg-white/20 transition-colors" title={isAlbumTheme ? 'Adicionar faixa à playlist' : 'Adicionar hino à playlist'}>
             <Plus className="w-5 h-5 text-white" />
             <span className="text-sm text-white font-medium">Adicionar</span>
           </button>

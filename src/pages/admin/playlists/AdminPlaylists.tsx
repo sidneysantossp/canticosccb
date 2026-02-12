@@ -65,7 +65,7 @@ const AdminPlaylists: React.FC = () => {
 
   const handleRemoveSong = async (songId: string, songTitle?: string) => {
     if (!selectedPlaylist) return;
-    if (!window.confirm(`Remover "${songTitle || 'música'}" da playlist?`)) return;
+    if (!window.confirm(`Remover "${songTitle || 'hino'}" da playlist?`)) return;
 
     try {
       await removeSongFromPlaylist(selectedPlaylist.id, songId);
@@ -120,7 +120,7 @@ const AdminPlaylists: React.FC = () => {
           <div className="flex items-center gap-3">
             <Music className="w-8 h-8 text-purple-400" />
             <div>
-              <p className="text-gray-400 text-sm">Total de Músicas</p>
+              <p className="text-gray-400 text-sm">Total de Hinos</p>
               <p className="text-2xl font-bold text-white">
                 {playlists.reduce((sum, p) => sum + (p.song_count || 0), 0)}
               </p>
@@ -169,7 +169,7 @@ const AdminPlaylists: React.FC = () => {
                   </td>
                   <td className="p-4">
                     <div className="space-y-1 text-sm">
-                      <p className="text-gray-400">{playlist.song_count || 0} músicas</p>
+                      <p className="text-gray-400">{playlist.song_count || 0} hinos</p>
                       <p className="text-gray-400">{playlist.followers_count || 0} seguidores</p>
                     </div>
                   </td>
@@ -248,7 +248,7 @@ const AdminPlaylists: React.FC = () => {
 
             <div className="grid grid-cols-3 gap-4 mb-6">
               <div className="bg-gray-800/50 rounded-lg p-3">
-                <p className="text-gray-400 text-sm">Músicas</p>
+                <p className="text-gray-400 text-sm">Hinos</p>
                 <p className="text-2xl font-bold text-white">{selectedPlaylist.songs?.length || 0}</p>
               </div>
               <div className="bg-gray-800/50 rounded-lg p-3">
@@ -265,7 +265,7 @@ const AdminPlaylists: React.FC = () => {
               </div>
             </div>
 
-            <h3 className="text-lg font-semibold text-white mb-4">Músicas da Playlist</h3>
+            <h3 className="text-lg font-semibold text-white mb-4">Hinos da Playlist</h3>
             <div className="space-y-2">
               {selectedPlaylist.songs && selectedPlaylist.songs.length > 0 ? (
                 selectedPlaylist.songs.map((song, index) => (

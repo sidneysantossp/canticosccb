@@ -50,8 +50,8 @@ const HymnCreateModal: React.FC<HymnCreateModalProps> = ({ isOpen, onClose, onSu
         setError('Por favor, selecione um arquivo de áudio válido');
         return;
       }
-      if (file.size > 50 * 1024 * 1024) {
-        setError('Arquivo de áudio muito grande. Máximo: 50 MB');
+      if (file.size > 5 * 1024 * 1024 * 1024) {
+        setError('Arquivo de áudio muito grande. Máximo: 5 GB');
         return;
       }
       setAudioFile(file);
@@ -308,7 +308,7 @@ const HymnCreateModal: React.FC<HymnCreateModalProps> = ({ isOpen, onClose, onSu
                 ) : (
                   <div>
                     <p className="text-white">Clique para selecionar áudio</p>
-                    <p className="text-text-muted text-sm">Máximo: 50 MB</p>
+                    <p className="text-text-muted text-sm">Máximo: 5 GB</p>
                   </div>
                 )}
               </label>

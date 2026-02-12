@@ -263,7 +263,7 @@ export default function FullScreenPlayer({ isOpen, onClose }: FullScreenPlayerPr
     }
   }, [isOpen, isAuthenticated, currentTrack, user]);
 
-  // Simular progresso da música
+  // Simular progresso do hino
   useEffect(() => {
     let interval: NodeJS.Timeout;
     
@@ -428,7 +428,7 @@ export default function FullScreenPlayer({ isOpen, onClose }: FullScreenPlayerPr
       setShowAddToPlaylist(false);
 
       // Feedback
-      setPlaylistSuccessMessage(`Playlist "${created.name}" criada com sucesso!\nMúsica adicionada.`);
+      setPlaylistSuccessMessage(`Playlist "${created.name}" criada com sucesso!\nHino adicionado.`);
       setShowPlaylistSuccess(true);
     } catch (e) {
       console.error('Erro ao criar playlist:', e);
@@ -486,7 +486,7 @@ export default function FullScreenPlayer({ isOpen, onClose }: FullScreenPlayerPr
       return;
     }
 
-    // Verificar se download está habilitado para esta música
+    // Verificar se download está habilitado para este hino
     const downloadEnabled = (currentTrack as any)?.allow_download !== undefined 
       ? Boolean((currentTrack as any).allow_download) 
       : false;
@@ -657,7 +657,7 @@ export default function FullScreenPlayer({ isOpen, onClose }: FullScreenPlayerPr
     // Só funciona para álbuns, quando está tocando, tem tempo válido e chegou perto do fim
     if (isAlbumTheme && isPlaying && currentTime > 0 && duration > 0 && !autoSwitched) {
       const percentage = (currentTime / duration) * 100;
-      // Se chegou a 99.5% da música, pedir próxima via store
+      // Se chegou a 99.5% do hino, pedir próximo via store
       if (percentage >= 99.5) {
         setAutoSwitched(true);
         playNext();

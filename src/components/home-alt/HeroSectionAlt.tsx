@@ -45,7 +45,7 @@ const HeroSectionAlt: React.FC<HeroSectionAltProps> = ({ banners, isDarkMode }) 
             <p className={`text-lg md:text-xl mb-8 ${
               isDarkMode ? 'text-gray-300' : 'text-gray-700'
             }`}>
-              Louve ao Senhor com música e adoração
+              Louve ao Senhor com hinos e adoração
             </p>
             <Link
               to="/categoria/cantados"

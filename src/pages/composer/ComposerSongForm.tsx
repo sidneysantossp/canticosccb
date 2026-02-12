@@ -79,12 +79,12 @@ const ComposerSongForm: React.FC = () => {
         else if (Array.isArray(raw)) arr = raw;
 
         // Resolver compositor_id do usuário e filtrar by compositor_id para garantir
-        let myComposerId: number | null = null;
+        let myComposerId: string | null = null;
         try {
           if ((user as any)?.id) {
-            const comp = await compositoresApi.getByUsuarioId((user as any).id);
+            const comp = await compositoresApi.getByUsuarioId((user as any).id, (user as any)?.email);
             const cdata: any = (comp as any)?.data || comp;
-            if (cdata?.id) myComposerId = Number(cdata.id);
+            if (cdata?.id) myComposerId = String(cdata.id);
           }
         } catch {}
 
@@ -99,7 +99,7 @@ const ComposerSongForm: React.FC = () => {
 
       // Se estiver editando, carregar dados do hino
       if (isEditMode && id) {
-        const songRes = await hinosApi.get(Number(id));
+        const songRes = await hinosApi.get(id);
         if (!songRes.error && songRes.data) {
           const song: any = songRes.data;
           setFormData({
@@ -159,8 +159,8 @@ const ComposerSongForm: React.FC = () => {
   const handleAudioChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      if (file.size > 50 * 1024 * 1024) {
-        setError('Áudio muito grande. Máximo 50MB.');
+      if (file.size > 5 * 1024 * 1024 * 1024) {
+        setError('Áudio muito grande. Máximo 5GB.');
         return;
       }
 
@@ -253,7 +253,7 @@ const ComposerSongForm: React.FC = () => {
       };
 
       if (isEditMode && id) {
-        const res = await hinosApi.update(Number(id), payload);
+        const res = await hinosApi.update(id, payload);
         if (res.error) throw new Error(res.error);
       } else {
         const res = await hinosApi.create(payload);

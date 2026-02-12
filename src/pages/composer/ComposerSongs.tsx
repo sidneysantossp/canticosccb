@@ -11,10 +11,12 @@ import {
   Eye,
   MoreVertical,
   Download,
-  Info
+  Info,
+  Trash2
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { hinosApi, compositoresApi } from '@/lib/api-client';
+import AlertModal from '@/components/ui/AlertModal';
 // import {
 //   getComposerSongs,
 //   getComposerSongStats,
@@ -62,6 +64,12 @@ const ComposerSongs: React.FC = () => {
   const pageSize = 10;
   const [trends, setTrends] = useState<SongTrend[]>([]);
   const [reloadTick, setReloadTick] = useState(0);
+  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
+  const [deleteConfirmTitle, setDeleteConfirmTitle] = useState('');
+  const [alertOpen, setAlertOpen] = useState(false);
+  const [alertTitle, setAlertTitle] = useState('');
+  const [alertMessage, setAlertMessage] = useState('');
+  const [alertType, setAlertType] = useState<'success' | 'error'>('success');
 
   // Load real data
   useEffect(() => {
@@ -70,45 +78,33 @@ const ComposerSongs: React.FC = () => {
       
       setLoading(true);
       try {
-        // Buscar nome do compositor a partir do usuário (fonte confiável: tabela compositores)
-        let composerName = (user as any)?.nome || (user as any)?.name || '';
+        // 1. Resolver compositor_id do usuário logado
+        let compositorId: string | null = null;
         try {
-          const comp = await compositoresApi.getByUsuarioId(user.id);
+          const comp = await compositoresApi.getByUsuarioId(user.id, (user as any)?.email);
           const cdata: any = comp?.data;
-          if (cdata?.nome) composerName = cdata.nome;
-          else if (cdata?.nome_artistico) composerName = cdata.nome_artistico;
+          if (cdata?.id) compositorId = String(cdata.id);
         } catch {}
 
-        const normalize = (s: string) => (s || '').normalize('NFD').replace(/\p{Diacritic}/gu, '').toLowerCase().trim();
-        const composerNorm = normalize(composerName);
-        // Buscar pendentes (globais) e publicados do compositor
-        const [pendingRes, pubRes, allResMaybe] = await Promise.all([
-          hinosApi.listPending(),
-          hinosApi.list({ compositor: composerName, ativo: 1, limit: 1000 }),
-          hinosApi.list({ compositor: composerName, limit: 1000 })
-        ]);
-        const pendingAll = (pendingRes.data?.hinos || []) as any[];
-        // Publicados: aceitar vários formatos de resposta
-        const pubRaw: any = pubRes.data as any;
-        let publishedAll: any[] = [];
-        if (Array.isArray(pubRaw)) publishedAll = pubRaw;
-        else if (Array.isArray(pubRaw?.data)) publishedAll = pubRaw.data;
-        else if (Array.isArray(pubRaw?.hinos)) publishedAll = pubRaw.hinos;
-        else if (Array.isArray(pubRaw?.items)) publishedAll = pubRaw.items;
+        console.log('🎵 [ComposerSongs] compositor_id:', compositorId);
 
-        // Filtrar pendentes por compositor (normalizado)
-        const minePending = pendingAll.filter(h => normalize(h.compositor || '') === composerNorm);
-
-        // Fallback para publicados: se API não filtrar, filtra no front
-        let minePublished = publishedAll.filter(h => normalize(h.compositor || '') === composerNorm);
-        // Base completa para drafts
-        const allRaw: any = allResMaybe.data as any;
+        // 2. Buscar todos os hinos
+        const allRes = await hinosApi.list({ limit: 1000 });
+        const allRaw: any = allRes.data;
         const allArr: any[] = Array.isArray(allRaw) ? allRaw : (allRaw?.data || allRaw?.hinos || allRaw?.items || []);
-        const mineAll = allArr.filter(h => normalize(h.compositor || '') === composerNorm);
 
-        // Drafts: ativo=0 e não está em pendentes
-        const pendingIds = new Set(minePending.map((h:any) => h.id));
-        const mineDrafts = mineAll.filter(h => Number(h.ativo) === 0 && !pendingIds.has(h.id));
+        // 3. Filtrar APENAS por compositor_id (exclusivo - só hinos que o compositor fez upload)
+        const mineAll = compositorId
+          ? allArr.filter((h: any) => h.compositor_id && String(h.compositor_id) === String(compositorId))
+          : [];
+
+        console.log('🎵 [ComposerSongs] Meus hinos:', mineAll.length, 'de', allArr.length, 'total');
+
+        // 4. Separar por status
+        const minePending = mineAll.filter((h: any) => h.status === 'pending');
+        const minePublished = mineAll.filter((h: any) => Number(h.ativo) === 1 && h.status !== 'pending');
+        const pendingIds = new Set(minePending.map((h: any) => h.id));
+        const mineDrafts = mineAll.filter((h: any) => Number(h.ativo) === 0 && !pendingIds.has(h.id));
 
         const combined = [
           ...minePending.map(h => ({ ...h, __status: 'pending' as const })),
@@ -147,7 +143,27 @@ const ComposerSongs: React.FC = () => {
     loadData();
   }, [user?.id, searchQuery, filterStatus, sortBy, reloadTick]);
 
-  // Ações de excluir/publicar serão implementadas depois com endpoints reais
+  const handleDeleteSong = async (songId: string) => {
+    try {
+      await hinosApi.delete(songId);
+      setSongs(prev => prev.filter(s => s.id !== songId));
+      setDeleteConfirmId(null);
+      setAlertTitle('Hino excluído');
+      setAlertMessage('O hino foi excluído com sucesso.');
+      setAlertType('success');
+      setAlertOpen(true);
+      setReloadTick(t => t + 1);
+    } catch (e) {
+      console.error('Erro ao excluir hino:', e);
+      setDeleteConfirmId(null);
+      setAlertTitle('Erro');
+      setAlertMessage('Falha ao excluir o hino. Tente novamente.');
+      setAlertType('error');
+      setAlertOpen(true);
+    }
+  };
+
+  // Ações de excluir/publicar
 
   // (mock removido)
 
@@ -317,6 +333,13 @@ const ComposerSongs: React.FC = () => {
                       Seu hino está em análise e será publicado em alguns minutos. Este processo inicial garante segurança e controle do conteúdo.
                     </div>
                   </div>
+                  <button
+                    onClick={() => { setDeleteConfirmId(song.id); setDeleteConfirmTitle(song.title); }}
+                    className="p-2 text-text-muted hover:text-red-400 transition-colors"
+                    title="Excluir"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
                 </div>
               </div>
             ))}
@@ -345,14 +368,21 @@ const ComposerSongs: React.FC = () => {
                       try {
                         await hinosApi.update(song.id, { ativo: 1 });
                         setSongs(prev => prev.map(s => s.id === song.id ? { ...s, status: 'published' } : s));
-                        setReloadTick(t => t + 1); // refetch listas (inclui Trends e estatísticas locais)
+                        setReloadTick(t => t + 1);
                       } catch (e) {
-                        alert('Falha ao publicar.');
+                        setAlertTitle('Erro'); setAlertMessage('Falha ao publicar.'); setAlertType('error'); setAlertOpen(true);
                       }
                     }}
                     className="px-3 py-1 rounded-md bg-green-600 hover:bg-green-700 text-white text-xs font-semibold"
                   >
                     Publicar
+                  </button>
+                  <button
+                    onClick={() => { setDeleteConfirmId(song.id); setDeleteConfirmTitle(song.title); }}
+                    className="p-2 text-text-muted hover:text-red-400 transition-colors"
+                    title="Excluir"
+                  >
+                    <Trash2 className="w-4 h-4" />
                   </button>
                 </div>
               </div>
@@ -449,7 +479,13 @@ const ComposerSongs: React.FC = () => {
                 <Edit className="w-5 h-5" />
               </Link>
 
-              {/* Ações de excluir/publicar serão adicionadas futuramente */}
+              <button
+                onClick={() => { setDeleteConfirmId(song.id); setDeleteConfirmTitle(song.title); }}
+                className="p-2 text-text-muted hover:text-red-400 transition-colors"
+                title="Excluir"
+              >
+                <Trash2 className="w-5 h-5" />
+              </button>
             </div>
           </div>
         ))}
@@ -508,6 +544,43 @@ const ComposerSongs: React.FC = () => {
           </div>
         </div>
       )}
+
+      {/* Modal de confirmação de exclusão */}
+      {deleteConfirmId !== null && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50">
+          <div className="bg-background-secondary border border-gray-700 rounded-xl p-6 max-w-sm w-full mx-4 shadow-2xl">
+            <h3 className="text-white text-lg font-bold mb-2">Excluir hino</h3>
+            <p className="text-text-muted text-sm mb-6">
+              Tem certeza que deseja excluir <span className="text-white font-medium">"{deleteConfirmTitle}"</span>? Esta ação não pode ser desfeita.
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setDeleteConfirmId(null)}
+                className="flex-1 px-4 py-2 border border-gray-600 text-white rounded-lg hover:bg-background-hover transition-colors"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={() => handleDeleteSong(deleteConfirmId)}
+                className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors font-medium"
+              >
+                Excluir
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* AlertModal padrão */}
+      <AlertModal
+        isOpen={alertOpen}
+        onClose={() => setAlertOpen(false)}
+        title={alertTitle}
+        message={alertMessage}
+        type={alertType}
+        buttonText="OK"
+        buttonColor={alertType === 'success' ? 'green' : 'red'}
+      />
     </div>
   );
 };

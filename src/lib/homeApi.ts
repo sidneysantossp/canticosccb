@@ -199,6 +199,57 @@ const mapSupabaseBanner = (row: SupabaseBannerRow): HomeBanner => ({
 
 const normalizeHomeCategory = (value: string | undefined | null) => slugify(String(value ?? ''));
 
+/**
+ * Diversifica hinos por compositor: máx 1 por compositor primeiro,
+ * depois preenche com extras (round-robin) se não houver compositores suficientes.
+ */
+function diversifyByComposer<T extends { composer_name?: string }>(items: T[], maxItems: number): T[] {
+  if (items.length <= 1) return items.slice(0, maxItems);
+
+  const composerKey = (item: T) => (item.composer_name || 'unknown').toLowerCase().trim();
+
+  // Agrupar por compositor mantendo a ordem original
+  const composerGroups = new Map<string, T[]>();
+  for (const item of items) {
+    const key = composerKey(item);
+    if (!composerGroups.has(key)) composerGroups.set(key, []);
+    composerGroups.get(key)!.push(item);
+  }
+
+  const result: T[] = [];
+  const seen = new Set<string>();
+
+  // Rodada 1: 1 hino por compositor (o mais recente, que já vem primeiro por created_at.desc)
+  for (const [key, group] of composerGroups) {
+    if (result.length >= maxItems) break;
+    result.push(group[0]);
+    seen.add(`${key}-0`);
+  }
+
+  // Rodadas extras: preencher slots vazios com hinos adicionais (round-robin)
+  if (result.length < maxItems) {
+    let round = 1;
+    let added = true;
+    while (added && result.length < maxItems) {
+      added = false;
+      for (const [key, group] of composerGroups) {
+        if (result.length >= maxItems) break;
+        if (round < group.length) {
+          const id = `${key}-${round}`;
+          if (!seen.has(id)) {
+            result.push(group[round]);
+            seen.add(id);
+            added = true;
+          }
+        }
+      }
+      round++;
+    }
+  }
+
+  return result.slice(0, maxItems);
+}
+
 async function getHomePageDataFromSupabase(): Promise<HomePageData> {
   const heroBanners = supabaseFetch<SupabaseBannerRow>('banners', {
     select: 'id,title,description,image_url,link_url,link_id,gradient_overlay,button_text,type',
@@ -250,35 +301,44 @@ async function getHomePageDataFromSupabase(): Promise<HomePageData> {
 
   const hymns = hymnsData.map(mapSupabaseHymn);
   const grouped = {
-    cantados: hymns
-      .filter((h) => {
-        const normalized = normalizeHomeCategory(h.category);
-        return normalized === 'cantados' || normalized.includes('cantados');
-      })
-      .map((h) => ({ ...h, category: 'Cantados' })),
-    tocados: hymns
-      .filter((h) => {
-        const normalized = normalizeHomeCategory(h.category);
-        return normalized === 'tocados' || normalized.includes('tocados');
-      })
-      .map((h) => ({ ...h, category: 'Tocados' })),
-    avulsos: hymns
-      .filter((h) => {
-        const normalized = normalizeHomeCategory(h.category);
-        return normalized === 'avulsos' || normalized.includes('avulsos');
-      })
-      .map((h) => ({ ...h, category: 'Avulsos' })),
+    cantados: diversifyByComposer(
+      hymns
+        .filter((h) => {
+          const normalized = normalizeHomeCategory(h.category);
+          return normalized === 'cantados' || normalized.includes('cantados');
+        })
+        .map((h) => ({ ...h, category: 'Cantados' })),
+      12
+    ),
+    tocados: diversifyByComposer(
+      hymns
+        .filter((h) => {
+          const normalized = normalizeHomeCategory(h.category);
+          return normalized === 'tocados' || normalized.includes('tocados');
+        })
+        .map((h) => ({ ...h, category: 'Tocados' })),
+      12
+    ),
+    avulsos: diversifyByComposer(
+      hymns
+        .filter((h) => {
+          const normalized = normalizeHomeCategory(h.category);
+          return normalized === 'avulsos' || normalized.includes('avulsos');
+        })
+        .map((h) => ({ ...h, category: 'Avulsos' })),
+      12
+    ),
   };
 
   return {
     banners: bannersData.map(mapSupabaseBanner),
-    featured: hymns.slice(0, 6),
+    featured: diversifyByComposer(hymns, 6),
     albums: albumsData.map((album, index) => mapSupabaseAlbum(album, index, composerNameById)),
     hymnsCantados: grouped.cantados,
     hymnsTocados: grouped.tocados,
     hymnsAvulsos: grouped.avulsos,
-    newReleases: hymns.slice(0, 6),
-    trending: hymns.slice(0, 6),
+    newReleases: diversifyByComposer(hymns, 6),
+    trending: diversifyByComposer(hymns, 6),
     composers: composersData.map(mapSupabaseComposer),
     playlists: [],
     categories: categoriesData.map((category: any) => ({

@@ -61,7 +61,7 @@ const AdminFeatured: React.FC = () => {
 
   const contentTypes = [
     { value: 'hymn', label: 'Hino' },
-    { value: 'song', label: 'Música' },
+    { value: 'song', label: 'Hino' },
     { value: 'album', label: 'Álbum' },
     { value: 'playlist', label: 'Playlist' },
     { value: 'composer', label: 'Compositor' },

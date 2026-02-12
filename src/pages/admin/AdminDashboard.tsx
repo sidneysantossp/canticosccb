@@ -100,7 +100,7 @@ const AdminDashboard: React.FC = () => {
     },
     {
       id: 5,
-      title: 'Total de Músicas',
+      title: 'Total de Hinos',
       value: s.totalSongs.toString(),
       change: '+0%',
       trend: 'up' as const,
@@ -297,7 +297,7 @@ const AdminDashboard: React.FC = () => {
                 </div>
               );
             }) : (
-              <p className="text-gray-400 text-center py-4">Nenhuma música encontrada</p>
+              <p className="text-gray-400 text-center py-4">Nenhum hino encontrado</p>
             )}
           </div>
         </div>

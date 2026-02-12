@@ -137,7 +137,7 @@ const AdminAlbums: React.FC = () => {
               </p>
               <p className="text-gray-500 text-xs mt-1">
                 {(album as any).genre && <span>{(album as any).genre} • </span>}
-                {album.total_tracks || 0} músicas
+                {album.total_tracks || 0} hinos
               </p>
             </div>
           </div>

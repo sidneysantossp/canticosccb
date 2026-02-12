@@ -1,6 +1,6 @@
 import { supabase } from '@/lib/supabase-auth';
 
-export async function getUserFavorites(userId: number): Promise<string[]> {
+export async function getUserFavorites(userId: string | number): Promise<string[]> {
   try {
     const { data, error } = await supabase
       .from('favorites')
@@ -18,7 +18,7 @@ export async function getUserFavorites(userId: number): Promise<string[]> {
   }
 }
 
-export async function addFavorite(userId: number, hymnId: number): Promise<boolean> {
+export async function addFavorite(userId: string | number, hymnId: string | number): Promise<boolean> {
   try {
     console.log('💚 addFavorite - Tentando adicionar:', { userId, hymnId });
     
@@ -43,7 +43,7 @@ export async function addFavorite(userId: number, hymnId: number): Promise<boole
   }
 }
 
-export async function removeFavorite(userId: number, hymnId: number): Promise<boolean> {
+export async function removeFavorite(userId: string | number, hymnId: string | number): Promise<boolean> {
   try {
     const { error } = await supabase
       .from('favorites')
@@ -62,7 +62,7 @@ export async function removeFavorite(userId: number, hymnId: number): Promise<bo
   }
 }
 
-export async function syncLocalFavoritesWithBackend(userId: number): Promise<void> {
+export async function syncLocalFavoritesWithBackend(userId: string | number): Promise<void> {
   if (typeof localStorage === 'undefined') return;
   try {
     const stored = localStorage.getItem('favoriteHymns');

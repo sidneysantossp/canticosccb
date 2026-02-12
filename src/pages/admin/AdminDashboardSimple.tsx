@@ -162,7 +162,7 @@ const AdminDashboardSimple: React.FC = () => {
             className="bg-gray-800/50 border border-gray-700 rounded-lg p-4 hover:border-red-600 transition-all hover:scale-105 text-center"
           >
             <Music className="w-8 h-8 text-green-500 mx-auto mb-2" />
-            <p className="text-white font-semibold text-sm">Músicas</p>
+            <p className="text-white font-semibold text-sm">Hinos</p>
           </Link>
         </div>
       </div>

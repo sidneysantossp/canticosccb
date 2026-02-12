@@ -2,12 +2,14 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { Eye, EyeOff, Mail, Lock, ArrowLeft } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
+import { useMobileMenu } from '@/contexts/MobileMenuContext';
 import { googleLogin } from '@/lib/supabase-auth';
 
 const LoginPage: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { signIn, profile } = useAuth();
+  const { closeMenu } = useMobileMenu();
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -25,6 +27,9 @@ const LoginPage: React.FC = () => {
     if (profile) {
       console.log('✅ LoginPage - Profile loaded, redirecting...', profile);
 
+      // Fechar menu mobile se estiver aberto
+      closeMenu();
+
       // Redirecionamento imediato para rotas corretas
       if (profile.is_composer) {
         navigate('/composer');
@@ -37,7 +42,7 @@ const LoginPage: React.FC = () => {
       // Resetar loading após redirecionamento
       setIsLoading(false);
     }
-  }, [profile, navigate, location.state]);
+  }, [profile, navigate, location.state, closeMenu]);
 
   const handleGoogleLogin = async () => {
     try {

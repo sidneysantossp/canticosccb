@@ -57,7 +57,7 @@ const ComposerEditSong: React.FC = () => {
   const [audioFile, setAudioFile] = useState<File | null>(null);
   const [coverFile, setCoverFile] = useState<File | null>(null);
 
-  // Carregar dados da música
+  // Carregar dados do hino
   useEffect(() => {
     const loadSong = async () => {
       if (!id) {
@@ -69,7 +69,7 @@ const ComposerEditSong: React.FC = () => {
       try {
         const songData = await getComposerSong(id);
         if (!songData) {
-          setModal({ open: true, title: 'Não encontrado', message: 'Música não encontrada.', onClose: () => navigate('/composer/songs') });
+          setModal({ open: true, title: 'Não encontrado', message: 'Hino não encontrado.', onClose: () => navigate('/composer/songs') });
           return;
         }
 
@@ -85,7 +85,7 @@ const ComposerEditSong: React.FC = () => {
         });
       } catch (error) {
         console.error('Error loading song:', error);
-        setModal({ open: true, title: 'Erro', message: 'Erro ao carregar música.', onClose: () => navigate('/composer/songs') });
+        setModal({ open: true, title: 'Erro', message: 'Erro ao carregar hino.', onClose: () => navigate('/composer/songs') });
         return;
       } finally {
         setLoading(false);
@@ -138,7 +138,7 @@ const ComposerEditSong: React.FC = () => {
       setModal({ open: true, title: 'Sucesso', message: 'Hino atualizado com sucesso!', onClose: () => navigate('/composer/songs') });
     } catch (error) {
       console.error('Error updating song:', error);
-      setModal({ open: true, title: 'Erro', message: 'Erro ao atualizar música.' });
+      setModal({ open: true, title: 'Erro', message: 'Erro ao atualizar hino.' });
     } finally {
       setSaving(false);
     }
@@ -152,10 +152,10 @@ const ComposerEditSong: React.FC = () => {
 
     try {
       await deleteSong(id);
-      setModal({ open: true, title: 'Sucesso', message: 'Música excluída com sucesso!', onClose: () => navigate('/composer/songs') });
+      setModal({ open: true, title: 'Sucesso', message: 'Hino excluído com sucesso!', onClose: () => navigate('/composer/songs') });
     } catch (error) {
       console.error('Error deleting song:', error);
-      setModal({ open: true, title: 'Erro', message: 'Erro ao excluir música.' });
+      setModal({ open: true, title: 'Erro', message: 'Erro ao excluir hino.' });
     }
   };
 
@@ -178,7 +178,7 @@ const ComposerEditSong: React.FC = () => {
       <div className="p-6 max-w-4xl mx-auto">
         <div className="text-center py-16">
           <Music className="w-16 h-16 text-text-muted mx-auto mb-4" />
-          <h3 className="text-white font-semibold mb-2">Música não encontrada</h3>
+          <h3 className="text-white font-semibold mb-2">Hino não encontrado</h3>
           <button
             onClick={() => navigate('/composer/songs')}
             className="text-primary-400 hover:text-primary-300"

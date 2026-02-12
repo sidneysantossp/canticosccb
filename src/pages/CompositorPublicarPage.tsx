@@ -43,7 +43,7 @@ const CompositorPublicarPage: React.FC = () => {
         </h2>
         <p className="text-text-muted max-w-md mb-6">
           {isComposer
-            ? 'Acesse o painel do compositor para enviar suas músicas e alcançar milhares de ouvintes.'
+            ? 'Acesse o painel do compositor para enviar seus hinos e alcançar milhares de ouvintes.'
             : 'Cadastre-se como compositor para publicar suas composições na plataforma.'}
         </p>
         <button

@@ -54,6 +54,53 @@ type SupabaseHymnRow = {
   youtube_source?: string;
 };
 
+/**
+ * Diversifica itens por compositor: máx 1 por compositor primeiro,
+ * depois preenche com extras (round-robin) se não houver compositores suficientes.
+ */
+function diversifyByArtist<T extends { artist?: string }>(items: T[], maxItems: number): T[] {
+  if (items.length <= 1) return items.slice(0, maxItems);
+
+  const artistKey = (item: T) => (item.artist || 'unknown').toLowerCase().trim();
+
+  const groups = new Map<string, T[]>();
+  for (const item of items) {
+    const key = artistKey(item);
+    if (!groups.has(key)) groups.set(key, []);
+    groups.get(key)!.push(item);
+  }
+
+  const result: T[] = [];
+  const seen = new Set<string>();
+
+  // Rodada 1: 1 hino por compositor
+  for (const [key, group] of groups) {
+    if (result.length >= maxItems) break;
+    result.push(group[0]);
+    seen.add(`${key}-0`);
+  }
+
+  // Rodadas extras: preencher slots vazios com round-robin
+  if (result.length < maxItems) {
+    let round = 1;
+    let added = true;
+    while (added && result.length < maxItems) {
+      added = false;
+      for (const [key, group] of groups) {
+        if (result.length >= maxItems) break;
+        if (round < group.length && !seen.has(`${key}-${round}`)) {
+          result.push(group[round]);
+          seen.add(`${key}-${round}`);
+          added = true;
+        }
+      }
+      round++;
+    }
+  }
+
+  return result.slice(0, maxItems);
+}
+
 const mapSupabasePopularHino = (row: SupabaseHymnRow, index: number): PopularHino => ({
   id: String(row.id ?? `recent-${index}`),
   number: Number(row.numero ?? index + 1),
@@ -199,10 +246,12 @@ const HomePage: React.FC = () => {
           select: 'id,numero,titulo,compositor_nome,categoria,cover_url,audio_url,duracao,created_at,youtube_source',
           ativo: 'eq.true',
           order: 'created_at.desc',
-          limit: '12',
+          limit: '30',
         });
         if (rows.length > 0) {
-          setHomepageTrends(rows.map(mapSupabasePopularHino));
+          const mapped = rows.map(mapSupabasePopularHino);
+          const diversified = diversifyByArtist(mapped, 12);
+          setHomepageTrends(diversified);
         }
       } catch (error) {
         console.error('❌ Error loading recent hymns:', error);
@@ -305,7 +354,8 @@ const HomePage: React.FC = () => {
       artist: hymn.composer_name || 'Hino Cantado',
       coverUrl: hymn.cover_url || '',
     }));
-  const hinosCantadosFinal = hinosCantados.filter(h => !!h.cover && h.cover.trim() !== '');
+  const hinosCantadosDiversified = diversifyByArtist(hinosCantados, 12);
+  const hinosCantadosFinal = hinosCantadosDiversified.filter(h => !!h.cover && h.cover.trim() !== '');
   
   console.log('ðŸŽµ Hinos Cantados (final):', hinosCantados.length, 'items');
   
@@ -327,7 +377,8 @@ const HomePage: React.FC = () => {
       artist: hymn.composer_name || 'Hino Tocado',
       coverUrl: hymn.cover_url || '',
     }));
-  const hinosTocadosFinal = hinosTocados.filter(h => !!h.cover && h.cover.trim() !== '');
+  const hinosTocadosDiversified = diversifyByArtist(hinosTocados, 12);
+  const hinosTocadosFinal = hinosTocadosDiversified.filter(h => !!h.cover && h.cover.trim() !== '');
   
   console.log('ðŸŽ¹ Hinos Tocados (final):', hinosTocados.length, 'items');
   
@@ -349,7 +400,8 @@ const HomePage: React.FC = () => {
       artist: hymn.composer_name || 'Hino Avulso',
       coverUrl: hymn.cover_url || '',
     }));
-  const hinosAvulsosFinal = hinosAvulsos.filter(h => !!h.cover && h.cover.trim() !== '');
+  const hinosAvulsosDiversified = diversifyByArtist(hinosAvulsos, 12);
+  const hinosAvulsosFinal = hinosAvulsosDiversified.filter(h => !!h.cover && h.cover.trim() !== '');
   
   console.log('ðŸŽ¼ Hinos Avulsos (final):', hinosAvulsos.length, 'items');
 
@@ -462,8 +514,8 @@ const HomePage: React.FC = () => {
     <>
       <SEOHead
         title="Início"
-        description="Plataforma de música religiosa da Congregação Cristã no Brasil. Ouça hinos clássicos, louvor e adoração. Descubra compositores e crie suas playlists."
-        keywords="ccb, congregação cristã, hinos, música religiosa, louvor, adoração, playlist gospel"
+        description="Plataforma de hinos da Congregação Cristã no Brasil. Ouça hinos clássicos, louvor e adoração. Descubra compositores e crie suas playlists."
+        keywords="ccb, congregação cristã, hinos, hinos religiosos, louvor, adoração, playlist gospel"
         canonical="/"
         ogImage="/images/og-home.jpg"
         schemaData={schemas}

@@ -32,7 +32,7 @@ export const isValidSlug = (slug: string): boolean => {
 };
 
 /**
- * Gera URL canônica para um hino/música
+ * Gera URL canônica para um hino
  */
 export const generateSongCanonicalUrl = (slug: string, categorySlug: string = 'hinos-avulsos'): string => {
   return `${SITE_URL}/${categorySlug}/${slug}`;

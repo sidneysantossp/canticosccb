@@ -1,8 +1,10 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
-import { Plus, Edit, Trash2, CheckCircle, XCircle, Mic2, AlertCircle } from 'lucide-react';
+import { Plus, Edit, Trash2, CheckCircle, XCircle, Mic2, AlertCircle, ToggleLeft, ToggleRight } from 'lucide-react';
 import { compositoresApi, type Compositor } from '@/lib/api-client';
 import { Avatar } from '@/components/ui/Avatar';
+import ConfirmModal from '@/components/ui/ConfirmModal';
+import AlertModal from '@/components/ui/AlertModal';
 
 let renderCount = 0;
 
@@ -17,6 +19,11 @@ const AdminComposers: React.FC = () => {
   const [totalPages, setTotalPages] = useState(1);
   const [totalCount, setTotalCount] = useState(0);
   const [pendingCount, setPendingCount] = useState(0);
+  const [togglingId, setTogglingId] = useState<string | null>(null);
+
+  // Modal states
+  const [confirmModal, setConfirmModal] = useState<{ show: boolean; composerId: string; composerName: string }>({ show: false, composerId: '', composerName: '' });
+  const [alertModal, setAlertModal] = useState<{ show: boolean; title: string; message: string; type: 'success' | 'error' }>({ show: false, title: '', message: '', type: 'success' });
 
   const loadComposers = useCallback(async () => {
     try {
@@ -76,14 +83,36 @@ const AdminComposers: React.FC = () => {
     }
   };
 
-  const handleDelete = async (id: string, nome: string) => {
-    if (!window.confirm(`Tem certeza que deseja deletar o compositor ${nome}?`)) return;
-    
+  const handleToggleActive = async (id: string, currentlyActive: boolean) => {
     try {
-      await compositoresApi.delete(id);
+      setTogglingId(id);
+      await compositoresApi.toggleActive(id, !currentlyActive);
+      loadComposers();
+    } catch (error) {
+      console.error('Error toggling composer active:', error);
+    } finally {
+      setTogglingId(null);
+    }
+  };
+
+  const handleDeleteRequest = (id: string, nome: string) => {
+    setConfirmModal({ show: true, composerId: id, composerName: nome });
+  };
+
+  const handleDeleteConfirm = async () => {
+    const { composerId, composerName } = confirmModal;
+    setConfirmModal({ show: false, composerId: '', composerName: '' });
+    try {
+      const result = await compositoresApi.delete(composerId);
+      if (result.success) {
+        setAlertModal({ show: true, title: 'Compositor Desativado', message: `O compositor "${composerName}" foi desativado. Todo o conteúdo (hinos e álbuns) foi ocultado da plataforma e pode ser gerenciado pelo admin.`, type: 'success' });
+      } else {
+        setAlertModal({ show: true, title: 'Erro', message: result.error || 'Não foi possível desativar o compositor.', type: 'error' });
+      }
       loadComposers();
     } catch (error) {
       console.error('Error deleting composer:', error);
+      setAlertModal({ show: true, title: 'Erro', message: 'Erro ao desativar o compositor.', type: 'error' });
     }
   };
 
@@ -202,20 +231,50 @@ const AdminComposers: React.FC = () => {
 
                   {/* Status */}
                   <td className="px-6 py-4">
-                    {composer.verificado ? (
-                      <span className="px-2 py-1 rounded-full text-xs font-semibold border bg-green-500/20 text-green-400 border-green-500/30">
-                        Aprovado
-                      </span>
-                    ) : (
-                      <span className="px-2 py-1 rounded-full text-xs font-semibold border bg-yellow-500/20 text-yellow-400 border-yellow-500/30">
-                        Pendente
-                      </span>
-                    )}
+                    <div className="flex flex-col gap-1">
+                      {composer.verificado ? (
+                        <span className="px-2 py-1 rounded-full text-xs font-semibold border bg-green-500/20 text-green-400 border-green-500/30 w-fit">
+                          Aprovado
+                        </span>
+                      ) : (
+                        <span className="px-2 py-1 rounded-full text-xs font-semibold border bg-yellow-500/20 text-yellow-400 border-yellow-500/30 w-fit">
+                          Pendente
+                        </span>
+                      )}
+                      {composer.status === 'deleted' && (
+                        <span className="px-2 py-1 rounded-full text-xs font-semibold border bg-red-500/20 text-red-400 border-red-500/30 w-fit">
+                          Excluído
+                        </span>
+                      )}
+                      {composer.status === 'inactive' && (
+                        <span className="px-2 py-1 rounded-full text-xs font-semibold border bg-gray-500/20 text-gray-400 border-gray-500/30 w-fit">
+                          Desabilitado
+                        </span>
+                      )}
+                    </div>
                   </td>
 
                   {/* Actions */}
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-2">
+                      {/* Toggle Active/Inactive */}
+                      <button
+                        onClick={() => handleToggleActive(composer.id.toString(), !(composer.ativo !== false && composer.status !== 'inactive' && composer.status !== 'deleted'))}
+                        disabled={togglingId === composer.id.toString()}
+                        className={`p-2 rounded-lg transition-colors ${
+                          (composer.ativo !== false && composer.status !== 'inactive' && composer.status !== 'deleted')
+                            ? 'bg-green-500/20 text-green-400 hover:bg-green-500/30'
+                            : 'bg-gray-700 text-gray-400 hover:bg-gray-600'
+                        } ${togglingId === composer.id.toString() ? 'opacity-50 cursor-wait' : ''}`}
+                        title={(composer.ativo !== false && composer.status !== 'inactive' && composer.status !== 'deleted') ? 'Desabilitar perfil' : 'Habilitar perfil'}
+                      >
+                        {(composer.ativo !== false && composer.status !== 'inactive' && composer.status !== 'deleted') ? (
+                          <ToggleRight className="w-5 h-5" />
+                        ) : (
+                          <ToggleLeft className="w-5 h-5" />
+                        )}
+                      </button>
+
                       {/* Toggle Approved */}
                       <button
                         onClick={() => handleToggleApproved(composer.id.toString(), !!composer.verificado)}
@@ -244,9 +303,9 @@ const AdminComposers: React.FC = () => {
 
                       {/* Delete */}
                       <button
-                        onClick={() => handleDelete(composer.id.toString(), composer.nome)}
+                        onClick={() => handleDeleteRequest(composer.id.toString(), composer.nome)}
                         className="p-2 rounded-lg bg-red-500/20 text-red-400 hover:bg-red-500/30 transition-colors"
-                        title="Deletar"
+                        title="Excluir compositor"
                       >
                         <Trash2 className="w-4 h-4" />
                       </button>
@@ -294,6 +353,26 @@ const AdminComposers: React.FC = () => {
           </div>
         )}
       </div>
+      {/* Confirm Delete Modal */}
+      <ConfirmModal
+        isOpen={confirmModal.show}
+        onClose={() => setConfirmModal({ show: false, composerId: '', composerName: '' })}
+        onConfirm={handleDeleteConfirm}
+        title="Excluir Compositor"
+        message={`Tem certeza que deseja excluir o compositor "${confirmModal.composerName}"? Todo o conteúdo (hinos e álbuns) será desabilitado da plataforma até que o admin exclua manualmente.`}
+        confirmText="Excluir"
+        cancelText="Cancelar"
+        confirmColor="red"
+      />
+
+      {/* Alert Modal */}
+      <AlertModal
+        isOpen={alertModal.show}
+        onClose={() => setAlertModal({ ...alertModal, show: false })}
+        title={alertModal.title}
+        message={alertModal.message}
+        type={alertModal.type}
+      />
     </div>
   );
 };

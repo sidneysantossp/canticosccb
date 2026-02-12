@@ -232,6 +232,31 @@ export default function ComposerPublicProfilePage() {
           setFollowersCount((prev) => (prev || 0) + 1);
           console.log('✅ Seguindo compositor');
 
+          // Criar notificação para o compositor
+          try {
+            const composerRows = await supabaseFetch<any>('composers', {
+              id: `eq.${id}`,
+              select: 'user_id'
+            });
+            const composerUserId = composerRows?.[0]?.user_id;
+            if (composerUserId) {
+              const followerName = user.user_metadata?.name || user.email || 'Alguém';
+              await supabaseInsert('notifications', {
+                user_id: composerUserId,
+                composer_id: id,
+                type: 'follow',
+                title: '👤 Novo seguidor',
+                message: `${followerName} começou a seguir você.`,
+                link: '/composer/followers',
+                read: false,
+                is_read: false,
+                metadata: { follower_id: user.id, follower_name: followerName },
+              });
+            }
+          } catch (notifErr) {
+            console.warn('Falha ao criar notificação de follow:', notifErr);
+          }
+
           setTimeout(() => {
             refreshCount();
           }, 500);
@@ -1049,7 +1074,7 @@ export default function ComposerPublicProfilePage() {
                       </div>
                       <div className="flex-1 min-w-0">
                         <p className="text-white font-medium truncate">{playlist.name}</p>
-                        <p className="text-gray-400 text-sm">{playlist.tracks.length} músicas</p>
+                        <p className="text-gray-400 text-sm">{playlist.tracks.length} hinos</p>
                       </div>
                     </button>
                   ))}

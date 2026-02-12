@@ -230,7 +230,7 @@ const AdminSidebar: React.FC = () => {
   }, [location.pathname]);
 
   return (
-    <div className="hidden lg:flex lg:flex-col lg:w-64 bg-black h-full fixed left-0 top-0 pt-6 pb-10 overflow-y-auto border-r border-gray-800">
+    <div className="hidden lg:flex lg:flex-col lg:w-64 bg-black h-full fixed left-0 top-0 z-30 pt-6 pb-10 overflow-y-auto border-r border-gray-800">
       {/* Logo oficial */}
       <div className="px-6 mb-8">
         <Link to="/admin" className="inline-flex items-center">

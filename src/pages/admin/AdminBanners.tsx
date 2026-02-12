@@ -46,7 +46,47 @@ const AdminBanners: React.FC = () => {
   const loadBanners = async () => {
     try {
       setIsLoading(true);
-      const data = await getAllBanners();
+      let data = await getAllBanners();
+      console.log('🎯 [AdminBanners] getAllBanners returned:', data.length, 'banners', data);
+
+      // Fallback: fetch direto se getAllBanners retornar vazio
+      if (data.length === 0) {
+        console.warn('⚠️ [AdminBanners] getAllBanners retornou vazio, tentando fetch direto...');
+        try {
+          const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
+          const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
+          const res = await fetch(`${SUPABASE_URL}/rest/v1/banners?select=*&order=position.asc`, {
+            headers: {
+              'apikey': SUPABASE_ANON_KEY,
+              'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+            },
+          });
+          console.log('📡 [AdminBanners] Direct fetch status:', res.status);
+          const raw = await res.json();
+          console.log('📡 [AdminBanners] Direct fetch result:', raw);
+          if (Array.isArray(raw) && raw.length > 0) {
+            data = raw.map((row: any) => ({
+              id: String(row.id),
+              title: row.title || '',
+              description: row.description || '',
+              image_url: row.image_url || '',
+              link_url: row.link_url || '',
+              link_type: row.link_type || row.type || '',
+              link_id: row.link_id ? String(row.link_id) : '',
+              type: row.type || 'hero',
+              position: row.position ?? 0,
+              is_active: row.is_active ?? true,
+              gradient_overlay: row.gradient_overlay || '',
+              created_at: row.created_at || '',
+              updated_at: row.updated_at || '',
+            }));
+            console.log('✅ [AdminBanners] Direct fetch got:', data.length, 'banners');
+          }
+        } catch (directErr) {
+          console.error('❌ [AdminBanners] Direct fetch failed:', directErr);
+        }
+      }
+
       setBanners(data);
     } catch (error) {
       console.error('Error loading banners:', error);
@@ -137,7 +177,8 @@ const AdminBanners: React.FC = () => {
       setPreviewType(isVideo ? 'video' : (isImage ? 'image' : 'audio'));
 
       const mediaUrl = await uploadBannerImage(file);
-      setFormData({ ...formData, image_url: mediaUrl });
+      console.log('✅ [AdminBanners] Upload concluído, URL:', mediaUrl);
+      setFormData(prev => ({ ...prev, image_url: mediaUrl }));
     } catch (error) {
       console.error('Error uploading media:', error);
     } finally {
@@ -151,28 +192,32 @@ const AdminBanners: React.FC = () => {
     }
     setPreviewUrl('');
     setPreviewType('image');
-    setFormData({ ...formData, image_url: '' });
+    setFormData(prev => ({ ...prev, image_url: '' }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    console.log('💾 [AdminBanners] handleSubmit formData:', formData);
     if (!formData.title.trim() || !formData.image_url) {
+      console.warn('⚠️ [AdminBanners] Submit bloqueado - title:', formData.title, 'image_url:', formData.image_url);
       return;
     }
 
     try {
       setIsSaving(true);
       
-      // Agora podemos enviar o gradient_overlay diretamente para o banco
       if (editingBanner) {
+        console.log('📝 [AdminBanners] Updating banner:', editingBanner.id);
         await updateBanner(editingBanner.id, formData);
       } else {
+        console.log('➕ [AdminBanners] Creating new banner');
         await createBanner(formData);
       }
+      console.log('✅ [AdminBanners] Banner salvo com sucesso!');
       await loadBanners();
       handleCloseModal();
     } catch (error) {
-      console.error('Error saving banner:', error);
+      console.error('❌ [AdminBanners] Error saving banner:', error);
     } finally {
       setIsSaving(false);
     }
@@ -198,7 +243,10 @@ const AdminBanners: React.FC = () => {
     }
   };
 
-  const filteredBanners = banners.filter(b => b.type === activeTab);
+  const filteredBanners = banners.filter(b => {
+    const bannerType = b.type || 'hero'; // Banners sem tipo são tratados como hero
+    return bannerType === activeTab;
+  });
 
   const tabs = [
     { id: 'hero' as BannerType, label: 'Hero/Carousel', icon: Layers, description: 'Banners principais da home (rotativo, full-width)' },
@@ -231,7 +279,7 @@ const AdminBanners: React.FC = () => {
           {tabs.map((tab) => {
             const Icon = tab.icon;
             const isActive = activeTab === tab.id;
-            const count = banners.filter(b => b.type === tab.id).length;
+            const count = banners.filter(b => (b.type || 'hero') === tab.id).length;
             
             return (
               <button

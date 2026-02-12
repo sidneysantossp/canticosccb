@@ -73,7 +73,7 @@ const AdminSEO: React.FC = () => {
               <label className="text-white text-sm font-medium mb-2 block">Keywords Globais</label>
               <input
                 type="text"
-                defaultValue="hinos, ccb, cânticos, congregação cristã, música gospel"
+                defaultValue="hinos, ccb, cânticos, congregação cristã, hinos gospel"
                 className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg text-white focus:outline-none focus:border-red-600"
               />
             </div>

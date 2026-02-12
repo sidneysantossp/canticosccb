@@ -18,11 +18,75 @@ if (typeof window !== 'undefined') {
 }
 
 function buildHeaders() {
-  // Usar anon key diretamente para evitar travamentos com getSession()
-  // Para tabelas públicas (RLS configurado), anon key é suficiente
+  // Anon key para leituras públicas
   return {
     apikey: SUPABASE_ANON_KEY,
     Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+    'Content-Type': 'application/json',
+  };
+}
+
+function getStoredToken(): string {
+  // Leitura síncrona do localStorage
+  try {
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key && key.startsWith('sb-') && key.endsWith('-auth-token')) {
+        const raw = localStorage.getItem(key);
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          const token = parsed?.access_token || parsed?.currentSession?.access_token;
+          if (token) return token;
+        }
+        break;
+      }
+    }
+  } catch (e) {
+    // fallback
+  }
+  return SUPABASE_ANON_KEY;
+}
+
+function isTokenExpired(token: string): boolean {
+  try {
+    const parts = token.split('.');
+    if (parts.length !== 3) return true;
+    const payload = JSON.parse(atob(parts[1]));
+    if (!payload.exp) return false;
+    // Considerar expirado se faltam menos de 30 segundos
+    return (payload.exp * 1000) < (Date.now() + 30000);
+  } catch {
+    return false;
+  }
+}
+
+async function buildAuthHeaders() {
+  let accessToken = getStoredToken();
+
+  // Se o token está expirado, tentar refresh via Supabase client (com timeout)
+  if (accessToken !== SUPABASE_ANON_KEY && isTokenExpired(accessToken)) {
+    console.log('[supabaseRest] JWT expired, attempting refresh...');
+    try {
+      const { supabase } = await import('./supabase-auth');
+      const refreshPromise = supabase.auth.refreshSession();
+      const timeoutPromise = new Promise<{ data: null; error: { message: string } }>((resolve) =>
+        setTimeout(() => resolve({ data: null, error: { message: 'Refresh timeout (5s)' } }), 5000)
+      );
+      const { data, error } = await Promise.race([refreshPromise, timeoutPromise]);
+      if (!error && data?.session?.access_token) {
+        accessToken = data.session.access_token;
+        console.log('[supabaseRest] JWT refreshed successfully');
+      } else {
+        console.warn('[supabaseRest] JWT refresh failed:', error?.message);
+      }
+    } catch (e) {
+      console.warn('[supabaseRest] JWT refresh error:', e);
+    }
+  }
+
+  return {
+    apikey: SUPABASE_ANON_KEY,
+    Authorization: `Bearer ${accessToken}`,
     'Content-Type': 'application/json',
   };
 }
@@ -86,9 +150,10 @@ export async function supabaseInsert<T>(table: string, data: any): Promise<T | n
   console.log(`[supabaseInsert] Inserting into ${table}:`, data);
 
   try {
-    const response = await fetch(url, {
+    const authHeaders = await buildAuthHeaders();
+    const response = await fetch(url.toString(), {
       method: 'POST',
-      headers: { ...buildHeaders(), 'Prefer': 'return=representation' },
+      headers: { ...authHeaders, 'Prefer': 'return=representation' },
       body: JSON.stringify(data),
     });
 
@@ -99,6 +164,12 @@ export async function supabaseInsert<T>(table: string, data: any): Promise<T | n
     }
 
     const result = await response.json();
+    console.log(`[supabaseInsert] Response for ${table}:`, result);
+    // RLS pode bloquear INSERT silenciosamente retornando 201 com array vazio
+    if (Array.isArray(result) && result.length === 0) {
+      console.error(`[supabaseInsert] Insert into ${table} returned empty array - likely blocked by RLS policy`);
+      throw new Error(`Insert into ${table} blocked - verifique as políticas RLS da tabela`);
+    }
     return Array.isArray(result) ? result[0] : result;
   } catch (error) {
     console.error(`[supabaseInsert] Exception:`, error);
@@ -116,9 +187,10 @@ export async function supabaseUpdate<T>(table: string, filters: Record<string, s
   console.log(`[supabaseUpdate] Updating ${table}:`, data);
 
   try {
+    const authHeaders = await buildAuthHeaders();
     const response = await fetch(url.toString(), {
       method: 'PATCH',
-      headers: { ...buildHeaders(), 'Prefer': 'return=representation' },
+      headers: { ...authHeaders, 'Prefer': 'return=representation' },
       body: JSON.stringify(data),
     });
 
@@ -129,6 +201,10 @@ export async function supabaseUpdate<T>(table: string, filters: Record<string, s
     }
 
     const result = await response.json();
+    console.log(`[supabaseUpdate] ${table} result:`, result);
+    if (Array.isArray(result) && result.length === 0) {
+      console.warn(`[supabaseUpdate] Update on ${table} returned empty array - possibly blocked by RLS or no matching rows`);
+    }
     return Array.isArray(result) ? result : [result];
   } catch (error) {
     console.error(`[supabaseUpdate] Exception:`, error);
@@ -146,9 +222,10 @@ export async function supabaseDelete(table: string, filters: Record<string, stri
   console.log(`[supabaseDelete] Deleting from ${table}`);
 
   try {
+    const authHeaders = await buildAuthHeaders();
     const response = await fetch(url.toString(), {
       method: 'DELETE',
-      headers: buildHeaders(),
+      headers: authHeaders,
     });
 
     if (!response.ok) {
@@ -162,6 +239,67 @@ export async function supabaseDelete(table: string, filters: Record<string, stri
     console.error(`[supabaseDelete] Exception:`, error);
     return false;
   }
+}
+
+/**
+ * Authenticated update: uses the logged-in user's JWT (not anon key).
+ * Returns the updated rows. Empty array = RLS blocked the operation.
+ */
+export async function supabaseAuthUpdate<T>(table: string, filters: Record<string, string>, data: any): Promise<T[]> {
+  if (!isSupabaseConfigured) {
+    console.warn(`[supabaseAuthUpdate] Supabase not configured`);
+    return [];
+  }
+
+  const authHeaders = await buildAuthHeaders();
+  const url = buildUrl(table, filters);
+  console.log(`[supabaseAuthUpdate] Updating ${table} with auth token:`, data);
+
+  const response = await fetch(url.toString(), {
+    method: 'PATCH',
+    headers: { ...authHeaders, 'Prefer': 'return=representation' },
+    body: JSON.stringify(data),
+  });
+
+  if (!response.ok) {
+    const text = await response.text().catch(() => '');
+    console.error(`[supabaseAuthUpdate] Error ${response.status}:`, text);
+    throw new Error(`Update failed: ${response.status} ${text}`);
+  }
+
+  const result = await response.json();
+  console.log(`[supabaseAuthUpdate] Result:`, result);
+  return Array.isArray(result) ? result : [result];
+}
+
+/**
+ * Authenticated delete: uses the logged-in user's JWT.
+ * Returns the deleted rows. Empty array = RLS blocked the operation.
+ */
+export async function supabaseAuthDelete<T>(table: string, filters: Record<string, string>): Promise<T[]> {
+  if (!isSupabaseConfigured) {
+    console.warn(`[supabaseAuthDelete] Supabase not configured`);
+    return [];
+  }
+
+  const authHeaders = await buildAuthHeaders();
+  const url = buildUrl(table, filters);
+  console.log(`[supabaseAuthDelete] Deleting from ${table} with auth token`);
+
+  const response = await fetch(url.toString(), {
+    method: 'DELETE',
+    headers: { ...authHeaders, 'Prefer': 'return=representation' },
+  });
+
+  if (!response.ok) {
+    const text = await response.text().catch(() => '');
+    console.error(`[supabaseAuthDelete] Error ${response.status}:`, text);
+    throw new Error(`Delete failed: ${response.status} ${text}`);
+  }
+
+  const result = await response.json();
+  console.log(`[supabaseAuthDelete] Result:`, result);
+  return Array.isArray(result) ? result : [result];
 }
 
 export async function supabaseRPC<T>(functionName: string, params: any = {}): Promise<T> {

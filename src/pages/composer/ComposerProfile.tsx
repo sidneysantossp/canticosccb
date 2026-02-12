@@ -18,7 +18,10 @@ import {
   Share2,
   ExternalLink,
   Settings,
-  Loader2
+  Loader2,
+  Move,
+  Check,
+  X
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -39,6 +42,15 @@ const ComposerProfile: React.FC = () => {
   
   const avatarInputRef = useRef<HTMLInputElement>(null);
   const bannerInputRef = useRef<HTMLInputElement>(null);
+  const bannerContainerRef = useRef<HTMLDivElement>(null);
+
+  // Banner repositioning state
+  const [bannerPositionY, setBannerPositionY] = useState(50); // 0-100 percentage
+  const [savedBannerPositionY, setSavedBannerPositionY] = useState(50);
+  const [isRepositioningBanner, setIsRepositioningBanner] = useState(false);
+  const [isDraggingBanner, setIsDraggingBanner] = useState(false);
+  const dragStartY = useRef(0);
+  const dragStartPosition = useRef(50);
 
   const [formData, setFormData] = useState({
     name: '',
@@ -81,59 +93,16 @@ const ComposerProfile: React.FC = () => {
       try {
         setIsLoadingData(true);
         
-        // Tentar carregar dados do compositor com timeout mais longo
-        const timeout = new Promise<null>((resolve) => setTimeout(() => resolve(null), 10000)); // 10 segundos
-        // 1) Tenta buscar pelo usuario_id (relacionamento mais comum)
-        const byUserRespPromise = compositoresApi.getByUsuarioId(Number(user.id));
-        // 2) Fallback: tenta pelo id direto
-        const byIdRespPromise = compositoresApi.get(Number(user.id));
-        const composerDataResp = (await Promise.race([
-          byUserRespPromise,
-          timeout
-        ])) as any || (await Promise.race([byIdRespPromise, timeout])) as any;
-        
-        // Normalizar possíveis formatos de resposta da API
-        const pickComposer = (resp: any) => {
-          const d = resp?.data ?? resp;
-          if (!d) return null;
-          // Arrays diretos
-          if (Array.isArray(d)) return d[0] || null;
-          // Arrays aninhados
-          if (Array.isArray(d?.data)) return d.data[0] || null;
-          if (Array.isArray(d?.compositores)) return d.compositores[0] || null;
-          // Objetos nomeados
-          if (d?.compositor?.id) return d.compositor;
-          if (d?.data && d.data.id) return d.data;
-          // Objeto direto
-          if (d?.id) return d;
-          return null;
-        };
+        // Buscar compositor pelo user_id (caminho principal)
+        let cd: any = null;
+        try {
+          const resp = await compositoresApi.getByUsuarioId(user.id, (user as any)?.email);
+          const d = (resp as any)?.data ?? resp;
+          if (d?.id) cd = d;
+        } catch (e) {
+          console.warn('ComposerProfile - getByUsuarioId falhou:', e);
+        }
 
-        let cd = pickComposer(composerDataResp) || pickComposer(await byIdRespPromise);
-        // 3) Fallback: listar compositores e encontrar por usuario_id
-        if (!cd) {
-          try {
-            const allResp: any = await compositoresApi.list({ limit: 500 } as any);
-            const d = (allResp as any)?.data ?? allResp;
-            const arr = d?.compositores || d?.data || d;
-            if (Array.isArray(arr)) {
-              cd = arr.find((c: any) => Number(c?.usuario_id) === Number(user.id)) || null;
-            }
-          } catch {}
-        }
-        // 4) Fallback extra: tentar buscar por email/nome na listagem
-        if (!cd) {
-          try {
-            const byEmail = await compositoresApi.list({ search: user.email || '' } as any);
-            cd = pickComposer(byEmail);
-          } catch {}
-        }
-        if (!cd && (profile as any)?.nome) {
-          try {
-            const byName = await compositoresApi.list({ search: (profile as any).nome } as any);
-            cd = pickComposer(byName);
-          } catch {}
-        }
         if (cd) {
           try { console.log('ComposerProfile - Dados do compositor resolvidos:', cd); } catch {}
           const toStr = (v: any) => (v === null || v === undefined ? '' : String(v));
@@ -155,6 +124,13 @@ const ComposerProfile: React.FC = () => {
             pushMilestones: notifFromComposer.pushMilestones,
           };
 
+          // Load banner position from metadata
+          const bpY = cd.metadata?.banner_position_y;
+          if (bpY !== undefined && bpY !== null) {
+            setBannerPositionY(Number(bpY));
+            setSavedBannerPositionY(Number(bpY));
+          }
+
           setFormData({
             name: toStr(cd.nome || cd.name),
             artisticName: toStr(cd.nome_artistico || cd.artistic_name || cd.artist_name),
@@ -166,7 +142,7 @@ const ComposerProfile: React.FC = () => {
             instagram: toStr(cd.instagram),
             facebook: toStr(cd.facebook),
             youtube: toStr(cd.youtube),
-            avatarUrl: toStr(cd.avatar_url),
+            avatarUrl: toStr(cd.avatar_url || cd.photo_url),
             bannerUrl: toStr(cd.banner_url),
             tipo_compositor: toStr(cd.tipo_compositor || cd.tipo || cd.genero || cd.categoria),
             endereco: toStr(cd.endereco || cd.logradouro || cd.address),
@@ -175,7 +151,7 @@ const ComposerProfile: React.FC = () => {
             bairro: toStr(cd.bairro || cd.district),
             cidade: toStr(cd.cidade || cd.city),
             estado: toStr(cd.estado || cd.uf || cd.state),
-            genres: [], // TODO: buscar gêneros da tabela de relacionamento
+            genres: [],
             notifications: resolvedNotifications
           });
         } else {
@@ -251,7 +227,7 @@ const ComposerProfile: React.FC = () => {
     };
 
     loadComposerData();
-  }, [user]);
+  }, [user?.id]);
 
   const availableGenres = [
     'Hinos Clássicos',
@@ -296,10 +272,10 @@ const ComposerProfile: React.FC = () => {
       setIsUploadingAvatar(true);
       setMessage(null);
       
-      const avatarUrl = await uploadComposerAvatar(Number(composerId), file);
+      const avatarUrl = await uploadComposerAvatar(composerId, file);
       
       // Atualizar no banco
-      await compositoresApi.update(Number(composerId), { avatar_url: avatarUrl } as any);
+      await compositoresApi.update(composerId, { avatar_url: avatarUrl } as any);
       
       // Atualizar estado local
       setFormData(prev => ({ ...prev, avatarUrl }));
@@ -321,10 +297,10 @@ const ComposerProfile: React.FC = () => {
       setIsUploadingBanner(true);
       setMessage(null);
       
-      const bannerUrl = await uploadComposerBanner(Number(composerId), file);
+      const bannerUrl = await uploadComposerBanner(composerId, file);
       
       // Atualizar no banco
-      await compositoresApi.update(Number(composerId), { banner_url: bannerUrl } as any);
+      await compositoresApi.update(composerId, { banner_url: bannerUrl } as any);
       
       // Atualizar estado local
       setFormData(prev => ({ ...prev, bannerUrl }));
@@ -335,6 +311,69 @@ const ComposerProfile: React.FC = () => {
     } finally {
       setIsUploadingBanner(false);
     }
+  };
+
+  // Banner repositioning handlers
+  const handleBannerMouseDown = (e: React.MouseEvent) => {
+    if (!isRepositioningBanner) return;
+    e.preventDefault();
+    setIsDraggingBanner(true);
+    dragStartY.current = e.clientY;
+    dragStartPosition.current = bannerPositionY;
+  };
+
+  const handleBannerMouseMove = (e: React.MouseEvent) => {
+    if (!isDraggingBanner) return;
+    e.preventDefault();
+    const container = bannerContainerRef.current;
+    if (!container) return;
+    const containerHeight = container.offsetHeight;
+    const deltaY = e.clientY - dragStartY.current;
+    const deltaPercent = (deltaY / containerHeight) * 100;
+    const newPosition = Math.max(0, Math.min(100, dragStartPosition.current - deltaPercent));
+    setBannerPositionY(newPosition);
+  };
+
+  const handleBannerMouseUp = () => {
+    setIsDraggingBanner(false);
+  };
+
+  const handleBannerTouchStart = (e: React.TouchEvent) => {
+    if (!isRepositioningBanner) return;
+    setIsDraggingBanner(true);
+    dragStartY.current = e.touches[0].clientY;
+    dragStartPosition.current = bannerPositionY;
+  };
+
+  const handleBannerTouchMove = (e: React.TouchEvent) => {
+    if (!isDraggingBanner) return;
+    const container = bannerContainerRef.current;
+    if (!container) return;
+    const containerHeight = container.offsetHeight;
+    const deltaY = e.touches[0].clientY - dragStartY.current;
+    const deltaPercent = (deltaY / containerHeight) * 100;
+    const newPosition = Math.max(0, Math.min(100, dragStartPosition.current - deltaPercent));
+    setBannerPositionY(newPosition);
+  };
+
+  const handleSaveBannerPosition = async () => {
+    if (!composerId) return;
+    try {
+      await compositoresApi.update(composerId, {
+        metadata: { banner_position_y: bannerPositionY }
+      } as any);
+      setSavedBannerPositionY(bannerPositionY);
+      setIsRepositioningBanner(false);
+      setMessage({ type: 'success', text: 'Posição do banner salva!' });
+      setTimeout(() => setMessage(null), 3000);
+    } catch (error: any) {
+      setMessage({ type: 'error', text: 'Erro ao salvar posição do banner' });
+    }
+  };
+
+  const handleCancelBannerPosition = () => {
+    setBannerPositionY(savedBannerPositionY);
+    setIsRepositioningBanner(false);
   };
 
   // Salvar alterações
@@ -357,7 +396,8 @@ const ComposerProfile: React.FC = () => {
       }
 
       // Atualizar no banco
-      await compositoresApi.update(Number(composerId), {
+      console.log('💾 [handleSave] Saving profile for composerId:', composerId);
+      const profileResult = await compositoresApi.update(composerId, {
         nome: formData.name,
         nome_artistico: formData.artisticName,
         email: formData.email,
@@ -376,15 +416,21 @@ const ComposerProfile: React.FC = () => {
         cidade: formData.cidade,
         estado: formData.estado,
       } as any);
+      console.log('💾 [handleSave] Profile update result:', profileResult);
+
+      if (profileResult && !profileResult.success) {
+        throw new Error(profileResult.error || 'Erro ao salvar perfil no banco');
+      }
 
       // Persistir preferências de notificações no compositor (fonte única de verdade)
-      await compositoresApi.update(Number(composerId), {
+      const notifResult = await compositoresApi.update(composerId, {
         notif_email_followers: formData.notifications.emailFollowers ? 1 : 0,
         notif_email_comments: formData.notifications.emailComments ? 1 : 0,
         notif_email_analytics: formData.notifications.emailAnalytics ? 1 : 0,
         notif_push_new_followers: formData.notifications.pushNewFollowers ? 1 : 0,
         notif_push_milestones: formData.notifications.pushMilestones ? 1 : 0,
       } as any);
+      console.log('💾 [handleSave] Notifications update result:', notifResult);
 
       setMessage({ type: 'success', text: 'Perfil atualizado com sucesso!' });
       
@@ -432,11 +478,100 @@ const ComposerProfile: React.FC = () => {
       ) : (
         <>
       {/* Profile Header */}
-      <div className="bg-background-secondary rounded-xl p-6 border border-gray-800 mb-8">
-        <div className="flex items-center gap-6">
+      <div className="bg-background-secondary rounded-xl border border-gray-800 mb-8 overflow-hidden">
+        {/* Banner */}
+        <div
+          ref={bannerContainerRef}
+          className={`relative w-full h-48 bg-gradient-to-r from-gray-800 via-gray-900 to-gray-800 group select-none ${
+            isRepositioningBanner ? 'cursor-grab active:cursor-grabbing' : 'cursor-pointer'
+          }`}
+          onClick={() => {
+            if (!isRepositioningBanner && !isUploadingBanner) {
+              bannerInputRef.current?.click();
+            }
+          }}
+          onMouseDown={handleBannerMouseDown}
+          onMouseMove={handleBannerMouseMove}
+          onMouseUp={handleBannerMouseUp}
+          onMouseLeave={handleBannerMouseUp}
+          onTouchStart={handleBannerTouchStart}
+          onTouchMove={handleBannerTouchMove}
+          onTouchEnd={handleBannerMouseUp}
+          style={formData.bannerUrl ? {
+            backgroundImage: `url(${formData.bannerUrl})`,
+            backgroundSize: 'cover',
+            backgroundPosition: `center ${bannerPositionY}%`
+          } : undefined}
+        >
+          {/* Hover overlay - only when NOT repositioning */}
+          {!isRepositioningBanner && (
+            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+              {isUploadingBanner ? (
+                <Loader2 className="w-8 h-8 text-white animate-spin" />
+              ) : (
+                <div className="flex items-center gap-2 text-white">
+                  <Camera className="w-5 h-5" />
+                  <span className="text-sm font-medium">{formData.bannerUrl ? 'Alterar Banner' : 'Adicionar Banner'}</span>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Repositioning overlay */}
+          {isRepositioningBanner && (
+            <div className="absolute inset-0 bg-black/30 flex items-center justify-center pointer-events-none">
+              <div className="flex flex-col items-center gap-1 text-white">
+                <Move className="w-6 h-6" />
+                <span className="text-sm font-medium">Arraste para reposicionar</span>
+              </div>
+            </div>
+          )}
+
+          {/* Reposition button - top right, only when banner exists and NOT repositioning */}
+          {formData.bannerUrl && !isRepositioningBanner && !isUploadingBanner && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                setIsRepositioningBanner(true);
+              }}
+              className="absolute top-3 right-3 px-3 py-1.5 bg-black/60 hover:bg-black/80 text-white text-xs font-medium rounded-lg backdrop-blur-sm transition-colors flex items-center gap-1.5 opacity-0 group-hover:opacity-100"
+            >
+              <Move className="w-3.5 h-3.5" />
+              Reposicionar
+            </button>
+          )}
+
+          {/* Save/Cancel controls when repositioning */}
+          {isRepositioningBanner && (
+            <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex items-center gap-2 z-20">
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleCancelBannerPosition();
+                }}
+                className="px-4 py-2 bg-gray-800/90 hover:bg-gray-700 text-white text-sm font-medium rounded-lg backdrop-blur-sm transition-colors flex items-center gap-1.5"
+              >
+                <X className="w-4 h-4" />
+                Cancelar
+              </button>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleSaveBannerPosition();
+                }}
+                className="px-4 py-2 bg-primary-500 hover:bg-primary-400 text-black text-sm font-medium rounded-lg transition-colors flex items-center gap-1.5"
+              >
+                <Check className="w-4 h-4" />
+                Salvar posição
+              </button>
+            </div>
+          )}
+        </div>
+
+        <div className="flex items-center gap-6 p-6">
           {/* Avatar */}
           <div className="relative">
-            <div className="w-32 h-32 rounded-full bg-background-tertiary flex items-center justify-center overflow-hidden border-2 border-gray-700">
+            <div className="w-32 h-32 rounded-full bg-background-tertiary flex items-center justify-center overflow-hidden border-4 border-background-secondary ring-2 ring-gray-700">
               {formData.avatarUrl ? (
                 <img
                   src={formData.avatarUrl}
@@ -500,35 +635,17 @@ const ComposerProfile: React.FC = () => {
             </div>
           </div>
 
+          {/* Hidden Input Banner */}
+          <input
+            ref={bannerInputRef}
+            type="file"
+            accept="image/jpeg,image/jpg,image/png,image/webp"
+            onChange={handleBannerUpload}
+            className="hidden"
+          />
+
           {/* Actions */}
           <div className="flex items-center gap-2">
-            <button
-              onClick={() => bannerInputRef.current?.click()}
-              disabled={isUploadingBanner}
-              className="px-4 py-2 bg-background-tertiary text-white rounded-lg hover:bg-background-hover transition-colors flex items-center gap-2 disabled:opacity-50"
-            >
-              {isUploadingBanner ? (
-                <>
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                  Uploading...
-                </>
-              ) : (
-                <>
-                  <Edit3 className="w-4 h-4" />
-                  Editar Banner
-                </>
-              )}
-            </button>
-            
-            {/* Hidden Input Banner */}
-            <input
-              ref={bannerInputRef}
-              type="file"
-              accept="image/jpeg,image/jpg,image/png,image/webp"
-              onChange={handleBannerUpload}
-              className="hidden"
-            />
-
             {/* Menu 3 Pontos */}
             <div className="relative">
               <button

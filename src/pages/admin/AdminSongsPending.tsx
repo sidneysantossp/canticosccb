@@ -27,14 +27,14 @@ const AdminSongsPending: React.FC = () => {
     try {
       setIsLoading(true);
       setError(null);
-      // Buscar apenas músicas com status 'draft' (pendentes)
+      // Buscar apenas hinos com status 'draft' (pendentes)
       const result = await getAllSongs(currentPage, 20, { status: 'draft', search: '' });
       setSongs(result.data);
       setTotalPages(result.totalPages);
       setTotalCount(result.count);
     } catch (error: any) {
       console.error('Error loading pending songs:', error);
-      setError(error?.message || 'Erro ao carregar músicas pendentes');
+      setError(error?.message || 'Erro ao carregar hinos pendentes');
     } finally {
       setIsLoading(false);
     }
@@ -68,7 +68,7 @@ const AdminSongsPending: React.FC = () => {
       <div className="p-6 flex items-center justify-center min-h-screen">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-500 mx-auto mb-4"></div>
-          <p className="text-gray-400">Carregando músicas pendentes...</p>
+          <p className="text-gray-400">Carregando hinos pendentes...</p>
         </div>
       </div>
     );
@@ -78,7 +78,7 @@ const AdminSongsPending: React.FC = () => {
     return (
       <div className="p-6">
         <div className="bg-red-900/50 border border-red-500 rounded-lg p-6 text-center">
-          <h2 className="text-xl font-bold text-red-200 mb-2">Erro ao carregar músicas pendentes</h2>
+          <h2 className="text-xl font-bold text-red-200 mb-2">Erro ao carregar hinos pendentes</h2>
           <p className="text-red-300 mb-4">{error}</p>
           <button
             onClick={loadSongs}
@@ -95,8 +95,8 @@ const AdminSongsPending: React.FC = () => {
     <div className="p-6 space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-3xl font-bold text-white mb-2">Músicas Pendentes de Aprovação</h1>
-        <p className="text-gray-400">Total: {totalCount} músicas aguardando aprovação</p>
+        <h1 className="text-3xl font-bold text-white mb-2">Hinos Pendentes de Aprovação</h1>
+        <p className="text-gray-400">Total: {totalCount} hinos aguardando aprovação</p>
       </div>
 
       {/* Stats Card */}
@@ -119,7 +119,7 @@ const AdminSongsPending: React.FC = () => {
             <thead className="bg-gray-800/50 border-b border-gray-700">
               <tr>
                 <th className="px-6 py-4 text-left text-xs font-semibold text-gray-400 uppercase">
-                  Música
+                  Hino
                 </th>
                 <th className="px-6 py-4 text-left text-xs font-semibold text-gray-400 uppercase">
                   Compositor
@@ -211,8 +211,8 @@ const AdminSongsPending: React.FC = () => {
         {songs.length === 0 && !isLoading && (
           <div className="text-center py-12">
             <Music className="w-16 h-16 text-gray-600 mx-auto mb-4" />
-            <p className="text-gray-400 text-lg mb-2">Nenhuma música pendente</p>
-            <p className="text-gray-500 text-sm">Todas as músicas foram aprovadas ou rejeitadas</p>
+            <p className="text-gray-400 text-lg mb-2">Nenhum hino pendente</p>
+            <p className="text-gray-500 text-sm">Todos os hinos foram aprovados ou rejeitados</p>
           </div>
         )}
 

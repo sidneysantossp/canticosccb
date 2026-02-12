@@ -226,7 +226,7 @@ export default function AddToPlaylistModal({ isOpen, onClose, track, bulkTracks 
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="text-white font-medium truncate">{playlist.name}</p>
-                      <p className="text-gray-400 text-sm">{playlist.tracks.length} músicas</p>
+                      <p className="text-gray-400 text-sm">{playlist.tracks.length} hinos</p>
                     </div>
                   </button>
                 ))}

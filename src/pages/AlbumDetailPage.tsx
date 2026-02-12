@@ -742,7 +742,7 @@ const AlbumDetailPage: React.FC = () => {
                       className="w-full p-3 bg-gray-700 hover:bg-gray-600 rounded-lg text-left transition-colors"
                     >
                       <div className="text-white font-medium">{playlist.name}</div>
-                      <div className="text-gray-400 text-sm">{playlist.tracks?.length || 0} músicas</div>
+                      <div className="text-gray-400 text-sm">{playlist.tracks?.length || 0} hinos</div>
                     </button>
                   ))
                 ) : (

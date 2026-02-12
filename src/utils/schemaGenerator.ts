@@ -15,7 +15,7 @@ export const generateOrganizationSchema = () => {
     name: 'Cânticos CCB',
     url: BASE_URL,
     logo: `${BASE_URL}/logo.png`,
-    description: 'Plataforma de música religiosa da Congregação Cristã no Brasil',
+    description: 'Plataforma de hinos da Congregação Cristã no Brasil',
     sameAs: [
       'https://www.facebook.com/canticosccb',
       'https://www.instagram.com/canticosccb',
@@ -68,7 +68,7 @@ export const generateBreadcrumbSchema = (items: Array<{ name: string; url: strin
 };
 
 /**
- * Schema para Música
+ * Schema para Hino
  */
 export const generateMusicRecordingSchema = (song: {
   name: string;

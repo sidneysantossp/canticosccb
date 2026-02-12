@@ -68,7 +68,7 @@ const AdminSongForm: React.FC = () => {
       // TODO: Criar API de gêneros
       setGenres([]);
 
-      // Se estiver editando, carregar dados da música
+      // Se estiver editando, carregar dados do hino
       if (isEditMode && id) {
         const songRes = await hinosApi.get(Number(id));
         if (!songRes.error && songRes.data) {
@@ -127,7 +127,7 @@ const AdminSongForm: React.FC = () => {
   const handleAudioChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      if (file.size > 50 * 1024 * 1024) {
+      if (file.size > 5 * 1024 * 1024 * 1024) {
         return;
       }
 
@@ -236,7 +236,7 @@ const AdminSongForm: React.FC = () => {
       navigate('/admin/hymns');
     } catch (error: any) {
       console.error('Error saving song:', error);
-      setError(error.message || 'Erro ao salvar música');
+      setError(error.message || 'Erro ao salvar hino');
     } finally {
       setIsLoading(false);
     }

@@ -245,7 +245,7 @@ const AdminAnalytics: React.FC = () => {
               <Music className="w-6 h-6 text-blue-400" />
             </div>
             <div>
-              <p className="text-gray-400 text-sm">Músicas Publicadas</p>
+              <p className="text-gray-400 text-sm">Hinos Publicados</p>
               <p className="text-white text-2xl font-bold">{summary.totalSongs}</p>
             </div>
           </div>
@@ -368,7 +368,7 @@ const AdminAnalytics: React.FC = () => {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Top Songs */}
         <div className="bg-gray-900/50 border border-gray-800 rounded-xl p-6">
-          <h3 className="text-xl font-bold text-white mb-4">Top 10 Músicas</h3>
+          <h3 className="text-xl font-bold text-white mb-4">Top 10 Hinos</h3>
           <ResponsiveContainer width="100%" height={400}>
             <BarChart data={topSongs} layout="horizontal">
               <CartesianGrid strokeDasharray="3 3" stroke="#374151" />

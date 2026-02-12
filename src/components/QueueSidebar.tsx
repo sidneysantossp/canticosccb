@@ -81,10 +81,10 @@ const QueueSidebar: React.FC<QueueSidebarProps> = ({ isOpen, onClose }) => {
             <div className="flex flex-col items-center justify-center py-8 text-center">
               <Music className="w-12 h-12 text-gray-600 mb-3" />
               <p className="text-gray-400 text-sm">
-                Nenhuma música na fila
+                Nenhum hino na fila
               </p>
               <p className="text-gray-500 text-xs mt-1">
-                Adicione músicas para reproduzir em seguida
+                Adicione hinos para reproduzir em seguida
               </p>
             </div>
           ) : (

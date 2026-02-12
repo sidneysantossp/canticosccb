@@ -22,6 +22,7 @@ export interface ComposerRegistrationData {
   documento_tipo: string;
   documento_numero: string;
   documento_imagem?: string;
+  documento_imagem_verso?: string;
 }
 
 export interface RegistrationResult {
@@ -131,7 +132,7 @@ export async function registerComposer(data: ComposerRegistrationData): Promise<
 /**
  * Creates only the composer profile (without auth user — that's handled by supabase.auth.signUp)
  */
-export async function createComposerProfile(data: Omit<ComposerRegistrationData, 'senha'>): Promise<{ success: boolean; compositor_id?: number; error?: string }> {
+export async function createComposerProfile(data: Omit<ComposerRegistrationData, 'senha'> & { user_id?: string }): Promise<{ success: boolean; compositor_id?: number; error?: string }> {
   if (!isSupabaseConfigured) {
     return { success: false, error: 'Supabase not configured' };
   }
@@ -158,21 +159,45 @@ export async function createComposerProfile(data: Omit<ComposerRegistrationData,
       category: 'solo',
     };
 
+    // Vincular ao user_id do auth se fornecido
+    if (data.user_id) {
+      composerData.user_id = data.user_id;
+    }
+
     const result = await supabaseInsert<any>('composers', composerData);
     const compositorId = result?.id || (Array.isArray(result) ? result[0]?.id : null);
 
-    // Save document if provided
-    if (data.documento_tipo && data.documento_numero && compositorId) {
+    // Save documents if provided
+    if (data.documento_tipo && compositorId) {
       try {
-        await supabaseInsert('composer_documents', {
-          composer_id: compositorId,
-          document_type: data.documento_tipo,
-          document_number: data.documento_numero,
-          document_image: data.documento_imagem || null,
-          status: 'pending',
-        });
+        // Frente do documento
+        if (data.documento_imagem) {
+          console.log('[createComposerProfile] Saving front document for composer:', compositorId);
+          await supabaseInsert('composer_documents', {
+            composer_id: compositorId,
+            document_type: data.documento_tipo,
+            document_number: data.documento_numero || null,
+            document_image: data.documento_imagem,
+            expected_name: data.nome || data.nome_artistico || '',
+            status: 'pending',
+          });
+          console.log('[createComposerProfile] Front document saved successfully');
+        }
+        // Verso do documento
+        if (data.documento_imagem_verso) {
+          console.log('[createComposerProfile] Saving back document for composer:', compositorId);
+          await supabaseInsert('composer_documents', {
+            composer_id: compositorId,
+            document_type: `${data.documento_tipo}_verso`,
+            document_number: data.documento_numero || null,
+            document_image: data.documento_imagem_verso,
+            expected_name: data.nome || data.nome_artistico || '',
+            status: 'pending',
+          });
+          console.log('[createComposerProfile] Back document saved successfully');
+        }
       } catch (docErr) {
-        console.warn('[createComposerProfile] Error saving document (table may not exist):', docErr);
+        console.warn('[createComposerProfile] Error saving document:', docErr);
       }
     }
 

@@ -551,7 +551,7 @@ const AdminYoutubeImport: React.FC = () => {
                     {audioFile ? audioFile.name : youtubeMetadata ? 'Áudio será processado - ou faça upload manual' : 'Selecionar arquivo de áudio'}
                   </span>
                   <span className="text-gray-500 text-xs mt-1">
-                    MP3, WAV (máx. 50MB)
+                    MP3, WAV (máx. 5GB)
                   </span>
                   <input
                     type="file"

@@ -64,8 +64,8 @@ const AdminCustomReports: React.FC = () => {
   const reportTemplates = [
     {
       id: 'songs-performance',
-      name: 'Performance de Músicas',
-      description: 'Relatório detalhado de plays, likes e compartilhamentos por música',
+      name: 'Performance de Hinos',
+      description: 'Relatório detalhado de plays, likes e compartilhamentos por hino',
       icon: Music,
       color: 'text-blue-400',
       bgColor: 'bg-blue-500/20'
@@ -105,7 +105,7 @@ const AdminCustomReports: React.FC = () => {
     {
       id: 'favorites-analysis',
       name: 'Análise de Favoritos',
-      description: 'Relatório de músicas mais favoritadas e tendências',
+      description: 'Relatório de hinos mais favoritados e tendências',
       icon: Heart,
       color: 'text-red-400',
       bgColor: 'bg-red-500/20'
@@ -115,7 +115,7 @@ const AdminCustomReports: React.FC = () => {
   const availableColumns = {
     songs: ['Título', 'Compositor', 'Categoria', 'Plays', 'Likes', 'Data de Criação'],
     users: ['Nome', 'Email', 'Plano', 'Data de Cadastro', 'Último Acesso', 'Status'],
-    playlists: ['Nome', 'Proprietário', 'Músicas', 'Seguidores', 'Visibilidade', 'Data de Criação'],
+    playlists: ['Nome', 'Proprietário', 'Hinos', 'Seguidores', 'Visibilidade', 'Data de Criação'],
     analytics: ['Data', 'Plays', 'Usuários Únicos', 'Novas Contas', 'Tempo Médio']
   };
 
@@ -567,10 +567,10 @@ const AdminCustomReports: React.FC = () => {
 
           <div className="bg-gray-800/50 rounded-lg p-4">
             <div className="flex items-center justify-between mb-2">
-              <h4 className="text-white font-medium">Top Músicas</h4>
+              <h4 className="text-white font-medium">Top Hinos</h4>
               <span className="text-xs text-gray-400">3 dias atrás</span>
             </div>
-            <p className="text-gray-400 text-sm mb-3">Ranking das 50 músicas mais tocadas</p>
+            <p className="text-gray-400 text-sm mb-3">Ranking dos 50 hinos mais tocados</p>
             <button className="text-primary-400 hover:text-primary-300 text-sm font-medium">
               Baixar →
             </button>

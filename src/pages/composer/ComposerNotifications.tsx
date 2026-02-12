@@ -7,12 +7,12 @@ import { useNavigate } from 'react-router-dom';
 import ConfirmModal from '@/components/ConfirmModal';
 
 interface Notification {
-  id: number;
-  tipo: 'convite' | 'geral' | 'sistema';
+  id: string;
+  tipo: string;
   titulo: string;
   mensagem: string | null;
   link: string | null;
-  lida: number;
+  lida: boolean;
   created_at: string;
 }
 
@@ -28,55 +28,92 @@ const ComposerNotifications: React.FC = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalNotifications, setTotalNotifications] = useState(0);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [notificationToDelete, setNotificationToDelete] = useState<number | null>(null);
+  const [notificationToDelete, setNotificationToDelete] = useState<string | null>(null);
+  const [composerId, setComposerId] = useState<string | null>(null);
 
-  const fetchNotifications = async (page: number = 1) => {
-    if (!user?.id || !isSupabaseConfigured) return;
+  // Buscar notificações usando REST API
+  const fetchNotifications = async (page: number = 1, cId?: string | null) => {
+    const resolvedComposerId = cId ?? composerId;
+    if (!resolvedComposerId && !user?.id) {
+      setLoading(false);
+      return;
+    }
     
     try {
       setLoading(true);
-      const offset = (page - 1) * ITEMS_PER_PAGE;
-      const rows = await supabaseFetch<any>('notificacoes', {
-        usuario_id: `eq.${user.id}`,
-        select: 'id,titulo,mensagem,tipo,link,lida,created_at',
+
+      // Construir filtro OR via query param
+      const orParts: string[] = [];
+      if (resolvedComposerId) orParts.push(`composer_id.eq.${resolvedComposerId}`);
+      if (user?.id) orParts.push(`user_id.eq.${user.id}`);
+
+      const rows = await supabaseFetch<any>('notifications', {
+        or: `(${orParts.join(',')})`,
+        select: 'id,title,message,type,link,is_read,created_at',
         order: 'created_at.desc',
         limit: String(ITEMS_PER_PAGE),
-        offset: String(offset)
+        offset: String((page - 1) * ITEMS_PER_PAGE),
       });
-      
-      const countRows = await supabaseFetch<any>('notificacoes', {
-        usuario_id: `eq.${user.id}`,
-        select: 'id'
-      });
-      
-      setNotifications(rows.map((row: any) => ({
+
+      setNotifications((rows || []).map((row: any) => ({
         id: row.id,
-        titulo: row.titulo,
-        mensagem: row.mensagem,
-        tipo: row.tipo,
-        link: row.link,
-        lida: row.lida,
+        titulo: row.title || '',
+        mensagem: row.message || null,
+        tipo: row.type || 'geral',
+        link: row.link || null,
+        lida: row.is_read,
         created_at: row.created_at
       })));
-      setTotalNotifications(countRows.length);
+      setTotalNotifications(rows.length);
     } catch (err: any) {
       console.error('Erro ao carregar notificações:', err);
-      setError(err.message);
+      setError(err.message || 'Erro ao carregar');
     } finally {
       setLoading(false);
     }
   };
 
-  const markAsRead = async (id: number) => {
-    if (!isSupabaseConfigured) return;
-    
+  useEffect(() => {
+    let cancelled = false;
+    const init = async () => {
+      if (!user?.id || !isSupabaseConfigured) {
+        setLoading(false);
+        return;
+      }
+
+      // 1. Resolver compositor
+      let cId: string | null = null;
+      try {
+        const rows = await supabaseFetch<any>('composers', {
+          user_id: `eq.${user.id}`,
+          select: 'id',
+          limit: '1'
+        });
+        if (rows.length > 0) {
+          cId = String(rows[0].id);
+          if (!cancelled) setComposerId(cId);
+        }
+      } catch (e) {
+        console.warn('Não foi possível resolver compositor:', e);
+      }
+
+      // 2. Buscar notificações
+      if (!cancelled) {
+        await fetchNotifications(1, cId);
+      }
+    };
+    init();
+    return () => { cancelled = true; };
+  }, [user?.id]);
+
+  const markAsRead = async (id: string) => {
     try {
       const notification = notifications.find(n => n.id === id);
       const wasUnread = notification && !notification.lida;
 
-      await supabaseUpdate('notificacoes', { id: `eq.${id}` }, { lida: true });
+      await supabaseUpdate('notifications', { id: `eq.${id}` }, { is_read: true });
       
-      setNotifications(prev => prev.map(n => n.id === id ? { ...n, lida: 1 } : n));
+      setNotifications(prev => prev.map(n => n.id === id ? { ...n, lida: true } : n));
       if (wasUnread) {
         decrementCount();
       }
@@ -92,28 +129,24 @@ const ComposerNotifications: React.FC = () => {
     }
   };
 
-  const handleDeleteClick = (id: number) => {
+  const handleDeleteClick = (id: string) => {
     setNotificationToDelete(id);
     setShowDeleteModal(true);
   };
 
   const deleteNotification = async () => {
-    if (!notificationToDelete || !isSupabaseConfigured) return;
+    if (!notificationToDelete) return;
 
     try {
-      const success = await supabaseDelete('notificacoes', { id: `eq.${notificationToDelete}` });
+      await supabaseDelete('notifications', { id: `eq.${notificationToDelete}` });
       
-      if (success) {
-        setNotifications(prev => prev.filter(n => n.id !== notificationToDelete));
-        setTotalNotifications(prev => prev - 1);
-        
-        // Se a página atual ficar vazia e não for a primeira, voltar uma página
-        if (notifications.length === 1 && currentPage > 1) {
-          setCurrentPage(prev => prev - 1);
-        } else if (notifications.length === 1) {
-          // Última notificação da primeira página, recarregar
-          fetchNotifications(1);
-        }
+      setNotifications(prev => prev.filter(n => n.id !== notificationToDelete));
+      setTotalNotifications(prev => prev - 1);
+      
+      if (notifications.length === 1 && currentPage > 1) {
+        setCurrentPage(prev => prev - 1);
+      } else if (notifications.length === 1) {
+        fetchNotifications(1);
       }
     } catch (err) {
       console.error('Erro ao deletar notificação:', err);
@@ -129,9 +162,8 @@ const ComposerNotifications: React.FC = () => {
     fetchNotifications(newPage);
   };
 
-  useEffect(() => {
-    fetchNotifications(currentPage);
-  }, [user?.id]);
+  // Paginação: recarregar ao mudar de página
+  // (init já carrega a primeira página)
 
   if (loading) {
     return (

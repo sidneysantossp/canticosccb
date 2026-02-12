@@ -54,12 +54,12 @@ const LoginRequiredModal: React.FC<LoginRequiredModalProps> = ({
             </div>
             <div>
               <p className="text-white font-medium">Favoritos</p>
-              <p className="text-green-200 text-sm">Salve suas músicas preferidas</p>
+              <p className="text-green-200 text-sm">Salve seus hinos preferidos</p>
             </div>
           </div>
           
           <p className="text-green-100 text-sm leading-relaxed">
-            {message}. Faça login para salvar suas músicas favoritas e acessá-las em qualquer dispositivo.
+            {message}. Faça login para salvar seus hinos favoritos e acessá-los em qualquer dispositivo.
           </p>
         </div>
 

@@ -21,9 +21,14 @@ interface LayoutProps {
 
 const Layout: React.FC<LayoutProps> = ({ children }) => {
   const { currentTrack } = usePlayerStore();
-  const { isMenuOpen } = useMobileMenu();
+  const { isMenuOpen, closeMenu } = useMobileMenu();
   const location = useLocation();
   const { user, isAdmin, isComposer } = useAuth();
+
+  // Fechar menu mobile ao mudar de rota
+  React.useEffect(() => {
+    closeMenu();
+  }, [location.pathname, closeMenu]);
 
   // Detectar tipo de área
   const isAdminPanel = location.pathname.startsWith('/admin');
@@ -63,7 +68,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
           {isUserDashboard && user && <UserSidebar />}
           {isPublicArea && (
             user
-              ? (isComposer ? <ComposerSidebar /> : <UserSidebar />)
+              ? <UserSidebar />
               : <Sidebar />
           )}
         </>
@@ -86,7 +91,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
       <MobileNav />
       
       {/* Audio Player - Always visible when track is playing */}
-      {currentTrack && <Player isHidden={isMenuOpen} />}
+      {currentTrack && !isAdminPanel && <Player isHidden={isMenuOpen} />}
       
       {/* Toast Notifications removed for silent UX */}
       

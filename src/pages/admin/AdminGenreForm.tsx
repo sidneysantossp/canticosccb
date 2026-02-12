@@ -99,7 +99,7 @@ const AdminGenreForm: React.FC = () => {
             <h1 className="text-3xl font-bold text-white">
               {isEditing ? 'Editar Gênero' : 'Novo Gênero'}
             </h1>
-            <p className="text-gray-400 mt-1">Organize músicas por estilos e gêneros musicais</p>
+            <p className="text-gray-400 mt-1">Organize hinos por estilos e gêneros musicais</p>
           </div>
         </div>
 

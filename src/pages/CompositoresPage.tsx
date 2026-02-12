@@ -220,7 +220,7 @@ export default function CompositoresPage() {
       <SEOHead
         title="Compositores - Ranking por Seguidores"
         description="Descubra os compositores mais seguidos e populares. Veja o ranking completo dos compositores da CCB."
-        keywords="compositores, ranking, seguidores, CCB, música"
+        keywords="compositores, ranking, seguidores, CCB, hinos"
       />
 
       <div className="min-h-screen bg-gradient-to-br from-background-primary via-background-secondary to-background-primary pb-24">

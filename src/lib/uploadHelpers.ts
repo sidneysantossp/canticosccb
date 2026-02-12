@@ -1,6 +1,6 @@
 import { uploadAvatar, uploadCover } from './uploadHelper';
 import { getCurrentUser } from './auth-client';
-import { supabaseUpdate, getSupabaseStorageUrl } from './supabaseRest';
+import { supabaseUpdate } from './supabaseRest';
 
 /**
  * Upload de avatar do usuário e atualização no banco de dados
@@ -9,15 +9,11 @@ export async function uploadUserAvatar(userId: number | string, file: File): Pro
   try {
     console.log('📸 uploadUserAvatar - Starting upload:', { userId, fileName: file.name });
     
-    // 1. Fazer upload do arquivo para o servidor
-    const fileName = await uploadAvatar(file);
-    console.log('✅ File uploaded:', fileName);
-    
-    // 2. Construir URL completa do avatar usando Supabase Storage
-    const avatarUrl = getSupabaseStorageUrl('avatars', fileName);
+    // 1. Fazer upload do arquivo (retorna URL pública completa)
+    const avatarUrl = await uploadAvatar(file);
     console.log('📸 Avatar URL:', avatarUrl);
     
-    // 3. Atualizar avatar_url no banco de dados via Supabase
+    // 2. Atualizar avatar_url no banco de dados via Supabase
     console.log('💾 Updating user avatar_url in database...');
     try {
       await supabaseUpdate('users', { id: `eq.${userId}` }, { avatar_url: avatarUrl });
@@ -26,10 +22,10 @@ export async function uploadUserAvatar(userId: number | string, file: File): Pro
       console.warn('⚠️ Database update failed:', e);
     }
     
-    // 4. Persistir no localStorage para sobreviver a refresh
+    // 3. Persistir no localStorage para sobreviver a refresh
     try {
       const current = getCurrentUser ? getCurrentUser() : null;
-      if (current && Number(current.id) === Number(userId)) {
+      if (current && String(current.id) === String(userId)) {
         const updated = { ...current, avatar_url: avatarUrl } as any;
         localStorage.setItem('user', JSON.stringify(updated));
         console.log('💾 LocalStorage user atualizado com novo avatar_url');
@@ -48,16 +44,12 @@ export async function uploadUserAvatar(userId: number | string, file: File): Pro
 /**
  * Upload de banner do compositor
  */
-export async function uploadComposerBanner(composerId: number, file: File): Promise<string> {
+export async function uploadComposerBanner(composerId: string | number, file: File): Promise<string> {
   try {
     console.log('🖼️ uploadComposerBanner - Starting upload:', { composerId, fileName: file.name });
 
-    // 1. Fazer upload do arquivo (usa covers por ser imagem larga)
-    const fileName = await uploadCover(file, 'covers');
-    console.log('✅ File uploaded:', fileName);
-
-    // 2. Construir URL completa usando Supabase Storage
-    const bannerUrl = getSupabaseStorageUrl('covers', fileName);
+    // 1. Fazer upload do arquivo (retorna URL pública completa)
+    const bannerUrl = await uploadCover(file, 'covers');
     console.log('🖼️ Banner URL:', bannerUrl);
 
     // 3. Atualizar no banco via Supabase
@@ -74,21 +66,17 @@ export async function uploadComposerBanner(composerId: number, file: File): Prom
 /**
  * Upload de avatar do compositor
  */
-export async function uploadComposerAvatar(composerId: number, file: File): Promise<string> {
+export async function uploadComposerAvatar(composerId: string | number, file: File): Promise<string> {
   try {
     console.log('📸 uploadComposerAvatar - Starting upload:', { composerId, fileName: file.name });
     
-    // 1. Fazer upload do arquivo
-    const fileName = await uploadAvatar(file);
-    console.log('✅ File uploaded:', fileName);
-    
-    // 2. Construir URL completa usando Supabase Storage
-    const avatarUrl = getSupabaseStorageUrl('avatars', fileName);
+    // 1. Fazer upload do arquivo (retorna URL pública completa)
+    const avatarUrl = await uploadAvatar(file);
     console.log('📸 Avatar URL:', avatarUrl);
     
-    // 3. Atualizar no banco via Supabase
+    // 3. Atualizar no banco via Supabase (ambos os campos para consistência)
     console.log('💾 Updating composer avatar_url in database...');
-    await supabaseUpdate('composers', { id: `eq.${composerId}` }, { photo_url: avatarUrl });
+    await supabaseUpdate('composers', { id: `eq.${composerId}` }, { photo_url: avatarUrl, avatar_url: avatarUrl });
     console.log('✅ Database updated successfully');
     return avatarUrl;
   } catch (error: any) {

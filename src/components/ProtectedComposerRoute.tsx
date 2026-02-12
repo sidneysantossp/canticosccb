@@ -41,15 +41,17 @@ export const ProtectedComposerRoute: React.FC<ProtectedComposerRouteProps> = ({ 
       const apiData = response.data as any;
       const compositores = apiData?.compositores || [];
 
-      // Encontrar o compositor pelo usuario_id
-      const compositor = compositores.find((c: any) =>
-        Number(c?.usuario_id) === Number(user.id)
-      );
+      // Encontrar o compositor pelo usuario_id (comparação por string, pois são UUIDs)
+      console.log('🔍 Buscando compositor com usuario_id:', user.id, 'entre', compositores.length, 'compositores');
+      const compositor = compositores.find((c: any) => {
+        const cUserId = String(c?.usuario_id || c?.user_id || '');
+        return cUserId === String(user.id);
+      });
 
       if (compositor) {
         console.log('🔍 Compositor encontrado:', compositor);
-        const verified = Number(compositor.verificado) === 1;
-        console.log('✅ Status verificado (normalizado):', verified);
+        const verified = compositor.verificado === true || compositor.verificado === 1 || compositor.verified === true;
+        console.log('✅ Status verificado (normalizado):', verified, '| verificado:', compositor.verificado, '| status:', compositor.status);
         setIsVerified(verified);
       } else {
         console.log('❌ Compositor não encontrado para usuario_id:', user.id);
