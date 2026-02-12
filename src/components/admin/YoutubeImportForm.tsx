@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 import { Youtube, Import, Loader, AlertCircle } from 'lucide-react'
-import youtubeImport from '@/pages/api/youtube-import'
+import youtubeImport from '@/lib/youtubeImport'
 
 interface YoutubeMetadata {
   videoId: string
