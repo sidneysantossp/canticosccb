@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { ArrowLeft, Save, Upload, Disc, Trash2 } from 'lucide-react';
+import { ArrowLeft, Save, Upload, Disc, Trash2, X } from 'lucide-react';
 import { albunsApi, uploadApi, compositoresApi, categoriasApi, Album, Hino } from '@/lib/api-client';
 import HinoSelector from '@/components/admin/HinoSelector';
 
@@ -13,7 +13,7 @@ const AdminAlbumForm: React.FC = () => {
     title: '',
     artist: '',
     description: '',
-    genre: '',
+    genres: [] as string[],
     total_tracks: '',
     release_date: '',
     status: 'published' as 'published' | 'draft'
@@ -85,7 +85,7 @@ const AdminAlbumForm: React.FC = () => {
           title: album.title || '',
           artist: album.artist || '',
           description: album.description || '',
-          genre: album.genre || '',
+          genres: album.genre ? album.genre.split(',').map((g: string) => g.trim()).filter(Boolean) : [],
           total_tracks: album.total_tracks?.toString() || '',
           release_date: album.release_date || '',
           status: album.status || 'published'
@@ -165,7 +165,7 @@ const AdminAlbumForm: React.FC = () => {
       const albumData = {
         titulo: formData.title.trim(),
         artist: formData.artist.trim() || undefined,
-        genre: formData.genre || undefined,
+        genre: formData.genres.length > 0 ? formData.genres.join(', ') : undefined,
         descricao: formData.description.trim() || undefined,
         cover_url: coverUrl || undefined,
         ano: formData.release_date ? parseInt(formData.release_date) : undefined,
@@ -335,18 +335,35 @@ const AdminAlbumForm: React.FC = () => {
                 <label className="block text-gray-400 text-sm font-semibold mb-2">
                   Gênero
                 </label>
-                <select
-                  value={formData.genre}
-                  onChange={(e) => setFormData({ ...formData, genre: e.target.value })}
-                  className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-green-600 appearance-none"
-                >
-                  <option value="">Selecione um gênero</option>
-                  {categories.map((cat) => (
-                    <option key={cat.id} value={cat.nome}>
-                      {cat.nome}
-                    </option>
+                <div className="min-h-[48px] bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 flex flex-wrap gap-2 items-center">
+                  {formData.genres.map((g) => (
+                    <span key={g} className="inline-flex items-center gap-1 bg-green-600/20 text-green-400 text-sm px-2.5 py-1 rounded-full border border-green-600/30">
+                      {g}
+                      <button
+                        type="button"
+                        onClick={() => setFormData({ ...formData, genres: formData.genres.filter(x => x !== g) })}
+                        className="hover:text-white transition-colors ml-0.5"
+                      >
+                        <X className="w-3.5 h-3.5" />
+                      </button>
+                    </span>
                   ))}
-                </select>
+                  <select
+                    value=""
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      if (val && !formData.genres.includes(val)) {
+                        setFormData({ ...formData, genres: [...formData.genres, val] });
+                      }
+                    }}
+                    className="bg-gray-800 text-white text-sm focus:outline-none flex-1 min-w-[140px] py-1 cursor-pointer rounded"
+                  >
+                    <option value="" className="bg-gray-800 text-white">+ Adicionar gênero</option>
+                    {categories.filter(c => !formData.genres.includes(c.nome)).map((cat) => (
+                      <option key={cat.id} value={cat.nome} className="bg-gray-800 text-white">{cat.nome}</option>
+                    ))}
+                  </select>
+                </div>
               </div>
 
               <div>

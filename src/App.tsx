@@ -47,6 +47,8 @@ import CompositorPublicarPage from '@/pages/CompositorPublicarPage';
 import AjudaPage from '@/pages/AjudaPage';
 import ContatoPage from '@/pages/ContatoPage';
 import NotFoundPage from '@/pages/NotFoundPage';
+import AvisosPage from '@/pages/AvisosPage';
+import AvisoDetailPage from '@/pages/AvisoDetailPage';
 
 // User Pages
 import ProfilePage from '@/pages/ProfilePage';
@@ -151,6 +153,8 @@ import AdminImportForm from '@/pages/admin/AdminImportForm';
 import AdminExport from '@/pages/admin/AdminExport';
 import AdminExportForm from '@/pages/admin/AdminExportForm';
 // AdminAPI imports removed due to secrets
+import AdminNotices from '@/pages/admin/AdminNotices';
+import AdminNoticeForm from '@/pages/admin/AdminNoticeForm';
 import AdminBibleNarrated from '@/pages/admin/AdminBibleNarrated';
 import AdminBibleNarratedForm from '@/pages/admin/AdminBibleNarratedForm';
 import GlobalAudioPlayer from '@/components/GlobalAudioPlayer';
@@ -219,6 +223,8 @@ const AppContent: React.FC = () => {
           <Route path="compositor/publicar" element={<CompositorPublicarPage />} />
           <Route path="ajuda" element={<AjudaPage />} />
           <Route path="contato" element={<ContatoPage />} />
+          <Route path="avisos" element={<AvisosPage />} />
+          <Route path="avisos/:id" element={<AvisoDetailPage />} />
 
           {/* User Routes - Protected */}
           <Route path="perfil" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
@@ -447,6 +453,11 @@ const AppContent: React.FC = () => {
           <Route path="admin/export/criar" element={<ProtectedRoute requireAdmin><AdminExportForm /></ProtectedRoute>} />
           <Route path="admin/export/create" element={<ProtectedRoute requireAdmin><AdminExportForm /></ProtectedRoute>} />
           {/* AdminAPI routes removed due to secrets */}
+          {/* Notices Management */}
+          <Route path="admin/notices" element={<ProtectedRoute requireAdmin><AdminNotices /></ProtectedRoute>} />
+          <Route path="admin/notices/create" element={<ProtectedRoute requireAdmin><AdminNoticeForm /></ProtectedRoute>} />
+          <Route path="admin/notices/edit/:id" element={<ProtectedRoute requireAdmin><AdminNoticeForm /></ProtectedRoute>} />
+
           <Route path="admin/biblia-narrada" element={<ProtectedRoute requireAdmin><AdminBibleNarrated /></ProtectedRoute>} />
           <Route path="admin/bible-narrated" element={<ProtectedRoute requireAdmin><AdminBibleNarrated /></ProtectedRoute>} />
           <Route path="admin/bible-narrated/criar" element={<ProtectedRoute requireAdmin><AdminBibleNarratedForm /></ProtectedRoute>} />

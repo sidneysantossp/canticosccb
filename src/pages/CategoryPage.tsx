@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { ArrowLeft, Play, Pause, Heart, Music, ListPlus, Share2, Plus } from 'lucide-react';
+import { ArrowLeft, Play, Pause, Heart, Music, ListPlus, Share2, Plus, Search, X } from 'lucide-react';
 import { buildAlbumCoverUrl } from '@/lib/media-helper';
 import { supabaseFetch, isSupabaseConfigured } from '@/lib/supabaseRest';
 import { getAll as getAllCategories } from '@/lib/categoriesApi';
@@ -9,6 +9,7 @@ import useFavoritesStore from '@/stores/favoritesStore';
 import { usePlayerContext } from '@/contexts/PlayerContext';
 import { useAuth } from '@/contexts/AuthContext';
 import AddToPlaylistModal from '@/components/modals/AddToPlaylistModal';
+import LoginRequiredModal from '@/components/modals/LoginRequiredModal';
 import SEOHead from '@/components/SEO/SEOHead';
 
 interface Category {
@@ -39,7 +40,11 @@ const CategoryPage: React.FC = () => {
   const [category, setCategory] = useState<Category | null>(null);
   const [songs, setSongs] = useState<Song[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [filterNumber, setFilterNumber] = useState('');
+  const [filterName, setFilterName] = useState('');
+  const [filterComposer, setFilterComposer] = useState('');
   const [showPlaylistModal, setShowPlaylistModal] = useState(false);
+  const [showLoginModal, setShowLoginModal] = useState(false);
   const [selectedTrack, setSelectedTrack] = useState<any>(null);
   const [bulkTracksForModal, setBulkTracksForModal] = useState<any[] | null>(null);
 
@@ -82,12 +87,56 @@ const CategoryPage: React.FC = () => {
         return;
       }
 
-      const list = await supabaseFetch<any>('hinos', {
+      // Buscar via hino_categorias (múltiplas categorias) + fallback coluna única
+      let hinoIds: string[] = [];
+      try {
+        // Buscar o ID da categoria pelo nome
+        const cats = await supabaseFetch<any>('categorias', {
+          nome: `ilike.%${resolvedName}%`,
+          select: 'id',
+          limit: '5',
+        });
+        if (cats.length > 0) {
+          const catIds = cats.map((c: any) => String(c.id));
+          // Buscar hino_ids relacionados
+          const rels = await supabaseFetch<any>('hino_categorias', {
+            categoria_id: `in.(${catIds.join(',')})`,
+            select: 'hino_id',
+          });
+          hinoIds = rels.map((r: any) => String(r.hino_id));
+        }
+      } catch (e) {
+        console.warn('hino_categorias lookup failed, using fallback:', e);
+      }
+
+      let list: any[] = [];
+      if (hinoIds.length > 0) {
+        // Buscar hinos pelos IDs encontrados via hino_categorias
+        list = await supabaseFetch<any>('hinos', {
+          id: `in.(${hinoIds.join(',')})`,
+          ativo: 'eq.true',
+          select: 'id,numero,titulo,compositor_nome,categoria,cover_url,audio_url,duracao,plays_count,youtube_source',
+          order: 'created_at.desc',
+          limit: '50',
+        });
+      }
+
+      // Fallback: buscar pela coluna categoria única (para hinos sem hino_categorias)
+      const fallbackList = await supabaseFetch<any>('hinos', {
         categoria: `ilike.%${resolvedName}%`,
         ativo: 'eq.true',
         select: 'id,numero,titulo,compositor_nome,categoria,cover_url,audio_url,duracao,plays_count,youtube_source',
-        limit: '50'
+        limit: '50',
       });
+
+      // Mesclar sem duplicatas
+      const seenIds = new Set(list.map((h: any) => String(h.id)));
+      for (const h of fallbackList) {
+        if (!seenIds.has(String(h.id))) {
+          list.push(h);
+          seenIds.add(String(h.id));
+        }
+      }
 
       const formattedSongs: Song[] = list.map((h: any) => ({
         id: String(h.id),
@@ -111,6 +160,7 @@ const CategoryPage: React.FC = () => {
   };
 
   const handleAddToQueue = (song: Song) => {
+    if (!user) { setShowLoginModal(true); return; }
     const track = resolveSongTrack(song);
     const { addToQueue } = (usePlayerStore as any).getState();
     addToQueue(track);
@@ -200,18 +250,14 @@ const CategoryPage: React.FC = () => {
   };
 
   const handleToggleFavorite = (song: Song) => {
-    console.log('🎵 handleToggleFavorite chamado:', song.title);
+    if (!user) { setShowLoginModal(true); return; }
     const songId = parseInt(song.id);
     const uid = user?.id ? Number(user.id) : undefined;
     const isFav = isFavorite(songId);
     
-    console.log('📊 Estado:', { songId, uid, isFavorite: isFav });
-    
     if (isFav) {
-      console.log('❌ Removendo favorito...');
       removeFavorite(songId, uid);
     } else {
-      console.log('✅ Adicionando favorito...');
       addFavorite({
         id: songId,
         title: song.title,
@@ -224,6 +270,7 @@ const CategoryPage: React.FC = () => {
   };
 
   const handleAddToPlaylist = (song: Song) => {
+    if (!user) { setShowLoginModal(true); return; }
     setSelectedTrack({
       id: song.id,
       title: song.title,
@@ -236,6 +283,7 @@ const CategoryPage: React.FC = () => {
   };
 
   const handleAddCategoryToPlaylist = () => {
+    if (!user) { setShowLoginModal(true); return; }
     const tracks = songs.map((song) => ({
       id: song.id,
       title: song.number ? `Hino ${song.number} - ${song.title}` : song.title,
@@ -282,6 +330,23 @@ const CategoryPage: React.FC = () => {
       </div>
     );
   }
+
+  // Filtrar hinos por número, nome e compositor (client-side)
+  const filteredSongs = songs.filter((song) => {
+    if (filterNumber) {
+      const num = String(song.number || '');
+      if (!num.includes(filterNumber.trim())) return false;
+    }
+    if (filterName) {
+      const name = song.title.toLowerCase();
+      if (!name.includes(filterName.toLowerCase().trim())) return false;
+    }
+    if (filterComposer) {
+      const artist = song.artist.toLowerCase();
+      if (!artist.includes(filterComposer.toLowerCase().trim())) return false;
+    }
+    return true;
+  });
 
   const categoryImage = category.image_url || `https://picsum.photos/seed/category-${category.id}/400/400`;
 
@@ -351,7 +416,62 @@ const CategoryPage: React.FC = () => {
         <div className="max-w-7xl mx-auto px-6 pt-6 pb-24">
           <h2 className="text-xl md:text-2xl font-semibold text-white mb-4">Hinos dessa Categoria</h2>
 
-          {songs.length === 0 ? (
+          {/* Filtros */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-6">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
+              <input
+                type="text"
+                value={filterNumber}
+                onChange={(e) => setFilterNumber(e.target.value)}
+                placeholder="Número do hino"
+                className="w-full pl-10 pr-9 py-2.5 bg-background-secondary border border-gray-700 rounded-lg text-white placeholder-gray-500 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+              />
+              {filterNumber && (
+                <button onClick={() => setFilterNumber('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-white">
+                  <X className="w-4 h-4" />
+                </button>
+              )}
+            </div>
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
+              <input
+                type="text"
+                value={filterName}
+                onChange={(e) => setFilterName(e.target.value)}
+                placeholder="Nome do hino"
+                className="w-full pl-10 pr-9 py-2.5 bg-background-secondary border border-gray-700 rounded-lg text-white placeholder-gray-500 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+              />
+              {filterName && (
+                <button onClick={() => setFilterName('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-white">
+                  <X className="w-4 h-4" />
+                </button>
+              )}
+            </div>
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
+              <input
+                type="text"
+                value={filterComposer}
+                onChange={(e) => setFilterComposer(e.target.value)}
+                placeholder="Compositor"
+                className="w-full pl-10 pr-9 py-2.5 bg-background-secondary border border-gray-700 rounded-lg text-white placeholder-gray-500 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+              />
+              {filterComposer && (
+                <button onClick={() => setFilterComposer('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-white">
+                  <X className="w-4 h-4" />
+                </button>
+              )}
+            </div>
+          </div>
+
+          {filteredSongs.length === 0 && songs.length > 0 ? (
+            <div className="text-center py-12">
+              <Search className="w-12 h-12 text-gray-600 mx-auto mb-3" />
+              <h3 className="text-lg font-semibold text-white mb-1">Nenhum resultado</h3>
+              <p className="text-gray-400 text-sm">Tente ajustar os filtros de busca.</p>
+            </div>
+          ) : songs.length === 0 ? (
             <div className="text-center py-16">
               <Music className="w-16 h-16 text-gray-600 mx-auto mb-4" />
               <h3 className="text-xl font-bold text-white mb-2">Nenhum hino encontrado</h3>
@@ -359,7 +479,7 @@ const CategoryPage: React.FC = () => {
             </div>
           ) : (
             <div className="space-y-2">
-              {songs.map((song, index) => (
+              {filteredSongs.map((song, index) => (
                 <div
                   key={song.id}
                   className="group bg-background-secondary hover:bg-background-tertiary rounded-lg p-4 transition-colors flex items-center gap-4"
@@ -402,24 +522,24 @@ const CategoryPage: React.FC = () => {
                     <button
                       onClick={() => handleAddToQueue(song)}
                       className="p-2 hover:bg-white/10 rounded-full transition-all"
-                      title="Adicionar à fila"
+                      title={user ? 'Adicionar à fila' : 'Faça login para adicionar à fila'}
                     >
                       <Plus className="w-5 h-5 text-gray-400 hover:text-primary-400" />
                     </button>
                     <button
                       onClick={() => handleAddToPlaylist(song)}
                       className="p-2 hover:bg-white/10 rounded-full transition-all"
-                      title="Adicionar à playlist"
+                      title={user ? 'Adicionar à playlist' : 'Faça login para adicionar à playlist'}
                     >
                       <ListPlus className="w-5 h-5 text-gray-400 hover:text-primary-400" />
                     </button>
                     <button
                       onClick={() => handleToggleFavorite(song)}
                       className={`p-2 hover:bg-white/10 rounded-full transition-all`}
-                      title={isFavorite(parseInt(song.id)) ? 'Remover dos favoritos' : 'Adicionar aos favoritos'}
+                      title={user ? (isFavorite(parseInt(song.id)) ? 'Remover dos favoritos' : 'Adicionar aos favoritos') : 'Faça login para favoritar'}
                     >
                       <Heart className={`w-5 h-5 ${
-                        isFavorite(parseInt(song.id)) 
+                        user && isFavorite(parseInt(song.id)) 
                           ? 'text-red-500 fill-red-500' 
                           : 'text-gray-400 hover:text-red-500'
                       }`} />
@@ -431,6 +551,14 @@ const CategoryPage: React.FC = () => {
           )}
         </div>
       </div>
+
+      {/* Login Required Modal */}
+      <LoginRequiredModal
+        isOpen={showLoginModal}
+        onClose={() => setShowLoginModal(false)}
+        title="Login Necessário"
+        message="Você precisa estar logado para realizar esta ação"
+      />
 
       {/* Add to Playlist Modal */}
       <AddToPlaylistModal

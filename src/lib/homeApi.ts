@@ -283,13 +283,18 @@ async function getHomePageDataFromSupabase(): Promise<HomePageData> {
     order: 'created_at.desc',
     limit: '60',
   });
+  // Buscar relações hino_categorias para suportar múltiplas categorias por hino
+  const hinoCatRows = supabaseFetch<{ hino_id: string; categoria_id: string }>('hino_categorias', {
+    select: 'hino_id,categoria_id',
+  }).catch(() => [] as { hino_id: string; categoria_id: string }[]);
 
-  const [bannersData, composersData, albumsData, categoriesData, hymnsData] = await Promise.all([
+  const [bannersData, composersData, albumsData, categoriesData, hymnsData, hinoCategorias] = await Promise.all([
     heroBanners,
     composerRows,
     albumRows,
     categoryRows,
     hymnRows,
+    hinoCatRows,
   ]);
 
   const composerNameById = composersData.reduce<Record<string, string>>((acc, row) => {
@@ -299,32 +304,53 @@ async function getHomePageDataFromSupabase(): Promise<HomePageData> {
     return acc;
   }, {});
 
+  // Construir mapa categoriaId -> nome
+  const catIdToName: Record<string, string> = {};
+  for (const cat of categoriesData) {
+    if (cat.id && cat.nome) catIdToName[String(cat.id)] = cat.nome;
+  }
+
+  // Construir mapa hinoId -> [nomes de categorias] (da tabela hino_categorias)
+  const hinoAllCategories: Record<string, string[]> = {};
+  for (const rel of hinoCategorias) {
+    const hid = String(rel.hino_id);
+    const catName = catIdToName[String(rel.categoria_id)];
+    if (catName) {
+      if (!hinoAllCategories[hid]) hinoAllCategories[hid] = [];
+      hinoAllCategories[hid].push(catName);
+    }
+  }
+
   const hymns = hymnsData.map(mapSupabaseHymn);
+
+  // Função auxiliar: verifica se um hino pertence a uma categoria
+  // Usa hino_categorias (múltiplas) com fallback para a coluna categoria (única)
+  const hymnMatchesCategory = (h: HomeHymn, keyword: string): boolean => {
+    const allCats = hinoAllCategories[String(h.id)];
+    if (allCats && allCats.length > 0) {
+      return allCats.some(c => normalizeHomeCategory(c).includes(keyword));
+    }
+    // Fallback: coluna categoria única
+    const normalized = normalizeHomeCategory(h.category);
+    return normalized === keyword || normalized.includes(keyword);
+  };
+
   const grouped = {
     cantados: diversifyByComposer(
       hymns
-        .filter((h) => {
-          const normalized = normalizeHomeCategory(h.category);
-          return normalized === 'cantados' || normalized.includes('cantados');
-        })
+        .filter((h) => hymnMatchesCategory(h, 'cantados'))
         .map((h) => ({ ...h, category: 'Cantados' })),
       12
     ),
     tocados: diversifyByComposer(
       hymns
-        .filter((h) => {
-          const normalized = normalizeHomeCategory(h.category);
-          return normalized === 'tocados' || normalized.includes('tocados');
-        })
+        .filter((h) => hymnMatchesCategory(h, 'tocados'))
         .map((h) => ({ ...h, category: 'Tocados' })),
       12
     ),
     avulsos: diversifyByComposer(
       hymns
-        .filter((h) => {
-          const normalized = normalizeHomeCategory(h.category);
-          return normalized === 'avulsos' || normalized.includes('avulsos');
-        })
+        .filter((h) => hymnMatchesCategory(h, 'avulsos'))
         .map((h) => ({ ...h, category: 'Avulsos' })),
       12
     ),

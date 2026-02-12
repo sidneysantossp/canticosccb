@@ -139,6 +139,30 @@ const ComposersSection: React.FC = () => {
       ]);
 
       if (fresh && Array.isArray(fresh) && fresh.length > 0) {
+        // Buscar contagem real de seguidores da tabela user_follows
+        try {
+          const composerIds = fresh.map((c: any) => String(c.id));
+          const followRows = await supabaseFetch<{ composer_id: string }>('user_follows', {
+            composer_id: `in.(${composerIds.join(',')})`,
+            select: 'composer_id',
+          });
+          // Contar seguidores por compositor
+          const followCounts: Record<string, number> = {};
+          for (const row of followRows) {
+            const cid = String(row.composer_id);
+            followCounts[cid] = (followCounts[cid] || 0) + 1;
+          }
+          // Mesclar contagem nos compositores
+          for (const comp of fresh) {
+            const count = followCounts[String(comp.id)] || 0;
+            (comp as any).followers = count;
+            (comp as any).followers_count = count;
+          }
+          console.log('👥 [ComposersSection] Followers counts:', followCounts);
+        } catch (followErr) {
+          console.warn('⚠️ [ComposersSection] Erro ao buscar seguidores:', followErr);
+        }
+
         const cacheCount = cachedComposers?.length || 0;
         const freshCount = fresh.length;
         const cacheIds = (cachedComposers || []).map((c: any) => c.id).join(',');

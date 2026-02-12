@@ -781,6 +781,7 @@ export const albunsApi = {
       };
 
       // Campos opcionais importantes
+      if (data.genre) insertData.genre = data.genre;
       if (data.compositor_id) insertData.composer_id = data.compositor_id;
       if (data.ano) insertData.release_date = `${data.ano}-01-01`;
       if (data.release_date) insertData.release_date = data.release_date;

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { TrendingUp, Users, Music, ArrowLeft, Calendar } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { getFeaturedComposers } from '@/lib/admin/composersAdminApi';
+import { supabaseFetch } from '@/lib/supabaseRest';
 import SEOHead from '@/components/SEO/SEOHead';
 
 interface Compositor {
@@ -103,6 +104,23 @@ export default function CompositoresPage() {
       });
 
       if (dbComposers && dbComposers.length > 0) {
+        // Buscar contagem real de seguidores da tabela user_follows
+        let followCounts: Record<string, number> = {};
+        try {
+          const composerIds = dbComposers.map((c: any) => String(c.id));
+          const followRows = await supabaseFetch<{ composer_id: string }>('user_follows', {
+            composer_id: `in.(${composerIds.join(',')})`,
+            select: 'composer_id',
+          });
+          for (const row of followRows) {
+            const cid = String(row.composer_id);
+            followCounts[cid] = (followCounts[cid] || 0) + 1;
+          }
+          console.log('👥 [CompositoresPage] Followers counts:', followCounts);
+        } catch (followErr) {
+          console.warn('⚠️ [CompositoresPage] Erro ao buscar seguidores:', followErr);
+        }
+
         // Converter dados do banco para o formato esperado
         let convertedComposers = dbComposers.map((composer: any, index: number) => {
           const avatarUrl = composer.avatar_url || composer.photo_url;
@@ -114,7 +132,7 @@ export default function CompositoresPage() {
             id: composer.id,
             name: composer.name,
             image: finalImage,
-            followers: composer.followers_count || 50000,
+            followers: followCounts[String(composer.id)] || 0,
             popularHino: `Hino ${Math.floor(Math.random() * 500) + 1} - ${composer.name}`,
             isTrending: composer.is_trending || false,
             rank: index + 1,

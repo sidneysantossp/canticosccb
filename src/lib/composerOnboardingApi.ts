@@ -166,39 +166,74 @@ export async function createComposerProfile(data: Omit<ComposerRegistrationData,
 
     const result = await supabaseInsert<any>('composers', composerData);
     const compositorId = result?.id || (Array.isArray(result) ? result[0]?.id : null);
+    console.log('[createComposerProfile] Composer created, ID:', compositorId, 'Result:', result);
+
+    if (!compositorId) {
+      console.error('[createComposerProfile] CRITICAL: compositorId is null after insert! Result was:', result);
+    }
 
     // Save documents if provided
     if (data.documento_tipo && compositorId) {
-      try {
-        // Frente do documento
-        if (data.documento_imagem) {
-          console.log('[createComposerProfile] Saving front document for composer:', compositorId);
-          await supabaseInsert('composer_documents', {
-            composer_id: compositorId,
-            document_type: data.documento_tipo,
-            document_number: data.documento_numero || null,
-            document_image: data.documento_imagem,
-            expected_name: data.nome || data.nome_artistico || '',
-            status: 'pending',
-          });
-          console.log('[createComposerProfile] Front document saved successfully');
+      const docImageFront = data.documento_imagem;
+      const docImageBack = data.documento_imagem_verso;
+      console.log('[createComposerProfile] Document data:', {
+        tipo: data.documento_tipo,
+        hasFront: !!docImageFront,
+        frontLength: docImageFront?.length || 0,
+        frontIsBase64: docImageFront?.startsWith('data:') || false,
+        hasBack: !!docImageBack,
+        backLength: docImageBack?.length || 0,
+        backIsBase64: docImageBack?.startsWith('data:') || false,
+      });
+
+      // Helper para salvar documento com fallback via supabase client
+      const saveDocument = async (docData: Record<string, any>, label: string) => {
+        try {
+          console.log(`[createComposerProfile] Saving ${label} via REST...`);
+          await supabaseInsert('composer_documents', docData);
+          console.log(`[createComposerProfile] ${label} saved via REST OK`);
+        } catch (restErr) {
+          console.warn(`[createComposerProfile] REST failed for ${label}, trying supabase client...`, restErr);
+          try {
+            const { supabase } = await import('./supabase-auth');
+            const { error: sbErr } = await supabase.from('composer_documents').insert(docData);
+            if (sbErr) {
+              console.error(`[createComposerProfile] Supabase client also failed for ${label}:`, sbErr.message);
+            } else {
+              console.log(`[createComposerProfile] ${label} saved via supabase client OK`);
+            }
+          } catch (clientErr) {
+            console.error(`[createComposerProfile] All methods failed for ${label}:`, clientErr);
+          }
         }
-        // Verso do documento
-        if (data.documento_imagem_verso) {
-          console.log('[createComposerProfile] Saving back document for composer:', compositorId);
-          await supabaseInsert('composer_documents', {
-            composer_id: compositorId,
-            document_type: `${data.documento_tipo}_verso`,
-            document_number: data.documento_numero || null,
-            document_image: data.documento_imagem_verso,
-            expected_name: data.nome || data.nome_artistico || '',
-            status: 'pending',
-          });
-          console.log('[createComposerProfile] Back document saved successfully');
-        }
-      } catch (docErr) {
-        console.warn('[createComposerProfile] Error saving document:', docErr);
+      };
+
+      // Frente do documento
+      if (docImageFront) {
+        await saveDocument({
+          composer_id: compositorId,
+          document_type: data.documento_tipo,
+          document_number: data.documento_numero || null,
+          document_image: docImageFront,
+          expected_name: data.nome || data.nome_artistico || '',
+          status: 'pending',
+        }, 'front document');
       }
+      // Verso do documento
+      if (docImageBack) {
+        await saveDocument({
+          composer_id: compositorId,
+          document_type: `${data.documento_tipo}_verso`,
+          document_number: data.documento_numero || null,
+          document_image: docImageBack,
+          expected_name: data.nome || data.nome_artistico || '',
+          status: 'pending',
+        }, 'back document');
+      }
+    } else if (data.documento_tipo && !compositorId) {
+      console.error('[createComposerProfile] Cannot save documents: compositorId is null!');
+    } else if (!data.documento_tipo) {
+      console.warn('[createComposerProfile] No documento_tipo provided, skipping document save');
     }
 
     return {

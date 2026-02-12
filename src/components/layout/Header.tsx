@@ -1,6 +1,6 @@
 import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { Search, Menu, User, Heart, LogOut, ChevronDown, Mic, Shield, Music, Bell } from 'lucide-react';
+import { Search, Menu, User, Heart, LogOut, ChevronDown, Mic, Shield, Music, Bell, Megaphone } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useMobileMenu } from '@/contexts/MobileMenuContext';
 import { useNotifications } from '@/contexts/NotificationsContext';
@@ -234,6 +234,16 @@ const Header: React.FC = () => {
 
         {/* Right Side */}
         <div className="flex items-center space-x-4 lg:ml-auto">
+          {/* Avisos Button - Desktop */}
+          <Link
+            to="/avisos"
+            className="hidden md:inline-flex items-center gap-1.5 px-3 py-2 rounded-full hover:bg-green-500/10 transition-colors group"
+            title="Avisos"
+          >
+            <Megaphone className="w-4.5 h-4.5 text-green-500 group-hover:text-green-400 transition-colors stroke-[2]" />
+            <span className="text-sm font-medium text-green-500 group-hover:text-green-400 transition-colors">Avisos</span>
+          </Link>
+
           {/* Notification Bell - Desktop */}
           {user && (
             <Link

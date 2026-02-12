@@ -372,13 +372,15 @@ export async function supabaseUploadFile(bucket: string, path: string, file: Fil
   }
 
   const url = `${SUPABASE_URL}/storage/v1/object/${bucket}/${path}`;
-  console.log(`[supabaseUploadFile] Uploading to ${bucket}/${path}`);
+  console.log(`[supabaseUploadFile] Uploading to ${bucket}/${path} (size: ${file.size} bytes)`);
 
   try {
+    const authHeaders = await buildAuthHeaders();
     const response = await fetch(url, {
       method: 'POST',
       headers: {
-        ...buildHeaders(),
+        apikey: authHeaders.apikey,
+        Authorization: authHeaders.Authorization,
         'Content-Type': file.type,
         'x-upsert': 'true'
       },

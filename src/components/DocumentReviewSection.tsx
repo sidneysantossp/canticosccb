@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { FileText, CheckCircle, XCircle, AlertCircle } from 'lucide-react';
 import { documentReviewsApi, type DocumentReview } from '@/lib/api-client';
 import { useAuth } from '@/contexts/AuthContext';
-import { getDocumentStorageUrl } from '@/lib/documentStorage';
+import { getDocumentStorageUrl, getDocumentSignedUrl } from '@/lib/documentStorage';
 
 interface DocumentReviewSectionProps {
   compositorId: number | string;
@@ -13,11 +13,6 @@ interface DocumentReviewSectionProps {
   managerEmail?: string;
   onApprovalChange?: () => void;
 }
-
-// Helper para construir URL da imagem do documento
-const getDocumentImageUrl = (imagePath: string): string => {
-  return getDocumentStorageUrl(imagePath);
-};
 
 export const DocumentReviewSection: React.FC<DocumentReviewSectionProps> = ({
   compositorId,
@@ -31,6 +26,7 @@ export const DocumentReviewSection: React.FC<DocumentReviewSectionProps> = ({
   const { user } = useAuth();
   const [documents, setDocuments] = useState<DocumentReview[]>([]);
   const [loading, setLoading] = useState(true);
+  const [resolvedUrls, setResolvedUrls] = useState<Record<string, string>>({});
   const [reviewingId, setReviewingId] = useState<number | null>(null);
   const [showNotesModal, setShowNotesModal] = useState(false);
   const [modalType, setModalType] = useState<'approve' | 'reject'>('approve');
@@ -58,6 +54,19 @@ export const DocumentReviewSection: React.FC<DocumentReviewSectionProps> = ({
         const docs = response.data.documents || [];
         console.log('✅ [Documentos] Documentos carregados:', docs.length, docs);
         setDocuments(docs);
+
+        // Resolver URLs assinadas para documentos com image_path
+        const urlMap: Record<string, string> = {};
+        for (const doc of docs) {
+          if (doc.image_path) {
+            try {
+              urlMap[doc.id] = await getDocumentSignedUrl(doc.image_path);
+            } catch {
+              urlMap[doc.id] = getDocumentStorageUrl(doc.image_path);
+            }
+          }
+        }
+        setResolvedUrls(urlMap);
       } else {
         console.warn('⚠️ [Documentos] Nenhum dado retornado');
       }
@@ -240,7 +249,7 @@ export const DocumentReviewSection: React.FC<DocumentReviewSectionProps> = ({
             {doc.image_path && (
               <div className="mb-3">
                 <img
-                  src={getDocumentImageUrl(doc.image_path)}
+                  src={resolvedUrls[doc.id] || getDocumentStorageUrl(doc.image_path)}
                   alt={`Documento ${doc.document_type}`}
                   className="max-w-full h-auto rounded border border-gray-700"
                   style={{ maxHeight: '300px' }}

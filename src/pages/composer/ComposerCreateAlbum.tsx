@@ -20,7 +20,7 @@ interface AlbumFormData {
   title: string;
   description: string;
   releaseYear: string;
-  genre: string;
+  genres: string[];
   coverImage: File | null;
   songs: Array<{
     id: string;
@@ -38,7 +38,7 @@ const ComposerCreateAlbum: React.FC = () => {
     title: '',
     description: '',
     releaseYear: new Date().getFullYear().toString(),
-    genre: '',
+    genres: [],
     coverImage: null,
     songs: []
   });
@@ -273,6 +273,7 @@ const ComposerCreateAlbum: React.FC = () => {
       const albumData = {
         titulo: formData.title.trim(),
         descricao: formData.description.trim() || undefined,
+        genre: formData.genres.length > 0 ? formData.genres.join(', ') : undefined,
         cover_url: coverUrl || undefined,
         ano: formData.releaseYear ? parseInt(formData.releaseYear) : undefined,
         usuario_id: user?.id,
@@ -537,16 +538,35 @@ const ComposerCreateAlbum: React.FC = () => {
                       <label className="block text-white font-medium mb-2">
                         Gênero
                       </label>
-                      <select
-                        value={formData.genre}
-                        onChange={(e) => handleInputChange('genre', e.target.value)}
-                        className="w-full px-4 py-3 bg-background-tertiary border border-gray-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-primary-500"
-                      >
-                        <option value="">Selecione um gênero</option>
-                        {genres.map(genre => (
-                          <option key={genre} value={genre}>{genre}</option>
+                      <div className="min-h-[48px] bg-background-tertiary border border-gray-700 rounded-lg px-3 py-2 flex flex-wrap gap-2 items-center">
+                        {formData.genres.map((g) => (
+                          <span key={g} className="inline-flex items-center gap-1 bg-primary-500/20 text-primary-400 text-sm px-2.5 py-1 rounded-full border border-primary-500/30">
+                            {g}
+                            <button
+                              type="button"
+                              onClick={() => handleInputChange('genres', formData.genres.filter(x => x !== g))}
+                              className="hover:text-white transition-colors ml-0.5"
+                            >
+                              <X className="w-3.5 h-3.5" />
+                            </button>
+                          </span>
                         ))}
-                      </select>
+                        <select
+                          value=""
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            if (val && !formData.genres.includes(val)) {
+                              handleInputChange('genres', [...formData.genres, val]);
+                            }
+                          }}
+                          className="bg-transparent text-white text-sm focus:outline-none flex-1 min-w-[140px] py-1 cursor-pointer"
+                        >
+                          <option value="">+ Adicionar gênero</option>
+                          {genres.filter(g => !formData.genres.includes(g)).map(genre => (
+                            <option key={genre} value={genre}>{genre}</option>
+                          ))}
+                        </select>
+                      </div>
                     </div>
 
                     <div>

@@ -34,7 +34,8 @@ import {
   FileText,
   Layers,
   Book,
-  Copyright
+  Copyright,
+  Bell
 } from 'lucide-react';
 
 const AdminSidebar: React.FC = () => {
@@ -155,6 +156,14 @@ const AdminSidebar: React.FC = () => {
         { path: '/admin/reports', label: 'Denúncias', icon: Flag, badge: 15 },
         { path: '/admin/copyright-claims', label: 'Direitos Autorais', icon: Copyright, badge: getPendingClaimsCount() },
         { path: '/admin/comments', label: 'Comentários', icon: MessageSquare }
+      ]
+    },
+    {
+      id: 'notifications',
+      title: 'Notificações',
+      icon: Bell,
+      items: [
+        { path: '/admin/notices', label: 'Avisos', icon: Megaphone }
       ]
     },
     {
