@@ -75,7 +75,7 @@ export default defineConfig({
     }
   },
   esbuild: {
-    drop: process.env.NODE_ENV === 'production' ? ['console', 'debugger'] : []
+    // drop console/debugger disabled - was causing runtime issues on Vercel
   },
   build: {
     outDir: 'dist',
