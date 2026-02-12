@@ -159,6 +159,7 @@ import AdminNoticeForm from '@/pages/admin/AdminNoticeForm';
 import AdminBibleNarrated from '@/pages/admin/AdminBibleNarrated';
 import AdminBibleNarratedForm from '@/pages/admin/AdminBibleNarratedForm';
 import GlobalAudioPlayer from '@/components/GlobalAudioPlayer';
+import AnalyticsScripts from '@/components/AnalyticsScripts';
 import { usePresence } from '@/hooks/usePresence';
 import { Navigate } from 'react-router-dom';
 
@@ -485,6 +486,7 @@ function App() {
               <MobileMenuProvider>
                 <GlobalAudioPlayer />
                 <PresenceTracker />
+                <AnalyticsScripts />
                 <AppContent />
               </MobileMenuProvider>
             </PlayerProvider>

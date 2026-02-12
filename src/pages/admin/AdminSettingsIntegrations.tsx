@@ -12,6 +12,7 @@ const AdminSettingsIntegrations: React.FC = () => {
   const [config, setConfig] = useState({
     analytics_enabled: false,
     google_analytics_id: '',
+    google_tag_manager_id: '',
     facebook_pixel_id: '',
     youtube_api_key: '',
   });
@@ -26,7 +27,7 @@ const AdminSettingsIntegrations: React.FC = () => {
       setError(null);
 
       const rows = await supabaseFetch<any>('site_config', {
-        config_key: 'in.(analytics_enabled,google_analytics_id,facebook_pixel_id,youtube_api_key)',
+        config_key: 'in.(analytics_enabled,google_analytics_id,google_tag_manager_id,facebook_pixel_id,youtube_api_key)',
         select: 'config_key,config_value',
       });
 
@@ -38,6 +39,7 @@ const AdminSettingsIntegrations: React.FC = () => {
       setConfig({
         analytics_enabled: configMap.analytics_enabled === 'true',
         google_analytics_id: configMap.google_analytics_id || '',
+        google_tag_manager_id: configMap.google_tag_manager_id || '',
         facebook_pixel_id: configMap.facebook_pixel_id || '',
         youtube_api_key: configMap.youtube_api_key || '',
       });
@@ -77,6 +79,7 @@ const AdminSettingsIntegrations: React.FC = () => {
 
       await saveConfigKey('analytics_enabled', String(config.analytics_enabled));
       await saveConfigKey('google_analytics_id', config.google_analytics_id);
+      await saveConfigKey('google_tag_manager_id', config.google_tag_manager_id);
       await saveConfigKey('facebook_pixel_id', config.facebook_pixel_id);
       await saveConfigKey('youtube_api_key', config.youtube_api_key);
 
@@ -142,7 +145,7 @@ const AdminSettingsIntegrations: React.FC = () => {
             </label>
           </div>
 
-          {/* Google Analytics + Facebook Pixel */}
+          {/* Google Analytics + Google Tag Manager */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-gray-400 text-sm font-semibold mb-2">Google Analytics ID</label>
@@ -153,17 +156,35 @@ const AdminSettingsIntegrations: React.FC = () => {
                 className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-green-600"
                 placeholder="G-XXXXXXXXXX"
               />
+              <p className="text-gray-500 text-xs mt-1">
+                ID de métricas do Google Analytics 4 (GA4)
+              </p>
             </div>
             <div>
-              <label className="block text-gray-400 text-sm font-semibold mb-2">Facebook Pixel ID</label>
+              <label className="block text-gray-400 text-sm font-semibold mb-2">Google Tag Manager ID</label>
               <input
                 type="text"
-                value={config.facebook_pixel_id}
-                onChange={(e) => setConfig({ ...config, facebook_pixel_id: e.target.value })}
+                value={config.google_tag_manager_id}
+                onChange={(e) => setConfig({ ...config, google_tag_manager_id: e.target.value })}
                 className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-green-600"
-                placeholder="123456789012345"
+                placeholder="GTM-XXXXXXX"
               />
+              <p className="text-gray-500 text-xs mt-1">
+                ID do contêiner do Google Tag Manager
+              </p>
             </div>
+          </div>
+
+          {/* Facebook Pixel */}
+          <div>
+            <label className="block text-gray-400 text-sm font-semibold mb-2">Facebook Pixel ID</label>
+            <input
+              type="text"
+              value={config.facebook_pixel_id}
+              onChange={(e) => setConfig({ ...config, facebook_pixel_id: e.target.value })}
+              className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-green-600"
+              placeholder="123456789012345"
+            />
           </div>
         </div>
       </div>
