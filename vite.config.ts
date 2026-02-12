@@ -82,17 +82,7 @@ export default defineConfig({
     sourcemap: true,
     rollupOptions: {
       output: {
-        manualChunks(id) {
-          if (id.includes('node_modules')) {
-            if (id.includes('react-dom') || id.includes('react-router') || id.includes('/react/')) return 'vendor-react';
-            if (id.includes('framer-motion')) return 'vendor-framer';
-            if (id.includes('@supabase')) return 'vendor-supabase';
-            if (id.includes('lucide-react')) return 'vendor-icons';
-            return 'vendor';
-          }
-          if (id.includes('/pages/admin/')) return 'admin';
-          if (id.includes('/pages/composer/')) return 'composer';
-        }
+        // manualChunks removed - was causing circular dependency crashes on Vercel
       }
     }
   },
