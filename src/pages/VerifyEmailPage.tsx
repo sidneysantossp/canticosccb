@@ -1,13 +1,15 @@
 import React, { useState, useEffect } from 'react';
-import { Link, useLocation } from 'react-router-dom';
-import { Mail, ArrowLeft, RefreshCw, CheckCircle, Clock } from 'lucide-react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { Mail, ArrowLeft, RefreshCw, CheckCircle, Clock, AlertCircle } from 'lucide-react';
 import { supabase } from '@/lib/supabase-auth';
 
 const VerifyEmailPage: React.FC = () => {
   const location = useLocation();
+  const navigate = useNavigate();
   const email = (location.state as any)?.email || '';
   const [resending, setResending] = useState(false);
   const [resent, setResent] = useState(false);
+  const [resendError, setResendError] = useState('');
   const [countdown, setCountdown] = useState(0);
 
   useEffect(() => {
@@ -20,6 +22,7 @@ const VerifyEmailPage: React.FC = () => {
   const handleResend = async () => {
     if (!email || countdown > 0) return;
     setResending(true);
+    setResendError('');
     try {
       const { error } = await supabase.auth.resend({
         type: 'signup',
@@ -28,15 +31,28 @@ const VerifyEmailPage: React.FC = () => {
           emailRedirectTo: `${import.meta.env.VITE_APP_URL || window.location.origin}/auth/callback?type=email_verification`,
         },
       });
-      if (error) throw error;
+      if (error) {
+        console.error('Erro ao reenviar:', error);
+        if (error.message.includes('rate') || error.message.includes('limit')) {
+          setResendError('Limite de envio atingido. Aguarde alguns minutos.');
+        } else {
+          setResendError(error.message);
+        }
+        return;
+      }
       setResent(true);
       setCountdown(60);
       setTimeout(() => setResent(false), 5000);
-    } catch (err) {
+    } catch (err: any) {
       console.error('Erro ao reenviar email:', err);
+      setResendError(err?.message || 'Erro ao reenviar. Tente novamente.');
     } finally {
       setResending(false);
     }
+  };
+
+  const handleSkip = () => {
+    navigate('/onboarding', { replace: true });
   };
 
   return (
@@ -109,9 +125,17 @@ const VerifyEmailPage: React.FC = () => {
           <div className="flex items-center gap-2 bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-3 mb-6">
             <Clock className="w-5 h-5 text-yellow-500 flex-shrink-0" />
             <p className="text-yellow-200 text-xs text-left">
-              Não encontrou? Verifique a pasta de <strong>spam</strong> ou <strong>lixo eletrônico</strong>.
+              O email pode levar até <strong>5 minutos</strong> para chegar. Verifique também a pasta de <strong>spam</strong> ou <strong>lixo eletrônico</strong>.
             </p>
           </div>
+
+          {/* Erro de reenvio */}
+          {resendError && (
+            <div className="flex items-center gap-2 bg-red-500/10 border border-red-500/30 rounded-lg p-3 mb-4">
+              <AlertCircle className="w-4 h-4 text-red-400 flex-shrink-0" />
+              <p className="text-red-300 text-xs text-left">{resendError}</p>
+            </div>
+          )}
 
           {/* Botão reenviar */}
           {email && (
@@ -143,6 +167,24 @@ const VerifyEmailPage: React.FC = () => {
               )}
             </button>
           )}
+
+          {/* Separador */}
+          <div className="relative my-5">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-gray-700"></div>
+            </div>
+            <div className="relative flex justify-center text-xs">
+              <span className="bg-background-secondary px-3 text-gray-500">ou</span>
+            </div>
+          </div>
+
+          {/* Botão pular verificação */}
+          <button
+            onClick={handleSkip}
+            className="w-full py-3 px-4 text-gray-400 hover:text-white text-sm transition-colors mb-4"
+          >
+            Continuar sem verificar agora
+          </button>
 
           {/* Link para login */}
           <p className="text-gray-500 text-sm">
