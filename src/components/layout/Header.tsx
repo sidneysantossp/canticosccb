@@ -434,6 +434,15 @@ const Header: React.FC = () => {
             </Link>
           )}
 
+          {/* Avisos - Mobile */}
+          <Link
+            to="/avisos"
+            className="lg:hidden relative p-2 rounded-full hover:bg-green-500/10 transition-colors group"
+            title="Avisos"
+          >
+            <Megaphone className="w-5 h-5 text-green-500 group-hover:text-green-400 transition-colors" />
+          </Link>
+
           {/* Notification Bell - Mobile */}
           {user && (
             <Link
