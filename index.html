@@ -17,6 +17,28 @@
   </head>
   <body style="background-color: #121212 !important; color: #ffffff !important; margin: 0; padding: 0; font-family: 'Montserrat', system-ui, sans-serif;">
     <div id="root" style="background-color: #121212 !important; color: #ffffff !important; min-height: 100vh; width: 100%;"></div>
+    <script>
+      window.addEventListener('error', function(e) {
+        var root = document.getElementById('root');
+        if (root && !root.hasChildNodes()) {
+          root.innerHTML = '<div style="padding:40px;color:#ff6b6b;font-family:monospace;max-width:800px;margin:0 auto;">' +
+            '<h2 style="color:#ff6b6b;">Erro ao carregar aplicação</h2>' +
+            '<p style="color:#ccc;">Mensagem: ' + (e.message || 'Unknown') + '</p>' +
+            '<p style="color:#ccc;">Arquivo: ' + (e.filename || 'Unknown') + '</p>' +
+            '<p style="color:#ccc;">Linha: ' + (e.lineno || '?') + ':' + (e.colno || '?') + '</p>' +
+            '</div>';
+        }
+      });
+      window.addEventListener('unhandledrejection', function(e) {
+        var root = document.getElementById('root');
+        if (root && !root.hasChildNodes()) {
+          root.innerHTML = '<div style="padding:40px;color:#ff6b6b;font-family:monospace;max-width:800px;margin:0 auto;">' +
+            '<h2 style="color:#ff6b6b;">Erro ao carregar aplicação</h2>' +
+            '<p style="color:#ccc;">Promise rejeitada: ' + (e.reason ? (e.reason.message || String(e.reason)) : 'Unknown') + '</p>' +
+            '</div>';
+        }
+      });
+    </script>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
