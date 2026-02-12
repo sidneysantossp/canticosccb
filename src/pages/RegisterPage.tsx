@@ -168,7 +168,7 @@ const RegisterPage: React.FC = () => {
 
     try {
       await signUp(formData.email, formData.password, formData.name);
-      navigate('/onboarding');
+      navigate('/verify-email', { state: { email: formData.email } });
     } catch (err: any) {
       console.error('❌ Register error:', err);
       console.error('❌ Register error message:', err?.message);
