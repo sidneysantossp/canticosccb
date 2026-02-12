@@ -1,0 +1,69 @@
+<table width="100%" cellpadding="0" cellspacing="0" style="background-color:#0a0a0a;padding:40px 0;font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;">
+  <tr>
+    <td align="center">
+      <table width="480" cellpadding="0" cellspacing="0" style="background-color:#1a1a1a;border-radius:16px;overflow:hidden;border:1px solid #2a2a2a;">
+        <!-- Header -->
+        <tr>
+          <td style="background:linear-gradient(135deg,#059669,#10b981);padding:32px 40px;text-align:center;">
+            <img src="https://canticosccb.com.br/logo-canticos-ccb.png" alt="Cânticos CCB" width="180" style="display:block;margin:0 auto;" />
+          </td>
+        </tr>
+        <!-- Body -->
+        <tr>
+          <td style="padding:40px;">
+            <h1 style="color:#ffffff;font-size:24px;font-weight:700;margin:0 0 8px 0;text-align:center;">
+              Seu link de acesso
+            </h1>
+            <p style="color:#9ca3af;font-size:15px;line-height:1.6;margin:0 0 24px 0;text-align:center;">
+              Clique no botão abaixo para acessar sua conta no <strong style="color:#10b981;">Cânticos CCB</strong> sem precisar digitar sua senha.
+            </p>
+            <!-- Button -->
+            <table width="100%" cellpadding="0" cellspacing="0">
+              <tr>
+                <td align="center" style="padding:8px 0 32px 0;">
+                  <a href="{{ .ConfirmationURL }}" target="_blank" style="display:inline-block;background-color:#10b981;color:#000000;font-size:16px;font-weight:700;text-decoration:none;padding:14px 40px;border-radius:50px;letter-spacing:0.5px;">
+                    Acessar minha conta
+                  </a>
+                </td>
+              </tr>
+            </table>
+            <!-- Warning -->
+            <table width="100%" cellpadding="0" cellspacing="0">
+              <tr>
+                <td style="background-color:#1c1917;border:1px solid #854d0e;border-radius:8px;padding:16px;">
+                  <p style="color:#fbbf24;font-size:13px;line-height:1.5;margin:0;">
+                    &#9888; Este link expira em 1 hora e pode ser usado apenas uma vez.
+                  </p>
+                </td>
+              </tr>
+            </table>
+            <!-- Divider -->
+            <table width="100%" cellpadding="0" cellspacing="0" style="margin-top:24px;">
+              <tr>
+                <td style="border-top:1px solid #2a2a2a;padding-top:24px;">
+                  <p style="color:#6b7280;font-size:13px;line-height:1.5;margin:0 0 12px 0;">
+                    Se o botão não funcionar, copie e cole este link no seu navegador:
+                  </p>
+                  <p style="color:#10b981;font-size:12px;word-break:break-all;margin:0;background-color:#0a0a0a;padding:12px;border-radius:8px;">
+                    {{ .ConfirmationURL }}
+                  </p>
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+        <!-- Footer -->
+        <tr>
+          <td style="background-color:#111111;padding:24px 40px;text-align:center;border-top:1px solid #2a2a2a;">
+            <p style="color:#4b5563;font-size:12px;margin:0 0 4px 0;">
+              Você recebeu este email porque solicitou um link de acesso.
+            </p>
+            <p style="color:#4b5563;font-size:12px;margin:0;">
+              Se não foi você, ignore este email.
+            </p>
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+</table>
