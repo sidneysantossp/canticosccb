@@ -163,7 +163,7 @@ export async function register(data: { nome: string; email: string; senha: strin
         data: {
           name: data.nome,
         },
-        emailRedirectTo: `${window.location.origin}/auth/callback?type=email_verification`,
+        emailRedirectTo: `${import.meta.env.VITE_APP_URL || window.location.origin}/auth/callback?type=email_verification`,
       },
     });
 

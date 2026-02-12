@@ -25,7 +25,7 @@ const VerifyEmailPage: React.FC = () => {
         type: 'signup',
         email,
         options: {
-          emailRedirectTo: `${window.location.origin}/auth/callback?type=email_verification`,
+          emailRedirectTo: `${import.meta.env.VITE_APP_URL || window.location.origin}/auth/callback?type=email_verification`,
         },
       });
       if (error) throw error;

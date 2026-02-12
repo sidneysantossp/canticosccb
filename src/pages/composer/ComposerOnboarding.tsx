@@ -574,7 +574,7 @@ const ComposerOnboarding: React.FC = () => {
         password: formData.password,
         options: {
           data: { name: formData.name },
-          emailRedirectTo: `${window.location.origin}/composer/dashboard`,
+          emailRedirectTo: `${import.meta.env.VITE_APP_URL || window.location.origin}/composer/dashboard`,
         },
       });
 
