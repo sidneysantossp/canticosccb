@@ -95,7 +95,7 @@ const PublicMobileSidebar: React.FC<PublicMobileSidebarProps> = ({ isOpen, onClo
 
       {/* Menu deslizante de baixo para cima */}
       <div
-        className={`fixed bottom-0 left-0 right-0 bg-gradient-to-b from-green-700 via-green-800 to-gray-950 rounded-t-3xl z-[60] transform transition-transform duration-300 ease-in-out lg:hidden h-[85vh] overflow-hidden ${
+        className={`fixed bottom-0 left-0 right-0 bg-gradient-to-b from-green-700 via-green-800 to-gray-950 rounded-t-3xl z-[60] transform transition-transform duration-300 ease-in-out lg:hidden h-[90vh] overflow-hidden ${
           isOpen ? 'translate-y-0' : 'translate-y-full'
         }`}
       >

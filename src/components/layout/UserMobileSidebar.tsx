@@ -101,7 +101,7 @@ const UserMobileSidebar: React.FC<UserMobileSidebarProps> = ({ isOpen, onClose }
 
       {/* Bottom Sheet com degradê, abre de baixo para cima */}
       <div
-        className={`fixed bottom-0 left-0 right-0 bg-gradient-to-b from-green-700 via-green-800 to-gray-950 rounded-t-3xl z-50 transform transition-transform duration-300 ease-in-out lg:hidden h-[85vh] overflow-hidden ${isOpen ? 'translate-y-0' : 'translate-y-full'
+        className={`fixed bottom-0 left-0 right-0 bg-gradient-to-b from-green-700 via-green-800 to-gray-950 rounded-t-3xl z-50 transform transition-transform duration-300 ease-in-out lg:hidden h-[90vh] overflow-hidden ${isOpen ? 'translate-y-0' : 'translate-y-full'
           }`}
       >
         {/* Barra de arraste */}
@@ -128,7 +128,7 @@ const UserMobileSidebar: React.FC<UserMobileSidebarProps> = ({ isOpen, onClose }
         </div>
 
         {/* Conteúdo scrollável */}
-        <div className="flex-1 overflow-y-auto pb-24">
+        <div className="flex-1 overflow-y-auto pb-32">
           {/* Seções de menu */}
           <nav className="p-4">
             {menuItems.map((section, idx) => (
