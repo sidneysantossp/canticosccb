@@ -7,7 +7,7 @@
 CREATE TABLE IF NOT EXISTS public.compositor_gerentes (
   id BIGSERIAL PRIMARY KEY,
   compositor_id BIGINT NOT NULL,
-  gerente_id UUID NOT NULL,
+  gerente_id TEXT NOT NULL,
   gerente_email TEXT,
   compositor_nome TEXT,
   compositor_nome_artistico TEXT,
@@ -32,7 +32,7 @@ ALTER TABLE public.compositor_gerentes ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Gerentes podem ver seus registros"
   ON public.compositor_gerentes
   FOR SELECT
-  USING (auth.uid() = gerente_id);
+  USING (auth.uid()::text = gerente_id);
 
 -- Política: compositores podem ver convites para eles
 CREATE POLICY "Compositores podem ver convites"
@@ -40,7 +40,7 @@ CREATE POLICY "Compositores podem ver convites"
   FOR SELECT
   USING (
     compositor_id IN (
-      SELECT id FROM public.compositores WHERE user_id = auth.uid()
+      SELECT id FROM public.composers WHERE user_id = auth.uid()::text
     )
   );
 
@@ -48,19 +48,13 @@ CREATE POLICY "Compositores podem ver convites"
 CREATE POLICY "Usuarios podem criar convites"
   ON public.compositor_gerentes
   FOR INSERT
-  WITH CHECK (auth.role() = 'authenticated');
+  WITH CHECK (true);
 
 -- Política: gerentes podem atualizar status dos seus convites
 CREATE POLICY "Gerentes podem atualizar seus convites"
   ON public.compositor_gerentes
   FOR UPDATE
-  USING (auth.uid() = gerente_id);
-
--- Política: service_role pode tudo (para triggers e admin)
-CREATE POLICY "Service role full access"
-  ON public.compositor_gerentes
-  FOR ALL
-  USING (auth.role() = 'service_role');
+  USING (auth.uid()::text = gerente_id);
 
 -- 4. Trigger para updated_at
 CREATE OR REPLACE FUNCTION public.update_compositor_gerentes_updated_at()
@@ -79,6 +73,7 @@ CREATE TRIGGER trigger_update_compositor_gerentes_updated_at
 
 -- ============================================
 -- INSTRUÇÕES:
--- Execute este SQL no Supabase SQL Editor:
--- Dashboard > SQL Editor > New Query > Cole e execute
+-- 1. Se a tabela já foi criada com erro, primeiro execute:
+--    DROP TABLE IF EXISTS public.compositor_gerentes CASCADE;
+-- 2. Depois execute este SQL completo no Supabase SQL Editor
 -- ============================================
