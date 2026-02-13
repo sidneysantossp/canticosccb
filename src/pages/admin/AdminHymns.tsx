@@ -71,12 +71,13 @@ const AdminHymns: React.FC = () => {
 
   // Filtrar hinos
   const filteredHymns = hymns.filter((hymn) => {
-    const matchesSearch = 
-      hymn.titulo.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      hymn.numero.toString().includes(searchQuery) ||
-      (hymn.compositor && hymn.compositor.toLowerCase().includes(searchQuery.toLowerCase()));
+    const query = searchQuery.toLowerCase();
+    const matchesSearch = !query ||
+      (hymn.titulo || '').toLowerCase().includes(query) ||
+      String(hymn.numero ?? '').includes(searchQuery) ||
+      (hymn.compositor && hymn.compositor.toLowerCase().includes(query));
     
-    const matchesCategory = categoryFilter === 'all' || hymn.categoria === categoryFilter;
+    const matchesCategory = categoryFilter === 'all' || (hymn.categoria || '') === categoryFilter;
     
     return matchesSearch && matchesCategory;
   });
