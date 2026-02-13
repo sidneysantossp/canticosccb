@@ -66,9 +66,9 @@ const UserSidebar: React.FC = () => {
         { icon: Search, label: 'Buscar', path: '/search' },
         { icon: Library, label: 'Biblioteca', path: '/library' },
         { icon: Grid, label: 'Categorias', path: '/categories' },
-        { icon: Music, label: 'Hinos Avulsos', path: '/categoria/avulsos' },
-        { icon: Mic, label: 'Hinos Cantados', path: '/categoria/cantados' },
-        { icon: Music, label: 'Hinos Instrumentais', path: '/categoria/instrumentais' },
+        { icon: Music, label: 'Avulsos', path: '/categoria/avulsos' },
+        { icon: Mic, label: 'Cantados', path: '/categoria/cantados' },
+        { icon: Music, label: 'Instrumentais', path: '/categoria/instrumentais' },
         { icon: FileText, label: 'Cifras', path: '/cifras' }
       ]
     },

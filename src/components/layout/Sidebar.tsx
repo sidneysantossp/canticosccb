@@ -14,9 +14,9 @@ const Sidebar: React.FC = () => {
     { path: '/search', icon: Search, label: 'Buscar' },
     { path: '/library', icon: Library, label: 'Biblioteca' },
     { path: '/categories', icon: Grid, label: 'Categorias' },
-    { path: '/categoria/avulsos', icon: Music, label: 'Hinos Avulsos' },
-    { path: '/categoria/cantados', icon: Mic, label: 'Hinos Cantados' },
-    { path: '/categoria/instrumentais', icon: Music, label: 'Hinos Instrumentais' },
+    { path: '/categoria/avulsos', icon: Music, label: 'Avulsos' },
+    { path: '/categoria/cantados', icon: Mic, label: 'Cantados' },
+    { path: '/categoria/instrumentais', icon: Music, label: 'Instrumentais' },
     { path: '/cifras', icon: FileText, label: 'Cifras' },
   ];
 
