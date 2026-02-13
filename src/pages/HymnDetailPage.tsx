@@ -14,6 +14,7 @@ interface Hymn {
   titulo: string;
   compositor_nome?: string;
   compositor_id?: string;
+  participacao_especial?: string;
   categoria?: string;
   cover_url?: string;
   audio_url?: string;
@@ -69,7 +70,7 @@ const HymnDetailPage: React.FC = () => {
 
       const rows = await supabaseFetch<any>('hinos', {
         id: `eq.${id}`,
-        select: 'id,numero,titulo,compositor_nome,compositor_id,categoria,cover_url,audio_url,letra,duracao,youtube_source',
+        select: 'id,numero,titulo,compositor_nome,compositor_id,participacao_especial,categoria,cover_url,audio_url,letra,duracao,youtube_source',
         limit: '1'
       });
 
@@ -80,6 +81,7 @@ const HymnDetailPage: React.FC = () => {
           titulo: rows[0].titulo,
           compositor_nome: rows[0].compositor_nome,
           compositor_id: rows[0].compositor_id,
+          participacao_especial: rows[0].participacao_especial,
           categoria: rows[0].categoria,
           cover_url: rows[0].cover_url,
           audio_url: rows[0].audio_url,
@@ -337,7 +339,7 @@ const HymnDetailPage: React.FC = () => {
                     : hymn.titulo}
                 </h1>
                 {hymn.compositor_nome && (
-                  <div className="flex items-center gap-3 mb-4">
+                  <div className="flex items-center gap-3 mb-2">
                     {hymn.compositor_id ? (
                       <Link
                         to={`/compositor/${hymn.compositor_id}`}
@@ -349,6 +351,11 @@ const HymnDetailPage: React.FC = () => {
                       <p className="text-lg text-text-muted">{hymn.compositor_nome}</p>
                     )}
                   </div>
+                )}
+                {hymn.participacao_especial && (
+                  <p className="text-sm text-gray-400 mb-4">
+                    <span className="text-gray-500">Part. Especial:</span> {hymn.participacao_especial}
+                  </p>
                 )}
                 {hymn.categoria && (
                   <span className="inline-block px-3 py-1 bg-background-tertiary text-text-muted rounded-full text-sm">
