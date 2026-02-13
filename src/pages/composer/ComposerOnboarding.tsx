@@ -634,7 +634,10 @@ const ComposerOnboarding: React.FC = () => {
           console.log('📧 Enviando convite ao gerente:', formData.managerData.email);
           const inviteResponse = await compositorGerentesApi.convidar({
             compositor_id: compositorId,
+            gerente_id: String(formData.managerData.id),
             email_gerente: formData.managerData.email,
+            compositor_nome: formData.name,
+            compositor_nome_artistico: formData.artisticName,
             notas: `Convite automático enviado durante o cadastro do compositor ${formData.artisticName}`
           });
           if (!inviteResponse.error) {

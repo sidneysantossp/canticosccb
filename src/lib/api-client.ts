@@ -1359,14 +1359,18 @@ export const compositorGerentesApi = {
       return { data: null, error: error.message };
     }
   },
-  convidar: async (data: { compositor_id: number; email_gerente: string; notas?: string }) => {
+  convidar: async (data: { compositor_id: number; email_gerente: string; gerente_id?: string; compositor_nome?: string; compositor_nome_artistico?: string; notas?: string }) => {
     const { supabaseInsert } = await import('./supabaseRest');
     try {
-      // Registrar convite na tabela de atividades ou similar
-      await supabaseInsert('atividades', {
-        tipo: 'invite_manager',
-        data: { ...data, status: 'pending' },
-        created_at: new Date().toISOString()
+      await supabaseInsert('compositor_gerentes', {
+        compositor_id: data.compositor_id,
+        gerente_id: data.gerente_id,
+        gerente_email: data.email_gerente,
+        compositor_nome: data.compositor_nome,
+        compositor_nome_artistico: data.compositor_nome_artistico,
+        status: 'pendente',
+        notas: data.notas,
+        convidado_em: new Date().toISOString(),
       });
       return { error: null };
     } catch (error: any) {
