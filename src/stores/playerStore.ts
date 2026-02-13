@@ -1,5 +1,26 @@
 import { create } from 'zustand';
 import { PlayerState, Hino } from '@/types';
+import { useFreePlayGateStore } from '@/stores/freePlayGateStore';
+
+// Helper: check if user is logged in (reads from localStorage where AuthContext persists)
+function isUserLoggedIn(): boolean {
+  try {
+    const raw = localStorage.getItem('user');
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      return !!parsed && !!parsed.id;
+    }
+    // Also check Supabase session
+    const sbKey = Object.keys(localStorage).find(k => k.startsWith('sb-') && k.endsWith('-auth-token'));
+    if (sbKey) {
+      const session = JSON.parse(localStorage.getItem(sbKey) || '{}');
+      return !!session?.user?.id;
+    }
+    return false;
+  } catch {
+    return false;
+  }
+}
 
 interface PlaybackContext {
   type: 'playlist' | 'album' | 'category' | 'unknown';
@@ -44,6 +65,18 @@ export const usePlayerStore = create<PlayerStore>((set, get) => ({
 
   // Actions
   play: (track: Hino) => {
+    // Free play gate: block anonymous users after 1 free play
+    if (!isUserLoggedIn()) {
+      const gate = useFreePlayGateStore.getState();
+      if (!gate.canPlay()) {
+        // Limit reached – show gate modal instead of playing
+        gate.showGate(track);
+        return;
+      }
+      // Record this free play
+      gate.recordPlay(track.id);
+    }
+
     const { history } = get();
     set({
       currentTrack: track,
@@ -63,9 +96,18 @@ export const usePlayerStore = create<PlayerStore>((set, get) => ({
   },
 
   next: () => {
-    const { queue, currentTrack } = get();
+    const { queue } = get();
     if (queue.length > 0) {
       const nextTrack = queue[0];
+      // Gate check for anonymous users
+      if (!isUserLoggedIn()) {
+        const gate = useFreePlayGateStore.getState();
+        if (!gate.canPlay()) {
+          gate.showGate(nextTrack);
+          return;
+        }
+        gate.recordPlay(nextTrack.id);
+      }
       const newQueue = queue.slice(1);
       set({
         currentTrack: nextTrack,
@@ -141,6 +183,16 @@ export const usePlayerStore = create<PlayerStore>((set, get) => ({
     if (queue.length > 0) {
       // Se tem fila, toca próxima da fila
       const nextTrack = queue[0];
+      // Gate check for anonymous users
+      if (!isUserLoggedIn()) {
+        const gate = useFreePlayGateStore.getState();
+        if (!gate.canPlay()) {
+          gate.showGate(nextTrack);
+          set({ isPlaying: false });
+          return;
+        }
+        gate.recordPlay(nextTrack.id);
+      }
       set({
         currentTrack: nextTrack,
         queue: queue.slice(1),
