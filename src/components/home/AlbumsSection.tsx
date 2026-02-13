@@ -38,12 +38,9 @@ const AlbumsSection: React.FC<AlbumsSectionProps> = ({ albums }) => {
     <section className="px-6 mb-8">
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h2 className="text-2xl md:text-3xl font-bold text-white">
-            Álbuns Recomendados
+          <h2 className="text-2xl md:text-3xl font-bold text-white leading-tight">
+            Álbuns<br />Recomendados
           </h2>
-          <p className="text-gray-400 text-sm mt-1">
-            Coleções especiais de hinos para edificação espiritual
-          </p>
         </div>
         <Link
           to="/albuns"

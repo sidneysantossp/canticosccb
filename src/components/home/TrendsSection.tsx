@@ -35,8 +35,14 @@ const TrendsSection: React.FC<Props> = ({
     <section className="px-6">
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h2 className="text-2xl md:text-3xl font-bold text-white flex items-center gap-2">
-            <span>{title}</span>
+          <h2 className="text-2xl md:text-3xl font-bold text-white flex items-center gap-2 leading-tight">
+            <span>
+              {title === 'Recém publicados' ? (
+                <>
+                  Recém<br />publicados
+                </>
+              ) : title}
+            </span>
             <TrendingUp className="w-7 h-7 text-primary-400" />
           </h2>
         </div>

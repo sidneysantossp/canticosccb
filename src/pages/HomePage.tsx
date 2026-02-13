@@ -561,7 +561,7 @@ const HomePage: React.FC = () => {
       />
 
       <HymnsSection
-        title="Hinos Cantados"
+        title={<>Hinos<br />Cantados</>}
         viewAllHref="/categoria/cantados"
         items={isLoading ? undefined : hinosCantadosFinal}
         onPlay={handleTogglePlay}
@@ -570,7 +570,7 @@ const HomePage: React.FC = () => {
       />
 
       <HymnsSection
-        title="Hinos Tocados"
+        title={<>Hinos<br />Tocados</>}
         viewAllHref="/categoria/tocados"
         items={isLoading ? undefined : hinosTocadosFinal}
         onPlay={handleTogglePlay}
@@ -579,7 +579,7 @@ const HomePage: React.FC = () => {
       />
 
       <HymnsSection
-        title="Hinos Avulsos"
+        title={<>Hinos<br />Avulsos</>}
         viewAllHref="/categoria/avulsos"
         items={isLoading ? undefined : hinosAvulsosFinal}
         onPlay={handleTogglePlay}
