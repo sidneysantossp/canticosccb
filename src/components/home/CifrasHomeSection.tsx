@@ -6,6 +6,16 @@ import { fetchCifras, Cifra, INSTRUMENTS } from '@/api/cifras';
 const CifrasHomeSection: React.FC = () => {
   const [cifras, setCifras] = useState<Cifra[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isXl, setIsXl] = useState(false);
+
+  useEffect(() => {
+    const check = () => setIsXl(window.innerWidth >= 1280);
+    check();
+    window.addEventListener('resize', check);
+    return () => window.removeEventListener('resize', check);
+  }, []);
+
+  const maxCards = isXl ? 8 : 7;
 
   useEffect(() => {
     loadCifras();
@@ -60,7 +70,7 @@ const CifrasHomeSection: React.FC = () => {
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
-        {cifras.slice(0, 8).map(cifra => (
+        {cifras.slice(0, maxCards).map(cifra => (
           <Link
             key={cifra.id}
             to={`/cifra/${cifra.slug}`}
