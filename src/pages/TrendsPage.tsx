@@ -9,6 +9,7 @@ import { apiFetch } from '@/lib/api-helper';
 import { buildAlbumCoverUrl, buildHinoUrl } from '@/lib/media-helper';
 import { usePlayerContext } from '@/contexts/PlayerContext';
 import { isSupabaseConfigured, supabaseFetch } from '@/lib/supabaseRest';
+import { buildAlbumUrl, buildHinoUrl as buildHinoSlugUrl } from '@/utils/slugUrl';
 
 interface TrendItem {
   id: string;
@@ -341,7 +342,7 @@ const TrendsPage: React.FC = () => {
                     {/* Info */}
                     <div className="flex-1 min-w-0">
                       <Link
-                        to={`/album/${hymn.albumId}`}
+                        to={buildHinoSlugUrl(hymn.id, hymn.title, hymn.number)}
                         className="block hover:underline"
                       >
                         <h3 className="text-white font-semibold truncate">

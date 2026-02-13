@@ -516,7 +516,7 @@ const HymnDetailPage: React.FC = () => {
               {relatedSongs.map((song) => (
                 <Link
                   key={song.id}
-                  to={`/hymn/${song.id}`}
+                  to={buildHinoUrl(song.id, song.titulo, song.numero)}
                   className="flex-shrink-0 w-44 group"
                 >
                   <div className="relative w-44 h-44 rounded-lg overflow-hidden mb-3 bg-background-tertiary">

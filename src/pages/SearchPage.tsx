@@ -4,7 +4,7 @@ import { Search, X, Play, Music, Mic, Disc, List, BookOpen, Heart, Music2, Mic2,
 import { usePlayerStore } from '@/stores/playerStore';
 import SEOHead from '@/components/SEO/SEOHead';
 import { generateWebsiteSchema } from '@/utils/schemaGenerator';
-import { buildHinoUrl, buildCompositorUrl } from '@/utils/slugUrl';
+import { buildHinoUrl, buildCompositorUrl, buildAlbumUrl } from '@/utils/slugUrl';
 import { advancedSearch, type HymnSearchResult, type ComposerSearchResult, type AlbumSearchResult, type PlaylistSearchResult } from '@/lib/mockApis';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/lib/supabase-auth';
@@ -276,7 +276,7 @@ const SearchPage: React.FC = () => {
                 <h2 className="text-2xl font-bold text-white mb-6">Álbuns</h2>
                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                   {albums.map((album) => (
-                    <Link key={album.id} to={`/album/${album.id}`} className="p-3 rounded-lg hover:bg-background-hover transition-colors">
+                    <Link key={album.id} to={buildAlbumUrl(album.id, album.title, album.artist)} className="p-3 rounded-lg hover:bg-background-hover transition-colors">
                       <img src={album.cover_url || 'https://picsum.photos/seed/album1/200/200'} alt={album.title} className="w-full h-36 object-cover rounded mb-3" />
                       <div className="text-white font-medium truncate">{album.title}</div>
                       <div className="text-text-muted text-sm truncate">{album.artist || 'Álbum'}</div>

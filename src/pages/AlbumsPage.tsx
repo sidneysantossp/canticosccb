@@ -105,7 +105,7 @@ const AlbumsPage: React.FC = () => {
     e.preventDefault();
     e.stopPropagation();
     
-    const url = `${window.location.origin}/album/${album.id}`;
+    const url = `${window.location.origin}${buildAlbumUrl(album.id, album.title, album.artist)}`;
     
     if (navigator.share) {
       navigator.share({
