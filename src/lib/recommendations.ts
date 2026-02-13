@@ -20,7 +20,7 @@ export interface PersonalizedData {
 const toRecTrack = (h: any, reason?: string): RecTrack => ({
   id: String(h.id),
   title: String(h.titulo || h.title || 'Hino'),
-  composer_name: String(h.compositor || h.composer_name || 'Desconhecido'),
+  composer_name: String(h.compositor_nome || h.compositor || h.composer_name || 'Desconhecido'),
   cover_url: String(h.cover_url || ''),
   audio_url: String(h.audio_url || ''),
   category: String(h.categoria || h.category || ''),

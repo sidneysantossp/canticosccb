@@ -27,7 +27,9 @@ const PersonalizedSection: React.FC<Props> = ({ title, items, onPlay }) => {
               </button>
             </div>
             <h3 className="font-bold text-white mb-1 line-clamp-2">{t.title}</h3>
-            <p className="text-sm text-gray-400 line-clamp-1">{t.composer_name || 'Compositor'}</p>
+            <p className="text-sm text-gray-400 line-clamp-1">
+              {[t.composer_name, t.category].filter(Boolean).join(' · ') || 'Compositor'}
+            </p>
           </div>
         ))}
       </div>
