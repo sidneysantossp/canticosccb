@@ -39,11 +39,15 @@ const UserSidebar: React.FC = () => {
 
     try {
       const response: any = await compositorGerentesApi.listarCompositores(user.id);
+      if (response.error) {
+        setIsManager(false);
+        return;
+      }
       const dataArray = Array.isArray(response.data) ? response.data : response.data?.compositores || [];
       const hasActiveManagements = dataArray.some((g: any) => g.status === 'ativo');
       setIsManager(!!hasActiveManagements);
-    } catch (error) {
-      console.error('Erro ao verificar gerente:', error);
+    } catch {
+      setIsManager(false);
     }
   };
 
