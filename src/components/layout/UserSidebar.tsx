@@ -6,12 +6,7 @@ import {
   Library,
   Heart,
   ListMusic,
-  Clock,
-  User,
-  Settings,
   Crown,
-  TrendingUp,
-  Music,
   Users,
   Grid
 } from 'lucide-react';
@@ -66,14 +61,12 @@ const UserSidebar: React.FC = () => {
         { icon: Grid, label: 'Categorias', path: '/categories' }
       ]
     },
-    {
+    ...(premiumEnabled ? [{
       category: 'Dashboard',
       items: [
-        { icon: User, label: 'Meu Perfil', path: '/profile' },
-        { icon: Settings, label: 'Configurações', path: '/settings' },
-        ...(premiumEnabled ? [{ icon: Crown, label: 'Assinatura', path: '/subscription' }] : [])
+        { icon: Crown, label: 'Assinatura', path: '/subscription' }
       ]
-    },
+    }] : []),
     ...(isManager ? [{
       category: 'Gerenciamento',
       items: [
