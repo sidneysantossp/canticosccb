@@ -4,6 +4,7 @@ import { Search, X, Play, Music, Mic, Disc, List, BookOpen, Heart, Music2, Mic2,
 import { usePlayerStore } from '@/stores/playerStore';
 import SEOHead from '@/components/SEO/SEOHead';
 import { generateWebsiteSchema } from '@/utils/schemaGenerator';
+import { buildHinoUrl, buildCompositorUrl } from '@/utils/slugUrl';
 import { advancedSearch, type HymnSearchResult, type ComposerSearchResult, type AlbumSearchResult, type PlaylistSearchResult } from '@/lib/mockApis';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/lib/supabase-auth';
@@ -211,7 +212,7 @@ const SearchPage: React.FC = () => {
                   {hymns.map((song) => (
                     <Link
                       key={song.id}
-                      to={`/hino/${song.id}`}
+                      to={buildHinoUrl(song.id, song.title, song.number)}
                       className="flex items-center gap-4 p-3 rounded-lg hover:bg-background-hover transition-colors group w-full"
                     >
                       <img src={song.cover_url || 'https://picsum.photos/seed/search1/100/100'} alt={song.title} className="w-12 h-12 rounded object-cover" />
@@ -255,7 +256,7 @@ const SearchPage: React.FC = () => {
                 <h2 className="text-2xl font-bold text-white mb-6">Compositores</h2>
                 <div className="space-y-2">
                   {composers.map((artist) => (
-                    <Link key={artist.id} to={`/compositor/${artist.id}`} className="flex items-center gap-4 p-3 rounded-lg hover:bg-background-hover transition-colors group w-full">
+                    <Link key={artist.id} to={buildCompositorUrl(artist.id, artist.name)} className="flex items-center gap-4 p-3 rounded-lg hover:bg-background-hover transition-colors group w-full">
                       <div className="w-12 h-12 bg-background-tertiary rounded flex items-center justify-center overflow-hidden">
                         <img src={artist.photo_url || 'https://picsum.photos/seed/artist1/150/150'} className="w-12 h-12 object-cover" alt={artist.name} />
                       </div>

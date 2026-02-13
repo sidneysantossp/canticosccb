@@ -1,6 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { Music } from 'lucide-react';
+import { buildAlbumUrl } from '@/utils/slugUrl';
 
 interface Album {
   id: string;
@@ -35,7 +36,7 @@ const AlbumsSectionAlt: React.FC<AlbumsSectionAltProps> = ({ albums, isDarkMode 
         {albums.slice(0, 12).map((album) => (
           <Link
             key={album.id}
-            to={`/album/${album.id}`}
+            to={buildAlbumUrl(album.id, album.title, album.artist)}
             className={`group rounded-lg overflow-hidden transition-all duration-300 ${
               isDarkMode ? 'bg-gray-900 hover:bg-gray-800' : 'bg-gray-100 hover:bg-gray-200'
             }`}

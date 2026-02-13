@@ -7,6 +7,7 @@ import useFavoritesStore from '@/stores/favoritesStore';
 import { usePlayerContext } from '@/contexts/PlayerContext';
 import SEOHead from '@/components/SEO/SEOHead';
 import { generateMusicRecordingSchema, generateBreadcrumbSchema } from '@/utils/schemaGenerator';
+import { extractUUID, buildHinoUrl, buildCompositorUrl } from '@/utils/slugUrl';
 import { useAuth } from '@/contexts/AuthContext';
 
 interface Hymn {
@@ -25,7 +26,8 @@ interface Hymn {
 }
 
 const HymnDetailPage: React.FC = () => {
-  const { id } = useParams<{ id: string }>();
+  const { id: rawId } = useParams<{ id: string }>();
+  const id = rawId ? extractUUID(rawId) : undefined;
   const navigate = useNavigate();
   const { play } = usePlayerStore();
   const { isFavorite, addFavorite, removeFavorite } = useFavoritesStore();
@@ -310,22 +312,22 @@ const HymnDetailPage: React.FC = () => {
         title={`${hymn.titulo}${hymn.compositor_nome ? ` - ${hymn.compositor_nome}` : ''}`}
         description={`Ouça ${hymn.titulo}${hymn.compositor_nome ? ` de ${hymn.compositor_nome}` : ''} na Cânticos CCB. ${hymn.categoria ? `Categoria: ${hymn.categoria}.` : ''}`}
         keywords={`${hymn.titulo}, ${hymn.compositor_nome || 'CCB'}, hino, ${hymn.categoria || 'hinos'}, congregação cristã`}
-        canonical={`/hino/${id}`}
+        canonical={buildHinoUrl(hymn.id, hymn.titulo, hymn.numero)}
         ogType="music.song"
         ogImage={hymn.cover_url}
         schemaData={[
           generateMusicRecordingSchema({
             name: hymn.titulo,
-            url: `/hino/${id}`,
+            url: buildHinoUrl(hymn.id, hymn.titulo, hymn.numero),
             artist: hymn.compositor_nome || 'Cânticos CCB',
-            artistUrl: hymn.compositor_id ? `/compositor/${hymn.compositor_id}` : '/',
+            artistUrl: hymn.compositor_id ? buildCompositorUrl(hymn.compositor_id, hymn.compositor_nome || undefined) : '/',
             genre: hymn.categoria || 'Hinos CCB',
             image: hymn.cover_url,
           }),
           generateBreadcrumbSchema([
             { name: 'Início', url: '/' },
             { name: hymn.categoria || 'Hinos', url: hymn.categoria ? `/categoria/${hymn.categoria.toLowerCase()}` : '/' },
-            { name: hymn.titulo, url: `/hino/${id}` },
+            { name: hymn.titulo, url: buildHinoUrl(hymn.id, hymn.titulo, hymn.numero) },
           ]),
         ]}
       />
@@ -362,7 +364,7 @@ const HymnDetailPage: React.FC = () => {
                   <div className="flex items-center gap-3 mb-2">
                     {hymn.compositor_id ? (
                       <Link
-                        to={`/compositor/${hymn.compositor_id}`}
+                        to={buildCompositorUrl(hymn.compositor_id!, hymn.compositor_nome || undefined)}
                         className="text-lg text-text-muted hover:text-primary-400 transition-colors"
                       >
                         {hymn.compositor_nome}

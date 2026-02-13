@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Music, Play, Search, ArrowLeft, MoreVertical, Heart, Share2, ListPlus, Info } from 'lucide-react';
 import SEOHead from '@/components/SEO/SEOHead';
+import { buildAlbumUrl } from '@/utils/slugUrl';
 // import { getPublishedAlbums } from '@/lib/albumsApi';
 import useFavoritesStore from '@/stores/favoritesStore';
 import { usePlayerStore } from '@/stores/playerStore';
@@ -76,7 +77,7 @@ const AlbumsPage: React.FC = () => {
     // TODO: Buscar primeira faixa do álbum e reproduzir
     console.log('Reproduzir álbum:', album.title);
     setOpenMenuId(null);
-    navigate(`/album/${album.id}`);
+    navigate(buildAlbumUrl(album.id, album.title, album.artist));
   };
 
   const handleToggleFavorite = (album: Album, e: React.MouseEvent) => {
@@ -135,7 +136,7 @@ const AlbumsPage: React.FC = () => {
     e.preventDefault();
     e.stopPropagation();
     setOpenMenuId(null);
-    navigate(`/album/${album.id}`);
+    navigate(buildAlbumUrl(album.id, album.title, album.artist));
   };
 
   const filteredAlbums = albums.filter(album =>
@@ -214,7 +215,7 @@ const AlbumsPage: React.FC = () => {
                 {filteredAlbums.map((album) => (
                   <div key={album.id} className="relative">
                     <Link
-                      to={`/album/${album.id}`}
+                      to={buildAlbumUrl(album.id, album.title, album.artist)}
                       className="group bg-background-secondary hover:bg-background-tertiary rounded-lg p-4 transition-all duration-300 hover:scale-105 cursor-pointer block"
                     >
                       {/* Cover */}

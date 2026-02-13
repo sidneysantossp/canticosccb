@@ -22,6 +22,7 @@ import { usePlayerStore } from '@/stores/playerStore';
 import { usePlayerContext } from '@/contexts/PlayerContext';
 import { getProfileDashboardData, type FollowedComposer, type UserPlaylist } from '@/lib/profileDashboardApi';
 import { uploadUserAvatar } from '@/lib/uploadHelpers';
+import { buildCompositorUrl } from '@/utils/slugUrl';
 import { buildAvatarUrl } from '@/lib/media-helper';
 import useFavoritesStore from '@/stores/favoritesStore';
 import usePlaylistsStore from '@/stores/playlistsStore';
@@ -586,7 +587,7 @@ const ProfilePage: React.FC = () => {
                 {followedComposers.map((composer) => (
                   <Link
                     key={composer.id}
-                    to={`/compositor/${composer.id}`}
+                    to={buildCompositorUrl(composer.id, composer.artistic_name || composer.name)}
                     className="bg-background-secondary rounded-lg p-6 text-center hover:bg-background-tertiary transition-colors group"
                   >
                     <img

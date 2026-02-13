@@ -27,6 +27,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { compositoresApi } from '@/lib/api-client';
 import { uploadComposerAvatar, uploadComposerBanner } from '@/lib/uploadHelpers';
+import { buildCompositorUrl } from '@/utils/slugUrl';
 
 const ComposerProfile: React.FC = () => {
   const navigate = useNavigate();
@@ -659,7 +660,7 @@ const ComposerProfile: React.FC = () => {
                 <div className="absolute right-0 top-full mt-2 w-48 bg-background-secondary border border-gray-700 rounded-lg shadow-xl z-10">
                   <button
                     onClick={() => {
-                      window.open(`/compositor/${composerId}`, '_blank');
+                      window.open(buildCompositorUrl(composerId!, formData.artisticName || formData.name), '_blank');
                       setShowMenu(false);
                     }}
                     className="w-full px-4 py-3 text-left text-white hover:bg-background-hover transition-colors flex items-center gap-3"
@@ -669,7 +670,7 @@ const ComposerProfile: React.FC = () => {
                   </button>
                   <button
                     onClick={() => {
-                      navigator.clipboard.writeText(window.location.origin + `/compositor/${composerId}`);
+                      navigator.clipboard.writeText(window.location.origin + buildCompositorUrl(composerId!, formData.artisticName || formData.name));
                       setMessage({ type: 'success', text: 'Link copiado!' });
                       setShowMenu(false);
                     }}

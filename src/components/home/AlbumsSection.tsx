@@ -1,6 +1,7 @@
 import React, { useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { ChevronLeft, ChevronRight, Play } from 'lucide-react';
+import { buildAlbumUrl } from '@/utils/slugUrl';
 
 interface Album {
   id: string;
@@ -31,7 +32,8 @@ const AlbumsSection: React.FC<AlbumsSectionProps> = ({ albums }) => {
   const handlePlayAlbum = (e: React.MouseEvent, albumId: string) => {
     e.preventDefault();
     e.stopPropagation();
-    navigate(`/album/${albumId}`);
+    const album = albums.find(a => a.id === albumId);
+    navigate(buildAlbumUrl(albumId, album?.title, album?.artist));
   };
 
   return (
@@ -77,7 +79,7 @@ const AlbumsSection: React.FC<AlbumsSectionProps> = ({ albums }) => {
           {albums.map((album) => (
             <Link
               key={album.id}
-              to={`/album/${album.id}`}
+              to={buildAlbumUrl(album.id, album.title, album.artist)}
               onClick={() => console.log('🎵 Navegando para álbum:', album.id, album.title)}
               className="flex-shrink-0 w-48 group/card bg-background-secondary hover:bg-background-tertiary rounded-lg p-4 transition-all duration-300 hover:scale-105"
             >

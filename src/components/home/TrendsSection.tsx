@@ -1,6 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { TrendingUp, Play, Pause, Heart, MoreHorizontal } from 'lucide-react';
+import { buildHinoUrl } from '@/utils/slugUrl';
 
 export type TrendItem = {
   id: string;
@@ -81,7 +82,7 @@ const TrendsSection: React.FC<Props> = ({
 
               {/* Track Info - Title, Duration and Favorite */}
               <div className="flex-1 min-w-0">
-                <Link to={`/hino/${hino.id}`}>
+                <Link to={buildHinoUrl(hino.id, hino.title)}>
                   <h3 className="font-semibold text-white group-hover:text-primary-400 transition-colors leading-tight cursor-pointer text-sm sm:text-base">
                     {hino.title}
                   </h3>

@@ -4,6 +4,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { getFeaturedComposers } from '@/lib/admin/composersAdminApi';
 import { supabaseFetch } from '@/lib/supabaseRest';
 import SEOHead from '@/components/SEO/SEOHead';
+import { buildCompositorUrl } from '@/utils/slugUrl';
 
 interface Compositor {
   id: string;
@@ -329,7 +330,7 @@ export default function CompositoresPage() {
               {composers.map((compositor, index) => (
                 <Link
                   key={compositor.id}
-                  to={`/compositor/${compositor.id}`}
+                  to={buildCompositorUrl(compositor.id, compositor.name)}
                   className={`group relative bg-gradient-to-r ${index === 0
                     ? 'from-primary-900/30 to-gray-900/30 border-primary-700/50'
                     : 'from-gray-900/50 to-gray-800/30 border-gray-800/50'

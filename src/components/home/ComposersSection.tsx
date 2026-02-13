@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { ChevronLeft, ChevronRight, TrendingUp, Users, BadgeCheck } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { buildCompositorUrl } from '@/utils/slugUrl';
 import { buildAvatarUrl } from '@/lib/media-helper';
 import { ComposerCardSkeleton } from '@/components/ui/SkeletonLoader';
 import { useCachedData } from '@/hooks/usePreloadData';
@@ -403,7 +404,7 @@ const ComposersSection: React.FC = () => {
               ).map((compositor, index) => (
                     <Link 
                       key={`mobile-${compositor.id}-${currentCompositorIndex}-${index}`}
-                      to={`/compositor/${compositor.id}`} 
+                      to={buildCompositorUrl(compositor.id, compositor.name)} 
                       className="block group bg-background-secondary rounded-lg overflow-hidden hover:bg-background-tertiary transition-all duration-300 hover:shadow-2xl hover:shadow-primary-500/20 cursor-pointer h-full"
                     >
                       <div className="p-3 sm:p-4 h-full flex flex-col">
@@ -489,7 +490,7 @@ const ComposersSection: React.FC = () => {
             {displayComposers.map((compositor) => (
               <Link
                 key={String(compositor.id)}
-                to={`/compositor/${compositor.id}`}
+                to={buildCompositorUrl(compositor.id, compositor.name)}
                 className="block group bg-background-secondary rounded-lg overflow-hidden hover:bg-background-tertiary transition-all duration-300 hover:scale-[1.02] hover:shadow-2xl hover:shadow-primary-500/20 cursor-pointer"
               >
                 <div className="p-3">
@@ -541,7 +542,7 @@ const ComposersSection: React.FC = () => {
             >
               {[...displayComposers, ...displayComposers].map((compositor, index) => (
                 <div key={`${compositor.id}-${index}`} style={{ width: '300px', minWidth: '300px' }} className="flex-shrink-0 px-3">
-                  <Link to={`/compositor/${compositor.id}`} className="block group bg-background-secondary rounded-lg overflow-hidden hover:bg-background-tertiary transition-all duration-300 hover:scale-[1.02] hover:shadow-2xl hover:shadow-primary-500/20 h-full cursor-pointer">
+                  <Link to={buildCompositorUrl(compositor.id, compositor.name)} className="block group bg-background-secondary rounded-lg overflow-hidden hover:bg-background-tertiary transition-all duration-300 hover:scale-[1.02] hover:shadow-2xl hover:shadow-primary-500/20 h-full cursor-pointer">
                     <div className="p-4">
                       <div className="relative rounded-full mb-4 w-36 h-36 lg:w-40 lg:h-40 mx-auto overflow-hidden">
                         <img

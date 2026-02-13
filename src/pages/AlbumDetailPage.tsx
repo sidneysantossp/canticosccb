@@ -8,6 +8,7 @@ import { usePlayerContext } from '@/contexts/PlayerContext';
 import { useAuth } from '@/contexts/AuthContext';
 import SEOHead from '@/components/SEO/SEOHead';
 import { generateMusicAlbumSchema, generateBreadcrumbSchema } from '@/utils/schemaGenerator';
+import { extractUUID, buildAlbumUrl, buildHinoUrl } from '@/utils/slugUrl';
 import LoginRequiredModal from '@/components/modals/LoginRequiredModal';
 import { albunsApi } from '@/lib/api-client';
 
@@ -39,7 +40,8 @@ interface AlbumDetails {
 }
 
 const AlbumDetailPage: React.FC = () => {
-  const { id } = useParams<{ id: string }>();
+  const { id: rawId } = useParams<{ id: string }>();
+  const id = rawId ? extractUUID(rawId) : undefined;
   const navigate = useNavigate();
   const [album, setAlbum] = useState<AlbumDetails | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -394,13 +396,13 @@ const AlbumDetailPage: React.FC = () => {
         title={`${album.title} - ${album.artist}`}
         description={album.description || `Álbum ${album.title} de ${album.artist} - Cânticos CCB`}
         keywords={`${album.title}, ${album.artist}, álbum, hinos, CCB, congregação cristã`}
-        canonical={`/album/${id}`}
+        canonical={buildAlbumUrl(album.id, album.title, album.artist)}
         ogType="music.album"
         ogImage={album.coverUrl}
         schemaData={[
           generateMusicAlbumSchema({
             name: album.title,
-            url: `/album/${id}`,
+            url: buildAlbumUrl(album.id, album.title, album.artist),
             artist: album.artist,
             artistUrl: '/',
             image: album.coverUrl,
@@ -409,14 +411,14 @@ const AlbumDetailPage: React.FC = () => {
             numTracks: album.totalTracks,
             tracks: album.tracks.map(t => ({
               name: t.title,
-              url: `/hino/${t.id}`,
+              url: buildHinoUrl(t.id, t.title),
               duration: t.duration,
             })),
           }),
           generateBreadcrumbSchema([
             { name: 'Início', url: '/' },
             { name: 'Álbuns', url: '/albums' },
-            { name: album.title, url: `/album/${id}` },
+            { name: album.title, url: buildAlbumUrl(album.id, album.title, album.artist) },
           ]),
         ]}
       />

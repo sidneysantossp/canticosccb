@@ -3,6 +3,7 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import { ArrowLeft, Music, Users, Play, Pause, Heart, TrendingUp, Clock, Share2, ListPlus } from 'lucide-react';
 import SEOHead from '@/components/SEO/SEOHead';
 import { generatePersonSchema, generateBreadcrumbSchema } from '@/utils/schemaGenerator';
+import { extractUUID, buildCompositorUrl, buildAlbumUrl } from '@/utils/slugUrl';
 import { usePlayerStore } from '@/stores/playerStore';
 import useFavoritesStore from '@/stores/favoritesStore';
 import usePlaylistsStore from '@/stores/playlistsStore';
@@ -46,7 +47,8 @@ interface ComposerAlbum {
 }
 
 export default function ComposerPublicProfilePage() {
-  const { id } = useParams<{ id: string }>();
+  const { id: rawId } = useParams<{ id: string }>();
+  const id = rawId ? extractUUID(rawId) : undefined;
   const navigate = useNavigate();
   const { play, pause, currentTrack, isPlaying } = usePlayerStore();
   const { isFavorite, addFavorite, removeFavorite } = useFavoritesStore();
@@ -319,7 +321,7 @@ export default function ComposerPublicProfilePage() {
   // Abrir álbum diretamente no player (tema de álbum) com fila de faixas
   const handleOpenAlbum = async (album: ComposerAlbum) => {
     if (!isSupabaseConfigured) {
-      navigate(`/album/${album.id}`);
+      navigate(buildAlbumUrl(album.id, album.title));
       return;
     }
 
@@ -371,7 +373,7 @@ export default function ComposerPublicProfilePage() {
       console.warn('Não foi possível abrir o álbum diretamente no player:', e);
     }
     // Fallback: navegar para a página do álbum
-    navigate(`/album/${album.id}`);
+    navigate(buildAlbumUrl(album.id, album.title));
   };
 
   useEffect(() => {
@@ -510,13 +512,13 @@ export default function ComposerPublicProfilePage() {
         title={`${composer.name} - Perfil do Compositor`}
         description={composer.bio || `Conheça ${composer.name}, compositor da CCB. Ouça seus hinos e acompanhe suas publicações.`}
         keywords={`${composer.name}, compositor, CCB, hinos, congregação cristã`}
-        canonical={`/compositor/${id}`}
+        canonical={buildCompositorUrl(composer.id, composer.name)}
         ogType="profile"
         ogImage={composer.avatar_url || composer.photo_url}
         schemaData={[
           generatePersonSchema({
             name: composer.name,
-            url: `/compositor/${id}`,
+            url: buildCompositorUrl(composer.id, composer.name),
             image: composer.avatar_url || composer.photo_url,
             description: composer.bio || `Compositor da Congregação Cristã no Brasil`,
             jobTitle: 'Compositor',
@@ -524,7 +526,7 @@ export default function ComposerPublicProfilePage() {
           generateBreadcrumbSchema([
             { name: 'Início', url: '/' },
             { name: 'Compositores', url: '/compositores' },
-            { name: composer.name, url: `/compositor/${id}` },
+            { name: composer.name, url: buildCompositorUrl(composer.id, composer.name) },
           ]),
         ]}
       />
