@@ -37,16 +37,28 @@ ALTER TABLE cifras ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "cifras_public_read" ON cifras
   FOR SELECT USING (is_active = true);
 
--- Política de leitura para admin (todas)
+-- Política de leitura para admin (todas, inclusive inativas)
 CREATE POLICY "cifras_admin_read" ON cifras
   FOR SELECT USING (
-    EXISTS (SELECT 1 FROM users WHERE users.id = auth.uid() AND users.is_admin = true)
+    EXISTS (SELECT 1 FROM public.users WHERE users.id = auth.uid() AND users.is_admin = true)
   );
 
--- Política de escrita para admin
-CREATE POLICY "cifras_admin_write" ON cifras
-  FOR ALL USING (
-    EXISTS (SELECT 1 FROM users WHERE users.id = auth.uid() AND users.is_admin = true)
+-- Política de INSERT para admin
+CREATE POLICY "cifras_admin_insert" ON cifras
+  FOR INSERT WITH CHECK (
+    EXISTS (SELECT 1 FROM public.users WHERE users.id = auth.uid() AND users.is_admin = true)
+  );
+
+-- Política de UPDATE para admin
+CREATE POLICY "cifras_admin_update" ON cifras
+  FOR UPDATE USING (
+    EXISTS (SELECT 1 FROM public.users WHERE users.id = auth.uid() AND users.is_admin = true)
+  );
+
+-- Política de DELETE para admin
+CREATE POLICY "cifras_admin_delete" ON cifras
+  FOR DELETE USING (
+    EXISTS (SELECT 1 FROM public.users WHERE users.id = auth.uid() AND users.is_admin = true)
   );
 
 -- Trigger para updated_at

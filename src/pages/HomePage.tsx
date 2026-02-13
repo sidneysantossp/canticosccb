@@ -3,6 +3,7 @@ import SEOHead from '@/components/SEO/SEOHead';
 import HeroSection from '@/components/home/HeroSection';
 import CategoryGrid from '@/components/home/CategoryGrid';
 import ComposersSection from '@/components/home/ComposersSection';
+import CifrasHomeSection from '@/components/home/CifrasHomeSection';
 import BannerCTA from '@/components/home/BannerCTA';
 import BibleSection from '@/components/home/BibleSection';
 import { getBibleNarratedSectionEnabled } from '@/api/bibleNarrated';
@@ -595,6 +596,11 @@ const HomePage: React.FC = () => {
       {/* Composers Section */}
       <div className="px-6">
         <ComposersSection />
+      </div>
+
+      {/* Cifras Section */}
+      <div className="px-6">
+        <CifrasHomeSection />
       </div>
 
       {/* Bible Section (togglable) */}
