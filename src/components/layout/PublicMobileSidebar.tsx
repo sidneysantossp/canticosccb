@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { X, Home, Search, Library, Music, Mic, User, Heart, LogOut, Shield, Star, Grid, List, FileText } from 'lucide-react';
+import { X, Home, Search, Library, Music, Mic, User, Heart, LogOut, Shield, Star, Grid, List, FileText, BookOpen } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { usePremiumEnabled } from '@/hooks/usePremiumEnabled';
 
@@ -50,6 +50,7 @@ const PublicMobileSidebar: React.FC<PublicMobileSidebarProps> = ({ isOpen, onClo
       { path: '/categoria/cantados', icon: Mic, label: 'Cantados' },
       { path: '/categoria/instrumentais', icon: Music, label: 'Instrumentais' },
       { path: '/cifras', icon: FileText, label: 'Cifras' },
+      { path: '/hinario', icon: BookOpen, label: 'Hinário' },
     ];
 
     // Adicionar painel específico do usuário

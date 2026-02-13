@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Home, Search, Library, User, Music, Mic, Grid, FileText } from 'lucide-react';
+import { Home, Search, Library, User, Music, Mic, Grid, FileText, BookOpen } from 'lucide-react';
 
 const Sidebar: React.FC = () => {
   const location = useLocation();
@@ -18,6 +18,7 @@ const Sidebar: React.FC = () => {
     { path: '/categoria/cantados', icon: Mic, label: 'Cantados' },
     { path: '/categoria/instrumentais', icon: Music, label: 'Instrumentais' },
     { path: '/cifras', icon: FileText, label: 'Cifras' },
+    { path: '/hinario', icon: BookOpen, label: 'Hinário' },
   ];
 
   // Sidebar pública (guest): sem itens pessoais

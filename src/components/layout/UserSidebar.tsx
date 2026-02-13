@@ -11,7 +11,8 @@ import {
   Grid,
   Music,
   Mic,
-  FileText
+  FileText,
+  BookOpen
 } from 'lucide-react';
 import { getLogoByType } from '@/lib/mockApis';
 import { useAuth } from '@/contexts/AuthContext';
@@ -69,7 +70,8 @@ const UserSidebar: React.FC = () => {
         { icon: Music, label: 'Avulsos', path: '/categoria/avulsos' },
         { icon: Mic, label: 'Cantados', path: '/categoria/cantados' },
         { icon: Music, label: 'Instrumentais', path: '/categoria/instrumentais' },
-        { icon: FileText, label: 'Cifras', path: '/cifras' }
+        { icon: FileText, label: 'Cifras', path: '/cifras' },
+        { icon: BookOpen, label: 'Hinário', path: '/hinario' }
       ]
     },
     ...(premiumEnabled ? [{

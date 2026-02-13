@@ -162,6 +162,8 @@ import AdminCifras from '@/pages/admin/AdminCifras';
 import AdminCifraForm from '@/pages/admin/AdminCifraForm';
 import CifraPage from '@/pages/CifraPage';
 import CifrasListPage from '@/pages/CifrasListPage';
+import HinarioListPage from '@/pages/HinarioListPage';
+import HinarioViewPage from '@/pages/HinarioViewPage';
 import GlobalAudioPlayer from '@/components/GlobalAudioPlayer';
 import FreePlayGateModal from '@/components/modals/FreePlayGateModal';
 import AnalyticsScripts from '@/components/AnalyticsScripts';
@@ -198,6 +200,8 @@ const AppContent: React.FC = () => {
           <Route path="hymn/:id" element={<HymnDetailPage />} />
           <Route path="cifras" element={<CifrasListPage />} />
           <Route path="cifra/:slug" element={<CifraPage />} />
+          <Route path="hinario" element={<HinarioListPage />} />
+          <Route path="hinario/:numero" element={<HinarioViewPage />} />
           <Route path="albuns" element={<AlbumsPage />} />
           <Route path="album/:id" element={<AlbumDetailPage />} />
           <Route path="compositores" element={<CompositoresPage />} />
