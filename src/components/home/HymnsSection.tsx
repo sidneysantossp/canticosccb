@@ -10,7 +10,7 @@ export type HymnCard = {
 };
 
 type Props = {
-  title: string;
+  title: React.ReactNode;
   viewAllHref: string;
   items: HymnCard[] | undefined;
   onPlay: (item: HymnCard) => void;
@@ -24,7 +24,7 @@ const HymnsSection: React.FC<Props> = ({ title, viewAllHref, items, onPlay, onSc
     <section className="px-6">
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h2 className="text-2xl md:text-3xl font-bold text-white">
+          <h2 className="text-2xl md:text-3xl font-bold text-white leading-tight">
             {title}
           </h2>
         </div>
@@ -72,7 +72,7 @@ const HymnsSection: React.FC<Props> = ({ title, viewAllHref, items, onPlay, onSc
                 <Play className="w-4 h-4 fill-current" />
               </button>
             </div>
-            <h3 className="font-bold text-white mb-1 line-clamp-2">{hino.title}</h3>
+            <h3 className="font-semibold text-white group-hover:text-primary-400 transition-colors leading-tight cursor-pointer text-sm sm:text-base mb-1 line-clamp-2">{hino.title}</h3>
             {hino.subtitle && (
               <p className="text-sm text-gray-400 line-clamp-1">{hino.subtitle}</p>
             )}

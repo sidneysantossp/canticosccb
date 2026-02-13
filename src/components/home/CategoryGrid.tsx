@@ -60,7 +60,6 @@ const CategoryGrid: React.FC = () => {
     <section className="mb-12">
       <div className="mb-6">
         <h2 className="text-2xl md:text-3xl font-bold text-white">Explore por Categoria</h2>
-        <p className="text-gray-400 text-sm mt-1">Navegue por diferentes estilos e tipos de hino</p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
