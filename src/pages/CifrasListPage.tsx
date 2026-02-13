@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Search, Music, FileText, Eye } from 'lucide-react';
+import SEOHead from '@/components/SEO/SEOHead';
+import { generateItemListSchema, generateBreadcrumbSchema } from '@/utils/schemaGenerator';
 import { fetchCifras, Cifra, INSTRUMENTS, CATEGORIES } from '@/api/cifras';
 
 const CifrasListPage: React.FC = () => {
@@ -36,6 +38,29 @@ const CifrasListPage: React.FC = () => {
   });
 
   return (
+    <>
+    <SEOHead
+      title="Cifras Musicais - Acordes e Tablaturas"
+      description="Encontre cifras com acordes para violão, guitarra, ukulele e teclado. Tablaturas de hinos da Congregação Cristã no Brasil."
+      keywords="cifras, acordes, tablatura, violão, guitarra, ukulele, teclado, hinos, CCB"
+      canonical="/cifras"
+      schemaData={[
+        ...(filtered.length > 0 ? [generateItemListSchema({
+          name: 'Cifras Musicais',
+          description: 'Cifras com acordes para hinos da CCB',
+          url: '/cifras',
+          items: filtered.slice(0, 20).map((c, i) => ({
+            name: c.title,
+            url: `/cifra/${c.slug}`,
+            position: i + 1,
+          })),
+        })] : []),
+        generateBreadcrumbSchema([
+          { name: 'Início', url: '/' },
+          { name: 'Cifras', url: '/cifras' },
+        ]),
+      ]}
+    />
     <div className="max-w-5xl mx-auto py-8 px-4">
       {/* Header */}
       <div className="mb-8">
@@ -134,6 +159,7 @@ const CifrasListPage: React.FC = () => {
         </div>
       )}
     </div>
+    </>
   );
 };
 

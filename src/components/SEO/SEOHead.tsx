@@ -10,7 +10,7 @@ interface SEOProps {
   ogImage?: string;
   ogUrl?: string;
   twitterCard?: 'summary' | 'summary_large_image' | 'player';
-  schemaData?: object;
+  schemaData?: object | object[];
   noindex?: boolean;
   nofollow?: boolean;
 }
@@ -31,9 +31,11 @@ const SEOHead: React.FC<SEOProps> = ({
   const siteName = 'Cânticos CCB';
   const fullTitle = title.includes(siteName) ? title : `${title} | ${siteName}`;
   const baseUrl = import.meta.env.VITE_APP_URL || 'https://canticosccb.com.br';
-  const canonicalUrl = canonical || ogUrl || window.location.href;
+  const cleanPath = window.location.pathname;
+  const defaultUrl = `${baseUrl}${cleanPath}`;
+  const canonicalUrl = canonical ? (canonical.startsWith('http') ? canonical : `${baseUrl}${canonical}`) : defaultUrl;
   const imageUrl = ogImage.startsWith('http') ? ogImage : `${baseUrl}${ogImage}`;
-  const pageUrl = ogUrl || window.location.href;
+  const pageUrl = ogUrl ? (ogUrl.startsWith('http') ? ogUrl : `${baseUrl}${ogUrl}`) : canonicalUrl;
 
   // Robots meta tag
   const robotsContent = [
@@ -85,9 +87,17 @@ const SEOHead: React.FC<SEOProps> = ({
 
       {/* Schema.org JSON-LD */}
       {schemaData && (
-        <script type="application/ld+json">
-          {JSON.stringify(schemaData)}
-        </script>
+        Array.isArray(schemaData)
+          ? schemaData.map((schema, i) => (
+              <script key={i} type="application/ld+json">
+                {JSON.stringify(schema)}
+              </script>
+            ))
+          : (
+              <script type="application/ld+json">
+                {JSON.stringify(schemaData)}
+              </script>
+            )
       )}
     </Helmet>
   );

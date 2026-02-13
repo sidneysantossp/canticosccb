@@ -11,6 +11,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import AddToPlaylistModal from '@/components/modals/AddToPlaylistModal';
 import LoginRequiredModal from '@/components/modals/LoginRequiredModal';
 import SEOHead from '@/components/SEO/SEOHead';
+import { generateBreadcrumbSchema, generateItemListSchema } from '@/utils/schemaGenerator';
 
 interface Category {
   id: string;
@@ -354,7 +355,17 @@ const CategoryPage: React.FC = () => {
     <>
       <SEOHead
         title={category.meta_title || `${category.name} - Cânticos CCB`}
-        description={category.meta_description || category.description || `Explore hinos da categoria ${category.name}`}
+        description={category.meta_description || category.description || `Explore hinos da categoria ${category.name} na Cânticos CCB`}
+        keywords={`${category.name}, hinos, CCB, congregação cristã, ${category.slug}`}
+        canonical={`/categoria/${slug}`}
+        ogImage={category.image_url}
+        schemaData={[
+          generateBreadcrumbSchema([
+            { name: 'Início', url: '/' },
+            { name: 'Categorias', url: '/categories' },
+            { name: category.name, url: `/categoria/${slug}` },
+          ]),
+        ]}
       />
 
       <div className="min-h-screen bg-background-primary">

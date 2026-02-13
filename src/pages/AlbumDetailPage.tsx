@@ -7,6 +7,7 @@ import usePlaylistsStore from '@/stores/playlistsStore';
 import { usePlayerContext } from '@/contexts/PlayerContext';
 import { useAuth } from '@/contexts/AuthContext';
 import SEOHead from '@/components/SEO/SEOHead';
+import { generateMusicAlbumSchema, generateBreadcrumbSchema } from '@/utils/schemaGenerator';
 import LoginRequiredModal from '@/components/modals/LoginRequiredModal';
 import { albunsApi } from '@/lib/api-client';
 
@@ -391,9 +392,33 @@ const AlbumDetailPage: React.FC = () => {
     <>
       <SEOHead
         title={`${album.title} - ${album.artist}`}
-        description={album.description}
-        keywords={`${album.title}, ${album.artist}, álbum, hinos, CCB`}
+        description={album.description || `Álbum ${album.title} de ${album.artist} - Cânticos CCB`}
+        keywords={`${album.title}, ${album.artist}, álbum, hinos, CCB, congregação cristã`}
+        canonical={`/album/${id}`}
+        ogType="music.album"
         ogImage={album.coverUrl}
+        schemaData={[
+          generateMusicAlbumSchema({
+            name: album.title,
+            url: `/album/${id}`,
+            artist: album.artist,
+            artistUrl: '/',
+            image: album.coverUrl,
+            description: album.description,
+            datePublished: album.releaseYear,
+            numTracks: album.totalTracks,
+            tracks: album.tracks.map(t => ({
+              name: t.title,
+              url: `/hino/${t.id}`,
+              duration: t.duration,
+            })),
+          }),
+          generateBreadcrumbSchema([
+            { name: 'Início', url: '/' },
+            { name: 'Álbuns', url: '/albums' },
+            { name: album.title, url: `/album/${id}` },
+          ]),
+        ]}
       />
 
       {showMenu && (

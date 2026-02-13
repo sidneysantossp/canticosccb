@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { ArrowLeft, Minus, Plus, Type, ScrollText, Settings2, Eye, Printer, Share2, ChevronDown, Music, X } from 'lucide-react';
+import SEOHead from '@/components/SEO/SEOHead';
+import { generateCifraSchema, generateBreadcrumbSchema } from '@/utils/schemaGenerator';
 import { fetchCifraBySlug, incrementCifraViews, Cifra, INSTRUMENTS, ALL_KEYS } from '@/api/cifras';
 import {
   isChordLine,
@@ -166,6 +168,32 @@ const CifraPage: React.FC = () => {
   }
 
   return (
+    <>
+    <SEOHead
+      title={`${cifra.title}${cifra.artist ? ` - ${cifra.artist}` : ''} | Cifra`}
+      description={`Cifra de ${cifra.title}${cifra.artist ? ` (${cifra.artist})` : ''} - Tom: ${cifra.original_key}. Acordes e tablatura para ${INSTRUMENTS.find(i => i.value === cifra.instrument)?.label || cifra.instrument}.`}
+      keywords={`cifra, ${cifra.title}, ${cifra.artist || 'CCB'}, acordes, tablatura, ${cifra.original_key}, ${cifra.instrument}`}
+      canonical={`/cifra/${slug}`}
+      ogImage={cifra.cover_url}
+      schemaData={[
+        generateCifraSchema({
+          name: cifra.title,
+          url: `/cifra/${slug}`,
+          artist: cifra.artist,
+          description: `Cifra e acordes de ${cifra.title} - Tom: ${cifra.original_key}`,
+          image: cifra.cover_url,
+          datePublished: cifra.created_at,
+          dateModified: cifra.updated_at,
+          musicalKey: cifra.original_key,
+          instrument: cifra.instrument,
+        }),
+        generateBreadcrumbSchema([
+          { name: 'Início', url: '/' },
+          { name: 'Cifras', url: '/cifras' },
+          { name: cifra.title, url: `/cifra/${slug}` },
+        ]),
+      ]}
+    />
     <div className="max-w-4xl mx-auto py-6 px-4 print:px-0 print:py-0">
       {/* Header */}
       <div className="mb-6">
@@ -406,6 +434,7 @@ const CifraPage: React.FC = () => {
         </button>
       </div>
     </div>
+    </>
   );
 };
 

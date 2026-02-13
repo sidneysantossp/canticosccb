@@ -265,6 +265,72 @@ export const generateMusicPlaylistSchema = (playlist: {
 };
 
 /**
+ * Schema para Cifra/Tablatura (CreativeWork)
+ */
+export const generateCifraSchema = (cifra: {
+  name: string;
+  url: string;
+  artist?: string;
+  description?: string;
+  image?: string;
+  datePublished?: string;
+  dateModified?: string;
+  musicalKey?: string;
+  instrument?: string;
+}) => {
+  const schema: any = {
+    '@context': 'https://schema.org',
+    '@type': 'CreativeWork',
+    name: cifra.name,
+    url: cifra.url.startsWith('http') ? cifra.url : `${BASE_URL}${cifra.url}`,
+    genre: 'Hinos CCB',
+    inLanguage: 'pt-BR',
+    publisher: {
+      '@type': 'Organization',
+      name: 'Cânticos CCB',
+      url: BASE_URL,
+    },
+  };
+
+  if (cifra.artist) {
+    schema.author = { '@type': 'Person', name: cifra.artist };
+  }
+  if (cifra.description) schema.description = cifra.description;
+  if (cifra.image) schema.image = cifra.image;
+  if (cifra.datePublished) schema.datePublished = cifra.datePublished;
+  if (cifra.dateModified) schema.dateModified = cifra.dateModified;
+  if (cifra.musicalKey) schema.musicalKey = cifra.musicalKey;
+  if (cifra.instrument) schema.keywords = `cifra, ${cifra.instrument}, tablatura, acordes`;
+
+  return schema;
+};
+
+/**
+ * Schema para ItemList (listagem genérica)
+ */
+export const generateItemListSchema = (list: {
+  name: string;
+  description?: string;
+  url: string;
+  items: Array<{ name: string; url: string; position?: number }>;
+}) => {
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'ItemList',
+    name: list.name,
+    description: list.description,
+    url: list.url.startsWith('http') ? list.url : `${BASE_URL}${list.url}`,
+    numberOfItems: list.items.length,
+    itemListElement: list.items.map((item, index) => ({
+      '@type': 'ListItem',
+      position: item.position ?? index + 1,
+      name: item.name,
+      url: item.url.startsWith('http') ? item.url : `${BASE_URL}${item.url}`,
+    })),
+  };
+};
+
+/**
  * Schema para FAQ Page
  */
 export const generateFAQSchema = (faqs: Array<{ question: string; answer: string }>) => {

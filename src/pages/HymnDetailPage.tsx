@@ -6,6 +6,7 @@ import { usePlayerStore } from '@/stores/playerStore';
 import useFavoritesStore from '@/stores/favoritesStore';
 import { usePlayerContext } from '@/contexts/PlayerContext';
 import SEOHead from '@/components/SEO/SEOHead';
+import { generateMusicRecordingSchema, generateBreadcrumbSchema } from '@/utils/schemaGenerator';
 import { useAuth } from '@/contexts/AuthContext';
 
 interface Hymn {
@@ -306,8 +307,27 @@ const HymnDetailPage: React.FC = () => {
   return (
     <>
       <SEOHead
-        title={`${hymn.titulo} - Cânticos CCB`}
-        description={`Ouça ${hymn.titulo} ${hymn.compositor_nome ? `de ${hymn.compositor_nome}` : ''}`}
+        title={`${hymn.titulo}${hymn.compositor_nome ? ` - ${hymn.compositor_nome}` : ''}`}
+        description={`Ouça ${hymn.titulo}${hymn.compositor_nome ? ` de ${hymn.compositor_nome}` : ''} na Cânticos CCB. ${hymn.categoria ? `Categoria: ${hymn.categoria}.` : ''}`}
+        keywords={`${hymn.titulo}, ${hymn.compositor_nome || 'CCB'}, hino, ${hymn.categoria || 'hinos'}, congregação cristã`}
+        canonical={`/hino/${id}`}
+        ogType="music.song"
+        ogImage={hymn.cover_url}
+        schemaData={[
+          generateMusicRecordingSchema({
+            name: hymn.titulo,
+            url: `/hino/${id}`,
+            artist: hymn.compositor_nome || 'Cânticos CCB',
+            artistUrl: hymn.compositor_id ? `/compositor/${hymn.compositor_id}` : '/',
+            genre: hymn.categoria || 'Hinos CCB',
+            image: hymn.cover_url,
+          }),
+          generateBreadcrumbSchema([
+            { name: 'Início', url: '/' },
+            { name: hymn.categoria || 'Hinos', url: hymn.categoria ? `/categoria/${hymn.categoria.toLowerCase()}` : '/' },
+            { name: hymn.titulo, url: `/hino/${id}` },
+          ]),
+        ]}
       />
       
       <div className="min-h-screen bg-background-primary">

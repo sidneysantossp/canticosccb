@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { ArrowLeft, Music, Users, Play, Pause, Heart, TrendingUp, Clock, Share2, ListPlus } from 'lucide-react';
 import SEOHead from '@/components/SEO/SEOHead';
+import { generatePersonSchema, generateBreadcrumbSchema } from '@/utils/schemaGenerator';
 import { usePlayerStore } from '@/stores/playerStore';
 import useFavoritesStore from '@/stores/favoritesStore';
 import usePlaylistsStore from '@/stores/playlistsStore';
@@ -507,8 +508,25 @@ export default function ComposerPublicProfilePage() {
     <>
       <SEOHead
         title={`${composer.name} - Perfil do Compositor`}
-        description={composer.bio || `Conheça ${composer.name}, compositor da CCB`}
-        keywords={`${composer.name}, compositor, CCB, hinos`}
+        description={composer.bio || `Conheça ${composer.name}, compositor da CCB. Ouça seus hinos e acompanhe suas publicações.`}
+        keywords={`${composer.name}, compositor, CCB, hinos, congregação cristã`}
+        canonical={`/compositor/${id}`}
+        ogType="profile"
+        ogImage={composer.avatar_url || composer.photo_url}
+        schemaData={[
+          generatePersonSchema({
+            name: composer.name,
+            url: `/compositor/${id}`,
+            image: composer.avatar_url || composer.photo_url,
+            description: composer.bio || `Compositor da Congregação Cristã no Brasil`,
+            jobTitle: 'Compositor',
+          }),
+          generateBreadcrumbSchema([
+            { name: 'Início', url: '/' },
+            { name: 'Compositores', url: '/compositores' },
+            { name: composer.name, url: `/compositor/${id}` },
+          ]),
+        ]}
       />
 
       <div className="min-h-screen bg-gradient-to-br from-background-primary via-background-secondary to-background-primary pb-24">
