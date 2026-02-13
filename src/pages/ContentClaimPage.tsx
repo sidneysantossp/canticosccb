@@ -42,7 +42,7 @@ const ContentClaimPage: React.FC = () => {
         songId: 0,
         songTitle: 'Conteúdo informado via URL pública',
         songArtist: 'Desconhecido',
-        songCoverUrl: 'https://canticosccb.com.br/logo-canticos-ccb.png',
+        songCoverUrl: '/logo-canticos-ccb.png',
         composerId: 'public_user',
         composerName: name.trim(),
         composerEmail: email.trim(),

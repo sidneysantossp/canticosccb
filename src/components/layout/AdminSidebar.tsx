@@ -43,7 +43,7 @@ const AdminSidebar: React.FC = () => {
   const [expandedSections, setExpandedSections] = useState<string[]>([]);
   const { getPendingClaimsCount } = useCopyrightClaimsStore();
   const [pendingComposersCount, setPendingComposersCount] = useState(0);
-  const [logoSrc, setLogoSrc] = useState<string>('https://canticosccb.com.br/logo-canticos-ccb.png');
+  const [logoSrc, setLogoSrc] = useState<string>('/logo-canticos-ccb.png');
 
   // Carregar contagem de compositores pendentes
   useEffect(() => {
@@ -249,7 +249,7 @@ const AdminSidebar: React.FC = () => {
             className="h-10 w-auto object-contain"
             referrerPolicy="no-referrer"
             onError={() => {
-              if (logoSrc !== 'https://canticosccb.com.br/logo-canticos-ccb.png') setLogoSrc('https://canticosccb.com.br/logo-canticos-ccb.png');
+              if (logoSrc !== '/logo-canticos-ccb.png') setLogoSrc('/logo-canticos-ccb.png');
             }}
           />
         </Link>

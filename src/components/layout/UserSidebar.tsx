@@ -93,7 +93,7 @@ const UserSidebar: React.FC = () => {
       <div className="px-6 mb-8">
         <Link to="/" className="inline-flex items-center">
           <img
-            src="https://canticosccb.com.br/logo-canticos-ccb.png"
+            src="/logo-canticos-ccb.png"
             alt="Cânticos CCB"
             className="h-10 w-auto object-contain"
             referrerPolicy="no-referrer"

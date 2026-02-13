@@ -7,7 +7,7 @@ export const API_URLS = {
 
 // Asset URLs
 export const ASSETS = {
-  LOGO_URL: 'https://canticosccb.com.br/logo-canticos-ccb.png',
+  LOGO_URL: '/logo-canticos-ccb.png',
   DEFAULT_AVATAR: 'https://i.pravatar.cc/150?img=1',
   PLACEHOLDER_IMAGE: 'https://picsum.photos/seed/placeholder/300/300',
 } as const;

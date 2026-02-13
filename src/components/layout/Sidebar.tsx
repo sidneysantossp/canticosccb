@@ -25,14 +25,9 @@ const Sidebar: React.FC = () => {
       <div className="px-6 mb-8">
         <Link to="/" className="inline-block">
           <img 
-            src="https://canticosccb.com.br/logo-canticos-ccb.png" 
+            src="/logo-canticos-ccb.png" 
             alt="Cânticos CCB - Congregação Cristã no Brasil" 
             className="h-10 w-auto object-contain"
-            onError={(e) => {
-              // Fallback para logo local se o link externo falhar
-              const target = e.currentTarget as HTMLImageElement;
-              target.src = 'https://canticosccb.com.br/logo-canticos-ccb.png';
-            }}
           />
         </Link>
       </div>
