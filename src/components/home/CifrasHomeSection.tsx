@@ -15,7 +15,7 @@ const CifrasHomeSection: React.FC = () => {
     return () => window.removeEventListener('resize', check);
   }, []);
 
-  const maxCards = isXl ? 8 : 7;
+  const maxCards = isXl ? 8 : 6;
 
   useEffect(() => {
     loadCifras();
@@ -69,7 +69,7 @@ const CifrasHomeSection: React.FC = () => {
         </Link>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
         {cifras.slice(0, maxCards).map(cifra => (
           <Link
             key={cifra.id}
