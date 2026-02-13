@@ -107,16 +107,6 @@ const CifrasHomeSection: React.FC = () => {
           </Link>
         ))}
 
-        {/* Card "Ver mais" */}
-        <Link
-          to="/cifras"
-          className="group flex items-center justify-center gap-2 bg-gray-800/30 hover:bg-primary-500/10 border border-dashed border-gray-700/50 hover:border-primary-500/40 rounded-xl px-3 py-3 transition-all min-h-[68px]"
-        >
-          <div className="flex items-center gap-2 text-gray-400 group-hover:text-primary-400 transition-colors">
-            <span className="text-sm font-medium">Ver mais</span>
-            <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-          </div>
-        </Link>
       </div>
     </section>
   );
