@@ -25,7 +25,7 @@ const Sidebar: React.FC = () => {
       <div className="px-6 mb-8">
         <Link to="/" className="inline-block">
           <img 
-            src="/logo-canticos-ccb.png" 
+            src="https://canticosccb.com.br/logo-canticos-ccb.png" 
             alt="Cânticos CCB - Congregação Cristã no Brasil" 
             className="h-10 w-auto object-contain"
           />

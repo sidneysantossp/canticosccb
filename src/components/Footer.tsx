@@ -12,13 +12,13 @@ const Footer: React.FC = () => {
             <div className="mb-6 -ml-2">
               <Link to="/" className="inline-block">
                 <img 
-                  src="/logo-canticos-ccb.png" 
+                  src="https://canticosccb.com.br/logo-canticos-ccb.png" 
                   alt="Cânticos CCB - Congregação Cristã no Brasil" 
                   className="h-10 w-auto object-contain"
                   onError={(e) => {
                     // Fallback para logo local se o link externo falhar
                     const target = e.currentTarget as HTMLImageElement;
-                    target.src = '/logo-canticos-ccb.png';
+                    target.src = 'https://canticosccb.com.br/logo-canticos-ccb.png';
                   }}
                 />
               </Link>

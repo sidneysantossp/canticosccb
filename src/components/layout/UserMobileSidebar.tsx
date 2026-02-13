@@ -113,7 +113,7 @@ const UserMobileSidebar: React.FC<UserMobileSidebarProps> = ({ isOpen, onClose }
         <div className="flex items-center justify-between pl-4 pr-6 pb-4">
           <Link to="/" className="flex items-center gap-3" onClick={onClose}>
             <img
-              src="/logo-canticos-ccb.png"
+              src="https://canticosccb.com.br/logo-canticos-ccb.png"
               alt="Cânticos CCB"
               className="h-8 w-auto object-contain"
               referrerPolicy="no-referrer"
