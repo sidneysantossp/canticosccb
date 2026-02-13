@@ -17,7 +17,7 @@ const LoginPage: React.FC = () => {
   const [rememberMe, setRememberMe] = useState(false);
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const logoSrc = '/logo-canticos-ccb.png';
+  const logoSrc = 'https://canticosccb.com.br/logo-canticos-ccb.png';
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const [isGsiReady, setIsGsiReady] = useState(false);
   const googleBtnRef = useRef<HTMLDivElement | null>(null);

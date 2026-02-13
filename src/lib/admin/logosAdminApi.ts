@@ -30,7 +30,7 @@ const mockLogos: Logo[] = [
     id: '2',
     type: 'primary',
     name: 'Logo Principal (Claro)',
-    url: '/logo-canticos-ccb.png',
+    url: 'https://canticosccb.com.br/logo-canticos-ccb.png',
     width: 300,
     height: 80,
     file_size: 15360,

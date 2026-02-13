@@ -230,5 +230,5 @@ export const getLogoByType = async (type: string): Promise<{ url: string } | nul
   } catch {}
 
   // Fallback seguro local (garante UI funcional)
-  return { url: '/logo-canticos-ccb.png' };
+  return { url: 'https://canticosccb.com.br/logo-canticos-ccb.png' };
 };

@@ -215,7 +215,7 @@ const useNotificationsStore = create<NotificationsState>()(
           if ('Notification' in window && Notification.permission === 'granted') {
             new Notification(newNotification.title, {
               body: newNotification.message,
-              icon: newNotification.userAvatar || '/logo-canticos-ccb.png'
+              icon: newNotification.userAvatar || 'https://canticosccb.com.br/logo-canticos-ccb.png'
             });
           }
         });
