@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Play } from 'lucide-react';
 import type { RecTrack } from '@/lib/recommendations';
 
@@ -9,15 +9,54 @@ type Props = {
 };
 
 const PersonalizedSection: React.FC<Props> = ({ title, items, onPlay }) => {
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const [isPaused, setIsPaused] = useState(false);
   const valid = Array.isArray(items) ? items.filter((t) => !!t.cover_url && t.cover_url.trim() !== '') : [];
+
+  // Rotação automática
+  useEffect(() => {
+    if (valid.length <= 1 || isPaused) return;
+
+    const interval = setInterval(() => {
+      if (scrollRef.current) {
+        const { scrollLeft, scrollWidth, clientWidth } = scrollRef.current;
+        // Se chegou perto do fim, volta pro começo
+        if (scrollLeft + clientWidth >= scrollWidth - 10) {
+          scrollRef.current.scrollTo({ left: 0, behavior: 'smooth' });
+        } else {
+          // Scrola um card (aprox 200px)
+          scrollRef.current.scrollBy({ left: 200, behavior: 'smooth' });
+        }
+      }
+    }, 4000); // 4 segundos
+
+    return () => clearInterval(interval);
+  }, [valid.length, isPaused]);
+
   if (valid.length === 0) return null;
+
+  // Tratamento do título para quebra de linha
+  const displayTitle = title === 'Recomendado para você' ? (
+    <>
+      Recomendado<br />
+      para você
+    </>
+  ) : title;
 
   return (
     <section className="px-6">
       <div className="flex items-center justify-between mb-6">
-        <h2 className="text-2xl md:text-3xl font-bold text-white">{title}</h2>
+        <h2 className="text-2xl md:text-3xl font-bold text-white leading-tight">{displayTitle}</h2>
       </div>
-      <div className="flex gap-6 overflow-x-auto scrollbar-hide pb-4" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+      <div 
+        ref={scrollRef}
+        className="flex gap-6 overflow-x-auto scrollbar-hide pb-4 scroll-smooth" 
+        style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+        onMouseEnter={() => setIsPaused(true)}
+        onMouseLeave={() => setIsPaused(false)}
+        onTouchStart={() => setIsPaused(true)}
+        onTouchEnd={() => setIsPaused(false)}
+      >
         {valid.slice(0, 12).map((t, idx) => (
           <div key={`${title}-${t.id}-${idx}`} className="group flex-shrink-0 w-48 bg-background-secondary hover:bg-background-tertiary p-4 rounded-lg transition-all duration-300 hover:scale-105">
             <div className="relative mb-4">
