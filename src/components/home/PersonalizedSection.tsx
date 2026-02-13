@@ -26,7 +26,7 @@ const PersonalizedSection: React.FC<Props> = ({ title, items, onPlay }) => {
                 <Play className="w-4 h-4 fill-current" />
               </button>
             </div>
-            <h3 className="font-bold text-white mb-1 line-clamp-2">{t.title}</h3>
+            <h3 className="font-semibold text-white group-hover:text-primary-400 transition-colors leading-tight cursor-pointer text-sm sm:text-base mb-1 line-clamp-2">{t.title}</h3>
             <p className="text-sm text-gray-400 line-clamp-1">
               {[t.composer_name, t.category].filter(Boolean).join(' · ') || 'Compositor'}
             </p>
