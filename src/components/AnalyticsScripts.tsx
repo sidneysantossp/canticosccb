@@ -96,17 +96,26 @@ const AnalyticsScripts: React.FC = () => {
     let cancelled = false;
 
     const loadConfig = async () => {
+      // Timeout de segurança para não bloquear a página
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Analytics config timeout')), 5000)
+      );
+
       try {
-        const rows = await supabaseFetch<any>('site_config', {
+        const rowsPromise = supabaseFetch<any>('site_config', {
           config_key: 'in.(analytics_enabled,google_analytics_id,google_tag_manager_id,facebook_pixel_id)',
           select: 'config_key,config_value',
         });
 
+        const rows = await Promise.race([rowsPromise, timeoutPromise]) as any[];
+
         if (cancelled) return;
 
         const configMap: Record<string, string> = {};
-        for (const row of rows) {
-          configMap[row.config_key] = row.config_value;
+        if (Array.isArray(rows)) {
+          for (const row of rows) {
+            configMap[row.config_key] = row.config_value;
+          }
         }
 
         const config: AnalyticsConfig = {
@@ -118,24 +127,28 @@ const AnalyticsScripts: React.FC = () => {
 
         if (!config.analytics_enabled) {
           cleanupAll();
+          setLoaded(true);
           return;
         }
 
-        if (config.google_analytics_id) {
-          injectGoogleAnalytics(config.google_analytics_id);
-        }
+        // Injetar scripts em try-catch individuais para não falhar tudo
+        try {
+          if (config.google_analytics_id) injectGoogleAnalytics(config.google_analytics_id);
+        } catch (e) { console.warn('GA injection failed', e); }
 
-        if (config.google_tag_manager_id) {
-          injectGTM(config.google_tag_manager_id);
-        }
+        try {
+          if (config.google_tag_manager_id) injectGTM(config.google_tag_manager_id);
+        } catch (e) { console.warn('GTM injection failed', e); }
 
-        if (config.facebook_pixel_id) {
-          injectFacebookPixel(config.facebook_pixel_id);
-        }
+        try {
+          if (config.facebook_pixel_id) injectFacebookPixel(config.facebook_pixel_id);
+        } catch (e) { console.warn('Pixel injection failed', e); }
 
         setLoaded(true);
       } catch (err) {
-        console.error('[AnalyticsScripts] Error loading config:', err);
+        // Silently fail after timeout or error
+        console.warn('[AnalyticsScripts] Config load skipped/failed');
+        setLoaded(true);
       }
     };
 
