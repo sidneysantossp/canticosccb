@@ -158,6 +158,10 @@ import AdminNotices from '@/pages/admin/AdminNotices';
 import AdminNoticeForm from '@/pages/admin/AdminNoticeForm';
 import AdminBibleNarrated from '@/pages/admin/AdminBibleNarrated';
 import AdminBibleNarratedForm from '@/pages/admin/AdminBibleNarratedForm';
+import AdminCifras from '@/pages/admin/AdminCifras';
+import AdminCifraForm from '@/pages/admin/AdminCifraForm';
+import CifraPage from '@/pages/CifraPage';
+import CifrasListPage from '@/pages/CifrasListPage';
 import GlobalAudioPlayer from '@/components/GlobalAudioPlayer';
 import FreePlayGateModal from '@/components/modals/FreePlayGateModal';
 import AnalyticsScripts from '@/components/AnalyticsScripts';
@@ -192,6 +196,8 @@ const AppContent: React.FC = () => {
           <Route path="search" element={<SearchPage />} />
           <Route path="hino/:id" element={<HymnDetailPage />} />
           <Route path="hymn/:id" element={<HymnDetailPage />} />
+          <Route path="cifras" element={<CifrasListPage />} />
+          <Route path="cifra/:slug" element={<CifraPage />} />
           <Route path="albuns" element={<AlbumsPage />} />
           <Route path="album/:id" element={<AlbumDetailPage />} />
           <Route path="compositores" element={<CompositoresPage />} />
@@ -468,6 +474,11 @@ const AppContent: React.FC = () => {
           <Route path="admin/bible-narrated/create" element={<ProtectedRoute requireAdmin><AdminBibleNarratedForm /></ProtectedRoute>} />
           <Route path="admin/bible-narrated/editar/:id" element={<ProtectedRoute requireAdmin><AdminBibleNarratedForm /></ProtectedRoute>} />
           <Route path="admin/bible-narrated/edit/:id" element={<ProtectedRoute requireAdmin><AdminBibleNarratedForm /></ProtectedRoute>} />
+
+          {/* Cifras Management */}
+          <Route path="admin/cifras" element={<ProtectedRoute requireAdmin><AdminCifras /></ProtectedRoute>} />
+          <Route path="admin/cifras/new" element={<ProtectedRoute requireAdmin><AdminCifraForm /></ProtectedRoute>} />
+          <Route path="admin/cifras/:id/edit" element={<ProtectedRoute requireAdmin><AdminCifraForm /></ProtectedRoute>} />
 
           {/* 404 - Catch All */}
           <Route path="*" element={<NotFoundPage />} />

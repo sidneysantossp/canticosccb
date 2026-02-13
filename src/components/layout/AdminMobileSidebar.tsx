@@ -100,6 +100,7 @@ const AdminMobileSidebar: React.FC<AdminMobileSidebarProps> = ({ isOpen, onClose
         { path: '/admin/songs/pending', label: 'Aprovação Pendente', icon: CheckCircle, badge: 5 },
         { path: '/admin/albums', label: 'Álbuns', icon: Album },
         { path: '/admin/collections', label: 'Coletâneas', icon: Layers },
+        { path: '/admin/cifras', label: 'Cifras', icon: FileText },
         { path: '/admin/categories', label: 'Categorias', icon: Grid },
         { path: '/admin/genres', label: 'Gêneros', icon: List },
         { path: '/admin/tags', label: 'Tags', icon: Tag }

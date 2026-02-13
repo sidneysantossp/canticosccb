@@ -1,0 +1,140 @@
+import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
+import { Search, Music, FileText, Eye } from 'lucide-react';
+import { fetchCifras, Cifra, INSTRUMENTS, CATEGORIES } from '@/api/cifras';
+
+const CifrasListPage: React.FC = () => {
+  const [cifras, setCifras] = useState<Cifra[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [filterInstrument, setFilterInstrument] = useState('');
+  const [filterCategory, setFilterCategory] = useState('');
+
+  useEffect(() => {
+    loadCifras();
+  }, []);
+
+  const loadCifras = async () => {
+    try {
+      setIsLoading(true);
+      const data = await fetchCifras({ is_active: true });
+      setCifras(data);
+    } catch (err) {
+      console.error('Erro ao carregar cifras:', err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const filtered = cifras.filter(c => {
+    const matchSearch = !searchTerm ||
+      c.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      c.artist.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchInstrument = !filterInstrument || c.instrument === filterInstrument;
+    const matchCategory = !filterCategory || c.category === filterCategory;
+    return matchSearch && matchInstrument && matchCategory;
+  });
+
+  return (
+    <div className="max-w-5xl mx-auto py-8 px-4">
+      {/* Header */}
+      <div className="mb-8">
+        <h1 className="text-3xl md:text-4xl font-bold text-white leading-tight">
+          Cifras<br />Musicais
+        </h1>
+        <p className="text-gray-400 mt-2">Encontre cifras com acordes para violão, guitarra, ukulele e teclado</p>
+      </div>
+
+      {/* Search & Filters */}
+      <div className="flex flex-col sm:flex-row gap-3 mb-8">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+          <input
+            type="text"
+            placeholder="Buscar cifra por título ou artista..."
+            value={searchTerm}
+            onChange={e => setSearchTerm(e.target.value)}
+            className="w-full pl-10 pr-4 py-3 bg-gray-800/60 border border-gray-700 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary-500"
+          />
+        </div>
+        <select
+          value={filterInstrument}
+          onChange={e => setFilterInstrument(e.target.value)}
+          className="px-4 py-3 bg-gray-800/60 border border-gray-700 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-primary-500"
+        >
+          <option value="">Instrumento</option>
+          {INSTRUMENTS.map(i => (
+            <option key={i.value} value={i.value}>{i.label}</option>
+          ))}
+        </select>
+        <select
+          value={filterCategory}
+          onChange={e => setFilterCategory(e.target.value)}
+          className="px-4 py-3 bg-gray-800/60 border border-gray-700 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-primary-500"
+        >
+          <option value="">Categoria</option>
+          {CATEGORIES.map(c => (
+            <option key={c.value} value={c.value}>{c.label}</option>
+          ))}
+        </select>
+      </div>
+
+      {/* Results */}
+      {isLoading ? (
+        <div className="flex items-center justify-center py-20">
+          <div className="animate-spin w-8 h-8 border-4 border-primary-500 border-t-transparent rounded-full" />
+        </div>
+      ) : filtered.length === 0 ? (
+        <div className="text-center py-20">
+          <FileText className="w-16 h-16 text-gray-600 mx-auto mb-4" />
+          <h3 className="text-xl text-gray-400 mb-2">
+            {searchTerm || filterInstrument || filterCategory ? 'Nenhuma cifra encontrada' : 'Nenhuma cifra disponível'}
+          </h3>
+          <p className="text-gray-500">
+            {searchTerm || filterInstrument || filterCategory ? 'Tente ajustar os filtros' : 'Em breve teremos cifras disponíveis'}
+          </p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {filtered.map(cifra => (
+            <Link
+              key={cifra.id}
+              to={`/cifra/${cifra.slug}`}
+              className="group bg-gray-800/40 hover:bg-gray-800/70 border border-gray-700/50 hover:border-gray-600 rounded-xl p-4 transition-all"
+            >
+              <div className="flex items-start gap-3">
+                {cifra.cover_url ? (
+                  <img src={cifra.cover_url} alt="" className="w-14 h-14 rounded-lg object-cover flex-shrink-0" />
+                ) : (
+                  <div className="w-14 h-14 rounded-lg bg-gray-700/50 flex items-center justify-center flex-shrink-0">
+                    <Music className="w-6 h-6 text-gray-500" />
+                  </div>
+                )}
+                <div className="flex-1 min-w-0">
+                  <h3 className="text-white font-semibold group-hover:text-primary-400 transition-colors line-clamp-1">
+                    {cifra.title}
+                  </h3>
+                  <p className="text-gray-400 text-sm line-clamp-1">{cifra.artist}</p>
+                  <div className="flex items-center gap-2 mt-2">
+                    <span className="px-2 py-0.5 bg-primary-500/15 text-primary-400 text-xs rounded-md font-medium">
+                      {cifra.original_key}
+                    </span>
+                    <span className="text-gray-500 text-xs">
+                      {INSTRUMENTS.find(i => i.value === cifra.instrument)?.label || cifra.instrument}
+                    </span>
+                    <span className="text-gray-600 text-xs ml-auto flex items-center gap-1">
+                      <Eye className="w-3 h-3" />
+                      {cifra.views_count}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </Link>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default CifrasListPage;

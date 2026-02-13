@@ -121,6 +121,7 @@ const AdminSidebar: React.FC = () => {
         { path: '/admin/albums', label: 'Álbuns', icon: Album },
         { path: '/admin/collections', label: 'Coletâneas', icon: Layers },
         { path: '/admin/bible-narrated', label: 'Bíblia Narrada', icon: Book },
+        { path: '/admin/cifras', label: 'Cifras', icon: FileText },
         { path: '/admin/categories', label: 'Categorias', icon: Grid },
         { path: '/admin/genres', label: 'Gêneros', icon: List },
         { path: '/admin/tags', label: 'Tags', icon: Tag }
