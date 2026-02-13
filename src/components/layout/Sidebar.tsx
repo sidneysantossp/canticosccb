@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Home, Search, Library, User, Music, Mic } from 'lucide-react';
+import { Home, Search, Library, User, Music, Mic, Grid, FileText } from 'lucide-react';
 
 const Sidebar: React.FC = () => {
   const location = useLocation();
@@ -12,9 +12,12 @@ const Sidebar: React.FC = () => {
   const navItems = [
     { path: '/', icon: Home, label: 'Início' },
     { path: '/search', icon: Search, label: 'Buscar' },
+    { path: '/library', icon: Library, label: 'Biblioteca' },
+    { path: '/categories', icon: Grid, label: 'Categorias' },
+    { path: '/categoria/avulsos', icon: Music, label: 'Hinos Avulsos' },
     { path: '/categoria/cantados', icon: Mic, label: 'Hinos Cantados' },
-    { path: '/categoria/tocados', icon: Music, label: 'Hinos Tocados' },
-    { path: '/library', icon: Library, label: 'Sua Biblioteca' }
+    { path: '/categoria/instrumentais', icon: Music, label: 'Hinos Instrumentais' },
+    { path: '/cifras', icon: FileText, label: 'Cifras' },
   ];
 
   // Sidebar pública (guest): sem itens pessoais

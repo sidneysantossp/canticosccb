@@ -8,7 +8,10 @@ import {
   ListMusic,
   Crown,
   Users,
-  Grid
+  Grid,
+  Music,
+  Mic,
+  FileText
 } from 'lucide-react';
 import { getLogoByType } from '@/lib/mockApis';
 import { useAuth } from '@/contexts/AuthContext';
@@ -62,7 +65,11 @@ const UserSidebar: React.FC = () => {
         { icon: Home, label: 'Início', path: '/' },
         { icon: Search, label: 'Buscar', path: '/search' },
         { icon: Library, label: 'Biblioteca', path: '/library' },
-        { icon: Grid, label: 'Categorias', path: '/categories' }
+        { icon: Grid, label: 'Categorias', path: '/categories' },
+        { icon: Music, label: 'Hinos Avulsos', path: '/categoria/avulsos' },
+        { icon: Mic, label: 'Hinos Cantados', path: '/categoria/cantados' },
+        { icon: Music, label: 'Hinos Instrumentais', path: '/categoria/instrumentais' },
+        { icon: FileText, label: 'Cifras', path: '/cifras' }
       ]
     },
     ...(premiumEnabled ? [{
