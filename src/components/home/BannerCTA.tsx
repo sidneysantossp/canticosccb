@@ -33,12 +33,12 @@ const BannerCTA: React.FC = () => {
               <span className="text-white/90 font-medium">Para Compositores</span>
             </div>
             
-            <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
-              Compartilhe Seus Hinos
+            <h2 className="text-3xl md:text-4xl font-bold text-white mb-4 leading-tight">
+              Compartilhe<br />Seus Hinos
             </h2>
             
             <p className="text-lg text-white/90 mb-8 leading-relaxed">
-              Venha fazer parte da família CCB compartilhando suas Composições com milhares de pessoas. Traga seus Álbuns, Hinos Avulsos e Tocatas.
+              Venha fazer parte da família CCB compartilhando suas Composições com milhares de pessoas.
             </p>
             
             <div className="flex flex-col sm:flex-row gap-4">
