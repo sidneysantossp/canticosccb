@@ -74,12 +74,9 @@ const BibleSection: React.FC = () => {
     <section className="mb-12">
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h2 className="text-2xl md:text-3xl font-bold text-white mb-2">
-            Bíblia Narrada
+          <h2 className="text-2xl md:text-3xl font-bold text-white mb-2 leading-tight">
+            Bíblia<br />Narrada
           </h2>
-          <p className="text-gray-400">
-            Ouça a palavra de Deus narrada com clareza e reverência
-          </p>
         </div>
         <div className="hidden md:block">
           <Link to="/biblia-narrada" className="text-primary-400 hover:text-primary-300 font-medium transition-colors">
