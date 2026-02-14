@@ -224,49 +224,6 @@ const HinarioViewPage: React.FC = () => {
           </div>
         </div>
 
-        {/* Navigation bar */}
-        <div className="max-w-3xl mx-auto px-4 py-2 flex items-center justify-between gap-2">
-          <button
-            onClick={() => currentNumero > 1 && navigate(`/hinario/${currentNumero - 1}`)}
-            disabled={currentNumero <= 1}
-            className="flex items-center gap-1 px-2 py-1.5 bg-gray-800 hover:bg-gray-700 disabled:opacity-30 disabled:cursor-not-allowed text-white rounded-lg transition-colors text-xs"
-          >
-            <ChevronLeft className="w-3.5 h-3.5" />
-            <span>Anterior</span>
-          </button>
-
-          <form onSubmit={handleGoTo} className="flex items-center gap-1.5">
-            <input
-              type="number"
-              min={1}
-              max={totalHymns || 480}
-              value={goToInput}
-              onChange={e => setGoToInput(e.target.value)}
-              placeholder={String(currentNumero)}
-              className="w-14 px-2 py-1.5 bg-gray-800 border border-gray-600 rounded-lg text-white text-center text-xs focus:outline-none focus:ring-2 focus:ring-primary-500 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-            />
-            <span className="text-gray-500 text-xs">/ {totalHymns || '...'}</span>
-          </form>
-
-          <div className="flex items-center gap-1">
-            <button onClick={zoomOut} disabled={fontSize <= 12} className="p-1.5 bg-gray-800 hover:bg-gray-700 disabled:opacity-30 text-white rounded-lg transition-colors" title="Diminuir fonte">
-              <ZoomOut className="w-3.5 h-3.5" />
-            </button>
-            <button onClick={zoomIn} disabled={fontSize >= 32} className="p-1.5 bg-gray-800 hover:bg-gray-700 disabled:opacity-30 text-white rounded-lg transition-colors" title="Aumentar fonte">
-              <ZoomIn className="w-3.5 h-3.5" />
-            </button>
-          </div>
-
-          <button
-            onClick={() => currentNumero < totalHymns && navigate(`/hinario/${currentNumero + 1}`)}
-            disabled={currentNumero >= totalHymns}
-            className="flex items-center gap-1 px-2 py-1.5 bg-gray-800 hover:bg-gray-700 disabled:opacity-30 disabled:cursor-not-allowed text-white rounded-lg transition-colors text-xs"
-          >
-            <span>Próximo</span>
-            <ChevronRight className="w-3.5 h-3.5" />
-          </button>
-        </div>
-
         {/* Back link + share - inside sticky */}
         <div className="max-w-3xl mx-auto px-4 pb-2 flex items-center justify-between">
           <Link
@@ -288,7 +245,7 @@ const HinarioViewPage: React.FC = () => {
       </div>
 
       <div
-        className="max-w-3xl mx-auto px-4 pt-4 pb-28 md:pb-8 select-none"
+        className="max-w-3xl mx-auto px-4 pt-4 pb-8 select-none"
         onCopy={e => e.preventDefault()}
         onCut={e => e.preventDefault()}
         onContextMenu={e => e.preventDefault()}
@@ -322,66 +279,50 @@ const HinarioViewPage: React.FC = () => {
             </div>
           ))}
         </div>
-      </div>
 
-      {/* Bottom navigation bar - mobile only */}
-      <div className="fixed bottom-0 left-0 right-0 z-40 bg-gray-900/95 backdrop-blur-sm border-t border-gray-700/60 md:hidden">
-        <div className="max-w-3xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
-          {/* Prev */}
-          <button
-            onClick={() => currentNumero > 1 && navigate(`/hinario/${currentNumero - 1}`)}
-            disabled={currentNumero <= 1}
-            className="flex items-center gap-1 px-3 py-2 bg-gray-800 hover:bg-gray-700 disabled:opacity-30 disabled:cursor-not-allowed text-white rounded-lg transition-colors text-sm"
-          >
-            <ChevronLeft className="w-4 h-4" />
-            <span className="text-xs sm:text-sm">Anterior</span>
-          </button>
-
-          {/* Go-to input */}
-          <form onSubmit={handleGoTo} className="flex items-center gap-2">
-            <input
-              type="number"
-              min={1}
-              max={totalHymns || 480}
-              value={goToInput}
-              onChange={e => setGoToInput(e.target.value)}
-              placeholder={String(currentNumero)}
-              className="w-16 px-2 py-2 bg-gray-800 border border-gray-600 rounded-lg text-white text-center text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-            />
-            <span className="text-gray-500 text-xs">
-              / {totalHymns || '...'}
-            </span>
-          </form>
-
-          {/* Zoom controls */}
-          <div className="flex items-center gap-1">
+        {/* Navigation bar - below content */}
+        <div className="mt-10 mb-8 border-t border-gray-700/60 pt-6">
+          <div className="flex items-center justify-between gap-2">
             <button
-              onClick={zoomOut}
-              disabled={fontSize <= 12}
-              className="p-2 bg-gray-800 hover:bg-gray-700 disabled:opacity-30 text-white rounded-lg transition-colors"
-              title="Diminuir fonte"
+              onClick={() => currentNumero > 1 && navigate(`/hinario/${currentNumero - 1}`)}
+              disabled={currentNumero <= 1}
+              className="flex items-center gap-1 px-3 py-2 bg-gray-800 hover:bg-gray-700 disabled:opacity-30 disabled:cursor-not-allowed text-white rounded-lg transition-colors text-sm"
             >
-              <ZoomOut className="w-4 h-4" />
+              <ChevronLeft className="w-4 h-4" />
+              <span className="text-xs sm:text-sm">Anterior</span>
             </button>
+
+            <form onSubmit={handleGoTo} className="flex items-center gap-2">
+              <input
+                type="number"
+                min={1}
+                max={totalHymns || 480}
+                value={goToInput}
+                onChange={e => setGoToInput(e.target.value)}
+                placeholder={String(currentNumero)}
+                className="w-16 px-2 py-2 bg-gray-800 border border-gray-600 rounded-lg text-white text-center text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+              />
+              <span className="text-gray-500 text-xs">/ {totalHymns || '...'}</span>
+            </form>
+
+            <div className="flex items-center gap-1">
+              <button onClick={zoomOut} disabled={fontSize <= 12} className="p-2 bg-gray-800 hover:bg-gray-700 disabled:opacity-30 text-white rounded-lg transition-colors" title="Diminuir fonte">
+                <ZoomOut className="w-4 h-4" />
+              </button>
+              <button onClick={zoomIn} disabled={fontSize >= 32} className="p-2 bg-gray-800 hover:bg-gray-700 disabled:opacity-30 text-white rounded-lg transition-colors" title="Aumentar fonte">
+                <ZoomIn className="w-4 h-4" />
+              </button>
+            </div>
+
             <button
-              onClick={zoomIn}
-              disabled={fontSize >= 32}
-              className="p-2 bg-gray-800 hover:bg-gray-700 disabled:opacity-30 text-white rounded-lg transition-colors"
-              title="Aumentar fonte"
+              onClick={() => currentNumero < totalHymns && navigate(`/hinario/${currentNumero + 1}`)}
+              disabled={currentNumero >= totalHymns}
+              className="flex items-center gap-1 px-3 py-2 bg-gray-800 hover:bg-gray-700 disabled:opacity-30 disabled:cursor-not-allowed text-white rounded-lg transition-colors text-sm"
             >
-              <ZoomIn className="w-4 h-4" />
+              <span className="text-xs sm:text-sm">Próximo</span>
+              <ChevronRight className="w-4 h-4" />
             </button>
           </div>
-
-          {/* Next */}
-          <button
-            onClick={() => currentNumero < totalHymns && navigate(`/hinario/${currentNumero + 1}`)}
-            disabled={currentNumero >= totalHymns}
-            className="flex items-center gap-1 px-3 py-2 bg-gray-800 hover:bg-gray-700 disabled:opacity-30 disabled:cursor-not-allowed text-white rounded-lg transition-colors text-sm"
-          >
-            <span className="text-xs sm:text-sm">Próximo</span>
-            <ChevronRight className="w-4 h-4" />
-          </button>
         </div>
       </div>
     </>
