@@ -32,7 +32,9 @@ import {
   ChevronRight,
   Crown,
   FileText,
-  Layers
+  Layers,
+  Book,
+  BookOpen
 } from 'lucide-react';
 
 interface AdminMobileSidebarProps {
@@ -101,6 +103,8 @@ const AdminMobileSidebar: React.FC<AdminMobileSidebarProps> = ({ isOpen, onClose
         { path: '/admin/albums', label: 'Álbuns', icon: Album },
         { path: '/admin/collections', label: 'Coletâneas', icon: Layers },
         { path: '/admin/cifras', label: 'Cifras', icon: FileText },
+        { path: '/admin/bible-narrated', label: 'Bíblia Narrada', icon: Book },
+        { path: '/admin/hinario', label: 'Hinário', icon: BookOpen },
         { path: '/admin/categories', label: 'Categorias', icon: Grid },
         { path: '/admin/genres', label: 'Gêneros', icon: List },
         { path: '/admin/tags', label: 'Tags', icon: Tag }

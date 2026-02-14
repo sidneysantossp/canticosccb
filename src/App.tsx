@@ -160,6 +160,8 @@ import AdminBibleNarrated from '@/pages/admin/AdminBibleNarrated';
 import AdminBibleNarratedForm from '@/pages/admin/AdminBibleNarratedForm';
 import AdminCifras from '@/pages/admin/AdminCifras';
 import AdminCifraForm from '@/pages/admin/AdminCifraForm';
+import AdminHinario from '@/pages/admin/AdminHinario';
+import AdminHinarioForm from '@/pages/admin/AdminHinarioForm';
 import CifraPage from '@/pages/CifraPage';
 import CifrasListPage from '@/pages/CifrasListPage';
 import HinarioListPage from '@/pages/HinarioListPage';
@@ -483,6 +485,11 @@ const AppContent: React.FC = () => {
           <Route path="admin/cifras" element={<ProtectedRoute requireAdmin><AdminCifras /></ProtectedRoute>} />
           <Route path="admin/cifras/new" element={<ProtectedRoute requireAdmin><AdminCifraForm /></ProtectedRoute>} />
           <Route path="admin/cifras/:id/edit" element={<ProtectedRoute requireAdmin><AdminCifraForm /></ProtectedRoute>} />
+
+          {/* Hinário Management */}
+          <Route path="admin/hinario" element={<ProtectedRoute requireAdmin><AdminHinario /></ProtectedRoute>} />
+          <Route path="admin/hinario/new" element={<ProtectedRoute requireAdmin><AdminHinarioForm /></ProtectedRoute>} />
+          <Route path="admin/hinario/:id/edit" element={<ProtectedRoute requireAdmin><AdminHinarioForm /></ProtectedRoute>} />
 
           {/* 404 - Catch All */}
           <Route path="*" element={<NotFoundPage />} />

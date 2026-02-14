@@ -26,9 +26,11 @@ CREATE UNIQUE INDEX IF NOT EXISTS idx_hinario_numero_categoria ON hinario(numero
 -- RLS
 ALTER TABLE hinario ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "hinario_public_read" ON hinario;
 CREATE POLICY "hinario_public_read" ON hinario
   FOR SELECT USING (is_active = true);
 
+DROP POLICY IF EXISTS "hinario_admin_all" ON hinario;
 CREATE POLICY "hinario_admin_all" ON hinario
   FOR ALL USING (
     auth.role() = 'service_role'
