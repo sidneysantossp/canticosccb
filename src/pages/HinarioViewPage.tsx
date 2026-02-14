@@ -287,7 +287,13 @@ const HinarioViewPage: React.FC = () => {
         </div>
       </div>
 
-      <div className="max-w-3xl mx-auto px-4 pt-4 pb-28 md:pb-8">
+      <div
+        className="max-w-3xl mx-auto px-4 pt-4 pb-28 md:pb-8 select-none"
+        onCopy={e => e.preventDefault()}
+        onCut={e => e.preventDefault()}
+        onContextMenu={e => e.preventDefault()}
+        style={{ WebkitUserSelect: 'none', userSelect: 'none' }}
+      >
 
         {/* Hymn header */}
         <div className="mb-8">
