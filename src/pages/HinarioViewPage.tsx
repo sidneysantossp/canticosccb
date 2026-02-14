@@ -13,6 +13,9 @@ import {
   HinarioVerse,
 } from '@/api/hinario';
 
+const normalize = (str: string) =>
+  str.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+
 const HinarioViewPage: React.FC = () => {
   const { numero } = useParams<{ numero: string }>();
   const navigate = useNavigate();
@@ -69,11 +72,11 @@ const HinarioViewPage: React.FC = () => {
       setSearchResults([]);
       return;
     }
-    const q = searchQuery.toLowerCase().trim();
+    const q = normalize(searchQuery.trim());
     const results = allHymns.filter(h =>
       String(h.numero) === q ||
       String(h.numero).startsWith(q) ||
-      h.titulo.toLowerCase().includes(q)
+      normalize(h.titulo).includes(q)
     ).slice(0, 15);
     setSearchResults(results);
   }, [searchQuery, allHymns]);

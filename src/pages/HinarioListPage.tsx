@@ -5,6 +5,9 @@ import SEOHead from '@/components/SEO/SEOHead';
 import { generateBreadcrumbSchema } from '@/utils/schemaGenerator';
 import { fetchHinarioList, HinarioHymn, HINARIO_CATEGORIES } from '@/api/hinario';
 
+const normalize = (str: string) =>
+  str.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+
 const HinarioListPage: React.FC = () => {
   const [hymns, setHymns] = useState<HinarioHymn[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -28,9 +31,11 @@ const HinarioListPage: React.FC = () => {
   };
 
   const filtered = hymns.filter(h => {
+    const q = normalize(searchTerm.trim());
     const matchSearch = !searchTerm ||
-      h.titulo.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      String(h.numero) === searchTerm.trim();
+      normalize(h.titulo).includes(q) ||
+      String(h.numero) === searchTerm.trim() ||
+      String(h.numero).startsWith(searchTerm.trim());
     const matchCategory = !filterCategory || h.categoria === filterCategory;
     return matchSearch && matchCategory;
   });
