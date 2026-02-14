@@ -266,17 +266,15 @@ const HinarioViewPage: React.FC = () => {
             <ChevronRight className="w-3.5 h-3.5" />
           </button>
         </div>
-      </div>
 
-      <div className="max-w-3xl mx-auto px-4 pt-4 pb-28 md:pb-8">
-        {/* Back link + share */}
-        <div className="flex items-center justify-between mb-6">
+        {/* Back link + share - inside sticky */}
+        <div className="max-w-3xl mx-auto px-4 pb-2 flex items-center justify-between">
           <Link
             to="/hinario"
-            className="inline-flex items-center gap-2 text-gray-400 hover:text-white transition-colors"
+            className="inline-flex items-center gap-2 text-primary-400 hover:text-primary-300 transition-colors"
           >
             <ArrowLeft className="w-4 h-4" />
-            <span className="text-sm">Hinário</span>
+            <span className="text-sm font-medium">Voltar</span>
           </Link>
 
           <button
@@ -287,6 +285,9 @@ const HinarioViewPage: React.FC = () => {
             <Share2 className="w-4 h-4" />
           </button>
         </div>
+      </div>
+
+      <div className="max-w-3xl mx-auto px-4 pt-4 pb-28 md:pb-8">
 
         {/* Hymn header */}
         <div className="mb-8">
