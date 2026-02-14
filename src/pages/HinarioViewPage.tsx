@@ -265,7 +265,7 @@ const HinarioViewPage: React.FC = () => {
         </div>
       </div>
 
-      <div className="max-w-3xl mx-auto px-4 pt-4 pb-28">
+      <div className="max-w-3xl mx-auto px-4 pt-4 pb-28 md:pb-8">
         {/* Back link + share */}
         <div className="flex items-center justify-between mb-6">
           <Link
@@ -314,8 +314,8 @@ const HinarioViewPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Bottom navigation bar - fixed */}
-      <div className="fixed bottom-0 left-0 right-0 z-40 bg-gray-900/95 backdrop-blur-sm border-t border-gray-700/60">
+      {/* Bottom navigation bar - mobile only */}
+      <div className="fixed bottom-0 left-0 right-0 z-40 bg-gray-900/95 backdrop-blur-sm border-t border-gray-700/60 md:hidden">
         <div className="max-w-3xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
           {/* Prev */}
           <button
