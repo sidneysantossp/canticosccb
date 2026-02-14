@@ -99,7 +99,7 @@ const HinarioListPage: React.FC = () => {
             </p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
             {filtered.map(hymn => (
               <Link
                 key={hymn.id}
@@ -110,7 +110,7 @@ const HinarioListPage: React.FC = () => {
                   <span className="text-primary-400 font-bold text-lg">{hymn.numero}</span>
                 </div>
                 <div className="flex-1 min-w-0">
-                  <h3 className="text-white font-medium group-hover:text-primary-400 transition-colors line-clamp-1 text-sm">
+                  <h3 className="text-white font-medium group-hover:text-primary-400 transition-colors text-sm">
                     {hymn.titulo}
                   </h3>
                   {hymn.subtitulo && (
