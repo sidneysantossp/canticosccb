@@ -152,7 +152,7 @@ const HinarioViewPage: React.FC = () => {
 
         {/* Hymn header */}
         <div className="mb-8">
-          <h1 className="text-2xl md:text-3xl font-bold text-white leading-tight">
+          <h1 className="text-lg md:text-2xl font-bold text-white leading-tight">
             {hymn.numero} - {hymn.titulo}
           </h1>
           {hymn.subtitulo && (
@@ -189,7 +189,7 @@ const HinarioViewPage: React.FC = () => {
             className="flex items-center gap-1 px-3 py-2 bg-gray-800 hover:bg-gray-700 disabled:opacity-30 disabled:cursor-not-allowed text-white rounded-lg transition-colors text-sm"
           >
             <ChevronLeft className="w-4 h-4" />
-            <span className="hidden sm:inline">Anterior</span>
+            <span className="text-xs sm:text-sm">Anterior</span>
           </button>
 
           {/* Go-to input */}
@@ -203,7 +203,7 @@ const HinarioViewPage: React.FC = () => {
               placeholder={String(currentNumero)}
               className="w-16 px-2 py-2 bg-gray-800 border border-gray-600 rounded-lg text-white text-center text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
             />
-            <span className="text-gray-500 text-xs hidden sm:inline">
+            <span className="text-gray-500 text-xs">
               / {totalHymns || '...'}
             </span>
           </form>
@@ -234,7 +234,7 @@ const HinarioViewPage: React.FC = () => {
             disabled={currentNumero >= totalHymns}
             className="flex items-center gap-1 px-3 py-2 bg-gray-800 hover:bg-gray-700 disabled:opacity-30 disabled:cursor-not-allowed text-white rounded-lg transition-colors text-sm"
           >
-            <span className="hidden sm:inline">Próximo</span>
+            <span className="text-xs sm:text-sm">Próximo</span>
             <ChevronRight className="w-4 h-4" />
           </button>
         </div>
