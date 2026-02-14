@@ -1,11 +1,12 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { ArrowLeft, ChevronLeft, ChevronRight, ZoomIn, ZoomOut, BookOpen, Share2 } from 'lucide-react';
+import { ArrowLeft, ChevronLeft, ChevronRight, ZoomIn, ZoomOut, BookOpen, Share2, Search, X } from 'lucide-react';
 import SEOHead from '@/components/SEO/SEOHead';
 import { generateBreadcrumbSchema } from '@/utils/schemaGenerator';
 import {
   fetchHinarioByNumero,
   fetchHinarioCount,
+  fetchHinarioList,
   incrementHinarioViews,
   parseVerses,
   HinarioHymn,
@@ -23,6 +24,12 @@ const HinarioViewPage: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [fontSize, setFontSize] = useState(18);
   const [goToInput, setGoToInput] = useState('');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState<HinarioHymn[]>([]);
+  const [allHymns, setAllHymns] = useState<HinarioHymn[]>([]);
+  const [showSearch, setShowSearch] = useState(false);
+  const searchRef = useRef<HTMLDivElement>(null);
+  const searchInputRef = useRef<HTMLInputElement>(null);
 
   const currentNumero = Number(numero) || 1;
 
@@ -53,7 +60,41 @@ const HinarioViewPage: React.FC = () => {
 
   useEffect(() => {
     fetchHinarioCount().then(setTotalHymns);
+    fetchHinarioList({ is_active: true }).then(setAllHymns);
   }, []);
+
+  // Search filter
+  useEffect(() => {
+    if (!searchQuery.trim()) {
+      setSearchResults([]);
+      return;
+    }
+    const q = searchQuery.toLowerCase().trim();
+    const results = allHymns.filter(h =>
+      String(h.numero) === q ||
+      String(h.numero).startsWith(q) ||
+      h.titulo.toLowerCase().includes(q)
+    ).slice(0, 15);
+    setSearchResults(results);
+  }, [searchQuery, allHymns]);
+
+  // Close search on click outside
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (searchRef.current && !searchRef.current.contains(e.target as Node)) {
+        setShowSearch(false);
+        setSearchQuery('');
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const handleSelectHymn = (num: number) => {
+    setShowSearch(false);
+    setSearchQuery('');
+    navigate(`/hinario/${num}`);
+  };
 
   // Keyboard navigation
   useEffect(() => {
@@ -130,8 +171,57 @@ const HinarioViewPage: React.FC = () => {
         ]}
       />
 
-      {/* Top navigation bar */}
+      {/* Top sticky area: search + nav */}
       <div className="sticky top-0 z-30 bg-gray-900/95 backdrop-blur-sm border-b border-gray-700/60">
+        {/* Search bar */}
+        <div className="max-w-3xl mx-auto px-4 pt-2 pb-1" ref={searchRef}>
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+            <input
+              ref={searchInputRef}
+              type="text"
+              value={searchQuery}
+              onChange={e => { setSearchQuery(e.target.value); setShowSearch(true); }}
+              onFocus={() => setShowSearch(true)}
+              placeholder="Buscar hino por número ou nome..."
+              className="w-full pl-9 pr-8 py-2 bg-gray-800/80 border border-gray-700 rounded-lg text-white text-sm placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary-500"
+            />
+            {searchQuery && (
+              <button
+                onClick={() => { setSearchQuery(''); setShowSearch(false); }}
+                className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-gray-400 hover:text-white"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            )}
+
+            {/* Dropdown results */}
+            {showSearch && searchResults.length > 0 && (
+              <div className="absolute top-full left-0 right-0 mt-1 bg-gray-800 border border-gray-700 rounded-lg shadow-xl max-h-64 overflow-y-auto z-50">
+                {searchResults.map(h => (
+                  <button
+                    key={h.id}
+                    onClick={() => handleSelectHymn(h.numero)}
+                    className={`w-full flex items-center gap-3 px-4 py-2.5 text-left hover:bg-gray-700/70 transition-colors ${
+                      h.numero === currentNumero ? 'bg-primary-500/10 border-l-2 border-primary-500' : ''
+                    }`}
+                  >
+                    <span className="text-primary-400 font-bold text-sm w-8 text-right flex-shrink-0">{h.numero}</span>
+                    <span className="text-gray-200 text-sm truncate">{h.titulo}</span>
+                  </button>
+                ))}
+              </div>
+            )}
+
+            {showSearch && searchQuery.trim() && searchResults.length === 0 && (
+              <div className="absolute top-full left-0 right-0 mt-1 bg-gray-800 border border-gray-700 rounded-lg shadow-xl p-4 z-50">
+                <p className="text-gray-500 text-sm text-center">Nenhum hino encontrado</p>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Navigation bar */}
         <div className="max-w-3xl mx-auto px-4 py-2 flex items-center justify-between gap-2">
           <button
             onClick={() => currentNumero > 1 && navigate(`/hinario/${currentNumero - 1}`)}
