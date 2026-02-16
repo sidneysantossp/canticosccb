@@ -12,7 +12,7 @@ import usePlaylistsStore from '@/stores/playlistsStore';
 import { usePlayerContext } from '@/contexts/PlayerContext';
 import { useTouchScroll } from '@/hooks/useTouchScroll';
 import { useFavorites } from '@/hooks/useFavorites';
-import { generateWebsiteSchema, generateOrganizationSchema } from '@/utils/schemaGenerator';
+import { generateWebsiteSchema, generateOrganizationSchema, generateFAQSchema } from '@/utils/schemaGenerator';
 import { getHomePageData, type HomePageData } from '@/lib/homeApi';
 import { getPersonalizedHomeData, type PersonalizedData, type RecTrack } from '@/lib/recommendations';
 import LoginRequiredModal from '@/components/modals/LoginRequiredModal';
@@ -121,10 +121,35 @@ const mapSupabasePopularHino = (row: SupabaseHymnRow, index: number): PopularHin
 });
 
 const HomePage: React.FC = () => {
+  // FAQ data for SEO
+  const homeFAQs = [
+    {
+      question: 'Como ouvir hinos da CCB online grátis?',
+      answer: 'No Cânticos CCB você pode ouvir todos os hinos do Hinário 5 gratuitamente, tanto cantados quanto tocados (instrumentais). Basta acessar canticosccb.com.br e buscar pelo número ou nome do hino.'
+    },
+    {
+      question: 'O que é o Hinário 5 da CCB?',
+      answer: 'O Hinário 5, oficialmente chamado "Hinos de Louvores e Súplicas a Deus", é o livro de hinos utilizado nos cultos da Congregação Cristã no Brasil. Contém 480 hinos com letras e partituras musicais.'
+    },
+    {
+      question: 'Quantos hinos tem o Hinário 5?',
+      answer: 'O Hinário 5 possui 480 hinos numerados, utilizados nos cultos e reuniões da Congregação Cristã no Brasil.'
+    },
+    {
+      question: 'O que são cifras de hinos da CCB?',
+      answer: 'Cifras são representações simplificadas das notas musicais e acordes de um hino, permitindo que músicos toquem os hinos em instrumentos como violão, teclado e outros. O Cânticos CCB oferece cifras gratuitas com transposição de tom.'
+    },
+    {
+      question: 'Posso criar playlists de hinos da CCB?',
+      answer: 'Sim! No Cânticos CCB você pode criar uma conta gratuita, salvar seus hinos favoritos e criar playlists personalizadas para ouvir a qualquer momento.'
+    },
+  ];
+
   // Schema combinado para homepage
   const schemas = [
     generateWebsiteSchema(),
-    generateOrganizationSchema()
+    generateOrganizationSchema(),
+    generateFAQSchema(homeFAQs),
   ];
   const { play, pause, currentTrack, isPlaying } = usePlayerStore();
   const { openFullScreen } = usePlayerContext();
@@ -514,11 +539,11 @@ const HomePage: React.FC = () => {
   return (
     <>
       <SEOHead
-        title="Início"
-        description="Plataforma de hinos da Congregação Cristã no Brasil. Ouça hinos clássicos, louvor e adoração. Descubra compositores e crie suas playlists."
-        keywords="ccb, congregação cristã, hinos, hinos religiosos, louvor, adoração, playlist gospel"
+        title="Cânticos CCB — Ouça Hinos da Congregação Cristã no Brasil | Hinário 5, Cifras e Compositores"
+        description="Ouça hinos da CCB online grátis. Hinário 5 completo com hinos cantados e tocados, cifras, compositores e playlists da Congregação Cristã no Brasil. Crie sua conta e salve seus hinos favoritos."
+        keywords="hinos CCB, hinário 5, congregação cristã no brasil, cifras CCB, hinos cantados, hinos tocados, compositores CCB, ouvir hinos CCB online grátis, hinos de louvores e súplicas a deus"
         canonical="/"
-        ogImage="/images/og-home.jpg"
+        ogImage="/logo-canticos-ccb.png"
         schemaData={schemas}
       />
       
@@ -609,6 +634,26 @@ const HomePage: React.FC = () => {
           <BibleSection />
         </div>
       )}
+
+      {/* FAQ Section - SEO */}
+      <div className="px-6">
+        <div className="max-w-4xl mx-auto">
+          <h2 className="text-xl md:text-2xl font-bold text-white mb-6">Perguntas Frequentes</h2>
+          <div className="space-y-4">
+            {homeFAQs.map((faq, i) => (
+              <details key={i} className="group bg-gray-800/40 border border-gray-700/50 rounded-xl overflow-hidden">
+                <summary className="flex items-center justify-between px-5 py-4 cursor-pointer text-white font-medium text-sm md:text-base hover:bg-gray-800/60 transition-colors list-none">
+                  <span>{faq.question}</span>
+                  <span className="ml-4 text-gray-400 group-open:rotate-180 transition-transform text-xs">▼</span>
+                </summary>
+                <div className="px-5 pb-4 text-gray-400 text-sm leading-relaxed">
+                  {faq.answer}
+                </div>
+              </details>
+            ))}
+          </div>
+        </div>
+      </div>
 
       {/* Banner CTA */}
       <div className="px-6">

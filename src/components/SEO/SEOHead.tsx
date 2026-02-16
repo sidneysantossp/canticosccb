@@ -21,7 +21,7 @@ const SEOHead: React.FC<SEOProps> = ({
   keywords,
   canonical,
   ogType = 'website',
-  ogImage = '/images/og-default.jpg',
+  ogImage = '/logo-canticos-ccb.png',
   ogUrl,
   twitterCard = 'summary_large_image',
   schemaData,

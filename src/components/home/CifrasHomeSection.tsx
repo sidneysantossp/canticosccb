@@ -79,7 +79,7 @@ const CifrasHomeSection: React.FC = () => {
             {cifra.cover_url ? (
               <img
                 src={cifra.cover_url}
-                alt=""
+                alt={`Cifra de ${cifra.title}`}
                 className="w-11 h-11 rounded-lg object-cover flex-shrink-0"
               />
             ) : (

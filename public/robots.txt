@@ -7,7 +7,9 @@ Allow: /
 # Sitemap
 Sitemap: https://canticosccb.com.br/sitemap.xml
 
-# Disallow private areas
+# Disallow private/auth areas
+Disallow: /admin
+Disallow: /admin/*
 Disallow: /composer/dashboard
 Disallow: /composer/analytics
 Disallow: /composer/songs/upload
@@ -15,24 +17,46 @@ Disallow: /composer/albums/create
 Disallow: /settings
 Disallow: /edit-profile
 Disallow: /subscription
-
-# Disallow auth pages
 Disallow: /login
 Disallow: /register
 Disallow: /onboarding
 Disallow: /composer/onboarding
 
-# Allow public pages
-Allow: /
+# Allow all public content
+Allow: /hino/*
+Allow: /album/*
+Allow: /compositor/*
+Allow: /cifras
+Allow: /cifras/*
+Allow: /hinario
+Allow: /hinario/*
 Allow: /search
-Allow: /library
-Allow: /premium
+Allow: /categorias/*
+Allow: /trends
 Allow: /about
 Allow: /terms
-Allow: /artist/*
-Allow: /album/*
-Allow: /song/*
-Allow: /playlist/*
 
-# Crawl delay (optional, adjust if needed)
-# Crawl-delay: 1
+# AI Crawlers - explicitly allowed
+User-agent: GPTBot
+Allow: /
+
+User-agent: ClaudeBot
+Allow: /
+
+User-agent: Google-Extended
+Allow: /
+
+User-agent: Applebot-Extended
+Allow: /
+
+User-agent: PerplexityBot
+Allow: /
+
+User-agent: Bytespider
+Allow: /
+
+# Content signals for AI
+# search=yes: content should appear in search results
+# ai-input=yes: content may be cited in AI responses (RAG)
+# ai-train=no: content should NOT be used for model training
+Content-Signal: search=yes,ai-input=yes,ai-train=no

@@ -129,7 +129,7 @@ const CifrasListPage: React.FC = () => {
             >
               <div className="flex items-start gap-3">
                 {cifra.cover_url ? (
-                  <img src={cifra.cover_url} alt="" className="w-14 h-14 rounded-lg object-cover flex-shrink-0" />
+                  <img src={cifra.cover_url} alt={`Cifra de ${cifra.title}`} className="w-14 h-14 rounded-lg object-cover flex-shrink-0" />
                 ) : (
                   <div className="w-14 h-14 rounded-lg bg-gray-700/50 flex items-center justify-center flex-shrink-0">
                     <Music className="w-6 h-6 text-gray-500" />
