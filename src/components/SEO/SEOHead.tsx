@@ -34,7 +34,8 @@ const SEOHead: React.FC<SEOProps> = ({
   const cleanPath = window.location.pathname;
   const defaultUrl = `${baseUrl}${cleanPath}`;
   const canonicalUrl = canonical ? (canonical.startsWith('http') ? canonical : `${baseUrl}${canonical}`) : defaultUrl;
-  const imageUrl = ogImage.startsWith('http') ? ogImage : `${baseUrl}${ogImage}`;
+  const resolvedImage = ogImage || '/logo-canticos-ccb.png';
+  const imageUrl = resolvedImage.startsWith('http') ? resolvedImage : `${baseUrl}${resolvedImage}`;
   const pageUrl = ogUrl ? (ogUrl.startsWith('http') ? ogUrl : `${baseUrl}${ogUrl}`) : canonicalUrl;
 
   // Robots meta tag
