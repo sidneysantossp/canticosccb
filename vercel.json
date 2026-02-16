@@ -1,6 +1,46 @@
 {
   "rewrites": [
     {
+      "source": "/hino/:path*",
+      "has": [{ "type": "header", "key": "user-agent", "value": "(?i).*(googlebot|bingbot|yandexbot|duckduckbot|slurp|baiduspider|facebookexternalhit|twitterbot|linkedinbot|whatsapp|telegrambot|discordbot|applebot|pinterest|redditbot|gptbot|claudebot|google-extended|applebot-extended|perplexitybot|bytespider|ccbot|amazonbot|meta-externalagent|petalbot|semrushbot|ahrefsbot|mj12bot|embedly|quora|showyoubot|outbrain|rogerbot|screaming.frog).*" }],
+      "destination": "/api/ssr?path=/hino/:path*"
+    },
+    {
+      "source": "/compositor/:path*",
+      "has": [{ "type": "header", "key": "user-agent", "value": "(?i).*(googlebot|bingbot|yandexbot|duckduckbot|slurp|baiduspider|facebookexternalhit|twitterbot|linkedinbot|whatsapp|telegrambot|discordbot|applebot|pinterest|redditbot|gptbot|claudebot|google-extended|applebot-extended|perplexitybot|bytespider|ccbot|amazonbot|meta-externalagent|petalbot|semrushbot|ahrefsbot|mj12bot|embedly|quora|showyoubot|outbrain|rogerbot|screaming.frog).*" }],
+      "destination": "/api/ssr?path=/compositor/:path*"
+    },
+    {
+      "source": "/album/:path*",
+      "has": [{ "type": "header", "key": "user-agent", "value": "(?i).*(googlebot|bingbot|yandexbot|duckduckbot|slurp|baiduspider|facebookexternalhit|twitterbot|linkedinbot|whatsapp|telegrambot|discordbot|applebot|pinterest|redditbot|gptbot|claudebot|google-extended|applebot-extended|perplexitybot|bytespider|ccbot|amazonbot|meta-externalagent|petalbot|semrushbot|ahrefsbot|mj12bot|embedly|quora|showyoubot|outbrain|rogerbot|screaming.frog).*" }],
+      "destination": "/api/ssr?path=/album/:path*"
+    },
+    {
+      "source": "/hinario/:numero",
+      "has": [{ "type": "header", "key": "user-agent", "value": "(?i).*(googlebot|bingbot|yandexbot|duckduckbot|slurp|baiduspider|facebookexternalhit|twitterbot|linkedinbot|whatsapp|telegrambot|discordbot|applebot|pinterest|redditbot|gptbot|claudebot|google-extended|applebot-extended|perplexitybot|bytespider|ccbot|amazonbot|meta-externalagent|petalbot|semrushbot|ahrefsbot|mj12bot|embedly|quora|showyoubot|outbrain|rogerbot|screaming.frog).*" }],
+      "destination": "/api/ssr?path=/hinario/:numero"
+    },
+    {
+      "source": "/hinario",
+      "has": [{ "type": "header", "key": "user-agent", "value": "(?i).*(googlebot|bingbot|yandexbot|duckduckbot|slurp|baiduspider|facebookexternalhit|twitterbot|linkedinbot|whatsapp|telegrambot|discordbot|applebot|pinterest|redditbot|gptbot|claudebot|google-extended|applebot-extended|perplexitybot|bytespider|ccbot|amazonbot|meta-externalagent|petalbot|semrushbot|ahrefsbot|mj12bot|embedly|quora|showyoubot|outbrain|rogerbot|screaming.frog).*" }],
+      "destination": "/api/ssr?path=/hinario"
+    },
+    {
+      "source": "/cifra/:slug*",
+      "has": [{ "type": "header", "key": "user-agent", "value": "(?i).*(googlebot|bingbot|yandexbot|duckduckbot|slurp|baiduspider|facebookexternalhit|twitterbot|linkedinbot|whatsapp|telegrambot|discordbot|applebot|pinterest|redditbot|gptbot|claudebot|google-extended|applebot-extended|perplexitybot|bytespider|ccbot|amazonbot|meta-externalagent|petalbot|semrushbot|ahrefsbot|mj12bot|embedly|quora|showyoubot|outbrain|rogerbot|screaming.frog).*" }],
+      "destination": "/api/ssr?path=/cifra/:slug*"
+    },
+    {
+      "source": "/cifras",
+      "has": [{ "type": "header", "key": "user-agent", "value": "(?i).*(googlebot|bingbot|yandexbot|duckduckbot|slurp|baiduspider|facebookexternalhit|twitterbot|linkedinbot|whatsapp|telegrambot|discordbot|applebot|pinterest|redditbot|gptbot|claudebot|google-extended|applebot-extended|perplexitybot|bytespider|ccbot|amazonbot|meta-externalagent|petalbot|semrushbot|ahrefsbot|mj12bot|embedly|quora|showyoubot|outbrain|rogerbot|screaming.frog).*" }],
+      "destination": "/api/ssr?path=/cifras"
+    },
+    {
+      "source": "/:path(trends|tendencias|about|sobre|search|buscar|compositores|albuns|termos|premium)",
+      "has": [{ "type": "header", "key": "user-agent", "value": "(?i).*(googlebot|bingbot|yandexbot|duckduckbot|slurp|baiduspider|facebookexternalhit|twitterbot|linkedinbot|whatsapp|telegrambot|discordbot|applebot|pinterest|redditbot|gptbot|claudebot|google-extended|applebot-extended|perplexitybot|bytespider|ccbot|amazonbot|meta-externalagent|petalbot|semrushbot|ahrefsbot|mj12bot|embedly|quora|showyoubot|outbrain|rogerbot|screaming.frog).*" }],
+      "destination": "/api/ssr?path=/:path"
+    },
+    {
       "source": "/((?!.*\\.(?:png|jpg|jpeg|gif|svg|ico|css|js|woff|woff2|ttf|eot|pdf|zip|mp3|mp4|webm|ogg)$).*)",
       "destination": "/index.html"
     }

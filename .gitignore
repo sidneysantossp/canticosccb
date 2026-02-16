@@ -69,7 +69,8 @@ Thumbs.db
 **/secrets.*
 
 # Backend/PHP and media (do not push to Vercel)
-/api/
+/api/*
+!/api/ssr.ts
 vendor/
 media/
 media_protegida/
