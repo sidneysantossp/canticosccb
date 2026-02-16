@@ -255,14 +255,15 @@ async function handleHinarioView(numero: string): Promise<PageMeta | null> {
   if (isNaN(num)) return null;
   const rows = await supaFetch('hinario', {
     numero: `eq.${num}`,
-    select: 'id,numero,titulo,letra,compositor,tom',
+    is_active: 'eq.true',
+    select: 'id,numero,titulo,subtitulo,conteudo,categoria',
     limit: '1',
   });
   if (!rows.length) return null;
   const h = rows[0];
   const titulo = h.titulo || '';
   const title = `Hino ${h.numero} — ${titulo} | Letra Completa do Hinário 5 | Cânticos CCB`;
-  const desc = `Leia a letra completa do Hino ${h.numero} "${titulo}" do Hinário 5 da CCB.${h.compositor ? ` Compositor: ${h.compositor}.` : ''}`;
+  const desc = `Leia a letra completa do Hino ${h.numero} "${titulo}" do Hinário 5 da Congregação Cristã no Brasil.${h.subtitulo ? ` ${h.subtitulo}.` : ''}`;
   const canonical = `${SITE_URL}/hinario/${h.numero}`;
 
   const schema = {
@@ -270,7 +271,6 @@ async function handleHinarioView(numero: string): Promise<PageMeta | null> {
     name: `Hino ${h.numero} — ${titulo}`, url: canonical,
     inLanguage: 'pt-BR', genre: 'Hino Religioso',
     isPartOf: { '@type': 'Book', name: 'Hinário 5 — Hinos de Louvores e Súplicas a Deus' },
-    ...(h.compositor ? { author: { '@type': 'Person', name: h.compositor } } : {}),
   };
   const breadcrumb = {
     '@context': 'https://schema.org', '@type': 'BreadcrumbList',
@@ -281,8 +281,8 @@ async function handleHinarioView(numero: string): Promise<PageMeta | null> {
     ],
   };
 
-  const letraHtml = h.letra
-    ? `<section><h2>Letra</h2><div style="white-space:pre-line;">${esc(h.letra)}</div></section>`
+  const conteudoHtml = h.conteudo
+    ? `<section><h2>Letra do Hino ${h.numero}</h2><div style="white-space:pre-line;">${esc(h.conteudo)}</div></section>`
     : '';
 
   return {
@@ -291,9 +291,8 @@ async function handleHinarioView(numero: string): Promise<PageMeta | null> {
     bodyHtml: `
       <nav><a href="${SITE_URL}">Início</a> &rsaquo; <a href="${SITE_URL}/hinario">Hinário</a> &rsaquo; Hino ${h.numero}</nav>
       <h1>Hino ${h.numero} — ${esc(titulo)}</h1>
-      ${h.compositor ? `<p><strong>Compositor:</strong> ${esc(h.compositor)}</p>` : ''}
-      ${h.tom ? `<p><strong>Tom:</strong> ${esc(h.tom)}</p>` : ''}
-      ${letraHtml}
+      ${h.subtitulo ? `<p>${esc(h.subtitulo)}</p>` : ''}
+      ${conteudoHtml}
       <nav style="margin-top:20px;">
         ${num > 1 ? `<a href="${SITE_URL}/hinario/${num - 1}">&larr; Hino ${num - 1}</a> ` : ''}
         ${num < 480 ? `<a href="${SITE_URL}/hinario/${num + 1}">Hino ${num + 1} &rarr;</a>` : ''}
