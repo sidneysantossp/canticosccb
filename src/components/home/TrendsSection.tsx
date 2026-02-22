@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { TrendingUp, Play, Pause, Heart, MoreHorizontal } from 'lucide-react';
+import { TrendingUp, Play, Pause, Heart, MoreHorizontal, Music } from 'lucide-react';
 import { buildHinoUrl } from '@/utils/slugUrl';
 
 export type TrendItem = {
@@ -61,12 +61,18 @@ const TrendsSection: React.FC<Props> = ({
             <div className="flex gap-3">
               {/* Cover Image */}
               <div className="relative flex-shrink-0">
-                <img
-                  src={hino.coverUrl}
-                  alt={hino.title}
-                  className="w-12 h-12 sm:w-14 sm:h-14 rounded object-cover"
-                  loading="lazy"
-                />
+                {hino.coverUrl && hino.coverUrl.trim() !== '' ? (
+                  <img
+                    src={hino.coverUrl}
+                    alt={hino.title}
+                    className="w-12 h-12 sm:w-14 sm:h-14 rounded object-cover"
+                    loading="lazy"
+                  />
+                ) : (
+                  <div className="w-12 h-12 sm:w-14 sm:h-14 rounded bg-background-tertiary flex items-center justify-center">
+                    <Music className="w-5 h-5 sm:w-6 sm:h-6 text-gray-500" />
+                  </div>
+                )}
                 <button
                   onClick={() => onTogglePlay(hino)}
                   className="absolute inset-0 bg-black/60 rounded flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
