@@ -71,6 +71,7 @@ Thumbs.db
 # Backend/PHP and media (do not push to Vercel)
 /api/*
 !/api/ssr.ts
+!/api/archive-proxy.ts
 vendor/
 media/
 media_protegida/
