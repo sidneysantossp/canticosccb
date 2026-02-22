@@ -276,8 +276,14 @@ const HomePage: React.FC = () => {
         });
         if (rows.length > 0) {
           const mapped = rows.map(mapSupabasePopularHino);
-          const diversified = diversifyByArtist(mapped, 12);
-          setHomepageTrends(diversified);
+          // Separate hymns with and without covers
+          const withCover = mapped.filter(h => h.coverUrl && h.coverUrl.trim() !== '');
+          const withoutCover = mapped.filter(h => !h.coverUrl || h.coverUrl.trim() === '');
+          // Prioritize hymns with covers, then fill remaining slots with no-cover
+          const diversifiedCover = diversifyByArtist(withCover, 9);
+          const diversifiedNoCover = diversifyByArtist(withoutCover, 3);
+          const combined = [...diversifiedCover, ...diversifiedNoCover].slice(0, 12);
+          setHomepageTrends(combined);
         }
       } catch (error) {
         console.error('❌ Error loading recent hymns:', error);
