@@ -182,7 +182,7 @@ const HomePage: React.FC = () => {
   const [homepageTrends, setHomepageTrends] = useState<PopularHino[]>([]);
 
   const popularHinos: PopularHino[] = homepageTrends;
-  const popularHinosFiltered: PopularHino[] = popularHinos.filter(h => !!h.coverUrl && h.coverUrl.trim() !== '');
+  const popularHinosFiltered: PopularHino[] = popularHinos;
   
   console.log('ðŸŽµ Popular Hinos:', popularHinos.length, 'items');
 
