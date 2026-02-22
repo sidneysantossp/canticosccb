@@ -1,8 +1,7 @@
 // Logos Management — Supabase REST + Storage
 import { supabaseFetch, supabaseUpdate, supabaseInsert } from '@/lib/supabaseRest';
-import { uploadFile } from '@/lib/supabase-upload';
 
-export type LogoType = 'favicon' | 'primary' | 'secondary' | 'dark' | 'light' | 'icon' | 'watermark' | 'social';
+export type LogoType = 'favicon' | 'primary' | 'secondary' | 'social';
 
 export interface Logo {
   id: string;
@@ -17,10 +16,10 @@ export interface Logo {
 
 // Fallback data when table doesn't exist yet
 const FALLBACK_LOGOS: Logo[] = [
-  { id: '0', type: 'primary', name: 'Logo Principal', url: 'https://canticosccb.com.br/logo-canticos-ccb.png', width: 300, height: 80, updated_at: new Date().toISOString() },
+  { id: '0', type: 'primary', name: 'Logo Principal (Claro)', url: 'https://canticosccb.com.br/logo-canticos-ccb.png', width: 300, height: 80, updated_at: new Date().toISOString() },
+  { id: '0', type: 'secondary', name: 'Logo Alternativo (Escuro)', url: '', width: 0, height: 0, updated_at: new Date().toISOString() },
   { id: '0', type: 'favicon', name: 'Favicon', url: '/icons/favicon.svg', width: 32, height: 32, updated_at: new Date().toISOString() },
-  { id: '0', type: 'dark', name: 'Logo Escuro', url: '', width: 0, height: 0, updated_at: new Date().toISOString() },
-  { id: '0', type: 'social', name: 'Imagem Social (OG)', url: 'https://canticosccb.com.br/logo-canticos-ccb.png', width: 1200, height: 630, updated_at: new Date().toISOString() },
+  { id: '0', type: 'social', name: 'Imagem para Redes Sociais', url: 'https://canticosccb.com.br/logo-canticos-ccb.png', width: 1200, height: 630, updated_at: new Date().toISOString() },
 ];
 
 const mapRow = (r: any): Logo => ({
@@ -65,9 +64,8 @@ export const updateLogo = async (
     if (Array.isArray(result) && result.length === 0) {
       // Row doesn't exist yet — insert it
       const nameMap: Record<string, string> = {
-        primary: 'Logo Principal', secondary: 'Logo Secundário', dark: 'Logo Escuro',
-        light: 'Logo Claro', favicon: 'Favicon', social: 'Imagem Social (OG)',
-        icon: 'Ícone', watermark: 'Marca d\'água',
+        primary: 'Logo Principal (Claro)', secondary: 'Logo Alternativo (Escuro)',
+        favicon: 'Favicon', social: 'Imagem para Redes Sociais',
       };
       await supabaseInsert('site_logos', {
         type: logoType,
@@ -86,8 +84,39 @@ export const updateLogo = async (
 };
 
 export const uploadLogoImage = async (file: File, logoType: LogoType): Promise<string> => {
-  const url = await uploadFile(file, 'covers');
-  return url;
+  const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
+  const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
+  if (!SUPABASE_URL || !SUPABASE_ANON_KEY) throw new Error('Supabase não configurado');
+
+  // Get auth token
+  let accessToken = SUPABASE_ANON_KEY;
+  try {
+    const { supabase } = await import('@/lib/supabase-auth');
+    const { data } = await supabase.auth.getSession();
+    if (data?.session?.access_token) accessToken = data.session.access_token;
+  } catch { /* use anon */ }
+
+  const ext = file.name.split('.').pop() || 'png';
+  const path = `logos/${logoType}-${Date.now()}.${ext}`;
+  const uploadUrl = `${SUPABASE_URL}/storage/v1/object/logos/${path}`;
+
+  const response = await fetch(uploadUrl, {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${accessToken}`,
+      'apikey': SUPABASE_ANON_KEY,
+      'Content-Type': file.type,
+      'x-upsert': 'true',
+    },
+    body: file,
+  });
+
+  if (!response.ok) {
+    const errText = await response.text().catch(() => '');
+    throw new Error(`Upload falhou: ${response.status} - ${errText}`);
+  }
+
+  return `${SUPABASE_URL}/storage/v1/object/public/logos/${path}`;
 };
 
 export const getImageDimensions = (file: File): Promise<{ width: number; height: number }> => {
