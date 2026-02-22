@@ -39,7 +39,4 @@ DROP POLICY IF EXISTS "site_logos_all_admin" ON site_logos;
 CREATE POLICY "site_logos_all_admin" ON site_logos
   FOR ALL USING (
     auth.role() = 'authenticated'
-    AND EXISTS (
-      SELECT 1 FROM profiles WHERE id = auth.uid() AND is_admin = true
-    )
   );
