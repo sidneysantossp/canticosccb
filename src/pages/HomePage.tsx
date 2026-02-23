@@ -280,9 +280,11 @@ const HomePage: React.FC = () => {
           const withCover = mapped.filter(h => h.coverUrl && h.coverUrl.trim() !== '');
           const withoutCover = mapped.filter(h => !h.coverUrl || h.coverUrl.trim() === '');
           // Prioritize hymns with covers, then fill remaining slots with no-cover
-          const diversifiedCover = diversifyByArtist(withCover, 9);
-          const diversifiedNoCover = diversifyByArtist(withoutCover, 3);
-          const combined = [...diversifiedCover, ...diversifiedNoCover].slice(0, 12);
+          const maxItems = 12;
+          const diversifiedCover = diversifyByArtist(withCover, maxItems);
+          const remaining = maxItems - diversifiedCover.length;
+          const diversifiedNoCover = remaining > 0 ? diversifyByArtist(withoutCover, remaining) : [];
+          const combined = [...diversifiedCover, ...diversifiedNoCover];
           setHomepageTrends(combined);
         }
       } catch (error) {
