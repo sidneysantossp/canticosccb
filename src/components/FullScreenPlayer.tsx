@@ -1075,11 +1075,17 @@ export default function FullScreenPlayer({ isOpen, onClose }: FullScreenPlayerPr
 
               <div className="space-y-4">
                 <div className="flex items-center gap-4">
-                  <img
-                    src={currentTrack.coverUrl}
-                    alt={currentTrack.title}
-                    className="w-20 h-20 rounded-lg object-cover"
-                  />
+                  {currentTrack.coverUrl && currentTrack.coverUrl.trim() !== '' ? (
+                    <img
+                      src={currentTrack.coverUrl}
+                      alt={currentTrack.title}
+                      className="w-20 h-20 rounded-lg object-cover"
+                    />
+                  ) : (
+                    <div className="w-20 h-20 rounded-lg bg-gray-800 flex items-center justify-center">
+                      <Music className="w-8 h-8 text-gray-500" />
+                    </div>
+                  )}
                   <div className="flex-1">
                     <h4 className="text-lg font-semibold text-white mb-1">{currentTrack.title}</h4>
                     <p className="text-gray-300">{currentTrack.artist}</p>
