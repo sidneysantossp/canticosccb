@@ -535,19 +535,19 @@ export async function getHomePageData(): Promise<HomePageData> {
           limit: '50'
         })
       ]);
-      cantadosApi = cantados.length > 0 ? cantados : mockHinos.filter(h => h.categoria === 'Hinos Cantados');
-      tocadosApi = tocados.length > 0 ? tocados : mockHinos.filter(h => h.categoria === 'Hinos Tocados');
-      avulsosApi = avulsos.length > 0 ? avulsos : mockHinos.filter(h => h.categoria === 'Hinos Avulsos');
+      cantadosApi = cantados;
+      tocadosApi = tocados;
+      avulsosApi = avulsos;
     } catch (e) {
       console.warn('Supabase error loading hinos by category:', e);
-      cantadosApi = mockHinos.filter(h => h.categoria === 'Hinos Cantados');
-      tocadosApi = mockHinos.filter(h => h.categoria === 'Hinos Tocados');
-      avulsosApi = mockHinos.filter(h => h.categoria === 'Hinos Avulsos');
+      cantadosApi = [];
+      tocadosApi = [];
+      avulsosApi = [];
     }
   } else {
-    cantadosApi = mockHinos.filter(h => h.categoria === 'Hinos Cantados');
-    tocadosApi = mockHinos.filter(h => h.categoria === 'Hinos Tocados');
-    avulsosApi = mockHinos.filter(h => h.categoria === 'Hinos Avulsos');
+    cantadosApi = [];
+    tocadosApi = [];
+    avulsosApi = [];
   }
 
   const fallbackSortedHymns: any[] = [];
