@@ -30,7 +30,7 @@ interface ImportState {
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
-const DEFAULT_COVER_URL = 'https://rdogsfrplohxnemvtetn.supabase.co/storage/v1/object/public/images/covers/1771801481610_8xqa8e.png';
+const DEFAULT_COVER_URL = 'https://rdogsfrplohxnemvtetn.supabase.co/storage/v1/object/public/images/covers/1771984574638_y6tw06.png';
 
 function slugToTitle(slug: string): string {
   return slug

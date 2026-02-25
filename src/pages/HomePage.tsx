@@ -370,7 +370,7 @@ const HomePage: React.FC = () => {
       .replace(/[\u0300-\u036f]/g, '')
       .toLowerCase();
 
-  const DEFAULT_COVER = '1771801481610_8xqa8e';
+  const DEFAULT_COVER = '1771984574638_y6tw06';
   const hasRealCover = (url: string) => url && url.trim() !== '' && !url.includes(DEFAULT_COVER);
   const prioritizeRealCovers = (items: any[], max: number) => {
     const withReal = items.filter(h => hasRealCover(h.cover));
