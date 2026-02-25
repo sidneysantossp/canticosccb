@@ -3,6 +3,8 @@ import { Link, useNavigate } from 'react-router-dom';
 import { ChevronLeft, ChevronRight, Play } from 'lucide-react';
 import { buildAlbumUrl } from '@/utils/slugUrl';
 
+const DEFAULT_COVER_URL = 'https://rdogsfrplohxnemvtetn.supabase.co/storage/v1/object/public/images/covers/1771984574638_y6tw06.png';
+
 interface Album {
   id: string;
   title: string;
@@ -86,10 +88,15 @@ const AlbumsSection: React.FC<AlbumsSectionProps> = ({ albums }) => {
               {/* Cover com Play Button */}
               <div className="relative mb-4 aspect-square">
                 <img
-                  src={album.coverUrl}
+                  src={album.coverUrl || DEFAULT_COVER_URL}
                   alt={album.title}
                   className="w-full h-full object-cover rounded-lg shadow-lg"
                   loading="lazy"
+                  onError={(e) => {
+                    const target = e.currentTarget;
+                    target.onerror = null;
+                    target.src = DEFAULT_COVER_URL;
+                  }}
                 />
 
                 {/* Play Button Overlay */}

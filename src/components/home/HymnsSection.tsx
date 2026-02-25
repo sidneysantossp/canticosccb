@@ -2,6 +2,8 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { Play, ChevronLeft, ChevronRight } from 'lucide-react';
 
+const DEFAULT_COVER_URL = 'https://rdogsfrplohxnemvtetn.supabase.co/storage/v1/object/public/images/covers/1771984574638_y6tw06.png';
+
 export type HymnCard = {
   id: string;
   title: string;
@@ -59,10 +61,15 @@ const HymnsSection: React.FC<Props> = ({ title, viewAllHref, items, onPlay, onSc
           <div key={`${hino.id}-${index}`} className="group flex-shrink-0 w-48 bg-background-secondary hover:bg-background-tertiary p-4 rounded-lg transition-all duration-300 hover:scale-105">
             <div className="relative mb-4">
               <img
-                src={hino.cover}
+                src={hino.cover || DEFAULT_COVER_URL}
                 alt={hino.title}
                 className="w-full aspect-square object-cover rounded-lg shadow-lg"
                 loading="lazy"
+                onError={(e) => {
+                  const target = e.currentTarget;
+                  target.onerror = null;
+                  target.src = DEFAULT_COVER_URL;
+                }}
               />
               <button
                 onClick={() => onPlay(hino)}
