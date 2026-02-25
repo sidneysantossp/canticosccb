@@ -369,6 +369,20 @@ const HomePage: React.FC = () => {
       .normalize('NFD')
       .replace(/[\u0300-\u036f]/g, '')
       .toLowerCase();
+
+  const DEFAULT_COVER = '1771801481610_8xqa8e';
+  const hasRealCover = (url: string) => url && url.trim() !== '' && !url.includes(DEFAULT_COVER);
+  const prioritizeRealCovers = (items: any[], max: number) => {
+    const withReal = items.filter(h => hasRealCover(h.cover));
+    const withDefault = items.filter(h => !hasRealCover(h.cover) && h.cover && h.cover.trim() !== '');
+    const noCover = items.filter(h => !h.cover || h.cover.trim() === '');
+    const diversifiedReal = diversifyByArtist(withReal, max);
+    const remaining = max - diversifiedReal.length;
+    const diversifiedDefault = remaining > 0 ? diversifyByArtist(withDefault, remaining) : [];
+    const remaining2 = max - diversifiedReal.length - diversifiedDefault.length;
+    const diversifiedNone = remaining2 > 0 ? diversifyByArtist(noCover, remaining2) : [];
+    return [...diversifiedReal, ...diversifiedDefault, ...diversifiedNone].slice(0, max);
+  };
   
   // Converter hinos cantados do backend (apenas categoria Cantados)
   console.log('ðŸŽµ homeData.hymnsCantados:', homeData.hymnsCantados?.length || 0, homeData.hymnsCantados);
@@ -388,8 +402,7 @@ const HomePage: React.FC = () => {
       artist: hymn.composer_name || 'Hino Cantado',
       coverUrl: hymn.cover_url || '',
     }));
-  const hinosCantadosDiversified = diversifyByArtist(hinosCantados, 12);
-  const hinosCantadosFinal = hinosCantadosDiversified.filter(h => !!h.cover && h.cover.trim() !== '');
+  const hinosCantadosFinal = prioritizeRealCovers(hinosCantados, 12);
   
   console.log('ðŸŽµ Hinos Cantados (final):', hinosCantados.length, 'items');
   
@@ -411,8 +424,7 @@ const HomePage: React.FC = () => {
       artist: hymn.composer_name || 'Hino Tocado',
       coverUrl: hymn.cover_url || '',
     }));
-  const hinosTocadosDiversified = diversifyByArtist(hinosTocados, 12);
-  const hinosTocadosFinal = hinosTocadosDiversified.filter(h => !!h.cover && h.cover.trim() !== '');
+  const hinosTocadosFinal = prioritizeRealCovers(hinosTocados, 12);
   
   console.log('ðŸŽ¹ Hinos Tocados (final):', hinosTocados.length, 'items');
   
@@ -434,8 +446,7 @@ const HomePage: React.FC = () => {
       artist: hymn.composer_name || 'Hino Avulso',
       coverUrl: hymn.cover_url || '',
     }));
-  const hinosAvulsosDiversified = diversifyByArtist(hinosAvulsos, 12);
-  const hinosAvulsosFinal = hinosAvulsosDiversified.filter(h => !!h.cover && h.cover.trim() !== '');
+  const hinosAvulsosFinal = prioritizeRealCovers(hinosAvulsos, 12);
   
   console.log('ðŸŽ¼ Hinos Avulsos (final):', hinosAvulsos.length, 'items');
 

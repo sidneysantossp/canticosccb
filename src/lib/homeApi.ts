@@ -520,19 +520,19 @@ export async function getHomePageData(): Promise<HomePageData> {
           categoria: 'ilike.%Hinos Cantados%',
           ativo: 'eq.true',
           select: 'id,numero,titulo,compositor_nome,categoria,audio_url,cover_url,youtube_source',
-          limit: '12'
+          limit: '50'
         }),
         supabaseFetch<any>('hinos', {
           categoria: 'ilike.%Hinos Tocados%',
           ativo: 'eq.true',
           select: 'id,numero,titulo,compositor_nome,categoria,audio_url,cover_url,youtube_source',
-          limit: '12'
+          limit: '50'
         }),
         supabaseFetch<any>('hinos', {
           categoria: 'ilike.%Hinos Avulsos%',
           ativo: 'eq.true',
           select: 'id,numero,titulo,compositor_nome,categoria,audio_url,cover_url,youtube_source',
-          limit: '12'
+          limit: '50'
         })
       ]);
       cantadosApi = cantados.length > 0 ? cantados : mockHinos.filter(h => h.categoria === 'Hinos Cantados');
