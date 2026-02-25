@@ -150,7 +150,7 @@ const mapSupabaseHymn = (row: SupabaseHymnRow): HomeHymn => ({
   title: String(row.titulo ?? 'Hino sem título'),
   composer_name: row.compositor_nome ?? row.compositor ?? 'Compositor Desconhecido',
   category: row.categoria ?? 'Outros',
-  cover_url: row.cover_url ?? ASSETS.PLACEHOLDER_IMAGE,
+  cover_url: row.cover_url ?? '',
   audio_url: row.audio_url ?? '',
   duration: row.duracao ?? '00:00',
   created_at: row.created_at ?? new Date().toISOString(),
@@ -181,7 +181,7 @@ const mapSupabaseAlbum = (
     id: String(row.id ?? `album-${index}`),
     title: row.title ?? `Álbum ${index + 1}`,
     artist: row.artist ?? 'Canticos CCB',
-    cover_url: row.cover_url ?? ASSETS.PLACEHOLDER_IMAGE,
+    cover_url: row.cover_url ?? '',
   };
 };
 
@@ -498,21 +498,7 @@ export async function getHomePageData(): Promise<HomePageData> {
   let tocadosApi: any[] = [];
   let avulsosApi: any[] = [];
 
-  const mockHinos = [
-    { id: 1, numero: 1, titulo: 'Hino de Adoração', compositor_nome: 'João de Deus', categoria: 'Hinos Cantados', cover_url: 'https://picsum.photos/seed/hino-1/400/400', audio_url: '' },
-    { id: 2, numero: 2, titulo: 'Hino de Louvor', compositor_nome: 'Maria José', categoria: 'Hinos Cantados', cover_url: 'https://picsum.photos/seed/hino-2/400/400', audio_url: '' },
-    { id: 6, numero: 6, titulo: 'Hino de Graça', compositor_nome: 'José Lima', categoria: 'Hinos Cantados', cover_url: 'https://picsum.photos/seed/hino-6/400/400', audio_url: '' },
-    { id: 7, numero: 7, titulo: 'Hino de Fé', compositor_nome: 'Ruth Oliveira', categoria: 'Hinos Cantados', cover_url: 'https://picsum.photos/seed/hino-7/400/400', audio_url: '' },
-    { id: 3, numero: 3, titulo: 'Hino de Comunhão', compositor_nome: 'Carlos Silva', categoria: 'Hinos Tocados', cover_url: 'https://picsum.photos/seed/hino-3/400/400', audio_url: '' },
-    { id: 8, numero: 8, titulo: 'Hino Instrumental', compositor_nome: 'Paulo Mendes', categoria: 'Hinos Tocados', cover_url: 'https://picsum.photos/seed/hino-8/400/400', audio_url: '' },
-    { id: 9, numero: 9, titulo: 'Hino de Reverência', compositor_nome: 'Lucas Almeida', categoria: 'Hinos Tocados', cover_url: 'https://picsum.photos/seed/hino-9/400/400', audio_url: '' },
-    { id: 10, numero: 10, titulo: 'Hino de Paz', compositor_nome: 'Marcos Reis', categoria: 'Hinos Tocados', cover_url: 'https://picsum.photos/seed/hino-10/400/400', audio_url: '' },
-    { id: 4, numero: 4, titulo: 'Hino Especial', compositor_nome: 'Ana Santos', categoria: 'Hinos Avulsos', cover_url: 'https://picsum.photos/seed/hino-4/400/400', audio_url: '' },
-    { id: 5, numero: 5, titulo: 'Hino de Evangelização', compositor_nome: 'Pedro Costa', categoria: 'Hinos Avulsos', cover_url: 'https://picsum.photos/seed/hino-5/400/400', audio_url: '' },
-    { id: 11, numero: 11, titulo: 'Hino de Esperança', compositor_nome: 'Sara Nunes', categoria: 'Hinos Avulsos', cover_url: 'https://picsum.photos/seed/hino-11/400/400', audio_url: '' },
-    { id: 12, numero: 12, titulo: 'Hino de Alegria', compositor_nome: 'Daniel Souza', categoria: 'Hinos Avulsos', cover_url: 'https://picsum.photos/seed/hino-12/400/400', audio_url: '' },
-  ];
-
+  
   if (isSupabaseConfigured) {
     try {
       // Single query to fetch all active hymns, then filter by category
