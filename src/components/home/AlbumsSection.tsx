@@ -2,8 +2,7 @@ import React, { useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { ChevronLeft, ChevronRight, Play } from 'lucide-react';
 import { buildAlbumUrl } from '@/utils/slugUrl';
-
-const DEFAULT_COVER_URL = 'https://rdogsfrplohxnemvtetn.supabase.co/storage/v1/object/public/images/covers/1771984574638_y6tw06.png';
+import { DEFAULT_COVER_URL } from '@/lib/config';
 
 interface Album {
   id: string;

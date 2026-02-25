@@ -23,6 +23,7 @@ import TrendsSection from '@/components/home/TrendsSection';
 import AlbumsSection from '@/components/home/AlbumsSection';
 import HymnsSection from '@/components/home/HymnsSection';
 import { isSupabaseConfigured, supabaseFetch } from '@/lib/supabaseRest';
+import { DEFAULT_COVER_IDENTIFIER } from '@/lib/config';
 type PopularHino = {
   id: string;
   number: number;
@@ -370,7 +371,7 @@ const HomePage: React.FC = () => {
       .replace(/[\u0300-\u036f]/g, '')
       .toLowerCase();
 
-  const DEFAULT_COVER = '1771984574638_y6tw06';
+  const DEFAULT_COVER = DEFAULT_COVER_IDENTIFIER;
   const hasRealCover = (url: string) => url && url.trim() !== '' && !url.includes(DEFAULT_COVER);
   const prioritizeRealCovers = (items: any[], max: number) => {
     const withReal = items.filter(h => hasRealCover(h.cover));

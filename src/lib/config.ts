@@ -5,30 +5,42 @@
 
 const SUPABASE_URL = (import.meta.env?.VITE_SUPABASE_URL ?? '').replace(/\/+$/, '');
 const SUPABASE_STORAGE_URL = SUPABASE_URL ? `${SUPABASE_URL}/storage/v1/object/public` : '';
+const MEDIA_PUBLIC_BASE_URL =
+  (import.meta.env?.VITE_MEDIA_PUBLIC_BASE_URL ?? '').replace(/\/+$/, '') ||
+  (SUPABASE_STORAGE_URL ? `${SUPABASE_STORAGE_URL}/images` : '');
+
+export const DEFAULT_COVER_IDENTIFIER = '1771984574638_y6tw06';
+export const DEFAULT_COVER_URL =
+  import.meta.env?.VITE_DEFAULT_COVER_URL ??
+  `${MEDIA_PUBLIC_BASE_URL}/covers/${DEFAULT_COVER_IDENTIFIER}.png`;
 
 
 export function getHinoUrl(filename: string): string {
   if (!filename) return '';
   if (filename.startsWith('http')) return filename;
-  return `${SUPABASE_STORAGE_URL}/hinos/${encodeURIComponent(filename)}`;
+  if (!MEDIA_PUBLIC_BASE_URL) return '';
+  return `${MEDIA_PUBLIC_BASE_URL}/hinos/${encodeURIComponent(filename)}`;
 }
 
 export function getAlbumCoverUrl(filename: string): string {
   if (!filename) return '';
   if (filename.startsWith('http')) return filename;
-  return `${SUPABASE_STORAGE_URL}/covers/${encodeURIComponent(filename)}`;
+  if (!MEDIA_PUBLIC_BASE_URL) return '';
+  return `${MEDIA_PUBLIC_BASE_URL}/covers/${encodeURIComponent(filename)}`;
 }
 
 export function getAvatarUrl(filename: string): string {
   if (!filename) return '';
   if (filename.startsWith('http')) return filename;
-  return `${SUPABASE_STORAGE_URL}/avatars/${encodeURIComponent(filename)}`;
+  if (!MEDIA_PUBLIC_BASE_URL) return '';
+  return `${MEDIA_PUBLIC_BASE_URL}/avatars/${encodeURIComponent(filename)}`;
 }
 
 export function getBannerUrl(filename: string): string {
   if (!filename) return '';
   if (filename.startsWith('http')) return filename;
-  return `${SUPABASE_STORAGE_URL}/banners/${encodeURIComponent(filename)}`;
+  if (!MEDIA_PUBLIC_BASE_URL) return '';
+  return `${MEDIA_PUBLIC_BASE_URL}/banners/${encodeURIComponent(filename)}`;
 }
 
 /**
@@ -47,7 +59,7 @@ export const APP_CONFIG = {
   name: 'Cânticos CCB',
   description: 'Plataforma de Hinos da Congregação Cristã no Brasil',
   url: import.meta.env.VITE_APP_URL || 'http://localhost:5173',
-  mediaUrl: SUPABASE_STORAGE_URL,
+  mediaUrl: MEDIA_PUBLIC_BASE_URL,
 } as const;
 
 // Feature Flags

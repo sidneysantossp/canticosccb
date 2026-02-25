@@ -1,8 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { Play, ChevronLeft, ChevronRight } from 'lucide-react';
-
-const DEFAULT_COVER_URL = 'https://rdogsfrplohxnemvtetn.supabase.co/storage/v1/object/public/images/covers/1771984574638_y6tw06.png';
+import { DEFAULT_COVER_URL } from '@/lib/config';
 
 export type HymnCard = {
   id: string;
