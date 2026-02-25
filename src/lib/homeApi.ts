@@ -128,6 +128,8 @@ type SupabaseAlbumRow = {
   cover_url?: string;
   artist?: string;
   created_at?: string;
+  featured?: boolean;
+  featured_order?: number;
 };
 
 type SupabaseBannerRow = {
@@ -184,6 +186,37 @@ const mapSupabaseAlbum = (
     cover_url: row.cover_url ?? '',
   };
 };
+
+/**
+ * Monta a lista de álbuns do carrossel:
+ * 1. Álbuns marcados como destaque (featured=true), ordenados por featured_order
+ * 2. Preenche os slots restantes com os álbuns mais recentes (não-featured)
+ */
+function prioritizeFeaturedAlbums(
+  rows: SupabaseAlbumRow[],
+  composerNames: Record<string, string>,
+  maxSlots: number
+): HomeAlbum[] {
+  const featured = rows
+    .filter((r) => r.featured)
+    .sort((a, b) => (a.featured_order ?? 0) - (b.featured_order ?? 0));
+
+  const recent = rows
+    .filter((r) => !r.featured)
+    .sort((a, b) => {
+      const da = a.created_at ? new Date(a.created_at).getTime() : 0;
+      const db = b.created_at ? new Date(b.created_at).getTime() : 0;
+      return db - da;
+    });
+
+  const featuredSlice = featured.slice(0, maxSlots);
+  const remainingSlots = maxSlots - featuredSlice.length;
+  const recentSlice = recent.slice(0, remainingSlots);
+
+  return [...featuredSlice, ...recentSlice].map((row, index) =>
+    mapSupabaseAlbum(row, index, composerNames)
+  );
+}
 
 const mapSupabaseBanner = (row: SupabaseBannerRow): HomeBanner => ({
   id: String(row.id ?? row.title ?? `banner-${Math.random()}`),
@@ -267,10 +300,10 @@ async function getHomePageDataFromSupabase(): Promise<HomePageData> {
     limit: '20',
   });
   const albumRows = supabaseFetch<SupabaseAlbumRow>('albums', {
-    select: 'id,title,description,cover_url,artist,created_at',
+    select: 'id,title,description,cover_url,artist,created_at,featured,featured_order',
     is_published: 'eq.true',
     order: 'created_at.desc',
-    limit: '12',
+    limit: '20',
   });
   const categoryRows = supabaseFetch<any>('categorias', {
     select: 'id,nome,slug,descricao,imagem_url',
@@ -359,7 +392,7 @@ async function getHomePageDataFromSupabase(): Promise<HomePageData> {
   return {
     banners: bannersData.map(mapSupabaseBanner),
     featured: diversifyByComposer(hymns, 6),
-    albums: albumsData.map((album, index) => mapSupabaseAlbum(album, index, composerNameById)),
+    albums: prioritizeFeaturedAlbums(albumsData, composerNameById, 8),
     hymnsCantados: grouped.cantados,
     hymnsTocados: grouped.tocados,
     hymnsAvulsos: grouped.avulsos,

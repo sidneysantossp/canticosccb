@@ -705,7 +705,7 @@ export const albunsApi = {
     try {
       const rows = await supabaseFetch<any>('albums', {
         id: `eq.${id}`,
-        select: 'id,title,artist,description,cover_url,total_tracks,release_date,composer_id,is_published,active,created_at,updated_at',
+        select: 'id,title,artist,description,cover_url,total_tracks,release_date,composer_id,is_published,active,created_at,updated_at,featured,featured_order,genre',
         limit: '1'
       });
       const album = rows?.[0] || null;
@@ -785,6 +785,8 @@ export const albunsApi = {
       if (data.compositor_id) insertData.composer_id = data.compositor_id;
       if (data.ano) insertData.release_date = `${data.ano}-01-01`;
       if (data.release_date) insertData.release_date = data.release_date;
+      if (data.featured !== undefined) insertData.featured = data.featured;
+      if (data.featured_order !== undefined) insertData.featured_order = data.featured_order;
 
       console.log('📀 [albunsApi.create] Inserting:', insertData);
       const { data: result, error: insertError } = await supabase
@@ -819,6 +821,8 @@ export const albunsApi = {
       if (data.ativo !== undefined) updateData.active = data.ativo !== 0;
       if (data.ano !== undefined) updateData.release_date = `${data.ano}-01-01`;
       if (data.compositor_id !== undefined) updateData.composer_id = data.compositor_id;
+      if (data.featured !== undefined) updateData.featured = data.featured;
+      if (data.featured_order !== undefined) updateData.featured_order = data.featured_order;
 
       const { error } = await supabase.from('albums').update(updateData).eq('id', id);
       if (error) {

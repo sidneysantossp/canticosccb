@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { ArrowLeft, Save, Upload, Disc, Trash2, X } from 'lucide-react';
+import { ArrowLeft, Save, Upload, Disc, Trash2, X, Star } from 'lucide-react';
 import { albunsApi, uploadApi, compositoresApi, categoriasApi, Album, Hino } from '@/lib/api-client';
 import HinoSelector from '@/components/admin/HinoSelector';
 
@@ -16,7 +16,9 @@ const AdminAlbumForm: React.FC = () => {
     genres: [] as string[],
     total_tracks: '',
     release_date: '',
-    status: 'published' as 'published' | 'draft'
+    status: 'published' as 'published' | 'draft',
+    featured: false,
+    featured_order: 0
   });
 
   const [coverFile, setCoverFile] = useState<File | null>(null);
@@ -88,7 +90,9 @@ const AdminAlbumForm: React.FC = () => {
           genres: album.genre ? album.genre.split(',').map((g: string) => g.trim()).filter(Boolean) : [],
           total_tracks: album.total_tracks?.toString() || '',
           release_date: album.release_date || '',
-          status: album.status || 'published'
+          status: album.status || 'published',
+          featured: album.featured || false,
+          featured_order: album.featured_order || 0
         });
         setCoverPreview(album.cover_url || '');
 
@@ -170,7 +174,9 @@ const AdminAlbumForm: React.FC = () => {
         cover_url: coverUrl || undefined,
         ano: formData.release_date ? parseInt(formData.release_date) : undefined,
         ativo: formData.status === 'published' ? 1 : 0,
-        is_published: formData.status === 'published'
+        is_published: formData.status === 'published',
+        featured: formData.featured,
+        featured_order: formData.featured ? formData.featured_order : 0
       };
 
       let albumId: string | number = id || '';
@@ -423,6 +429,43 @@ const AdminAlbumForm: React.FC = () => {
               <p className="text-gray-500 text-xs mt-2">
                 Álbuns publicados aparecem na home e na listagem pública.
               </p>
+            </div>
+
+            {/* Destaque na Home */}
+            <div className="mb-4">
+              <label className="block text-gray-400 text-sm font-semibold mb-2">
+                Destaque na Home
+              </label>
+              <button
+                type="button"
+                onClick={() => setFormData({ ...formData, featured: !formData.featured })}
+                className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg font-semibold text-sm transition-colors ${
+                  formData.featured
+                    ? 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/40'
+                    : 'bg-gray-800 text-gray-400 hover:bg-gray-700 border border-gray-700'
+                }`}
+              >
+                <Star className={`w-5 h-5 ${formData.featured ? 'fill-yellow-400' : ''}`} />
+                {formData.featured ? 'Em destaque no carrossel' : 'Marcar como destaque'}
+              </button>
+              {formData.featured && (
+                <div className="mt-3">
+                  <label className="block text-gray-500 text-xs mb-1">
+                    Ordem no carrossel (1 = primeiro)
+                  </label>
+                  <input
+                    type="number"
+                    min="1"
+                    max="6"
+                    value={formData.featured_order || 1}
+                    onChange={(e) => setFormData({ ...formData, featured_order: parseInt(e.target.value) || 1 })}
+                    className="w-24 bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-yellow-500"
+                  />
+                  <p className="text-gray-500 text-xs mt-1">
+                    Até 6 álbuns em destaque. Os demais slots são preenchidos pelos mais recentes.
+                  </p>
+                </div>
+              )}
             </div>
           </div>
 
