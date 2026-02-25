@@ -5,6 +5,10 @@ const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY ?? '';
 
 export const isSupabaseConfigured = Boolean(SUPABASE_URL && SUPABASE_ANON_KEY);
 
+// Simple in-memory cache with TTL
+const cache = new Map<string, { data: any; timestamp: number }>();
+const CACHE_TTL = 2 * 60 * 1000; // 2 minutes
+
 console.log('🔧 [supabaseRest] Module loaded successfully');
 
 // Debug: Log configuration status on load
@@ -110,7 +114,17 @@ export async function supabaseFetch<T>(table: string, params: Record<string, str
   }
 
   const url = buildUrl(table, params);
-  console.log(`[supabaseFetch] Fetching ${table}:`, url.toString());
+  const cacheKey = url.toString();
+  const now = Date.now();
+  
+  // Check cache first
+  const cached = cache.get(cacheKey);
+  if (cached && (now - cached.timestamp) < CACHE_TTL) {
+    console.log(`[supabaseFetch] Cache hit for ${table}, returning ${cached.data.length} cached records`);
+    return cached.data;
+  }
+
+  console.log(`[supabaseFetch] Cache miss for ${table}, fetching:`, url.toString());
 
   try {
     const headers = buildHeaders();
@@ -132,6 +146,10 @@ export async function supabaseFetch<T>(table: string, params: Record<string, str
     const payload = (await response.json()) as T[];
     const result = Array.isArray(payload) ? payload : [];
     console.log(`[supabaseFetch] ${table} returned ${result.length} records`);
+    
+    // Cache the result
+    cache.set(cacheKey, { data: result, timestamp: now });
+    
     return result;
   } catch (error) {
     const msg = error instanceof Error ? error.message : String(error);

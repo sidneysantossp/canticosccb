@@ -515,29 +515,23 @@ export async function getHomePageData(): Promise<HomePageData> {
 
   if (isSupabaseConfigured) {
     try {
-      const [cantados, tocados, avulsos] = await Promise.all([
-        supabaseFetch<any>('hinos', {
-          categoria: 'ilike.%Hinos Cantados%',
-          ativo: 'eq.true',
-          select: 'id,numero,titulo,compositor_nome,categoria,audio_url,cover_url,youtube_source',
-          limit: '50'
-        }),
-        supabaseFetch<any>('hinos', {
-          categoria: 'ilike.%Hinos Tocados%',
-          ativo: 'eq.true',
-          select: 'id,numero,titulo,compositor_nome,categoria,audio_url,cover_url,youtube_source',
-          limit: '50'
-        }),
-        supabaseFetch<any>('hinos', {
-          categoria: 'ilike.%Hinos Avulsos%',
-          ativo: 'eq.true',
-          select: 'id,numero,titulo,compositor_nome,categoria,audio_url,cover_url,youtube_source',
-          limit: '50'
-        })
-      ]);
-      cantadosApi = cantados;
-      tocadosApi = tocados;
-      avulsosApi = avulsos;
+      // Single query to fetch all active hymns, then filter by category
+      const allHymns = await supabaseFetch<any>('hinos', {
+        ativo: 'eq.true',
+        select: 'id,numero,titulo,compositor_nome,categoria,audio_url,cover_url,youtube_source',
+        limit: '150'
+      });
+      
+      // Filter by category on client side
+      cantadosApi = allHymns.filter(h => 
+        h.categoria && h.categoria.toLowerCase().includes('cantados')
+      );
+      tocadosApi = allHymns.filter(h => 
+        h.categoria && h.categoria.toLowerCase().includes('tocados')
+      );
+      avulsosApi = allHymns.filter(h => 
+        h.categoria && h.categoria.toLowerCase().includes('avulsos')
+      );
     } catch (e) {
       console.warn('Supabase error loading hinos by category:', e);
       cantadosApi = [];
