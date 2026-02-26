@@ -183,23 +183,18 @@ const AdminAlbumForm: React.FC = () => {
 
       // 1. Salvar dados do álbum
       console.log('💾 [handleSubmit] Salvando álbum...', albumData);
-      try {
-        if (isEditing && id) {
-          const response = await albunsApi.update(id, albumData);
-          console.log('💾 [handleSubmit] Update result:', response);
-          albumId = id;
-        } else {
-          const response = await albunsApi.create(albumData);
-          console.log('💾 [handleSubmit] Create result:', response);
-          if (response.error) throw new Error(response.error);
-          albumId = response.data?.id;
+      if (isEditing && id) {
+        const response = await albunsApi.update(id, albumData);
+        console.log('💾 [handleSubmit] Update result:', response);
+        if (response.error) {
+          throw new Error(response.error);
         }
-      } catch (albumErr: any) {
-        console.error('❌ [handleSubmit] Erro ao salvar dados do álbum:', albumErr);
-        // Continuar para salvar hinos mesmo se o update falhar parcialmente
-        if (!isEditing) {
-          throw albumErr; // Só bloqueia se for criação (precisa do ID)
-        }
+        albumId = id;
+      } else {
+        const response = await albunsApi.create(albumData);
+        console.log('💾 [handleSubmit] Create result:', response);
+        if (response.error) throw new Error(response.error);
+        albumId = response.data?.id;
       }
 
       // 2. Salvar hinos do álbum
@@ -280,7 +275,7 @@ const AdminAlbumForm: React.FC = () => {
                 <input
                   type="text"
                   value={formData.title}
-                  onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                  onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
                   required
                   className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-green-600"
                   placeholder="Hinário 5"
@@ -295,8 +290,9 @@ const AdminAlbumForm: React.FC = () => {
                   type="text"
                   value={formData.artist}
                   onChange={(e) => {
-                    setFormData({ ...formData, artist: e.target.value });
-                    setArtistSearch(e.target.value);
+                    const val = e.target.value;
+                    setFormData(prev => ({ ...prev, artist: val }));
+                    setArtistSearch(val);
                     setShowArtistDropdown(true);
                   }}
                   onFocus={() => setShowArtistDropdown(true)}
@@ -317,7 +313,7 @@ const AdminAlbumForm: React.FC = () => {
                           type="button"
                           onMouseDown={(e) => e.preventDefault()}
                           onClick={() => {
-                            setFormData({ ...formData, artist: c.name });
+                            setFormData(prev => ({ ...prev, artist: c.name }));
                             setArtistSearch('');
                             setShowArtistDropdown(false);
                           }}
@@ -347,7 +343,7 @@ const AdminAlbumForm: React.FC = () => {
                       {g}
                       <button
                         type="button"
-                        onClick={() => setFormData({ ...formData, genres: formData.genres.filter(x => x !== g) })}
+                        onClick={() => setFormData(prev => ({ ...prev, genres: prev.genres.filter(x => x !== g) }))}
                         className="hover:text-white transition-colors ml-0.5"
                       >
                         <X className="w-3.5 h-3.5" />
@@ -358,8 +354,11 @@ const AdminAlbumForm: React.FC = () => {
                     value=""
                     onChange={(e) => {
                       const val = e.target.value;
-                      if (val && !formData.genres.includes(val)) {
-                        setFormData({ ...formData, genres: [...formData.genres, val] });
+                      if (val) {
+                        setFormData(prev => ({
+                          ...prev,
+                          genres: prev.genres.includes(val) ? prev.genres : [...prev.genres, val]
+                        }));
                       }
                     }}
                     className="bg-gray-800 text-white text-sm focus:outline-none flex-1 min-w-[140px] py-1 cursor-pointer rounded"
@@ -379,7 +378,7 @@ const AdminAlbumForm: React.FC = () => {
                 <input
                   type="date"
                   value={formData.release_date}
-                  onChange={(e) => setFormData({ ...formData, release_date: e.target.value })}
+                  onChange={(e) => setFormData(prev => ({ ...prev, release_date: e.target.value }))}
                   className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-green-600"
                 />
               </div>
@@ -391,7 +390,7 @@ const AdminAlbumForm: React.FC = () => {
               </label>
               <textarea
                 value={formData.description}
-                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
                 rows={4}
                 className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-3 text-white resize-none focus:outline-none focus:border-green-600"
                 placeholder="Descrição do álbum..."
@@ -405,7 +404,7 @@ const AdminAlbumForm: React.FC = () => {
               <div className="flex gap-3">
                 <button
                   type="button"
-                  onClick={() => setFormData({ ...formData, status: 'published' })}
+                  onClick={() => setFormData(prev => ({ ...prev, status: 'published' }))}
                   className={`flex-1 px-4 py-3 rounded-lg font-semibold text-sm transition-colors ${
                     formData.status === 'published'
                       ? 'bg-green-600 text-white'
@@ -416,7 +415,7 @@ const AdminAlbumForm: React.FC = () => {
                 </button>
                 <button
                   type="button"
-                  onClick={() => setFormData({ ...formData, status: 'draft' })}
+                  onClick={() => setFormData(prev => ({ ...prev, status: 'draft' }))}
                   className={`flex-1 px-4 py-3 rounded-lg font-semibold text-sm transition-colors ${
                     formData.status === 'draft'
                       ? 'bg-yellow-600 text-white'
@@ -438,7 +437,7 @@ const AdminAlbumForm: React.FC = () => {
               </label>
               <button
                 type="button"
-                onClick={() => setFormData({ ...formData, featured: !formData.featured })}
+                onClick={() => setFormData(prev => ({ ...prev, featured: !prev.featured }))}
                 className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg font-semibold text-sm transition-colors ${
                   formData.featured
                     ? 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/40'
@@ -458,7 +457,7 @@ const AdminAlbumForm: React.FC = () => {
                     min="1"
                     max="6"
                     value={formData.featured_order || 1}
-                    onChange={(e) => setFormData({ ...formData, featured_order: parseInt(e.target.value) || 1 })}
+                    onChange={(e) => setFormData(prev => ({ ...prev, featured_order: parseInt(e.target.value) || 1 }))}
                     className="w-24 bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-yellow-500"
                   />
                   <p className="text-gray-500 text-xs mt-1">

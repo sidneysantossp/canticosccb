@@ -824,12 +824,18 @@ export const albunsApi = {
       if (data.featured !== undefined) updateData.featured = data.featured;
       if (data.featured_order !== undefined) updateData.featured_order = data.featured_order;
 
-      const { error } = await supabase.from('albums').update(updateData).eq('id', id);
+      console.log('📀 [albunsApi.update] ID:', id, 'Data:', updateData);
+      const { data: result, error } = await supabase.from('albums').update(updateData).eq('id', id).select();
       if (error) {
-        console.error('❌ [albunsApi.update] Error:', error);
+        console.error('❌ [albunsApi.update] Supabase error:', error);
         return { data: null, error: error.message };
       }
-      return { data: { id }, error: null };
+      console.log('✅ [albunsApi.update] Result:', result);
+      if (!result || result.length === 0) {
+        console.warn('⚠️ [albunsApi.update] Nenhuma linha atualizada - verifique RLS policies ou se o ID existe');
+        return { data: null, error: 'Nenhuma linha atualizada. Verifique se o álbum existe e se você tem permissão.' };
+      }
+      return { data: result[0], error: null };
     } catch (error: any) {
       console.error('❌ [albunsApi.update] Error:', error);
       return { data: null, error: error.message };
