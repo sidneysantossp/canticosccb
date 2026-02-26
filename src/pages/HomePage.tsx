@@ -651,26 +651,6 @@ const HomePage: React.FC = () => {
         </div>
       )}
 
-      {/* FAQ Section - SEO */}
-      <div className="px-6">
-        <div className="max-w-4xl mx-auto">
-          <h2 className="text-xl md:text-2xl font-bold text-white mb-6">Perguntas Frequentes</h2>
-          <div className="space-y-4">
-            {homeFAQs.map((faq, i) => (
-              <details key={i} className="group bg-gray-800/40 border border-gray-700/50 rounded-xl overflow-hidden">
-                <summary className="flex items-center justify-between px-5 py-4 cursor-pointer text-white font-medium text-sm md:text-base hover:bg-gray-800/60 transition-colors list-none">
-                  <span>{faq.question}</span>
-                  <span className="ml-4 text-gray-400 group-open:rotate-180 transition-transform text-xs">▼</span>
-                </summary>
-                <div className="px-5 pb-4 text-gray-400 text-sm leading-relaxed">
-                  {faq.answer}
-                </div>
-              </details>
-            ))}
-          </div>
-        </div>
-      </div>
-
       {/* Banner CTA */}
       <div className="px-6">
         <BannerCTA />
