@@ -374,15 +374,11 @@ const HomePage: React.FC = () => {
   const DEFAULT_COVER = DEFAULT_COVER_IDENTIFIER;
   const hasRealCover = (url: string) => url && url.trim() !== '' && !url.includes(DEFAULT_COVER);
   const prioritizeRealCovers = (items: any[], max: number) => {
-    const withReal = items.filter(h => hasRealCover(h.cover));
-    const withDefault = items.filter(h => !hasRealCover(h.cover) && h.cover && h.cover.trim() !== '');
-    const noCover = items.filter(h => !h.cover || h.cover.trim() === '');
-    const diversifiedReal = diversifyByArtist(withReal, max);
-    const remaining = max - diversifiedReal.length;
-    const diversifiedDefault = remaining > 0 ? diversifyByArtist(withDefault, remaining) : [];
-    const remaining2 = max - diversifiedReal.length - diversifiedDefault.length;
-    const diversifiedNone = remaining2 > 0 ? diversifyByArtist(noCover, remaining2) : [];
-    return [...diversifiedReal, ...diversifiedDefault, ...diversifiedNone].slice(0, max);
+    // Dentro de cada compositor, priorizar itens com cover real
+    const coverScore = (h: any) => hasRealCover(h.cover) ? 2 : (h.cover && h.cover.trim() !== '' ? 1 : 0);
+    const sorted = [...items].sort((a, b) => coverScore(b) - coverScore(a));
+    // Diversificar por compositor (1 por compositor, depois round-robin)
+    return diversifyByArtist(sorted, max);
   };
   
   // Converter hinos cantados do backend (apenas categoria Cantados)
