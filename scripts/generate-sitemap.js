@@ -122,8 +122,15 @@ async function main() {
   urls.push(urlEntry('/cifras', today, 'daily', '0.9'));
   urls.push(urlEntry('/hinario', today, 'daily', '0.9'));
   urls.push(urlEntry('/trends', today, 'daily', '0.8'));
-  urls.push(urlEntry('/about', today, 'monthly', '0.5'));
-  urls.push(urlEntry('/terms', today, 'yearly', '0.3'));
+  urls.push(urlEntry('/sobre', today, 'monthly', '0.5'));
+  urls.push(urlEntry('/termos', today, 'yearly', '0.3'));
+  urls.push(urlEntry('/categorias', today, 'weekly', '0.8'));
+  urls.push(urlEntry('/compositores', today, 'weekly', '0.8'));
+  urls.push(urlEntry('/albuns', today, 'weekly', '0.8'));
+  urls.push(urlEntry('/recem-chegados', today, 'daily', '0.8'));
+  urls.push(urlEntry('/instrumentais', today, 'weekly', '0.7'));
+  urls.push(urlEntry('/biblia-narrada', today, 'weekly', '0.7'));
+  urls.push(urlEntry('/privacidade', today, 'yearly', '0.3'));
 
   // Hinos
   console.log('  📀 Fetching hinos...');
@@ -175,7 +182,7 @@ async function main() {
   for (const ci of cifras) {
     const mod = (ci.updated_at || ci.created_at || today).split('T')[0];
     const slug = ci.slug || ci.id;
-    urls.push(urlEntry(`/cifras/${slug}`, mod, 'monthly', '0.7'));
+    urls.push(urlEntry(`/cifra/${slug}`, mod, 'monthly', '0.7'));
   }
 
   // Hinário (letras)
@@ -191,13 +198,18 @@ async function main() {
     urls.push(urlEntry(`/hinario/${h.numero}`, mod, 'monthly', '0.7'));
   }
 
-  // Categorias
-  const categories = [
-    'louvores', 'suplicas', 'ceia-do-senhor', 'batismo',
-    'santa-ceia', 'natal', 'mocidade', 'infantil',
-  ];
-  for (const cat of categories) {
-    urls.push(urlEntry(`/categorias/${cat}`, today, 'weekly', '0.6'));
+  // Categorias (buscar do banco)
+  console.log('  📂 Fetching categorias...');
+  const categorias = await supabaseFetch('categorias', 'id,nome,slug,updated_at', {
+    'ativo': 'eq.1',
+    'order': 'nome.asc',
+    'limit': '200',
+  });
+  console.log(`     Found ${categorias.length} categorias`);
+  for (const cat of categorias) {
+    const mod = (cat.updated_at || today).split('T')[0];
+    const catSlug = cat.slug || cat.id;
+    urls.push(urlEntry(`/categoria/${catSlug}`, mod, 'weekly', '0.6'));
   }
 
   // Build XML

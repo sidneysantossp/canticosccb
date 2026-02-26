@@ -171,9 +171,19 @@ import GlobalAudioPlayer from '@/components/GlobalAudioPlayer';
 import FreePlayGateModal from '@/components/modals/FreePlayGateModal';
 import AnalyticsScripts from '@/components/AnalyticsScripts';
 import { usePresence } from '@/hooks/usePresence';
-import { Navigate } from 'react-router-dom';
+import { Navigate, useParams as useRouteParams } from 'react-router-dom';
 
 const PresenceTracker: React.FC = () => { usePresence(); return null; };
+
+const RedirectToCategoria: React.FC = () => {
+  const { slug } = useRouteParams();
+  return <Navigate to={`/categoria/${slug}`} replace />;
+};
+
+const RedirectToCifra: React.FC = () => {
+  const { slug } = useRouteParams();
+  return <Navigate to={`/cifra/${slug}`} replace />;
+};
 
 const AppContent: React.FC = () => {
   return (
@@ -214,6 +224,10 @@ const AppContent: React.FC = () => {
           <Route path="categories" element={<CategoriesPage />} />
           <Route path="categoria/:slug" element={<CategoryPage />} />
           <Route path="category/:slug" element={<CategoryPage />} />
+          {/* Redirects para URLs antigas indexadas pelo Google */}
+          <Route path="categorias/:slug" element={<RedirectToCategoria />} />
+          <Route path="cifras/:slug" element={<RedirectToCifra />} />
+          <Route path="terms" element={<Navigate to="/termos" replace />} />
           <Route path="playlist/:id" element={<PlaylistDetailPage />} />
           <Route path="tendencias" element={<TrendsPage />} />
           <Route path="trends" element={<TrendsPage />} />
