@@ -765,6 +765,7 @@ export default function FullScreenPlayer({ isOpen, onClose }: FullScreenPlayerPr
                 src={coverSrc}
                 alt={currentTrack.title}
                 className="w-56 h-56 rounded-3xl shadow-2xl object-cover"
+                onError={(e) => { (e.target as HTMLImageElement).src = `https://ui-avatars.com/api/?name=${encodeURIComponent(currentTrack.title)}&background=1f2937&color=ffffff`; }}
               />
               
               {/* Glow effect */}
@@ -1080,6 +1081,7 @@ export default function FullScreenPlayer({ isOpen, onClose }: FullScreenPlayerPr
                       src={currentTrack.coverUrl}
                       alt={currentTrack.title}
                       className="w-20 h-20 rounded-lg object-cover"
+                      onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
                     />
                   ) : (
                     <div className="w-20 h-20 rounded-lg bg-gray-800 flex items-center justify-center">

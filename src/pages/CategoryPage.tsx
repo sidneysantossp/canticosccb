@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { ArrowLeft, Play, Pause, Heart, Music, ListPlus, Share2, Plus, Search, X } from 'lucide-react';
-import { buildAlbumCoverUrl } from '@/lib/media-helper';
+import { DEFAULT_COVER_URL } from '@/lib/config';
 import { supabaseFetch, isSupabaseConfigured } from '@/lib/supabaseRest';
 import { getAll as getAllCategories } from '@/lib/categoriesApi';
 import { usePlayerStore } from '@/stores/playerStore';
@@ -501,11 +501,18 @@ const CategoryPage: React.FC = () => {
                     aria-label={currentTrack?.id === song.id && isPlaying ? 'Pausar' : 'Reproduzir'}
                     className="relative flex-shrink-0 w-12 h-12 rounded-md overflow-hidden"
                   >
-                    <img
-                      src={buildAlbumCoverUrl({ id: String(song.id), cover_url: song.cover_url })}
-                      alt={song.title}
-                      className="w-12 h-12 object-cover"
-                    />
+                    {song.cover_url ? (
+                      <img
+                        src={song.cover_url}
+                        alt={song.title}
+                        className="w-12 h-12 object-cover"
+                        onError={(e) => { (e.target as HTMLImageElement).src = DEFAULT_COVER_URL; }}
+                      />
+                    ) : (
+                      <div className="w-12 h-12 bg-gray-800 flex items-center justify-center">
+                        <Music className="w-5 h-5 text-gray-500" />
+                      </div>
+                    )}
                     <div className="absolute inset-0 bg-black/30 flex items-center justify-center">
                       {currentTrack?.id === song.id && isPlaying ? (
                         <Pause className="w-5 h-5 text-white" />

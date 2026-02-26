@@ -6,7 +6,8 @@ import useFavoritesStore from '@/stores/favoritesStore';
 import { useAuth } from '@/contexts/AuthContext';
 import SEOHead from '@/components/SEO/SEOHead';
 import { apiFetch } from '@/lib/api-helper';
-import { buildAlbumCoverUrl, buildHinoUrl } from '@/lib/media-helper';
+import { buildHinoUrl } from '@/lib/media-helper';
+import { DEFAULT_COVER_URL } from '@/lib/config';
 import { usePlayerContext } from '@/contexts/PlayerContext';
 import { isSupabaseConfigured, supabaseFetch } from '@/lib/supabaseRest';
 import { buildAlbumUrl, buildHinoUrl as buildHinoSlugUrl } from '@/utils/slugUrl';
@@ -89,7 +90,7 @@ const TrendsPage: React.FC = () => {
         number: h.numero || 0,
         title: h.titulo,
         artist: h.compositor_nome || h.compositor || 'Artista Desconhecido',
-        coverUrl: buildAlbumCoverUrl({ id: String(h.id), cover_url: h.cover_url }),
+        coverUrl: h.cover_url || DEFAULT_COVER_URL,
         duration: h.duracao || '—',
         plays: h.plays || 0,
         rank: index + 1,
@@ -326,6 +327,7 @@ const TrendsPage: React.FC = () => {
                         src={hymn.coverUrl}
                         alt={hymn.title}
                         className="w-16 h-16 rounded-lg object-cover"
+                        onError={(e) => { (e.target as HTMLImageElement).src = DEFAULT_COVER_URL; }}
                       />
                       <button
                         onClick={() => handlePlayPause(hymn)}

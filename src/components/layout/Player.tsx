@@ -227,6 +227,7 @@ const Player: React.FC<PlayerProps> = ({ isHidden = false }) => {
                   src={currentTrack.coverUrl}
                   alt={currentTrack.title}
                   className="w-12 h-12 md:w-14 md:h-14 rounded object-cover flex-shrink-0"
+                  onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
                 />
               ) : (
                 <div className="w-12 h-12 md:w-14 md:h-14 rounded bg-background-secondary flex items-center justify-center flex-shrink-0">

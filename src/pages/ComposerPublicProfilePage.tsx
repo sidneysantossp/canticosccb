@@ -12,6 +12,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useNotifications } from '@/contexts/NotificationsContext';
 import { usePlayerContext } from '@/contexts/PlayerContext';
 import { buildHinoUrl, buildAlbumCoverUrl } from '@/lib/media-helper';
+import { DEFAULT_COVER_URL } from '@/lib/config';
 import { supabaseFetch, supabaseInsert, supabaseDelete, isSupabaseConfigured } from '@/lib/supabaseRest';
 
 interface Composer {
@@ -146,7 +147,7 @@ export default function ComposerPublicProfilePage() {
           if (audioUrl && !audioUrl.startsWith('http') && !audioUrl.endsWith('.mp3')) {
             audioUrl = audioUrl + '.mp3';
           }
-          const coverUrl = buildAlbumCoverUrl({ id: String(h.id), cover_url: h.cover_url });
+          const coverUrl = h.cover_url || DEFAULT_COVER_URL;
 
           return {
             id: String(h.id),
@@ -351,7 +352,7 @@ export default function ComposerPublicProfilePage() {
         artist: composer?.name || h.compositor || 'Compositor',
         duration: toMMSS(h.duracao),
         audioUrl: buildHinoUrl({ id: String(h.id), audio_url: h.audio_url }),
-        coverUrl: buildAlbumCoverUrl({ id: String(h.id), cover_url: h.cover_url || album.cover_url }) || albumCover,
+        coverUrl: h.cover_url || album.cover_url || albumCover || DEFAULT_COVER_URL,
         album: album.title,
         lyrics: h.letra || h.lyrics || '',
         plays: 0,
@@ -689,9 +690,10 @@ export default function ComposerPublicProfilePage() {
                       >
                         <div className="flex items-center gap-4">
                           <img
-                            src={song.cover_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(song.title)}&background=1f2937&color=ffffff`}
+                            src={song.cover_url || DEFAULT_COVER_URL}
                             alt={song.title}
                             className="w-12 h-12 rounded-md object-cover flex-shrink-0"
+                            onError={(e) => { (e.target as HTMLImageElement).src = DEFAULT_COVER_URL; }}
                           />
                           <div className="flex-1 min-w-0">
                             <h3 className="font-semibold text-white truncate group-hover:text-primary-400 transition-colors">
@@ -822,9 +824,10 @@ export default function ComposerPublicProfilePage() {
                       >
                         <div className="flex items-center gap-4">
                           <img
-                            src={album.cover_url || 'https://picsum.photos/seed/album/120/120'}
+                            src={album.cover_url || DEFAULT_COVER_URL}
                             alt={album.title}
                             className="w-12 h-12 rounded-md object-cover flex-shrink-0"
+                            onError={(e) => { (e.target as HTMLImageElement).src = DEFAULT_COVER_URL; }}
                           />
                           <div className="flex-1 min-w-0">
                             <h3 className="font-semibold text-white truncate group-hover:text-primary-400 transition-colors">
@@ -913,9 +916,10 @@ export default function ComposerPublicProfilePage() {
               {/* Song Info */}
               <div className="flex items-center gap-4 mb-6">
                 <img
-                  src={selectedSong.cover_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(selectedSong.title)}&background=1f2937&color=ffffff`}
+                  src={selectedSong.cover_url || DEFAULT_COVER_URL}
                   alt={selectedSong.title}
                   className="w-16 h-16 rounded-lg object-cover"
+                  onError={(e) => { (e.target as HTMLImageElement).src = DEFAULT_COVER_URL; }}
                 />
                 <div>
                   <h4 className="font-semibold text-white text-lg">

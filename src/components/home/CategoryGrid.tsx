@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { fetchActiveCategories, type CategoryRecord } from '@/lib/categoriesApi';
 import { Plus } from 'lucide-react';
 import { buildAlbumCoverUrl } from '@/lib/media-helper';
+import { DEFAULT_COVER_URL } from '@/lib/config';
 
 const CategoryGrid: React.FC = () => {
   const [categories, setCategories] = useState<CategoryRecord[]>([]);
@@ -77,7 +78,7 @@ const CategoryGrid: React.FC = () => {
                 alt={category.name}
                 className="w-12 h-12 rounded object-cover"
                 loading="lazy"
-                onError={(e) => { (e.currentTarget as HTMLImageElement).src = `https://picsum.photos/seed/category-fallback-${category.id}/200/200`; }}
+                onError={(e) => { (e.currentTarget as HTMLImageElement).src = DEFAULT_COVER_URL; }}
               />
             </div>
             <div className="flex-1 min-w-0">
