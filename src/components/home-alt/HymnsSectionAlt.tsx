@@ -1,6 +1,8 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { Play, ChevronLeft, ChevronRight } from 'lucide-react';
+import { buildHinoUrl } from '@/utils/slugUrl';
+import { DEFAULT_COVER_URL } from '@/lib/config';
 
 interface HymnsSectionAltProps {
   title: string;
@@ -40,22 +42,26 @@ const HymnsSectionAlt: React.FC<HymnsSectionAltProps> = ({
       <div className="relative">
         <div className="flex gap-4 overflow-x-auto scrollbar-hide pb-4">
           {items.map((item) => (
-            <div
+            <Link
               key={item.id}
-              className={`group flex-shrink-0 w-40 rounded-lg overflow-hidden transition-all duration-300 cursor-pointer ${
+              to={buildHinoUrl(item.id, item.title, item.number)}
+              className={`group flex-shrink-0 w-40 rounded-lg overflow-hidden transition-all duration-300 cursor-pointer no-underline ${
                 isDarkMode ? 'bg-gray-900 hover:bg-gray-800' : 'bg-gray-100 hover:bg-gray-200'
               }`}
-              onClick={() => onPlay(item)}
             >
               <div className="aspect-square relative overflow-hidden">
                 <img
-                  src={item.cover || '/placeholder-hymn.jpg'}
+                  src={item.cover || DEFAULT_COVER_URL}
                   alt={item.title}
                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                  onError={(e) => { const t = e.currentTarget; t.onerror = null; t.src = DEFAULT_COVER_URL; }}
                 />
-                <div className={`absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity ${
-                  isDarkMode ? 'bg-black/60' : 'bg-white/60'
-                }`}>
+                <div
+                  className={`absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity ${
+                    isDarkMode ? 'bg-black/60' : 'bg-white/60'
+                  }`}
+                  onClick={(e) => { e.preventDefault(); e.stopPropagation(); onPlay(item); }}
+                >
                   <Play className={isDarkMode ? 'text-white' : 'text-black'} size={32} />
                 </div>
               </div>
@@ -67,7 +73,7 @@ const HymnsSectionAlt: React.FC<HymnsSectionAltProps> = ({
                   {item.subtitle}
                 </p>
               </div>
-            </div>
+            </Link>
           ))}
         </div>
       </div>
