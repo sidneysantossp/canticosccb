@@ -320,6 +320,37 @@ export async function supabaseAuthDelete<T>(table: string, filters: Record<strin
   return Array.isArray(result) ? result : [result];
 }
 
+/**
+ * Authenticated insert: uses the logged-in user's JWT (not anon key).
+ * Accepts a single object or an array of objects.
+ */
+export async function supabaseAuthInsert<T>(table: string, data: any): Promise<T[]> {
+  if (!isSupabaseConfigured) {
+    console.warn(`[supabaseAuthInsert] Supabase not configured`);
+    return [];
+  }
+
+  const authHeaders = await buildAuthHeaders();
+  const url = `${SUPABASE_URL}/rest/v1/${table}`;
+  console.log(`[supabaseAuthInsert] Inserting into ${table}:`, Array.isArray(data) ? `${data.length} rows` : '1 row');
+
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: { ...authHeaders, 'Prefer': 'return=representation' },
+    body: JSON.stringify(data),
+  });
+
+  if (!response.ok) {
+    const text = await response.text().catch(() => '');
+    console.error(`[supabaseAuthInsert] Error ${response.status}:`, text);
+    throw new Error(`Insert failed: ${response.status} ${text}`);
+  }
+
+  const result = await response.json();
+  console.log(`[supabaseAuthInsert] Result:`, Array.isArray(result) ? `${result.length} rows` : result);
+  return Array.isArray(result) ? result : [result];
+}
+
 export async function supabaseRPC<T>(functionName: string, params: any = {}): Promise<T> {
   if (!isSupabaseConfigured) {
     console.warn(`[supabaseRPC] Supabase not configured`);

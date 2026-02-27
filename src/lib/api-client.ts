@@ -770,7 +770,7 @@ export const albunsApi = {
   },
   create: async (data: any) => {
     try {
-      const { supabase } = await import('./supabase-auth');
+      const { supabaseAuthInsert } = await import('./supabaseRest');
       const insertData: Record<string, any> = {
         title: data.titulo || data.title || '',
         description: data.descricao || data.description || '',
@@ -789,18 +789,14 @@ export const albunsApi = {
       if (data.featured_order !== undefined) insertData.featured_order = data.featured_order;
 
       console.log('📀 [albunsApi.create] Inserting:', insertData);
-      const { data: result, error: insertError } = await supabase
-        .from('albums')
-        .insert(insertData)
-        .select()
-        .single();
+      const result = await supabaseAuthInsert<any>('albums', insertData);
 
-      if (insertError) {
-        console.error('❌ [albunsApi.create] Supabase error:', insertError);
-        return { data: null, error: insertError.message };
+      if (!result || result.length === 0) {
+        console.error('❌ [albunsApi.create] Insert returned empty - possibly blocked by RLS');
+        return { data: null, error: 'Falha ao criar álbum. Verifique suas permissões.' };
       }
-      console.log('✅ [albunsApi.create] Result:', result);
-      return { data: result, error: null };
+      console.log('✅ [albunsApi.create] Result:', result[0]);
+      return { data: result[0], error: null };
     } catch (error: any) {
       console.error('❌ [albunsApi.create] Error:', error);
       return { data: null, error: error.message };
@@ -808,7 +804,7 @@ export const albunsApi = {
   },
   update: async (id: number | string, data: any) => {
     try {
-      const { supabase } = await import('./supabase-auth');
+      const { supabaseAuthUpdate } = await import('./supabaseRest');
       const updateData: any = {};
       if (data.titulo !== undefined) updateData.title = data.titulo;
       if (data.title !== undefined) updateData.title = data.title;
@@ -825,11 +821,7 @@ export const albunsApi = {
       if (data.featured_order !== undefined) updateData.featured_order = data.featured_order;
 
       console.log('📀 [albunsApi.update] ID:', id, 'Data:', updateData);
-      const { data: result, error } = await supabase.from('albums').update(updateData).eq('id', id).select();
-      if (error) {
-        console.error('❌ [albunsApi.update] Supabase error:', error);
-        return { data: null, error: error.message };
-      }
+      const result = await supabaseAuthUpdate<any>('albums', { id: `eq.${id}` }, updateData);
       console.log('✅ [albunsApi.update] Result:', result);
       if (!result || result.length === 0) {
         console.warn('⚠️ [albunsApi.update] Nenhuma linha atualizada - verifique RLS policies ou se o ID existe');
@@ -842,18 +834,22 @@ export const albunsApi = {
     }
   },
   delete: async (id: number | string) => {
-    const { supabaseDelete } = await import('./supabaseRest');
+    const { supabaseAuthDelete } = await import('./supabaseRest');
     try {
-      await supabaseDelete('albums', { id: `eq.${id}` });
+      await supabaseAuthDelete('albums', { id: `eq.${id}` });
     } catch (error: any) {
       console.error('❌ [albunsApi.delete] Error:', error);
     }
   },
   addHinos: async (albumId: string | number, hinoIds: (string | number)[]) => {
     try {
-      const { supabase } = await import('./supabase-auth');
+      const { supabaseAuthDelete, supabaseAuthInsert } = await import('./supabaseRest');
       // Limpar hinos existentes do álbum antes de re-inserir
-      await supabase.from('album_hinos').delete().eq('album_id', albumId);
+      try {
+        await supabaseAuthDelete('album_hinos', { album_id: `eq.${albumId}` });
+      } catch (e) {
+        console.warn('⚠️ [albunsApi.addHinos] Erro ao limpar hinos existentes:', e);
+      }
 
       console.log(`📀 [albunsApi.addHinos] Adicionando ${hinoIds.length} hinos ao álbum ${albumId}`);
       const rows = hinoIds.map((hinoId, i) => ({
@@ -862,11 +858,7 @@ export const albunsApi = {
         position: i + 1,
         track_number: i + 1,
       }));
-      const { error } = await supabase.from('album_hinos').insert(rows);
-      if (error) {
-        console.error('❌ [albunsApi.addHinos] Error:', error);
-        return { data: null, error: error.message };
-      }
+      await supabaseAuthInsert('album_hinos', rows);
       console.log('✅ [albunsApi.addHinos] Hinos salvos com sucesso');
       return { data: true, error: null };
     } catch (error: any) {
