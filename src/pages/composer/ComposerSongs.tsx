@@ -15,8 +15,9 @@ import {
   Trash2
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
-import { hinosApi, compositoresApi } from '@/lib/api-client';
+import { hinosApi } from '@/lib/api-client';
 import AlertModal from '@/components/ui/AlertModal';
+import { useActiveComposer } from '@/hooks/useActiveComposer';
 // import {
 //   getComposerSongs,
 //   getComposerSongStats,
@@ -44,6 +45,7 @@ type SongTrend = any;
 
 const ComposerSongs: React.FC = () => {
   const { user } = useAuth();
+  const { composerId, loading: loadingComposer } = useActiveComposer();
   const [searchQuery, setSearchQuery] = useState('');
   const [filterStatus, setFilterStatus] = useState<'all' | 'published' | 'pending' | 'draft'>('all');
   const [sortBy, setSortBy] = useState<'recent' | 'plays' | 'title'>('recent');
@@ -74,19 +76,11 @@ const ComposerSongs: React.FC = () => {
   // Load real data
   useEffect(() => {
     const loadData = async () => {
-      if (!user?.id) return;
+      if (!user?.id || !composerId || loadingComposer) return;
       
       setLoading(true);
       try {
-        // 1. Resolver compositor_id do usuário logado
-        let compositorId: string | null = null;
-        try {
-          const comp = await compositoresApi.getByUsuarioId(user.id, (user as any)?.email);
-          const cdata: any = comp?.data;
-          if (cdata?.id) compositorId = String(cdata.id);
-        } catch {}
-
-        console.log('🎵 [ComposerSongs] compositor_id:', compositorId);
+        console.log('🎵 [ComposerSongs] compositor_id:', composerId);
 
         // 2. Buscar todos os hinos
         const allRes = await hinosApi.list({ limit: 1000 });
@@ -94,8 +88,8 @@ const ComposerSongs: React.FC = () => {
         const allArr: any[] = Array.isArray(allRaw) ? allRaw : (allRaw?.data || allRaw?.hinos || allRaw?.items || []);
 
         // 3. Filtrar APENAS por compositor_id (exclusivo - só hinos que o compositor fez upload)
-        const mineAll = compositorId
-          ? allArr.filter((h: any) => h.compositor_id && String(h.compositor_id) === String(compositorId))
+        const mineAll = composerId
+          ? allArr.filter((h: any) => h.compositor_id && String(h.compositor_id) === String(composerId))
           : [];
 
         console.log('🎵 [ComposerSongs] Meus hinos:', mineAll.length, 'de', allArr.length, 'total');
@@ -141,7 +135,7 @@ const ComposerSongs: React.FC = () => {
     };
 
     loadData();
-  }, [user?.id, searchQuery, filterStatus, sortBy, reloadTick]);
+  }, [composerId, filterStatus, loadingComposer, reloadTick, searchQuery, sortBy, user?.id]);
 
   const handleDeleteSong = async (songId: string) => {
     try {

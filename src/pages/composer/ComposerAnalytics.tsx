@@ -14,20 +14,20 @@ import {
   BarChart3
 } from 'lucide-react';
 import { ComposerPageWrapper } from '@/components/ComposerPageWrapper';
-import { useAuth } from '@/contexts/AuthContext';
 import {
-  getComposerOverview,
-  getTopSongs,
-  getPlaysSeries,
-  getEngagementCounts,
+  getComposerOverviewByComposerId,
+  getTopSongsByComposerId,
+  getPlaysSeriesByComposerId,
+  getEngagementCountsByComposerId,
   getEngagementCountsWindow,
   getAudienceTopCountries,
   getAudienceDevices,
 } from '@/lib/composerStatsApi';
 import type { ComposerOverview, TopSong } from '@/lib/composerStatsApi';
+import { useActiveComposer } from '@/hooks/useActiveComposer';
 
 const ComposerAnalytics: React.FC = () => {
-  const { user } = useAuth();
+  const { composerId, loading: loadingComposer } = useActiveComposer();
   const [timeRange, setTimeRange] = useState<'7d' | '30d' | '90d' | '1y'>('30d');
   const [activeTab, setActiveTab] = useState<'overview' | 'songs' | 'audience' | 'engagement'>('overview');
   const [overview, setOverview] = useState<ComposerOverview | null>(null);
@@ -42,12 +42,12 @@ const ComposerAnalytics: React.FC = () => {
 
   useEffect(() => {
     const run = async () => {
-      if (!user?.id) { setLoading(false); return; }
+      if (!composerId || loadingComposer) { setLoading(false); return; }
       try {
         setLoading(true);
         const [overviewData, topSongs] = await Promise.all([
-          getComposerOverview(user.id, timeRange),
-          getTopSongs(user.id, 5)
+          getComposerOverviewByComposerId(composerId, timeRange),
+          getTopSongsByComposerId(composerId, 5)
         ]);
         setOverview(overviewData);
         setTopSongsData(topSongs);
@@ -58,18 +58,18 @@ const ComposerAnalytics: React.FC = () => {
       }
     };
     run();
-  }, [user?.id, timeRange]);
+  }, [composerId, loadingComposer, timeRange]);
 
   // carregar série de plays quando muda o período
   useEffect(() => {
     const loadSeries = async () => {
-      if (!user?.id) return;
+      if (!composerId || loadingComposer) return;
       const days = timeRange === '7d' ? 7 : timeRange === '30d' ? 30 : timeRange === '90d' ? 90 : 365;
-      const data = await getPlaysSeries(user.id, days);
+      const data = await getPlaysSeriesByComposerId(composerId, days);
       setSeries(data);
 
       // engagement do período
-      const e = await getEngagementCounts(user.id, days);
+      const e = await getEngagementCountsByComposerId(composerId, days);
       setEngagement(e);
 
       // período anterior para delta
@@ -82,14 +82,14 @@ const ComposerAnalytics: React.FC = () => {
 
       // público (países e devices)
       const [cc, dd] = await Promise.all([
-        getAudienceTopCountries(user.id, days, 5),
-        getAudienceDevices(user.id, days)
+        getAudienceTopCountries(composerId, days, 5),
+        getAudienceDevices(composerId, days)
       ]);
       setCountries(cc);
       setDevices(dd);
     };
     loadSeries();
-  }, [user?.id, timeRange]);
+  }, [composerId, loadingComposer, timeRange]);
 
   const formatSeconds = (sec: number) => {
     const m = Math.floor(sec / 60);

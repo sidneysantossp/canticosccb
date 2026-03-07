@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { AlertTriangle, X } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
-import apiClient from '@/lib/api-client';
 import { useLocation } from 'react-router-dom';
 import { useNavigate } from 'react-router-dom';
+import { compositoresApi, compositorGerentesApi } from '@/lib/api-client';
 
 const ManagingComposerBanner: React.FC = () => {
   const { managingComposerName: contextComposerName, switchBackToSelf, user } = useAuth();
@@ -26,7 +26,7 @@ const ManagingComposerBanner: React.FC = () => {
         if (!fromContextOrStorage && storedId) {
           const idNum = parseInt(storedId, 10);
           if (Number.isFinite(idNum)) {
-            const resp: any = await apiClient.compositores.get(idNum);
+            const resp: any = await compositoresApi.get(idNum);
             const payload = resp?.data || resp; // compat
             const name = payload?.nome_artistico || payload?.nome || null;
             if (name) {
@@ -46,12 +46,12 @@ const ManagingComposerBanner: React.FC = () => {
     // Evita reativar banner em rotas de usuário como '/manage-composers'.
     const maybeAutoSelectSingle = async () => {
       try {
-        const isComposerRoute = location.pathname.startsWith('/composer');
+        const isComposerRoute = location.pathname.startsWith('/composer') || location.pathname.startsWith('/compositor');
         const isManagePage = location.pathname.startsWith('/manage-composers');
         if (!isComposerRoute || isManagePage) return;
 
         if (!fromContextOrStorage && !storedId && user?.id) {
-          const resp: any = await apiClient.compositorGerentes.listarCompositores(user.id);
+          const resp: any = await compositorGerentesApi.listarCompositores(user.id);
           const payload = resp?.data;
           const list = Array.isArray(payload) ? payload : (Array.isArray(payload?.data) ? payload.data : []);
           // Considerar apenas ativos
@@ -74,7 +74,7 @@ const ManagingComposerBanner: React.FC = () => {
     };
 
     maybeAutoSelectSingle();
-  }, [contextComposerName, location.pathname]);
+  }, [contextComposerName, location.pathname, user?.id]);
 
   const handleSwitchBack = () => {
     // Limpar sessionStorage (mantém alinhado com AuthContext)

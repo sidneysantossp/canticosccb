@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Navigate, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
-import { compositoresApi } from '@/lib/api-client';
+import { compositoresApi, compositorGerentesApi } from '@/lib/api-client';
 import { AlertCircle } from 'lucide-react';
 
 interface ProtectedComposerRouteProps {
@@ -9,10 +9,11 @@ interface ProtectedComposerRouteProps {
 }
 
 export const ProtectedComposerRoute: React.FC<ProtectedComposerRouteProps> = ({ children }) => {
-  const { user } = useAuth();
+  const { user, managingComposerId } = useAuth();
   const navigate = useNavigate();
   const [isVerified, setIsVerified] = useState<boolean | null>(null);
   const [hasComposerProfile, setHasComposerProfile] = useState(false);
+  const [hasManagerAccess, setHasManagerAccess] = useState(false);
   const [loading, setLoading] = useState(true);
 
   const checkComposerStatus = React.useCallback(async () => {
@@ -22,8 +23,24 @@ export const ProtectedComposerRoute: React.FC<ProtectedComposerRouteProps> = ({ 
     }
 
     try {
-      const response = await compositoresApi.getByUsuarioId(String(user.id), user.email);
-      const compositor = response.data as any;
+      let compositor: any = null;
+
+      if (managingComposerId) {
+        const managedResponse = await compositoresApi.get(String(managingComposerId));
+        compositor = managedResponse.data as any;
+        setHasManagerAccess(Boolean(compositor));
+      } else {
+        const response = await compositoresApi.getByUsuarioId(String(user.id), user.email);
+        compositor = response.data as any;
+
+        if (!compositor) {
+          const managedResponse = await compositorGerentesApi.listarCompositores(user.id);
+          const managedList = Array.isArray(managedResponse.data) ? managedResponse.data : [];
+          setHasManagerAccess(managedList.some((item: any) => item.status === 'ativo'));
+        } else {
+          setHasManagerAccess(false);
+        }
+      }
 
       if (compositor) {
         setHasComposerProfile(true);
@@ -34,16 +51,17 @@ export const ProtectedComposerRoute: React.FC<ProtectedComposerRouteProps> = ({ 
       } else {
         setHasComposerProfile(false);
         console.log('❌ Compositor não encontrado para usuario_id:', user.id);
-        setIsVerified(user.tipo !== 'compositor');
+        setIsVerified(false);
       }
     } catch (error) {
       console.error('Erro ao verificar compositor:', error);
       setHasComposerProfile(false);
-      setIsVerified(user.tipo !== 'compositor');
+      setHasManagerAccess(false);
+      setIsVerified(false);
     } finally {
       setLoading(false);
     }
-  }, [user]);
+  }, [managingComposerId, user]);
 
   useEffect(() => {
     checkComposerStatus();
@@ -117,6 +135,18 @@ export const ProtectedComposerRoute: React.FC<ProtectedComposerRouteProps> = ({ 
     );
   }
 
-  // Se está verificado ou é outro tipo de usuário, permite acesso
+  if (hasComposerProfile && isVerified !== false) {
+    return <>{children}</>;
+  }
+
+  if (hasManagerAccess) {
+    return <Navigate to="/manage-composers" replace />;
+  }
+
+  // Se não é compositor nem gerente, direciona para onboarding/cadastro
+  if (user.tipo !== 'admin') {
+    return <Navigate to="/compositor/cadastro" replace />;
+  }
+
   return <>{children}</>;
 };

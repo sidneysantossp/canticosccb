@@ -1,6 +1,7 @@
 import React, { useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
+import { useActiveComposer } from '@/hooks/useActiveComposer';
 
 interface ComposerPageWrapperProps {
   children: React.ReactNode;
@@ -15,11 +16,12 @@ export const ComposerPageWrapper: React.FC<ComposerPageWrapperProps> = ({
   children, 
   requireComposer = true 
 }) => {
-  const { user, profile, loading } = useAuth();
+  const { user, profile, loading, managingComposerId } = useAuth();
+  const { composerId, loading: loadingComposer } = useActiveComposer();
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (loading) return;
+    if (loading || loadingComposer) return;
 
     if (!user) {
       console.warn('⚠️ ComposerPageWrapper: No user found, redirecting to login');
@@ -27,20 +29,21 @@ export const ComposerPageWrapper: React.FC<ComposerPageWrapperProps> = ({
       return;
     }
 
-    if (requireComposer && !profile?.is_composer) {
-      console.warn('⚠️ ComposerPageWrapper: User is not a composer, redirecting to home');
-      navigate('/');
+    if (requireComposer && !profile?.is_composer && !composerId) {
+      console.warn('⚠️ ComposerPageWrapper: User has no active composer context');
+      navigate(managingComposerId ? '/manage-composers' : '/');
       return;
     }
 
     console.log('✅ ComposerPageWrapper: User authenticated', {
       userId: user.id,
-      isComposer: profile?.is_composer
+      isComposer: profile?.is_composer,
+      composerId,
     });
-  }, [user, profile, loading, navigate, requireComposer]);
+  }, [user, profile, loading, loadingComposer, composerId, navigate, requireComposer, managingComposerId]);
 
   // Loading state
-  if (loading) {
+  if (loading || loadingComposer) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-background">
         <div className="text-center">
@@ -57,7 +60,7 @@ export const ComposerPageWrapper: React.FC<ComposerPageWrapperProps> = ({
   }
 
   // Not a composer
-  if (requireComposer && !profile?.is_composer) {
+  if (requireComposer && !profile?.is_composer && !composerId) {
     return null; // Vai redirecionar
   }
 

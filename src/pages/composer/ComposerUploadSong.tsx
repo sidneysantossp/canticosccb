@@ -13,7 +13,8 @@ import {
 } from 'lucide-react';
 import AlertModal from '@/components/ui/AlertModal';
 import { useAuth } from '@/contexts/AuthContext';
-import { hinosApi, uploadApi, compositoresApi } from '@/lib/api-client';
+import { hinosApi, uploadApi } from '@/lib/api-client';
+import { useActiveComposer } from '@/hooks/useActiveComposer';
 
 interface SongFormData {
   title: string;
@@ -30,11 +31,11 @@ interface SongFormData {
 const ComposerUploadSong: React.FC = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { composer, composerId } = useActiveComposer();
   const audioInputRef = useRef<HTMLInputElement>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
   const audioPreviewRef = useRef<HTMLAudioElement>(null);
-  const [compositorId, setCompositorId] = useState<string | null>(null);
-  const [compositorNome, setCompositorNome] = useState<string>('');
+  const compositorNome = composer?.nome_artistico || composer?.nome || (user as any)?.nome || (user as any)?.name || '';
 
   const [formData, setFormData] = useState<SongFormData>({
     title: '',
@@ -63,24 +64,6 @@ const ComposerUploadSong: React.FC = () => {
   const [modalType, setModalType] = useState<'success' | 'error' | 'info' | 'warning'>('info');
   const [modalCallback, setModalCallback] = useState<(() => void) | null>(null);
   const [genres, setGenres] = useState<string[]>([]);
-
-  // Resolver compositor_id do usuário logado
-  useEffect(() => {
-    const loadCompositor = async () => {
-      if (!user?.id) return;
-      try {
-        const comp = await compositoresApi.getByUsuarioId(user.id, (user as any)?.email);
-        const cdata: any = comp?.data;
-        console.log('🎵 [UploadSong] Compositor resolvido:', cdata);
-        if (cdata?.id) setCompositorId(String(cdata.id));
-        setCompositorNome(cdata?.nome_artistico || cdata?.nome || (user as any)?.nome || '');
-      } catch (e) {
-        console.warn('⚠️ [UploadSong] Compositor não encontrado pelo user_id, usando nome do user:', e);
-        setCompositorNome((user as any)?.nome || (user as any)?.name || '');
-      }
-    };
-    loadCompositor();
-  }, [user?.id]);
 
   // Carregar gêneros do banco de dados
   useEffect(() => {
@@ -287,13 +270,13 @@ const ComposerUploadSong: React.FC = () => {
         categoria: formData.genre || undefined,
         duracao: durationStr,
         letra: formData.lyrics || undefined,
-        ativo: 1,
-        status: 'published',
+        ativo: 0,
+        status: 'pending',
       };
 
-      if (compositorId) hinoData.compositor_id = compositorId;
+      if (composerId) hinoData.compositor_id = composerId;
 
-      console.log('📀 [UploadSong] compositorId:', compositorId, '| compositorNome:', compositorNome);
+      console.log('📀 [UploadSong] compositorId:', composerId, '| compositorNome:', compositorNome);
       console.log('📀 [UploadSong] hinoData:', hinoData);
 
       const result = await hinosApi.create(hinoData);

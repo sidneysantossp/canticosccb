@@ -10,20 +10,20 @@ import {
   UserPlus,
   Download
 } from 'lucide-react';
-import { useAuth } from '@/contexts/AuthContext';
 import {
-  getFollowerStats,
-  getFollowers,
-  getTopFans,
-  getFollowerGrowth,
+  getFollowerStatsByComposerId,
+  getFollowersByComposerId,
+  getTopFansByComposerId,
+  getFollowerGrowthByComposerId,
   type FollowerStats,
   type Follower,
   type TopFan,
   type FollowerGrowthPoint
 } from '@/lib/composerFollowersApi';
+import { useActiveComposer } from '@/hooks/useActiveComposer';
 
 const ComposerFollowers: React.FC = () => {
-  const { user } = useAuth();
+  const { composerId, loading: loadingComposer } = useActiveComposer();
   const [searchQuery, setSearchQuery] = useState('');
   const [filterBy, setFilterBy] = useState<'all' | 'recent' | 'active'>('all');
   const [loading, setLoading] = useState(true);
@@ -43,15 +43,15 @@ const ComposerFollowers: React.FC = () => {
   // Load real data
   useEffect(() => {
     const loadData = async () => {
-      if (!user?.id) return;
+      if (!composerId || loadingComposer) return;
       
       setLoading(true);
       try {
         const [stats, followersData, fansData, growth] = await Promise.all([
-          getFollowerStats(user.id),
-          getFollowers(user.id, 6, 0, searchQuery, filterBy),
-          getTopFans(user.id, 3),
-          getFollowerGrowth(user.id, 30)
+          getFollowerStatsByComposerId(composerId),
+          getFollowersByComposerId(composerId, 1000, 0, searchQuery, filterBy),
+          getTopFansByComposerId(composerId, 3),
+          getFollowerGrowthByComposerId(composerId, 30)
         ]);
 
         setFollowerStats(stats);
@@ -66,7 +66,7 @@ const ComposerFollowers: React.FC = () => {
     };
 
     loadData();
-  }, [user?.id, searchQuery, filterBy]);
+  }, [composerId, filterBy, loadingComposer, searchQuery]);
 
   const filteredFollowers = followers.filter(follower => {
     const matchesSearch = follower.name.toLowerCase().includes(searchQuery.toLowerCase()) ||

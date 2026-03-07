@@ -1,18 +1,16 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Copyright, MessageSquare, Clock, CheckCircle, XCircle, AlertCircle, Plus } from 'lucide-react';
 import useCopyrightClaimsStore, { CopyrightClaim } from '@/stores/copyrightClaimsStore';
 import CopyrightClaimChat from '@/components/CopyrightClaimChat';
+import { useActiveComposer } from '@/hooks/useActiveComposer';
 
 const ComposerCopyrightClaims = () => {
   const { claims, getClaimsByComposer } = useCopyrightClaimsStore();
+  const { composerId, composerName } = useActiveComposer();
   const [selectedClaim, setSelectedClaim] = useState<CopyrightClaim | null>(null);
   const [showChat, setShowChat] = useState(false);
-  
-  // TODO: Pegar ID do compositor logado
-  const composerId = 'composer_1';
-  const composerName = 'João Silva';
-  
-  const myClaims = getClaimsByComposer(composerId);
+
+  const myClaims = composerId ? getClaimsByComposer(composerId) : [];
 
   const getStatusColor = (status: CopyrightClaim['status']) => {
     const colors = {
@@ -248,8 +246,8 @@ const ComposerCopyrightClaims = () => {
               <CopyrightClaimChat
                 claim={selectedClaim}
                 userRole="composer"
-                userId={composerId}
-                userName={composerName}
+                userId={composerId || ''}
+                userName={composerName || 'Compositor'}
               />
             </div>
           </div>

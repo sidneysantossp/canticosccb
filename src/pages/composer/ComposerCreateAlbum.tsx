@@ -13,8 +13,9 @@ import {
   Trash2
 } from 'lucide-react';
 import AlertModal from '@/components/ui/AlertModal';
-import { albunsApi, hinosApi, compositoresApi } from '@/lib/api-client';
+import { albunsApi, hinosApi } from '@/lib/api-client';
 import { useAuth } from '@/contexts/AuthContext';
+import { useActiveComposer } from '@/hooks/useActiveComposer';
 
 interface AlbumFormData {
   title: string;
@@ -32,6 +33,7 @@ interface AlbumFormData {
 const ComposerCreateAlbum: React.FC = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { composer, composerId } = useActiveComposer();
   const imageInputRef = useRef<HTMLInputElement>(null);
 
   const [formData, setFormData] = useState<AlbumFormData>({
@@ -75,17 +77,7 @@ const ComposerCreateAlbum: React.FC = () => {
     const load = async () => {
       if (!user?.id) return;
       try {
-        // 1. Resolver compositor_id e nome do compositor logado
-        let compositorId: string | null = null;
-        let composerName = '';
-        try {
-          const comp = await compositoresApi.getByUsuarioId(user.id, (user as any)?.email);
-          const cdata: any = comp?.data;
-          if (cdata?.id) compositorId = String(cdata.id);
-          composerName = cdata?.nome_artistico || cdata?.nome || '';
-        } catch {}
-
-        console.log('🎵 [CreateAlbum] Buscando hinos do compositor:', { compositorId, composerName });
+        console.log('🎵 [CreateAlbum] Buscando hinos do compositor:', { composerId, composerName: composer?.nome_artistico || composer?.nome || '' });
 
         // 2. Buscar todos os hinos e filtrar pelo compositor_id OU compositor_nome
         const res = await hinosApi.list({ limit: 1000 });
@@ -94,8 +86,8 @@ const ComposerCreateAlbum: React.FC = () => {
 
         // Filtrar APENAS por compositor_id (sem fallback por nome)
         // Só mostra hinos que o próprio compositor fez upload
-        const mine = compositorId
-          ? (arr || []).filter((h: any) => h.compositor_id && String(h.compositor_id) === String(compositorId))
+        const mine = composerId
+          ? (arr || []).filter((h: any) => h.compositor_id && String(h.compositor_id) === String(composerId))
           : [];
 
         console.log('🎵 [CreateAlbum] Hinos encontrados:', mine.length, 'de', arr.length, 'total');
@@ -108,7 +100,7 @@ const ComposerCreateAlbum: React.FC = () => {
       }
     };
     load();
-  }, [user?.id]);
+  }, [composer?.nome, composer?.nome_artistico, composerId, user?.id]);
 
   const handleInputChange = (field: keyof AlbumFormData, value: any) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -258,17 +250,8 @@ const ComposerCreateAlbum: React.FC = () => {
       setUploadProgress(60);
 
       // 2. Criar álbum no banco
-      // Resolver compositor_id real pelo usuario_id
-      let resolvedCompositorId: string | undefined = undefined;
-      let resolvedCompositorNome: string | undefined = undefined;
-      try {
-        if (user?.id) {
-          const comp = await compositoresApi.getByUsuarioId(user.id, (user as any)?.email);
-          const cdata: any = comp?.data || comp;
-          if (cdata?.id) resolvedCompositorId = String(cdata.id);
-          if (cdata?.nome || cdata?.nome_artistico) resolvedCompositorNome = (cdata?.nome || cdata?.nome_artistico);
-        }
-      } catch {}
+      const resolvedCompositorId = composerId || undefined;
+      const resolvedCompositorNome = composer?.nome_artistico || composer?.nome || undefined;
 
       const albumData = {
         titulo: formData.title.trim(),

@@ -81,6 +81,9 @@ import ComposerFollowers from '@/pages/composer/ComposerFollowers';
 import ComposerNotifications from '@/pages/composer/ComposerNotifications';
 import ComposerCopyrightClaims from '@/pages/composer/ComposerCopyrightClaims';
 import ComposerOnboarding from '@/pages/composer/ComposerOnboarding';
+import ComposerTrending from '@/pages/composer/ComposerTrending';
+import ComposerLiked from '@/pages/composer/ComposerLiked';
+import ComposerHistory from '@/pages/composer/ComposerHistory';
 
 // Admin Pages
 // import AdminDashboard from '@/pages/admin/AdminDashboard';
@@ -319,9 +322,9 @@ const AppContent: React.FC = () => {
           <Route path="compositor/direitos-autorais" element={<ProtectedComposerRoute><ComposerCopyrightClaims /></ProtectedComposerRoute>} />
           <Route path="composer/copyright-claims" element={<ProtectedComposerRoute><ComposerCopyrightClaims /></ProtectedComposerRoute>} />
           {/* compositor/onboarding is public - it has its own signup form */}
-          <Route path="composer/trending" element={<ProtectedComposerRoute><TrendsPage /></ProtectedComposerRoute>} />
-          <Route path="composer/liked" element={<ProtectedComposerRoute><LikedSongsPage /></ProtectedComposerRoute>} />
-          <Route path="composer/history" element={<ProtectedComposerRoute><HistoryPage /></ProtectedComposerRoute>} />
+          <Route path="composer/trending" element={<ProtectedComposerRoute><ComposerTrending /></ProtectedComposerRoute>} />
+          <Route path="composer/liked" element={<ProtectedComposerRoute><ComposerLiked /></ProtectedComposerRoute>} />
+          <Route path="composer/history" element={<ProtectedComposerRoute><ComposerHistory /></ProtectedComposerRoute>} />
 
           {/* Admin Routes - Protected + Admin Role */}
           <Route path="admin" element={<ProtectedRoute requireAdmin><AdminDashboard /></ProtectedRoute>} />
@@ -540,4 +543,3 @@ function App() {
 }
 
 export default App;
-

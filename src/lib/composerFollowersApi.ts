@@ -33,6 +33,93 @@ export type TopFan = {
 
 export type FollowerGrowthPoint = { date: string; count: number };
 
+async function getFollowerStatsInternal(compositorId: string | number): Promise<FollowerStats> {
+  const empty: FollowerStats = { total: 0, thisMonth: 0, growth: 0, engagement: 0, averagePlays: 0 };
+  const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
+
+  const [allFollowers, recentFollowers] = await Promise.all([
+    supabaseFetch<any>('user_follows', {
+      composer_id: `eq.${compositorId}`,
+      select: 'id'
+    }).catch(() => []),
+    supabaseFetch<any>('user_follows', {
+      composer_id: `eq.${compositorId}`,
+      created_at: `gte.${thirtyDaysAgo}`,
+      select: 'id'
+    }).catch(() => []),
+  ]);
+
+  const total = allFollowers.length;
+  const thisMonth = recentFollowers.length;
+
+  return {
+    total,
+    thisMonth,
+    growth: total > 0 ? Math.round((thisMonth / total) * 100) : 0,
+    engagement: 0,
+    averagePlays: 0,
+  };
+}
+
+async function getFollowersInternal(
+  compositorId: string | number,
+  limit = 50,
+  offset = 0,
+  search = '',
+  filter: 'all'|'recent'|'active' = 'all'
+): Promise<Follower[]> {
+  const filters: Record<string, string> = {
+    composer_id: `eq.${compositorId}`,
+    select: 'id,user_id,created_at',
+    limit: String(limit),
+    offset: String(offset),
+    order: 'created_at.desc'
+  };
+
+  if (filter === 'recent') {
+    const recentCutoff = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+    filters.created_at = `gte.${recentCutoff}`;
+  }
+
+  const rows = await supabaseFetch<any>('user_follows', filters);
+
+  const userIds = rows.map((row: any) => row.user_id).filter(Boolean);
+  let usersMap: Record<string, any> = {};
+  if (userIds.length > 0) {
+    const users = await supabaseFetch<any>('users', {
+      id: `in.(${userIds.join(',')})`,
+      select: 'id,name,email,avatar_url'
+    }).catch(() => []);
+    usersMap = (users || []).reduce((acc: any, user: any) => {
+      acc[user.id] = user;
+      return acc;
+    }, {});
+  }
+
+  const normalized = rows.map((row: any) => {
+    const user = usersMap[row.user_id] || {};
+    return {
+      id: String(row.id),
+      name: user.name || 'Usuário',
+      email: user.email,
+      avatar_url: user.avatar_url,
+      followedAt: row.created_at,
+      totalPlays: 0,
+      isActive: true,
+      location: null,
+      favoriteSong: null,
+    };
+  });
+
+  if (!search.trim()) return normalized;
+
+  const query = search.trim().toLowerCase();
+  return normalized.filter((follower) =>
+    follower.name.toLowerCase().includes(query) ||
+    (follower.email ? follower.email.toLowerCase().includes(query) : false)
+  );
+}
+
 export async function getFollowerStats(usuarioId: string | number): Promise<FollowerStats> {
   const empty: FollowerStats = { total: 0, thisMonth: 0, growth: 0, engagement: 0, averagePlays: 0 };
   if (!isSupabaseConfigured) return empty;
@@ -47,29 +134,7 @@ export async function getFollowerStats(usuarioId: string | number): Promise<Foll
     const compositorId = composerRows?.[0]?.id;
     if (!compositorId) return empty;
 
-    const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
-
-    const [allFollowers, recentFollowers] = await Promise.all([
-      supabaseFetch<any>('user_follows', {
-        composer_id: `eq.${compositorId}`,
-        select: 'id'
-      }).catch(() => []),
-      supabaseFetch<any>('user_follows', {
-        composer_id: `eq.${compositorId}`,
-        created_at: `gte.${thirtyDaysAgo}`,
-        select: 'id'
-      }).catch(() => []),
-    ]);
-
-    const total = allFollowers.length;
-    const thisMonth = recentFollowers.length;
-    return {
-      total,
-      thisMonth,
-      growth: total > 0 ? Math.round((thisMonth / total) * 100) : 0,
-      engagement: 0,
-      averagePlays: 0,
-    };
+    return await getFollowerStatsInternal(compositorId);
   } catch (error) {
     console.error('Error fetching follower stats:', error);
     return empty;
@@ -89,41 +154,7 @@ export async function getFollowers(usuarioId: string | number, limit = 50, offse
     const compositorId = composerRows?.[0]?.id;
     if (!compositorId) return [];
 
-    const filters: Record<string, string> = {
-      composer_id: `eq.${compositorId}`,
-      select: 'id,user_id,created_at',
-      limit: String(limit),
-      offset: String(offset),
-      order: 'created_at.desc'
-    };
-
-    const rows = await supabaseFetch<any>('user_follows', filters);
-
-    // Buscar dados dos usuários
-    const userIds = rows.map((r: any) => r.user_id).filter(Boolean);
-    let usersMap: Record<string, any> = {};
-    if (userIds.length > 0) {
-      const users = await supabaseFetch<any>('users', {
-        id: `in.(${userIds.join(',')})`,
-        select: 'id,name,email,avatar_url'
-      }).catch(() => []);
-      usersMap = (users || []).reduce((acc: any, u: any) => { acc[u.id] = u; return acc; }, {});
-    }
-
-    return rows.map((row: any) => {
-      const u = usersMap[row.user_id] || {};
-      return {
-        id: String(row.id),
-        name: u.name || 'Usuário',
-        email: u.email,
-        avatar_url: u.avatar_url,
-        followedAt: row.created_at,
-        totalPlays: 0,
-        isActive: true,
-        location: null,
-        favoriteSong: null,
-      };
-    });
+    return await getFollowersInternal(compositorId, limit, offset, search, filter);
   } catch (error) {
     console.error('Error fetching followers:', error);
     return [];
@@ -168,6 +199,73 @@ export async function getFollowerGrowth(usuarioId: string | number, days = 30): 
     }));
   } catch (error) {
     console.error('Error fetching follower growth:', error);
+    return [];
+  }
+}
+
+export async function getFollowerStatsByComposerId(compositorId: string | number): Promise<FollowerStats> {
+  const empty: FollowerStats = { total: 0, thisMonth: 0, growth: 0, engagement: 0, averagePlays: 0 };
+  if (!isSupabaseConfigured) return empty;
+
+  try {
+    return await getFollowerStatsInternal(compositorId);
+  } catch (error) {
+    console.error('Error fetching follower stats by composer:', error);
+    return empty;
+  }
+}
+
+export async function getFollowersByComposerId(
+  compositorId: string | number,
+  limit = 50,
+  offset = 0,
+  search = '',
+  filter: 'all'|'recent'|'active' = 'all'
+): Promise<Follower[]> {
+  if (!isSupabaseConfigured) return [];
+
+  try {
+    return await getFollowersInternal(compositorId, limit, offset, search, filter);
+  } catch (error) {
+    console.error('Error fetching followers by composer:', error);
+    return [];
+  }
+}
+
+export async function getTopFansByComposerId(_compositorId: string | number, _limit = 3): Promise<TopFan[]> {
+  return [];
+}
+
+export async function getFollowerGrowthByComposerId(compositorId: string | number, days = 30): Promise<FollowerGrowthPoint[]> {
+  if (!isSupabaseConfigured) return [];
+
+  try {
+    const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString();
+    const rows = await supabaseFetch<any>('user_follows', {
+      composer_id: `eq.${compositorId}`,
+      created_at: `gte.${since}`,
+      select: 'created_at',
+      order: 'created_at.asc'
+    }).catch(() => []);
+
+    const counts = new Map<string, number>();
+    for (let index = days - 1; index >= 0; index -= 1) {
+      const date = new Date();
+      date.setHours(0, 0, 0, 0);
+      date.setDate(date.getDate() - index);
+      counts.set(date.toISOString().slice(0, 10), 0);
+    }
+
+    for (const row of rows || []) {
+      const key = String(row.created_at || '').slice(0, 10);
+      if (counts.has(key)) {
+        counts.set(key, (counts.get(key) || 0) + 1);
+      }
+    }
+
+    return Array.from(counts.entries()).map(([date, count]) => ({ date, count }));
+  } catch (error) {
+    console.error('Error fetching follower growth by composer:', error);
     return [];
   }
 }

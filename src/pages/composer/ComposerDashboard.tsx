@@ -17,8 +17,9 @@ import {
   Plus
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
-import { getComposerOverview, getTopSongs } from '@/lib/composerStatsApi';
+import { getComposerOverviewByComposerId, getTopSongsByComposerId } from '@/lib/composerStatsApi';
 import useNotificationsStore, { createFollowNotification } from '@/stores/notificationsStore';
+import { useActiveComposer } from '@/hooks/useActiveComposer';
 
 // Mock types
 interface ComposerStats {
@@ -61,10 +62,10 @@ interface RecentActivity {
 }
 
 const fetchOverview = async (params: { composerId?: string | number; usuarioId?: string | number; period: '7d'|'30d'|'90d'|'1y' }): Promise<ComposerStats> => {
-  const { usuarioId, period } = params;
-  if (!usuarioId) throw new Error('usuarioId required');
+  const { composerId, period } = params;
+  if (!composerId) throw new Error('composerId required');
   
-  const overview = await getComposerOverview(usuarioId, period);
+  const overview = await getComposerOverviewByComposerId(composerId, period);
   return {
     totalPlays: overview.plays,
     totalLikes: overview.likes,
@@ -91,10 +92,10 @@ const fetchOverview = async (params: { composerId?: string | number; usuarioId?:
 };
 
 const fetchHighlights = async (params: { composerId?: string | number; usuarioId?: string | number; limit: number }): Promise<TopSong[]> => {
-  const { usuarioId, limit } = params;
-  if (!usuarioId) return [];
+  const { composerId, limit } = params;
+  if (!composerId) return [];
   
-  const songs = await getTopSongs(usuarioId, limit);
+  const songs = await getTopSongsByComposerId(composerId, limit);
   return songs.map((s) => ({
     id: s.id,
     title: s.title,
@@ -110,7 +111,8 @@ const fetchRecentActivities = async (params: { composerId?: string | number; usu
 };
 
 const ComposerDashboard: React.FC = () => {
-  const { user, profile, managingComposerId } = useAuth();
+  const { user, profile } = useAuth();
+  const { composerId, loading: loadingComposer } = useActiveComposer();
   const [followToast, setFollowToast] = useState<{ visible: boolean; name: string }>(() => ({ visible: false, name: '' }));
   const [timeRange, setTimeRange] = useState<'7d' | '30d' | '90d' | '1y'>('30d');
   const [isLoading, setIsLoading] = useState(true);
@@ -123,13 +125,13 @@ const ComposerDashboard: React.FC = () => {
     console.log('🎯 ComposerDashboard - User:', user?.id);
     console.log('🎯 ComposerDashboard - Profile:', profile);
     
-    if (user?.id) {
+    if (user?.id && composerId && !loadingComposer) {
       loadDashboardData();
-    } else {
+    } else if (!loadingComposer) {
       console.warn('⚠️ No user ID found!');
       setIsLoading(false); // Stop loading if no user
     }
-  }, [user?.id, timeRange]);
+  }, [composerId, loadingComposer, timeRange, user?.id]);
 
   // Realtime: notificação de novo seguidor (disabled - mock mode)
   useEffect(() => {
@@ -194,8 +196,6 @@ const ComposerDashboard: React.FC = () => {
 
   const loadDashboardData = async () => {
     try {
-      const sessionComposerId = window.sessionStorage.getItem('managingComposerId') ? parseInt(window.sessionStorage.getItem('managingComposerId') as string) : undefined;
-      const composerId = (managingComposerId ?? sessionComposerId);
       const usuarioId = user!.id;
       console.log('📊 Loading dashboard data for composer:', composerId, 'usuario:', usuarioId);
       setIsLoading(true);

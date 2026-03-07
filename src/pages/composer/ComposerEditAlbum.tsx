@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import { albunsApi, hinosApi, uploadApi, compositoresApi } from '../../lib/api-client';
 import { useAuth } from '@/contexts/AuthContext';
+import { useActiveComposer } from '@/hooks/useActiveComposer';
 
 interface AlbumFormData {
   title: string;
@@ -31,6 +32,7 @@ interface AlbumFormData {
 
 const ComposerEditAlbum: React.FC = () => {
   const { user } = useAuth();
+  const { composer, composerId: activeComposerId } = useActiveComposer();
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const imageInputRef = useRef<HTMLInputElement>(null);
@@ -72,30 +74,14 @@ const ComposerEditAlbum: React.FC = () => {
   }, []);
 
   // Resolver compositor atual do usuário logado
-  const [composerName, setComposerName] = useState<string>('');
-  const [composerId, setComposerId] = useState<string | null>(null);
-  useEffect(() => {
-    const loadComposer = async () => {
-      try {
-        if (!user?.id) return;
-        const resp = await compositoresApi.getByUsuarioId(user.id, (user as any)?.email);
-        const cdata: any = (resp as any)?.data || resp;
-        if (cdata?.id) setComposerId(String(cdata.id));
-        const name = cdata?.nome_artistico || cdata?.nome || '';
-        setComposerName(name || '');
-      } catch (e) {
-        console.warn('Não foi possível resolver compositor do usuário:', e);
-      }
-    };
-    loadComposer();
-  }, [user?.id]);
+  const composerName = composer?.nome_artistico || composer?.nome || '';
 
   // Carregar todos os hinos disponíveis (apenas do compositor atual)
   useEffect(() => {
     const loadHinos = async () => {
       try {
-        if (!composerName) return; // aguardar resolução do compositor
-        const response = await hinosApi.list({ limit: 1000, compositor: composerName });
+        if (!activeComposerId) return;
+        const response = await hinosApi.list({ limit: 1000 });
         console.log('🎵 [EditAlbum] Resposta hinosApi.list:', response);
         const raw: any = response as any;
         const list = Array.isArray(raw?.data?.hinos)
@@ -108,12 +94,7 @@ const ComposerEditAlbum: React.FC = () => {
           ? raw
           : [];
 
-        // Filtrar client-side por compositor exatamente igual (quando disponível)
-        const filtered = list.filter((h: any) => {
-          const compStr = (h.compositor || '').toString().trim().toLowerCase();
-          const expect = composerName.toString().trim().toLowerCase();
-          return compStr === expect || compStr.includes(expect);
-        });
+        const filtered = list.filter((h: any) => String(h.compositor_id) === String(activeComposerId));
 
         console.log('🎵 [EditAlbum] Hinos disponíveis extraídos (filtrados):', filtered.length);
         setAvailableSongs(
@@ -130,7 +111,7 @@ const ComposerEditAlbum: React.FC = () => {
     };
 
     loadHinos();
-  }, [composerName]);
+  }, [activeComposerId]);
 
   // Carregar dados do álbum
   useEffect(() => {
@@ -326,7 +307,7 @@ const ComposerEditAlbum: React.FC = () => {
         genre: formData.genres.length > 0 ? formData.genres.join(', ') : null,
         ano: formData.releaseYear ? parseInt(formData.releaseYear) : null,
         cover_url: coverUrl || null,
-        compositor_id: composerId ?? null,
+        compositor_id: activeComposerId ?? null,
       };
       console.log('📝 [EditAlbum] Update payload:', payload);
       const upRes = await albunsApi.update(id, payload);

@@ -116,11 +116,12 @@ export const hinosApi = {
   create: async (data: any) => {
     const { supabaseInsert, supabaseFetch } = await import('./supabaseRest');
     try {
+      const resolvedStatus = data.status || (data.ativo === 1 ? 'published' : 'pending');
       // Inserir hino sem categorias primeiro
       const hinoData: Record<string, any> = {
         titulo: data.titulo,
         categoria: data.categorias?.[0] || data.categoria || '',
-        status: 'published',
+        status: resolvedStatus,
       };
       if (data.numero) hinoData.numero = data.numero;
       if (data.compositor) hinoData.compositor_nome = data.compositor;
@@ -186,6 +187,7 @@ export const hinosApi = {
       if (data.duracao !== undefined) updateData.duracao = data.duracao;
       if (data.letra !== undefined) updateData.letra = data.letra;
       if (data.ativo !== undefined) updateData.ativo = data.ativo;
+      if (data.status !== undefined) updateData.status = data.status;
       if (data.youtube_source) updateData.youtube_source = data.youtube_source;
       if (data.participacao_especial !== undefined) updateData.participacao_especial = data.participacao_especial;
       
@@ -1343,11 +1345,67 @@ export const compositorGerentesApi = {
   listarCompositores: async (userId: string | number) => {
     const { supabaseFetch } = await import('./supabaseRest');
     try {
-      const rows = await supabaseFetch<any>('compositor_gerentes', {
-        gerente_id: `eq.${userId}`,
-        select: '*',
+      const managerRows = await supabaseFetch<any>('composer_managers', {
+        manager_user_id: `eq.${userId}`,
+        select: 'id,composer_id,manager_user_id,status,created_at,accepted_at',
+        order: 'created_at.desc',
       });
-      return { data: rows || [], error: null };
+
+      if (!managerRows || managerRows.length === 0) {
+        return { data: [], error: null };
+      }
+
+      const composerIds = Array.from(
+        new Set(
+          managerRows
+            .map((row: any) => row.composer_id)
+            .filter(Boolean)
+            .map((id: any) => String(id))
+        )
+      );
+
+      let composersById: Record<string, any> = {};
+      if (composerIds.length > 0) {
+        const composers = await supabaseFetch<any>('composers', {
+          id: `in.(${composerIds.join(',')})`,
+          select: 'id,name,artistic_name,email,avatar_url,photo_url,bio,biography,status,verified',
+        });
+
+        composersById = (composers || []).reduce((acc: Record<string, any>, composer: any) => {
+          acc[String(composer.id)] = composer;
+          return acc;
+        }, {});
+      }
+
+      const mappedStatus = (status: string) => {
+        if (status === 'active') return 'ativo';
+        if (status === 'pending') return 'pendente';
+        if (status === 'rejected') return 'recusado';
+        if (status === 'removed') return 'removido';
+        return status || 'pendente';
+      };
+
+      const rows: CompositorGerente[] = managerRows.map((row: any) => {
+        const composer = composersById[String(row.composer_id)] || {};
+        return {
+          id: row.id,
+          compositor_id: Number(row.composer_id),
+          nome: composer.name || '',
+          nome_artistico: composer.artistic_name || '',
+          compositor_nome: composer.name || '',
+          compositor_nome_artistico: composer.artistic_name || '',
+          compositor_email: composer.email || '',
+          email: composer.email || '',
+          biografia: composer.biography || composer.bio || '',
+          avatar_url: composer.avatar_url || composer.photo_url || '',
+          status: mappedStatus(row.status),
+          gerente_usuario_id: row.manager_user_id,
+          convidado_em: row.created_at,
+          aceito_em: row.accepted_at || undefined,
+        };
+      });
+
+      return { data: rows, error: null };
     } catch (error: any) {
       return { data: [], error: error.message };
     }
@@ -1364,15 +1422,10 @@ export const compositorGerentesApi = {
   convidar: async (data: { compositor_id: number; email_gerente: string; gerente_id?: string; compositor_nome?: string; compositor_nome_artistico?: string; notas?: string }) => {
     const { supabaseInsert } = await import('./supabaseRest');
     try {
-      await supabaseInsert('compositor_gerentes', {
-        compositor_id: data.compositor_id,
-        gerente_id: data.gerente_id,
-        gerente_email: data.email_gerente,
-        compositor_nome: data.compositor_nome,
-        compositor_nome_artistico: data.compositor_nome_artistico,
-        status: 'pendente',
-        notas: data.notas,
-        convidado_em: new Date().toISOString(),
+      await supabaseInsert('composer_managers', {
+        composer_id: data.compositor_id,
+        manager_user_id: data.gerente_id,
+        status: 'pending',
       });
       return { error: null };
     } catch (error: any) {
@@ -1501,6 +1554,23 @@ export interface Compositor {
   status?: string;
   created_at?: string;
   updated_at?: string;
+}
+
+export interface CompositorGerente {
+  id: string | number;
+  compositor_id: number;
+  nome?: string;
+  nome_artistico?: string;
+  compositor_nome?: string;
+  compositor_nome_artistico?: string;
+  compositor_email?: string;
+  email?: string;
+  biografia?: string;
+  avatar_url?: string;
+  status: string;
+  gerente_usuario_id?: string | number;
+  convidado_em?: string;
+  aceito_em?: string;
 }
 
 export interface DocumentReview {

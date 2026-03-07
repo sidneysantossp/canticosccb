@@ -14,7 +14,7 @@ interface ManagedComposer {
 
 const ManageComposersPage: React.FC = () => {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, switchToComposer } = useAuth();
   const [composers, setComposers] = useState<ManagedComposer[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -45,15 +45,11 @@ const ManageComposersPage: React.FC = () => {
   };
 
   const handleAccessComposer = (composer: ManagedComposer) => {
-    // Salvar no localStorage
-    localStorage.setItem('managingComposerId', String(composer.compositor_id));
-    localStorage.setItem('managingComposerName', composer.compositor_nome_artistico || composer.compositor_nome);
-
-    // Redirecionar para dashboard do compositor
-    navigate('/composer/dashboard');
-
-    // Recarregar para aplicar mudanças
-    window.location.href = '/composer/dashboard';
+    switchToComposer(
+      composer.compositor_id,
+      composer.compositor_nome_artistico || composer.compositor_nome
+    );
+    navigate('/composer/dashboard', { replace: true });
   };
 
   if (loading) {

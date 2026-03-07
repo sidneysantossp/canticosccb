@@ -51,7 +51,7 @@ const ManageComposersModal: React.FC<ManageComposersModalProps> = ({
         ? payload
         : (Array.isArray(payload?.data) ? payload.data : []);
 
-      setComposers(list);
+      setComposers(list.filter((composer: CompositorGerente) => composer.status === 'ativo'));
     } catch (err: any) {
       setError(err.message || 'Erro ao carregar compositores');
     } finally {

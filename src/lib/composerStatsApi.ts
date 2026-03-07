@@ -18,68 +18,91 @@ export type TopSong = {
   coverUrl?: string;
 };
 
+const emptyOverview: ComposerOverview = {
+  plays: 0,
+  followers: 0,
+  likes: 0,
+  averageListenTimeSeconds: 0,
+  totalSongs: 0,
+  monthlyFollowers: 0,
+  totalAlbums: 0,
+};
+
+async function getComposerOverviewInternal(compositorId: string | number, period: '7d'|'30d'|'90d'|'1y' = '30d'): Promise<ComposerOverview> {
+  const periodDays = period === '7d' ? 7 : period === '30d' ? 30 : period === '90d' ? 90 : 365;
+  const sinceDate = new Date(Date.now() - periodDays * 24 * 60 * 60 * 1000).toISOString();
+
+  const [followersAll, followersRecent, songs, favorites, albums] = await Promise.all([
+    supabaseFetch<any>('user_follows', {
+      composer_id: `eq.${compositorId}`,
+      select: 'id'
+    }).catch(() => []),
+    supabaseFetch<any>('user_follows', {
+      composer_id: `eq.${compositorId}`,
+      created_at: `gte.${sinceDate}`,
+      select: 'id'
+    }).catch(() => []),
+    supabaseFetch<any>('hinos', {
+      compositor_id: `eq.${compositorId}`,
+      select: 'id,plays'
+    }).catch(() => []),
+    supabaseFetch<any>('hinos', {
+      compositor_id: `eq.${compositorId}`,
+      select: 'id'
+    }).then(async (hinos: any[]) => {
+      if (hinos.length === 0) return [];
+      const ids = hinos.map((h: any) => h.id);
+      return supabaseFetch<any>('favorites', {
+        hino_id: `in.(${ids.join(',')})`,
+        select: 'id'
+      }).catch(() => []);
+    }).catch(() => []),
+    supabaseFetch<any>('albums', {
+      composer_id: `eq.${compositorId}`,
+      select: 'id'
+    }).catch(() => []),
+  ]);
+
+  const totalPlays = songs.reduce((sum: number, song: any) => sum + (song.plays || 0), 0);
+
+  return {
+    plays: totalPlays,
+    followers: followersAll.length,
+    likes: favorites.length,
+    averageListenTimeSeconds: 0,
+    totalSongs: songs.length,
+    monthlyFollowers: followersRecent.length,
+    totalAlbums: albums.length,
+  };
+}
+
+async function getTopSongsInternal(compositorId: string | number, limit: number): Promise<TopSong[]> {
+  const rows = await supabaseFetch<any>('hinos', {
+    compositor_id: `eq.${compositorId}`,
+    select: 'id,titulo,plays,cover_url',
+    order: 'plays.desc',
+    limit: String(limit)
+  });
+
+  return rows.map((track: any) => ({
+    id: String(track.id),
+    title: track.titulo,
+    plays: track.plays || 0,
+    likes: 0,
+    coverUrl: track.cover_url || undefined,
+  }));
+}
+
 export async function getComposerOverview(usuarioId: string | number, period: '7d'|'30d'|'90d'|'1y' = '30d'): Promise<ComposerOverview> {
-  const empty: ComposerOverview = { plays: 0, followers: 0, likes: 0, averageListenTimeSeconds: 0, totalSongs: 0, monthlyFollowers: 0, totalAlbums: 0 };
-  if (!isSupabaseConfigured) return empty;
+  if (!isSupabaseConfigured) return emptyOverview;
 
   try {
     const compositorId = await getComposerIdForUser(usuarioId);
-    if (!compositorId) return empty;
-
-    // Buscar dados reais em paralelo
-    const periodDays = period === '7d' ? 7 : period === '30d' ? 30 : period === '90d' ? 90 : 365;
-    const sinceDate = new Date(Date.now() - periodDays * 24 * 60 * 60 * 1000).toISOString();
-
-    const [followersAll, followersRecent, songs, favorites, albums] = await Promise.all([
-      // Total de seguidores
-      supabaseFetch<any>('user_follows', {
-        composer_id: `eq.${compositorId}`,
-        select: 'id'
-      }).catch(() => []),
-      // Novos seguidores no período
-      supabaseFetch<any>('user_follows', {
-        composer_id: `eq.${compositorId}`,
-        created_at: `gte.${sinceDate}`,
-        select: 'id'
-      }).catch(() => []),
-      // Total de hinos publicados
-      supabaseFetch<any>('hinos', {
-        compositor_id: `eq.${compositorId}`,
-        select: 'id,plays'
-      }).catch(() => []),
-      // Total de favoritos (likes) nos hinos do compositor
-      supabaseFetch<any>('hinos', {
-        compositor_id: `eq.${compositorId}`,
-        select: 'id'
-      }).then(async (hinos: any[]) => {
-        if (hinos.length === 0) return [];
-        const ids = hinos.map((h: any) => h.id);
-        return supabaseFetch<any>('favorites', {
-          hino_id: `in.(${ids.join(',')})`,
-          select: 'id'
-        }).catch(() => []);
-      }).catch(() => []),
-      // Total de álbuns
-      supabaseFetch<any>('albums', {
-        composer_id: `eq.${compositorId}`,
-        select: 'id'
-      }).catch(() => []),
-    ]);
-
-    const totalPlays = songs.reduce((sum: number, s: any) => sum + (s.plays || 0), 0);
-
-    return {
-      plays: totalPlays,
-      followers: followersAll.length,
-      likes: favorites.length,
-      averageListenTimeSeconds: 0,
-      totalSongs: songs.length,
-      monthlyFollowers: followersRecent.length,
-      totalAlbums: albums.length,
-    };
+    if (!compositorId) return emptyOverview;
+    return await getComposerOverviewInternal(compositorId, period);
   } catch (error) {
     console.error('Error in getComposerOverview:', error);
-    return empty;
+    return emptyOverview;
   }
 }
 
@@ -87,23 +110,9 @@ export async function getTopSongs(usuarioId: string | number, limit: number): Pr
   if (!isSupabaseConfigured) return [];
 
   try {
-    // Resolver compositor_id a partir do user_id
     const compositorId = await getComposerIdForUser(usuarioId);
     if (!compositorId) return [];
-
-    const rows = await supabaseFetch<any>('hinos', {
-      compositor_id: `eq.${compositorId}`,
-      select: 'id,titulo,plays,cover_url',
-      order: 'plays.desc',
-      limit: String(limit)
-    });
-    return rows.map((t: any) => ({
-      id: String(t.id),
-      title: t.titulo,
-      plays: t.plays || 0,
-      likes: 0,
-      coverUrl: t.cover_url || undefined,
-    }));
+    return await getTopSongsInternal(compositorId, limit);
   } catch (error) {
     console.error('Error fetching top songs:', error);
     return [];
@@ -116,12 +125,7 @@ export async function getPlaysSeries(usuarioId: string | number, days: number): 
   try {
     const compositorId = await getComposerIdForUser(usuarioId);
     if (!compositorId) return [];
-
-    const data = await supabaseRPC<any[]>('get_plays_series', {
-      p_compositor_id: compositorId,
-      p_days: days
-    });
-    return data || [];
+    return await getPlaysSeriesByComposerId(compositorId, days);
   } catch (error) {
     return [];
   }
@@ -133,12 +137,7 @@ export async function getEngagementCounts(usuarioId: string | number, days: numb
   try {
     const compositorId = await getComposerIdForUser(usuarioId);
     if (!compositorId) return { likes: 0, shares: 0, downloads: 0 };
-
-    const data = await supabaseRPC<any>('get_engagement_counts', {
-      p_compositor_id: compositorId,
-      p_days: days
-    });
-    return { likes: data?.likes || 0, shares: data?.shares || 0, downloads: data?.downloads || 0 };
+    return await getEngagementCountsByComposerId(compositorId, days);
   } catch (error) {
     return { likes: 0, shares: 0, downloads: 0 };
   }
@@ -152,6 +151,42 @@ export async function getEngagementCountsWindow(_usuarioId: string | number, _st
 // Ainda não implementados no backend: retornar vazio
 export async function getAudienceTopCountries(_usuarioId: string | number, _days: number, _limit: number) { return []; }
 export async function getAudienceDevices(_usuarioId: string | number, _days: number) { return { mobile: 0, desktop: 0, other: 0 }; }
+
+export async function getComposerOverviewByComposerId(compositorId: string | number, period: '7d'|'30d'|'90d'|'1y' = '30d'): Promise<ComposerOverview> {
+  if (!isSupabaseConfigured) return emptyOverview;
+
+  try {
+    return await getComposerOverviewInternal(compositorId, period);
+  } catch (error) {
+    console.error('Error in getComposerOverviewByComposerId:', error);
+    return emptyOverview;
+  }
+}
+
+export async function getTopSongsByComposerId(compositorId: string | number, limit: number): Promise<TopSong[]> {
+  if (!isSupabaseConfigured) return [];
+
+  try {
+    return await getTopSongsInternal(compositorId, limit);
+  } catch (error) {
+    console.error('Error fetching top songs by composer:', error);
+    return [];
+  }
+}
+
+export async function getPlaysSeriesByComposerId(compositorId: string | number, days: number): Promise<{ day: string; plays: number }[]> {
+  if (!isSupabaseConfigured) return [];
+
+  try {
+    const data = await supabaseRPC<any[]>('get_plays_series', {
+      p_compositor_id: compositorId,
+      p_days: days
+    });
+    return data || [];
+  } catch (error) {
+    return [];
+  }
+}
 
 export async function getComposerIdForUser(usuarioId: string | number): Promise<string | null> {
   if (!isSupabaseConfigured) return null;

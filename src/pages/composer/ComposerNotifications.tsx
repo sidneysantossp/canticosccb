@@ -1,10 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNotifications } from '@/contexts/NotificationsContext';
-import { supabaseFetch, supabaseUpdate, supabaseDelete, isSupabaseConfigured } from '@/lib/supabaseRest';
+import { supabase } from '@/lib/supabase-auth';
+import { supabaseUpdate, supabaseDelete, isSupabaseConfigured } from '@/lib/supabaseRest';
 import { Bell, ExternalLink, Inbox, X, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import ConfirmModal from '@/components/ConfirmModal';
+import { useActiveComposer } from '@/hooks/useActiveComposer';
 
 interface Notification {
   id: string;
@@ -20,7 +22,8 @@ const ITEMS_PER_PAGE = 10;
 
 const ComposerNotifications: React.FC = () => {
   const { user } = useAuth();
-  const { refreshCount, decrementCount } = useNotifications();
+  const { decrementCount } = useNotifications();
+  const { composerId, isManagingComposer, loading: loadingComposer } = useActiveComposer();
   const navigate = useNavigate();
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(true);
@@ -29,9 +32,7 @@ const ComposerNotifications: React.FC = () => {
   const [totalNotifications, setTotalNotifications] = useState(0);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [notificationToDelete, setNotificationToDelete] = useState<string | null>(null);
-  const [composerId, setComposerId] = useState<string | null>(null);
 
-  // Buscar notificações usando REST API
   const fetchNotifications = async (page: number = 1, cId?: string | null) => {
     const resolvedComposerId = cId ?? composerId;
     if (!resolvedComposerId && !user?.id) {
@@ -41,19 +42,31 @@ const ComposerNotifications: React.FC = () => {
     
     try {
       setLoading(true);
+      setError(null);
 
-      // Construir filtro OR via query param
-      const orParts: string[] = [];
-      if (resolvedComposerId) orParts.push(`composer_id.eq.${resolvedComposerId}`);
-      if (user?.id) orParts.push(`user_id.eq.${user.id}`);
+      let query = supabase
+        .from('notifications')
+        .select('id,title,message,type,link,is_read,created_at', { count: 'exact' });
 
-      const rows = await supabaseFetch<any>('notifications', {
-        or: `(${orParts.join(',')})`,
-        select: 'id,title,message,type,link,is_read,created_at',
-        order: 'created_at.desc',
-        limit: String(ITEMS_PER_PAGE),
-        offset: String((page - 1) * ITEMS_PER_PAGE),
-      });
+      if (resolvedComposerId && isManagingComposer) {
+        query = query.eq('composer_id', resolvedComposerId);
+      } else if (resolvedComposerId && user?.id) {
+        query = query.or(`composer_id.eq.${resolvedComposerId},user_id.eq.${user.id}`);
+      } else if (resolvedComposerId) {
+        query = query.eq('composer_id', resolvedComposerId);
+      } else if (user?.id) {
+        query = query.eq('user_id', user.id);
+      }
+
+      const from = (page - 1) * ITEMS_PER_PAGE;
+      const to = from + ITEMS_PER_PAGE - 1;
+      const { data: rows, error: queryError, count } = await query
+        .order('created_at', { ascending: false })
+        .range(from, to);
+
+      if (queryError) {
+        throw queryError;
+      }
 
       setNotifications((rows || []).map((row: any) => ({
         id: row.id,
@@ -64,7 +77,7 @@ const ComposerNotifications: React.FC = () => {
         lida: row.is_read,
         created_at: row.created_at
       })));
-      setTotalNotifications(rows.length);
+      setTotalNotifications(count || 0);
     } catch (err: any) {
       console.error('Erro ao carregar notificações:', err);
       setError(err.message || 'Erro ao carregar');
@@ -76,35 +89,19 @@ const ComposerNotifications: React.FC = () => {
   useEffect(() => {
     let cancelled = false;
     const init = async () => {
-      if (!user?.id || !isSupabaseConfigured) {
+      if ((!user?.id && !composerId) || !isSupabaseConfigured || loadingComposer) {
         setLoading(false);
         return;
       }
 
-      // 1. Resolver compositor
-      let cId: string | null = null;
-      try {
-        const rows = await supabaseFetch<any>('composers', {
-          user_id: `eq.${user.id}`,
-          select: 'id',
-          limit: '1'
-        });
-        if (rows.length > 0) {
-          cId = String(rows[0].id);
-          if (!cancelled) setComposerId(cId);
-        }
-      } catch (e) {
-        console.warn('Não foi possível resolver compositor:', e);
-      }
-
       // 2. Buscar notificações
       if (!cancelled) {
-        await fetchNotifications(1, cId);
+        await fetchNotifications(1, composerId);
       }
     };
     init();
     return () => { cancelled = true; };
-  }, [user?.id]);
+  }, [composerId, loadingComposer, user?.id]);
 
   const markAsRead = async (id: string) => {
     try {
@@ -144,7 +141,9 @@ const ComposerNotifications: React.FC = () => {
       setTotalNotifications(prev => prev - 1);
       
       if (notifications.length === 1 && currentPage > 1) {
-        setCurrentPage(prev => prev - 1);
+        const newPage = currentPage - 1;
+        setCurrentPage(newPage);
+        fetchNotifications(newPage);
       } else if (notifications.length === 1) {
         fetchNotifications(1);
       }

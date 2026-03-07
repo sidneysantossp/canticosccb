@@ -5,6 +5,7 @@ import { supabase } from '@/lib/supabase-auth';
 import SuccessModal from '@/components/ui/SuccessModal';
 import ErrorModal from '@/components/ui/ErrorModal';
 import ConfirmModal from '@/components/ui/ConfirmModal';
+import { useActiveComposer } from '@/hooks/useActiveComposer';
 
 interface Manager {
   id: number;
@@ -31,6 +32,7 @@ interface PendingInvite {
 
 const ComposerManagers: React.FC = () => {
   const { user } = useAuth();
+  const { composerId: activeComposerId } = useActiveComposer();
   const [managers, setManagers] = useState<Manager[]>([]);
   const [pendingInvites, setPendingInvites] = useState<PendingInvite[]>([]);
   const [loading, setLoading] = useState(true);
@@ -38,7 +40,6 @@ const ComposerManagers: React.FC = () => {
   const [inviteEmail, setInviteEmail] = useState('');
   const [inviteNotes, setInviteNotes] = useState('');
   const [sending, setSending] = useState(false);
-  const [compositorId, setCompositorId] = useState<string | null>(null);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [showErrorModal, setShowErrorModal] = useState(false);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
@@ -47,16 +48,10 @@ const ComposerManagers: React.FC = () => {
   const [managerToRemove, setManagerToRemove] = useState<number | null>(null);
 
   useEffect(() => {
-    if (user?.id) {
-      loadCompositorId();
-    }
-  }, [user?.id]);
-
-  useEffect(() => {
-    if (compositorId) {
+    if (activeComposerId) {
       loadManagers();
     }
-  }, [compositorId]);
+  }, [activeComposerId]);
 
   useEffect(() => {
     if (user?.id) {
@@ -66,40 +61,6 @@ const ComposerManagers: React.FC = () => {
       return () => clearTimeout(timer);
     }
   }, [user?.id]);
-
-  const loadCompositorId = async () => {
-    if (!user?.id) {
-      setLoading(false);
-      return;
-    }
-
-    try {
-      const { data, error } = await supabase
-        .from('composers')
-        .select('id')
-        .eq('user_id', user.id)
-        .limit(1);
-
-      if (error) {
-        console.error('Erro ao buscar compositor:', error);
-        setCompositorId(null);
-        setLoading(false);
-        return;
-      }
-
-      const found = data?.[0];
-      if (found?.id) {
-        setCompositorId(String(found.id));
-      } else {
-        setCompositorId(null);
-        setLoading(false);
-      }
-    } catch (error) {
-      console.error('Erro inesperado ao buscar compositor:', error);
-      setCompositorId(null);
-      setLoading(false);
-    }
-  };
 
   const loadPendingInvites = async () => {
     if (!user?.id) {
@@ -160,14 +121,14 @@ const ComposerManagers: React.FC = () => {
   };
 
   const loadManagers = async () => {
-    if (!compositorId) return;
+    if (!activeComposerId) return;
 
     try {
       setLoading(true);
       const { data: rows, error } = await supabase
         .from('composer_managers')
         .select('id,status,created_at,accepted_at,manager_user_id')
-        .eq('composer_id', compositorId)
+        .eq('composer_id', activeComposerId)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
@@ -218,7 +179,7 @@ const ComposerManagers: React.FC = () => {
       setModalMessage('Voce agora e gerente desta conta de compositor.');
       setShowSuccessModal(true);
       loadPendingInvites();
-      if (compositorId) {
+      if (activeComposerId) {
         loadManagers();
       }
     } catch (error: any) {
@@ -251,7 +212,7 @@ const ComposerManagers: React.FC = () => {
   const handleSendInvite = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!compositorId) {
+    if (!activeComposerId) {
       setModalTitle('Erro');
       setModalMessage('Compositor nao identificado. Recarregue a pagina.');
       setShowErrorModal(true);
@@ -277,7 +238,7 @@ const ComposerManagers: React.FC = () => {
       }
 
       const { error: insertError } = await supabase.from('composer_managers').insert({
-        composer_id: compositorId,
+        composer_id: activeComposerId,
         manager_user_id: managerUser.id,
         status: 'pending',
       });
@@ -290,13 +251,13 @@ const ComposerManagers: React.FC = () => {
         const { data: composerData } = await supabase
           .from('composers')
           .select('name,artistic_name')
-          .eq('id', compositorId)
+          .eq('id', activeComposerId)
           .limit(1);
         const composerName = composerData?.[0]?.artistic_name || composerData?.[0]?.name || 'Um compositor';
 
         await supabase.from('notifications').insert({
           user_id: managerUser.id,
-          composer_id: compositorId,
+          composer_id: activeComposerId,
           type: 'convite',
           title: '📩 Convite para Gerenciar Conta',
           message: `${composerName} convidou você para ser gerente da conta. Acesse "Gerenciar Gestores" para aceitar ou recusar.`,
@@ -376,7 +337,7 @@ const ComposerManagers: React.FC = () => {
     );
   };
 
-  if (loading && !compositorId && loadingInvites && pendingInvites.length === 0) {
+  if (loading && !activeComposerId && loadingInvites && pendingInvites.length === 0) {
     return (
       <div className="min-h-screen bg-gray-950 flex items-center justify-center">
         <div className="text-center">
@@ -454,7 +415,7 @@ const ComposerManagers: React.FC = () => {
           </div>
         )}
 
-        {compositorId && (
+        {activeComposerId && (
           <div className="bg-gray-900 border border-gray-800 rounded-xl p-6">
             <div className="flex items-center gap-3 mb-4">
               <UserPlus className="w-6 h-6 text-primary-500" />
@@ -494,7 +455,7 @@ const ComposerManagers: React.FC = () => {
           </div>
         )}
 
-        {compositorId && (
+        {activeComposerId && (
           <div className="bg-gray-900 border border-gray-800 rounded-xl p-6">
             <h2 className="text-xl font-semibold text-white mb-4">Gerentes da Conta</h2>
             {managers.length === 0 ? (

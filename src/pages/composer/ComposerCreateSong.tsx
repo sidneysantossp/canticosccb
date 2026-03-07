@@ -2,11 +2,12 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { ArrowLeft, Upload, Music, Image as ImageIcon, Save, X, FileAudio, Clock } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
-import { uploadApi, hinosApi, compositoresApi, type Hino } from '@/lib/api-client';
+import { uploadApi, hinosApi, type Hino } from '@/lib/api-client';
 import { getSignedSupabaseUrl } from '@/lib/supabaseMedia';
 import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
 import '@/styles/quill-custom.css';
+import { useActiveComposer } from '@/hooks/useActiveComposer';
 
 // Helper: garante que a URL de áudio utiliza Supabase Storage assinado
 const getSignedPreviewUrl = async (original: string): Promise<string> => {
@@ -29,8 +30,15 @@ interface FormData {
   status: 'draft' | 'pending' | 'published' | 'archived';
 }
 
+const getSongFormStatus = (song: any): FormData['status'] => {
+  if (song?.status === 'pending') return 'pending';
+  if (Number(song?.ativo) === 1) return 'published';
+  return 'draft';
+};
+
 const ComposerCreateSong: React.FC = () => {
   const { user } = useAuth();
+  const { composer, composerId, loading: loadingComposer } = useActiveComposer();
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
   const isEditMode = !!id;
@@ -42,10 +50,10 @@ const ComposerCreateSong: React.FC = () => {
     album_id: '',
     key: '',
     tempo: '',
-    duration: '',
-    category_id: '',
-    status: 'draft'
-  });
+      duration: '',
+      category_id: '',
+      status: 'pending'
+    });
 
   const [albums, setAlbums] = useState<any[]>([]);
   const [categories, setCategories] = useState<any[]>([]);
@@ -87,9 +95,9 @@ const ComposerCreateSong: React.FC = () => {
   ];
 
   useEffect(() => {
-    if (!user?.id) return; // aguarda usuário carregar
+    if (!user?.id || loadingComposer) return; // aguarda usuário carregar
     loadInitialData();
-  }, [user?.id, id]);
+  }, [composerId, id, loadingComposer, user?.id]);
 
   // Limpeza dos ObjectURLs de preview
   useEffect(() => {
@@ -104,15 +112,8 @@ const ComposerCreateSong: React.FC = () => {
       setIsLoadingData(true);
       setLoadingAlbums(true);
 
-      // 1) Resolver compositor_id do usuário logado
-      let resolvedComposerId: string | null = null;
-      try {
-        if (user?.id) {
-          const comp = await compositoresApi.getByUsuarioId(user.id, (user as any)?.email);
-          const cdata: any = (comp as any)?.data || comp;
-          if (cdata?.id) resolvedComposerId = String(cdata.id);
-        }
-      } catch {}
+      // 1) Resolver compositor ativo do contexto atual
+      const resolvedComposerId = composerId ? String(composerId) : null;
       setMyComposerId(resolvedComposerId);
 
       // 2) Buscar álbuns via Supabase client (gerencia JWT automaticamente)
@@ -193,6 +194,7 @@ const ComposerCreateSong: React.FC = () => {
               album_id: hinoAlbumId,
               category_id: hinoCategoryId,
               duration: song.duracao || prev.duration,
+              status: getSongFormStatus(song),
             }));
             if (song.cover_url) setCoverPreview(song.cover_url);
             if (song.audio_url) {
@@ -301,7 +303,7 @@ const ComposerCreateSong: React.FC = () => {
       console.log('📀 [handleSubmit] category_id:', formData.category_id, '| categoriaNome:', categoriaNome, '| album_id:', formData.album_id);
 
       // 3) Compositor (usar nome do usuário logado)
-      const compositorNome = (user as any)?.nome || (user as any)?.name || undefined;
+      const compositorNome = composer?.nome_artistico || composer?.nome || (user as any)?.nome || (user as any)?.name || undefined;
 
       // 4) Normalizar duração (mm:ss)
       const normalizeDuration = (v?: string) => {
@@ -331,6 +333,7 @@ const ComposerCreateSong: React.FC = () => {
         duracao: normalizeDuration(formData.duration),
         letra: formData.lyrics || undefined,
         ativo: formData.status === 'published' ? 1 : 0,
+        status: formData.status,
       };
 
       // Vincular ao compositor_id para que o hino apareça nos álbuns

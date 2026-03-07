@@ -28,10 +28,12 @@ import { useAuth } from '@/contexts/AuthContext';
 import { compositoresApi } from '@/lib/api-client';
 import { uploadComposerAvatar, uploadComposerBanner } from '@/lib/uploadHelpers';
 import { buildCompositorUrl } from '@/utils/slugUrl';
+import { useActiveComposer } from '@/hooks/useActiveComposer';
 
 const ComposerProfile: React.FC = () => {
   const navigate = useNavigate();
   const { user, profile } = useAuth();
+  const { composer: activeComposer, composerId: activeComposerId, loading: loadingActiveComposer } = useActiveComposer();
   const [activeTab, setActiveTab] = useState<'profile' | 'social' | 'preferences'>('profile');
   const [isLoading, setIsLoading] = useState(false);
   const [isLoadingData, setIsLoadingData] = useState(true);
@@ -86,7 +88,7 @@ const ComposerProfile: React.FC = () => {
   // Carregar dados do compositor
   useEffect(() => {
     const loadComposerData = async () => {
-      if (!user?.id) {
+      if (!user?.id || loadingActiveComposer) {
         setIsLoadingData(false);
         return;
       }
@@ -94,10 +96,11 @@ const ComposerProfile: React.FC = () => {
       try {
         setIsLoadingData(true);
         
-        // Buscar compositor pelo user_id (caminho principal)
         let cd: any = null;
         try {
-          const resp = await compositoresApi.getByUsuarioId(user.id, (user as any)?.email);
+          const resp = activeComposerId
+            ? await compositoresApi.get(activeComposerId)
+            : await compositoresApi.getByUsuarioId(user.id, (user as any)?.email);
           const d = (resp as any)?.data ?? resp;
           if (d?.id) cd = d;
         } catch (e) {
@@ -228,7 +231,7 @@ const ComposerProfile: React.FC = () => {
     };
 
     loadComposerData();
-  }, [user?.id]);
+  }, [activeComposerId, loadingActiveComposer, user?.id]);
 
   const availableGenres = [
     'Hinos Clássicos',
@@ -613,7 +616,7 @@ const ComposerProfile: React.FC = () => {
               <h2 className="text-2xl font-bold text-white">
                 {formData.artisticName || 'Compositor'}
               </h2>
-              {profile?.is_composer && (
+              {(activeComposer?.verificado || profile?.is_composer) && (
                 <span title="Verificado">
                   <CheckCircle className="w-6 h-6 text-primary-500" />
                 </span>

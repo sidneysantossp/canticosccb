@@ -14,11 +14,13 @@ import {
   Share2,
   Globe
 } from 'lucide-react';
-import { albunsApi, compositoresApi } from '@/lib/api-client';
+import { albunsApi } from '@/lib/api-client';
 import { useAuth } from '@/contexts/AuthContext';
+import { useActiveComposer } from '@/hooks/useActiveComposer';
 
 const ComposerAlbums: React.FC = () => {
   const { user } = useAuth();
+  const { composerId, loading: loadingComposer } = useActiveComposer();
   const [searchQuery, setSearchQuery] = useState('');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [albums, setAlbums] = useState<any[]>([]);
@@ -47,22 +49,11 @@ const ComposerAlbums: React.FC = () => {
       console.log('🔄 Carregando álbuns...');
       try {
         setLoading(true);
-
-        // 1. Resolver compositor_id do usuário logado
-        let compositorId: string | number | null = null;
-        if (user?.id) {
-          try {
-            const comp = await compositoresApi.getByUsuarioId(user.id, (user as any)?.email);
-            const cdata: any = (comp as any)?.data || comp;
-            compositorId = cdata?.id ?? null;
-            console.log('🎵 Compositor resolvido:', { compositorId, nome: cdata?.nome });
-          } catch (e) {
-            console.warn('Não foi possível resolver compositor pelo usuario_id');
-          }
-        }
+        const resolvedComposerId = composerId;
+        console.log('🎵 Compositor resolvido:', { compositorId: resolvedComposerId });
 
         // 2. Buscar álbuns (filtrar server-side se possível)
-        const response = await albunsApi.list({ page: 1, limit: 1000, compositor_id: compositorId ? String(compositorId) : undefined } as any);
+        const response = await albunsApi.list({ page: 1, limit: 1000, compositor_id: resolvedComposerId ? String(resolvedComposerId) : undefined } as any);
         const raw: any = response as any;
 
         let albumsData: any[] = [];
@@ -78,11 +69,11 @@ const ComposerAlbums: React.FC = () => {
 
         // 3. Filtrar APENAS álbuns do compositor logado (sem fallbacks agressivos)
         let myAlbums: any[] = [];
-        if (compositorId != null) {
-          myAlbums = albumsData.filter((album: any) => String(album.composer_id) === String(compositorId));
+        if (resolvedComposerId != null) {
+          myAlbums = albumsData.filter((album: any) => String(album.composer_id) === String(resolvedComposerId));
         }
 
-        console.log('👤 Meus álbuns (compositor_id=' + compositorId + '):', myAlbums.length);
+        console.log('👤 Meus álbuns (compositor_id=' + resolvedComposerId + '):', myAlbums.length);
 
         // 4. Normalizar dados para o formato esperado pela UI
         const normalizedAlbums = myAlbums.map(album => ({
@@ -104,7 +95,7 @@ const ComposerAlbums: React.FC = () => {
       }
     };
     loadAlbums();
-  }, [user?.id]);
+  }, [composerId, loadingComposer, user?.id]);
 
   // Debug: Verificar se o componente está renderizando os dados
   useEffect(() => {
@@ -336,7 +327,7 @@ const ComposerAlbums: React.FC = () => {
                 />
                 <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-3">
                   <Link
-                    to={`/composer/albums/${album.id}`}
+                    to={`/composer/albums/edit/${album.id}`}
                     className="w-12 h-12 bg-primary-500 text-black rounded-full flex items-center justify-center hover:bg-primary-400 transition-colors"
                   >
                     <Eye className="w-6 h-6" />
