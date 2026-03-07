@@ -13,8 +13,8 @@ const SearchPage: React.FC = () => {
   const { play } = usePlayerStore();
   const { user } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
-  const initialQuery = searchParams.get('q') || '';
-  const [searchQuery, setSearchQuery] = useState(initialQuery);
+  const urlQuery = searchParams.get('q') || '';
+  const [searchQuery, setSearchQuery] = useState(urlQuery);
   const [activeFilter, setActiveFilter] = useState<'all' | 'songs' | 'artists' | 'albums' | 'playlists'>('all');
   const [isLoading, setIsLoading] = useState(false);
   const [hymns, setHymns] = useState<HymnSearchResult[]>([]);
@@ -89,6 +89,10 @@ const SearchPage: React.FC = () => {
   }, [user?.id]);
 
   useEffect(() => {
+    setSearchQuery((prev) => (prev === urlQuery ? prev : urlQuery));
+  }, [urlQuery]);
+
+  useEffect(() => {
     let isMounted = true;
     const run = async () => {
       if (!searchQuery.trim()) {
@@ -144,7 +148,7 @@ const SearchPage: React.FC = () => {
     });
   };
 
-  const hasResults = searchQuery && ((hymns.length > 0) || (composers.length > 0) || (albums.length > 0) || (playlists.length > 0));
+  const hasResults = searchQuery.trim().length > 0 && ((hymns.length > 0) || (composers.length > 0) || (albums.length > 0) || (playlists.length > 0));
 
   return (
     <>
@@ -230,7 +234,7 @@ const SearchPage: React.FC = () => {
                           );
                           return n > 0 && !hasNum ? `${n} - ${t}` : t;
                         })()}</div>
-                        <div className="text-text-muted text-sm">{song.composer_name || song.category || 'Hino'}</div>
+                        <div className="text-text-muted text-sm">{song.composer_name || song.category_name || 'Hino'}</div>
                       </div>
                       <button
                         className="opacity-0 group-hover:opacity-100 transition-opacity p-2 rounded-full hover:bg-background-tertiary"

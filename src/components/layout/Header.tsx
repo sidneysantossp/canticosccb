@@ -10,14 +10,26 @@ import { usePremiumEnabled } from '@/hooks/usePremiumEnabled';
 import ComposerMobileSidebar from './ComposerMobileSidebar';
 import AdminMobileSidebar from './AdminMobileSidebar';
 import PublicMobileSidebar from './PublicMobileSidebar';
+import { quickSearch } from '@/lib/mockApis';
+import { buildAlbumUrl, buildCompositorUrl, buildHinoUrl } from '@/utils/slugUrl';
+
+type HeaderSearchItem = {
+  id: string;
+  type: 'hymn' | 'composer' | 'album' | 'playlist';
+  title: string;
+  subtitle: string;
+  imageUrl?: string;
+  url: string;
+};
 
 const Header: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
-  const [searchResults, setSearchResults] = useState<any[]>([]);
+  const [searchResults, setSearchResults] = useState<HeaderSearchItem[]>([]);
   const [showResults, setShowResults] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
   const searchTimeout = useRef<NodeJS.Timeout | null>(null);
+  const searchRequestId = useRef(0);
   const headerRef = useRef<HTMLElement | null>(null);
 
   const { user, profile, signOut, isAdmin, isComposer } = useAuth();
@@ -44,6 +56,15 @@ const Header: React.FC = () => {
     setShowResults(false);
     setShowUserMenu(false);
   }, [location.pathname]);
+
+  useEffect(() => {
+    if (location.pathname !== '/search' && location.pathname !== '/buscar') {
+      return;
+    }
+
+    const currentQuery = new URLSearchParams(location.search).get('q') || '';
+    setSearchQuery((prev) => (prev === currentQuery ? prev : currentQuery));
+  }, [location.pathname, location.search]);
 
   // Debug: Log profile data e flags de autorização
   React.useEffect(() => {
@@ -88,22 +109,65 @@ const Header: React.FC = () => {
 
     if (query.trim()) {
       setIsSearching(true);
+      const requestId = ++searchRequestId.current;
       
       // Criar novo timeout
       searchTimeout.current = setTimeout(async () => {
         try {
-          // TODO: Implement search functionality
-          // const results = await quickSearch(query);
-          setSearchResults([]);
-          setShowResults(false);
+          const results = await quickSearch(query);
+          const flattenedResults: HeaderSearchItem[] = [
+            ...results.hymns.map((hymn) => ({
+              id: hymn.id,
+              type: 'hymn' as const,
+              title: hymn.number ? `${hymn.number} - ${hymn.title}` : hymn.title,
+              subtitle: hymn.composer_name || hymn.category_name || 'Hino',
+              imageUrl: hymn.cover_url,
+              url: buildHinoUrl(hymn.id, hymn.title, hymn.number),
+            })),
+            ...results.composers.map((composer) => ({
+              id: composer.id,
+              type: 'composer' as const,
+              title: composer.name,
+              subtitle: composer.bio || 'Compositor',
+              imageUrl: composer.photo_url,
+              url: buildCompositorUrl(composer.id, composer.name),
+            })),
+            ...results.albums.map((album) => ({
+              id: album.id,
+              type: 'album' as const,
+              title: album.title,
+              subtitle: album.artist || 'Álbum',
+              imageUrl: album.cover_url,
+              url: buildAlbumUrl(album.id, album.title, album.artist),
+            })),
+            ...results.playlists.map((playlist) => ({
+              id: playlist.id,
+              type: 'playlist' as const,
+              title: playlist.name,
+              subtitle: playlist.description || 'Playlist',
+              imageUrl: playlist.cover_url,
+              url: `/playlist/${playlist.id}`,
+            })),
+          ];
+
+          if (requestId !== searchRequestId.current) {
+            return;
+          }
+
+          setSearchResults(flattenedResults);
+          setShowResults(flattenedResults.length > 0);
         } catch (error) {
           console.error('Search error:', error);
           setSearchResults([]);
+          setShowResults(false);
         } finally {
-          setIsSearching(false);
+          if (requestId === searchRequestId.current) {
+            setIsSearching(false);
+          }
         }
       }, 300);
     } else {
+      searchRequestId.current += 1;
       setSearchResults([]);
       setShowResults(false);
       setIsSearching(false);
@@ -173,7 +237,7 @@ const Header: React.FC = () => {
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-text-muted w-4 h-4" />
               <input
                 type="text"
-                placeholder="Busque por hinos ou compositores"
+                placeholder="Busque por hinos, compositores, álbuns ou playlists"
                 value={searchQuery}
                 onChange={(e) => handleSearch(e.target.value)}
                 onFocus={() => searchQuery && setShowResults(true)}
@@ -190,7 +254,7 @@ const Header: React.FC = () => {
             <div className="absolute top-full left-0 right-0 mt-2 bg-background-secondary border border-gray-700 rounded-lg shadow-xl z-50 max-h-96 overflow-y-auto">
               {searchResults.slice(0, 6).map((result) => (
                 <Link
-                  key={result.id}
+                  key={`${result.type}-${result.id}`}
                   to={result.url}
                   className="flex items-center gap-3 p-3 hover:bg-background-hover transition-colors"
                   onClick={() => setShowResults(false)}
