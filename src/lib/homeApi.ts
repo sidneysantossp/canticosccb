@@ -127,7 +127,10 @@ type SupabaseAlbumRow = {
   description?: string;
   cover_url?: string;
   artist?: string;
+  composer_id?: string | number;
   created_at?: string;
+  is_published?: boolean;
+  active?: boolean;
   featured?: boolean;
   featured_order?: number;
 };
@@ -195,13 +198,21 @@ const mapSupabaseAlbum = (
 function prioritizeFeaturedAlbums(
   rows: SupabaseAlbumRow[],
   composerNames: Record<string, string>,
-  maxSlots: number
+  maxSlots?: number
 ): HomeAlbum[] {
-  const featured = rows
-    .filter((r) => r.featured)
-    .sort((a, b) => (a.featured_order ?? 0) - (b.featured_order ?? 0));
+  const publishedRows = rows.filter((row) => row.is_published !== false && row.active !== false);
 
-  const recent = rows
+  const featured = publishedRows
+    .filter((r) => r.featured)
+    .sort((a, b) => {
+      const orderDiff = (a.featured_order ?? 0) - (b.featured_order ?? 0);
+      if (orderDiff !== 0) return orderDiff;
+      const da = a.created_at ? new Date(a.created_at).getTime() : 0;
+      const db = b.created_at ? new Date(b.created_at).getTime() : 0;
+      return db - da;
+    });
+
+  const recent = publishedRows
     .filter((r) => !r.featured)
     .sort((a, b) => {
       const da = a.created_at ? new Date(a.created_at).getTime() : 0;
@@ -209,13 +220,17 @@ function prioritizeFeaturedAlbums(
       return db - da;
     });
 
-  const featuredSlice = featured.slice(0, maxSlots);
-  const remainingSlots = maxSlots - featuredSlice.length;
-  const recentSlice = recent.slice(0, remainingSlots);
+  const combined = [...featured, ...recent];
+  const uniqueRows = combined.filter((row, index, list) => {
+    const rowId = String(row.id ?? '');
+    return rowId ? list.findIndex((candidate) => String(candidate.id ?? '') === rowId) === index : true;
+  });
 
-  return [...featuredSlice, ...recentSlice].map((row, index) =>
-    mapSupabaseAlbum(row, index, composerNames)
-  );
+  const limitedRows = typeof maxSlots === 'number'
+    ? uniqueRows.slice(0, maxSlots)
+    : uniqueRows;
+
+  return limitedRows.map((row, index) => mapSupabaseAlbum(row, index, composerNames));
 }
 
 const mapSupabaseBanner = (row: SupabaseBannerRow): HomeBanner => ({
@@ -300,10 +315,11 @@ async function getHomePageDataFromSupabase(): Promise<HomePageData> {
     limit: '20',
   });
   const albumRows = supabaseFetch<SupabaseAlbumRow>('albums', {
-    select: 'id,title,description,cover_url,artist,created_at,featured,featured_order',
+    select: 'id,title,description,cover_url,artist,composer_id,created_at,is_published,active,featured,featured_order',
     is_published: 'eq.true',
+    active: 'eq.true',
     order: 'created_at.desc',
-    limit: '20',
+    limit: '1000',
   });
   const categoryRows = supabaseFetch<any>('categorias', {
     select: 'id,nome,slug,descricao,imagem_url',
@@ -392,7 +408,7 @@ async function getHomePageDataFromSupabase(): Promise<HomePageData> {
   return {
     banners: bannersData.map(mapSupabaseBanner),
     featured: diversifyByComposer(hymns, 6),
-    albums: prioritizeFeaturedAlbums(albumsData, composerNameById, 8),
+    albums: prioritizeFeaturedAlbums(albumsData, composerNameById),
     hymnsCantados: grouped.cantados,
     hymnsTocados: grouped.tocados,
     hymnsAvulsos: grouped.avulsos,

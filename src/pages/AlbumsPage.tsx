@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { Music, Play, Search, ArrowLeft, MoreVertical, Heart, Share2, ListPlus, Info } from 'lucide-react';
 import SEOHead from '@/components/SEO/SEOHead';
 import { buildAlbumUrl } from '@/utils/slugUrl';
-// import { getPublishedAlbums } from '@/lib/albumsApi';
+import { getAlbums } from '@/lib/supabase-api';
 import useFavoritesStore from '@/stores/favoritesStore';
 import { usePlayerStore } from '@/stores/playerStore';
 import { useAuth } from '@/contexts/AuthContext';
@@ -48,17 +48,19 @@ const AlbumsPage: React.FC = () => {
   const loadAlbums = async () => {
     setIsLoading(true);
     try {
-      // Buscar álbuns publicados do banco de dados
-      const albumsData = await getPublishedAlbums();
+      const albumsData = await getAlbums({ limit: 1000 });
 
-      // Converter para formato da interface
       const formattedAlbums: Album[] = albumsData.map(album => ({
         id: album.id,
         title: album.title,
-        artist: album.artist,
+        artist: album.artist || 'Acervo Cânticos CCB',
         coverUrl: album.cover_url || 'https://picsum.photos/300/300',
-        totalTracks: album.total_tracks,
-        releaseYear: album.release_year?.toString() || new Date().getFullYear().toString()
+        totalTracks: album.total_tracks || 0,
+        releaseYear:
+          album.release_year?.toString() ||
+          ((album as any).release_date
+            ? new Date((album as any).release_date).getFullYear().toString()
+            : new Date().getFullYear().toString())
       }));
 
       setAlbums(formattedAlbums);
