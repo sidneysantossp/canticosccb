@@ -149,6 +149,12 @@ const SearchPage: React.FC = () => {
   };
 
   const hasResults = searchQuery.trim().length > 0 && ((hymns.length > 0) || (composers.length > 0) || (albums.length > 0) || (playlists.length > 0));
+  const sectionPriority: Record<string, number> = {
+    composers: 4,
+    albums: 3,
+    hymns: 2,
+    playlists: 1,
+  };
 
   return (
     <>
@@ -208,103 +214,123 @@ const SearchPage: React.FC = () => {
         {/* Results or Suggestions */}
         {hasResults ? (
           <div className="space-y-12">
-            {/* Songs / Hymns */}
-            {(activeFilter !== 'artists' && hymns.length > 0) && (
-              <section>
-                <h2 className="text-2xl font-bold text-white mb-6">Hinos</h2>
-                <div className="space-y-2">
-                  {hymns.map((song) => (
-                    <Link
-                      key={song.id}
-                      to={buildHinoUrl(song.id, song.title, song.number)}
-                      className="flex items-center gap-4 p-3 rounded-lg hover:bg-background-hover transition-colors group w-full"
-                    >
-                      <img src={song.cover_url || 'https://picsum.photos/seed/search1/100/100'} alt={song.title} className="w-12 h-12 rounded object-cover" />
-                      <div className="flex-1">
-                        <div className="text-white font-medium">{(() => {
-                          const t = String(song.title || '');
-                          const n = Number(song.number || 0);
-                          const lower = t.toLowerCase();
-                          const hasNum = n > 0 && (
-                            lower.includes(`hino ${n}`) ||
-                            lower.startsWith(`${n} -`) ||
-                            lower.includes(`${n} -`) ||
-                            lower.includes(`#${n}`) ||
-                            lower.includes(`nº ${n}`)
-                          );
-                          return n > 0 && !hasNum ? `${n} - ${t}` : t;
-                        })()}</div>
-                        <div className="text-text-muted text-sm">{song.composer_name || song.category_name || 'Hino'}</div>
-                      </div>
-                      <button
-                        className="opacity-0 group-hover:opacity-100 transition-opacity p-2 rounded-full hover:bg-background-tertiary"
-                        onClick={(e) => {
-                          e.preventDefault();
-                          e.stopPropagation();
-                          const fallback = 'https://commondatastorage.googleapis.com/codeskulptor-demos/DDR_assets/Sevish_-__nbsp_.mp3';
-                          const ytSrc = (song as any).youtube_source || undefined;
-                          play({ id: song.id, title: song.title, artist: song.composer_name || 'Coral CCB', coverUrl: song.cover_url || '', audioUrl: ytSrc ? '' : (song.audio_url || fallback), youtubeSource: ytSrc } as any)
-                        }}
-                      >
-                        <Play className="w-5 h-5 text-white" />
-                      </button>
-                    </Link>
-                  ))}
-                </div>
-              </section>
-            )}
-
-            {/* Artists / Composers */}
-            {(activeFilter !== 'songs' && composers.length > 0) && (
-              <section>
-                <h2 className="text-2xl font-bold text-white mb-6">Compositores</h2>
-                <div className="space-y-2">
-                  {composers.map((artist) => (
-                    <Link key={artist.id} to={buildCompositorUrl(artist.id, artist.name)} className="flex items-center gap-4 p-3 rounded-lg hover:bg-background-hover transition-colors group w-full">
-                      <div className="w-12 h-12 bg-background-tertiary rounded flex items-center justify-center overflow-hidden">
-                        <img src={artist.photo_url || 'https://picsum.photos/seed/artist1/150/150'} className="w-12 h-12 object-cover" alt={artist.name} />
-                      </div>
-                      <div className="flex-1">
-                        <div className="text-white font-medium">{artist.name}</div>
-                        <div className="text-text-muted text-sm">{artist.total_hymns ? `${artist.total_hymns} hinos` : 'Compositor'}</div>
-                      </div>
-                    </Link>
-                  ))}
-                </div>
-              </section>
-            )}
-
-            {/* Albums */}
-            {(activeFilter !== 'artists' && activeFilter !== 'songs' && albums.length > 0 || (activeFilter === 'albums' && albums.length > 0)) && (
-              <section>
-                <h2 className="text-2xl font-bold text-white mb-6">Álbuns</h2>
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                  {albums.map((album) => (
-                    <Link key={album.id} to={buildAlbumUrl(album.id, album.title, album.artist)} className="p-3 rounded-lg hover:bg-background-hover transition-colors">
-                      <img src={album.cover_url || 'https://picsum.photos/seed/album1/200/200'} alt={album.title} className="w-full h-36 object-cover rounded mb-3" />
-                      <div className="text-white font-medium truncate">{album.title}</div>
-                      <div className="text-text-muted text-sm truncate">{album.artist || 'Álbum'}</div>
-                    </Link>
-                  ))}
-                </div>
-              </section>
-            )}
-
-            {/* Playlists */}
-            {(activeFilter !== 'artists' && activeFilter !== 'songs' && playlists.length > 0 || (activeFilter === 'playlists' && playlists.length > 0)) && (
-              <section>
-                <h2 className="text-2xl font-bold text-white mb-6">Playlists</h2>
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                  {playlists.map((pl) => (
-                    <Link key={pl.id} to={`/playlist/${pl.id}`} className="p-3 rounded-lg hover:bg-background-hover transition-colors">
-                      <img src={pl.cover_url || 'https://picsum.photos/seed/playlist1/200/200'} alt={pl.name} className="w-full h-36 object-cover rounded mb-3" />
-                      <div className="text-white font-medium truncate">{pl.name}</div>
-                      <div className="text-text-muted text-sm truncate">{pl.hymns_count ? `${pl.hymns_count} hinos` : (pl.description || 'Playlist')}</div>
-                    </Link>
-                  ))}
-                </div>
-              </section>
-            )}
+            {[
+              (activeFilter !== 'artists' && hymns.length > 0) ? {
+                key: 'hymns',
+                score: hymns[0]?.matchScore || 0,
+                node: (
+                  <section>
+                    <h2 className="text-2xl font-bold text-white mb-6">Hinos</h2>
+                    <div className="space-y-2">
+                      {hymns.map((song) => (
+                        <Link
+                          key={song.id}
+                          to={buildHinoUrl(song.id, song.title, song.number)}
+                          className="flex items-center gap-4 p-3 rounded-lg hover:bg-background-hover transition-colors group w-full"
+                        >
+                          <img src={song.cover_url || 'https://picsum.photos/seed/search1/100/100'} alt={song.title} className="w-12 h-12 rounded object-cover" />
+                          <div className="flex-1">
+                            <div className="text-white font-medium">{(() => {
+                              const t = String(song.title || '');
+                              const n = Number(song.number || 0);
+                              const lower = t.toLowerCase();
+                              const hasNum = n > 0 && (
+                                lower.includes(`hino ${n}`) ||
+                                lower.startsWith(`${n} -`) ||
+                                lower.includes(`${n} -`) ||
+                                lower.includes(`#${n}`) ||
+                                lower.includes(`nº ${n}`)
+                              );
+                              return n > 0 && !hasNum ? `${n} - ${t}` : t;
+                            })()}</div>
+                            <div className="text-text-muted text-sm">{song.composer_name || song.category_name || 'Hino'}</div>
+                          </div>
+                          <button
+                            className="opacity-0 group-hover:opacity-100 transition-opacity p-2 rounded-full hover:bg-background-tertiary"
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              const fallback = 'https://commondatastorage.googleapis.com/codeskulptor-demos/DDR_assets/Sevish_-__nbsp_.mp3';
+                              const ytSrc = (song as any).youtube_source || undefined;
+                              play({ id: song.id, title: song.title, artist: song.composer_name || 'Coral CCB', coverUrl: song.cover_url || '', audioUrl: ytSrc ? '' : (song.audio_url || fallback), youtubeSource: ytSrc } as any)
+                            }}
+                          >
+                            <Play className="w-5 h-5 text-white" />
+                          </button>
+                        </Link>
+                      ))}
+                    </div>
+                  </section>
+                ),
+              } : null,
+              (activeFilter !== 'songs' && composers.length > 0) ? {
+                key: 'composers',
+                score: composers[0]?.matchScore || 0,
+                node: (
+                  <section>
+                    <h2 className="text-2xl font-bold text-white mb-6">Compositores</h2>
+                    <div className="space-y-2">
+                      {composers.map((artist) => (
+                        <Link key={artist.id} to={buildCompositorUrl(artist.id, artist.name)} className="flex items-center gap-4 p-3 rounded-lg hover:bg-background-hover transition-colors group w-full">
+                          <div className="w-12 h-12 bg-background-tertiary rounded flex items-center justify-center overflow-hidden">
+                            <img src={artist.photo_url || 'https://picsum.photos/seed/artist1/150/150'} className="w-12 h-12 object-cover" alt={artist.name} />
+                          </div>
+                          <div className="flex-1">
+                            <div className="text-white font-medium">{artist.name}</div>
+                            <div className="text-text-muted text-sm">{artist.total_hymns ? `${artist.total_hymns} hinos` : 'Compositor'}</div>
+                          </div>
+                        </Link>
+                      ))}
+                    </div>
+                  </section>
+                ),
+              } : null,
+              ((activeFilter !== 'artists' && activeFilter !== 'songs' && albums.length > 0) || (activeFilter === 'albums' && albums.length > 0)) ? {
+                key: 'albums',
+                score: albums[0]?.matchScore || 0,
+                node: (
+                  <section>
+                    <h2 className="text-2xl font-bold text-white mb-6">Álbuns</h2>
+                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                      {albums.map((album) => (
+                        <Link key={album.id} to={buildAlbumUrl(album.id, album.title, album.artist)} className="p-3 rounded-lg hover:bg-background-hover transition-colors">
+                          <img src={album.cover_url || 'https://picsum.photos/seed/album1/200/200'} alt={album.title} className="w-full h-36 object-cover rounded mb-3" />
+                          <div className="text-white font-medium truncate">{album.title}</div>
+                          <div className="text-text-muted text-sm truncate">{album.artist || 'Álbum'}</div>
+                        </Link>
+                      ))}
+                    </div>
+                  </section>
+                ),
+              } : null,
+              ((activeFilter !== 'artists' && activeFilter !== 'songs' && playlists.length > 0) || (activeFilter === 'playlists' && playlists.length > 0)) ? {
+                key: 'playlists',
+                score: playlists[0]?.matchScore || 0,
+                node: (
+                  <section>
+                    <h2 className="text-2xl font-bold text-white mb-6">Playlists</h2>
+                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                      {playlists.map((pl) => (
+                        <Link key={pl.id} to={`/playlist/${pl.id}`} className="p-3 rounded-lg hover:bg-background-hover transition-colors">
+                          <img src={pl.cover_url || 'https://picsum.photos/seed/playlist1/200/200'} alt={pl.name} className="w-full h-36 object-cover rounded mb-3" />
+                          <div className="text-white font-medium truncate">{pl.name}</div>
+                          <div className="text-text-muted text-sm truncate">{pl.hymns_count ? `${pl.hymns_count} hinos` : (pl.description || 'Playlist')}</div>
+                        </Link>
+                      ))}
+                    </div>
+                  </section>
+                ),
+              } : null,
+            ]
+              .filter(Boolean)
+              .sort((a: any, b: any) =>
+                activeFilter === 'all'
+                  ? (b.score - a.score) || ((sectionPriority[b.key] || 0) - (sectionPriority[a.key] || 0))
+                  : 0
+              )
+              .map((section: any) => (
+                <React.Fragment key={section.key}>{section.node}</React.Fragment>
+              ))}
           </div>
         ) : (
           <div className="space-y-12">

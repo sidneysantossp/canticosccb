@@ -20,6 +20,7 @@ type HeaderSearchItem = {
   subtitle: string;
   imageUrl?: string;
   url: string;
+  matchScore: number;
 };
 
 const Header: React.FC = () => {
@@ -97,6 +98,12 @@ const Header: React.FC = () => {
   const isUserDashboard = userDashboardRoutes.some(route => location.pathname.startsWith(route));
   
   const isPublicArea = !isAdminPanel && !isComposerPanel && !isUserDashboard;
+  const typePriority: Record<HeaderSearchItem['type'], number> = {
+    composer: 4,
+    album: 3,
+    hymn: 2,
+    playlist: 1,
+  };
 
   // Função de busca com debounce manual
   const handleSearch = (query: string) => {
@@ -123,6 +130,7 @@ const Header: React.FC = () => {
               subtitle: hymn.composer_name || hymn.category_name || 'Hino',
               imageUrl: hymn.cover_url,
               url: buildHinoUrl(hymn.id, hymn.title, hymn.number),
+              matchScore: hymn.matchScore || 0,
             })),
             ...results.composers.map((composer) => ({
               id: composer.id,
@@ -131,6 +139,7 @@ const Header: React.FC = () => {
               subtitle: composer.bio || 'Compositor',
               imageUrl: composer.photo_url,
               url: buildCompositorUrl(composer.id, composer.name),
+              matchScore: composer.matchScore || 0,
             })),
             ...results.albums.map((album) => ({
               id: album.id,
@@ -139,6 +148,7 @@ const Header: React.FC = () => {
               subtitle: album.artist || 'Álbum',
               imageUrl: album.cover_url,
               url: buildAlbumUrl(album.id, album.title, album.artist),
+              matchScore: album.matchScore || 0,
             })),
             ...results.playlists.map((playlist) => ({
               id: playlist.id,
@@ -147,15 +157,22 @@ const Header: React.FC = () => {
               subtitle: playlist.description || 'Playlist',
               imageUrl: playlist.cover_url,
               url: `/playlist/${playlist.id}`,
+              matchScore: playlist.matchScore || 0,
             })),
           ];
+
+          const rankedResults = flattenedResults.sort((a, b) =>
+            (b.matchScore - a.matchScore) ||
+            (typePriority[b.type] - typePriority[a.type]) ||
+            a.title.localeCompare(b.title, 'pt-BR')
+          );
 
           if (requestId !== searchRequestId.current) {
             return;
           }
 
-          setSearchResults(flattenedResults);
-          setShowResults(flattenedResults.length > 0);
+          setSearchResults(rankedResults);
+          setShowResults(rankedResults.length > 0);
         } catch (error) {
           console.error('Search error:', error);
           setSearchResults([]);

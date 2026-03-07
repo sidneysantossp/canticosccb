@@ -10,6 +10,7 @@ export interface HymnSearchResult {
   cover_url?: string;
   audio_url?: string;
   youtube_source?: string;
+  matchScore?: number;
 }
 
 export interface ComposerSearchResult {
@@ -18,6 +19,7 @@ export interface ComposerSearchResult {
   bio?: string;
   photo_url?: string;
   total_hymns?: number;
+  matchScore?: number;
 }
 
 export interface AlbumSearchResult {
@@ -25,6 +27,7 @@ export interface AlbumSearchResult {
   title: string;
   artist?: string;
   cover_url?: string;
+  matchScore?: number;
 }
 
 export interface PlaylistSearchResult {
@@ -33,6 +36,7 @@ export interface PlaylistSearchResult {
   description?: string;
   cover_url?: string;
   hymns_count?: number;
+  matchScore?: number;
 }
 
 export interface SearchResult {
@@ -44,10 +48,52 @@ export interface SearchResult {
 
 interface SearchContext {
   searchTerm: string;
+  normalizedQuery: string;
   hymnFilter: string;
   composerFilter: string;
   albumFilter: string;
   playlistFilter: string;
+}
+
+function normalizeSearchValue(value?: string | number | null): string {
+  return String(value || '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .trim();
+}
+
+function getMatchScore(query: string, values: Array<{ value?: string | number | null; weight?: number }>): number {
+  if (!query) return 0;
+
+  let bestScore = 0;
+
+  for (const item of values) {
+    const text = normalizeSearchValue(item.value);
+    if (!text) continue;
+
+    let score = 0;
+
+    if (text === query) {
+      score = 120;
+    } else if (text.startsWith(query)) {
+      score = 100;
+    } else if (text.split(/\s+/).some((part) => part.startsWith(query))) {
+      score = 85;
+    } else {
+      const index = text.indexOf(query);
+      if (index >= 0) {
+        score = Math.max(45, 70 - Math.min(index, 25));
+      }
+    }
+
+    if (!score) continue;
+
+    const weight = item.weight ?? 1;
+    bestScore = Math.max(bestScore, Math.round(score * weight));
+  }
+
+  return bestScore;
 }
 
 function getSearchContext(query: string): SearchContext | null {
@@ -59,6 +105,7 @@ function getSearchContext(query: string): SearchContext | null {
 
   return {
     searchTerm,
+    normalizedQuery: normalizeSearchValue(normalizedQuery),
     hymnFilter: numericQuery != null
       ? `titulo.ilike.${searchTerm},compositor_nome.ilike.${searchTerm},numero.eq.${numericQuery}`
       : `titulo.ilike.${searchTerm},compositor_nome.ilike.${searchTerm}`,
@@ -81,16 +128,24 @@ async function searchHymns(context: SearchContext, limit: number): Promise<HymnS
     return [];
   }
 
-  return (data || []).map((h: any) => ({
-    id: String(h.id),
-    number: h.numero || 0,
-    title: h.titulo || 'Hino',
-    composer_name: h.compositor_nome,
-    category_name: h.categoria,
-    cover_url: h.cover_url,
-    audio_url: h.audio_url,
-    youtube_source: h.youtube_source || undefined,
-  }));
+  return (data || [])
+    .map((h: any) => ({
+      id: String(h.id),
+      number: h.numero || 0,
+      title: h.titulo || 'Hino',
+      composer_name: h.compositor_nome,
+      category_name: h.categoria,
+      cover_url: h.cover_url,
+      audio_url: h.audio_url,
+      youtube_source: h.youtube_source || undefined,
+      matchScore: getMatchScore(context.normalizedQuery, [
+        { value: h.numero, weight: 1.3 },
+        { value: h.titulo, weight: 1.1 },
+        { value: h.compositor_nome, weight: 0.55 },
+        { value: h.categoria, weight: 0.2 },
+      ]),
+    }))
+    .sort((a, b) => (b.matchScore || 0) - (a.matchScore || 0) || a.title.localeCompare(b.title, 'pt-BR'));
 }
 
 async function searchComposers(context: SearchContext, limit: number): Promise<ComposerSearchResult[]> {
@@ -105,12 +160,20 @@ async function searchComposers(context: SearchContext, limit: number): Promise<C
     return [];
   }
 
-  return (data || []).map((c: any) => ({
-    id: String(c.id),
-    name: c.name || c.artistic_name || 'Compositor',
-    bio: c.bio,
-    photo_url: c.photo_url,
-  }));
+  return (data || [])
+    .map((c: any) => ({
+      id: String(c.id),
+      name: c.artistic_name || c.name || 'Compositor',
+      bio: c.biography || c.bio,
+      photo_url: c.avatar_url || c.photo_url,
+      matchScore: getMatchScore(context.normalizedQuery, [
+        { value: c.artistic_name, weight: 1.2 },
+        { value: c.name, weight: 1.1 },
+        { value: c.email, weight: 0.35 },
+        { value: c.biography || c.bio, weight: 0.15 },
+      ]),
+    }))
+    .sort((a, b) => (b.matchScore || 0) - (a.matchScore || 0) || a.name.localeCompare(b.name, 'pt-BR'));
 }
 
 async function searchAlbums(context: SearchContext, limit: number): Promise<AlbumSearchResult[]> {
@@ -127,12 +190,18 @@ async function searchAlbums(context: SearchContext, limit: number): Promise<Albu
     return [];
   }
 
-  return (data || []).map((a: any) => ({
-    id: String(a.id),
-    title: a.title || 'Álbum',
-    artist: a.artist,
-    cover_url: a.cover_url,
-  }));
+  return (data || [])
+    .map((a: any) => ({
+      id: String(a.id),
+      title: a.title || 'Álbum',
+      artist: a.artist,
+      cover_url: a.cover_url,
+      matchScore: getMatchScore(context.normalizedQuery, [
+        { value: a.title, weight: 1.05 },
+        { value: a.artist, weight: 0.75 },
+      ]),
+    }))
+    .sort((a, b) => (b.matchScore || 0) - (a.matchScore || 0) || a.title.localeCompare(b.title, 'pt-BR'));
 }
 
 async function searchPlaylists(context: SearchContext, limit: number): Promise<PlaylistSearchResult[]> {
@@ -148,12 +217,18 @@ async function searchPlaylists(context: SearchContext, limit: number): Promise<P
     return [];
   }
 
-  return (data || []).map((p: any) => ({
-    id: String(p.id),
-    name: p.name || 'Playlist',
-    description: p.description,
-    cover_url: p.cover_url,
-  }));
+  return (data || [])
+    .map((p: any) => ({
+      id: String(p.id),
+      name: p.name || 'Playlist',
+      description: p.description,
+      cover_url: p.cover_url,
+      matchScore: getMatchScore(context.normalizedQuery, [
+        { value: p.name, weight: 1.05 },
+        { value: p.description, weight: 0.25 },
+      ]),
+    }))
+    .sort((a, b) => (b.matchScore || 0) - (a.matchScore || 0) || a.name.localeCompare(b.name, 'pt-BR'));
 }
 
 // Busca rápida usando Supabase
