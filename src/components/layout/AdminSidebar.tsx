@@ -270,11 +270,11 @@ const AdminSidebar: React.FC = () => {
               {/* Section Header */}
               <button
                 onClick={() => toggleSection(section.id)}
-                className="w-full flex items-center justify-between px-3 py-2 text-gray-400 hover:text-white transition-colors rounded-lg hover:bg-gray-800/50"
+                className="w-full flex items-center justify-between px-3 py-1.5 text-gray-400 hover:text-white transition-colors rounded-lg hover:bg-gray-800/50"
               >
-                <div className="flex items-center gap-3">
-                  <SectionIcon className="w-5 h-5" />
-                  <span className="font-medium text-sm">{section.title}</span>
+                <div className="flex items-center gap-2.5">
+                  <SectionIcon className="w-[18px] h-[18px]" />
+                  <span className="font-medium text-[13px]">{section.title}</span>
                 </div>
                 {isExpanded ? (
                   <ChevronDown className="w-4 h-4" />
@@ -294,18 +294,18 @@ const AdminSidebar: React.FC = () => {
                       <Link
                         key={item.path}
                         to={item.path}
-                        className={`relative flex items-center justify-between px-3 py-2 rounded-lg transition-all text-sm ${
+                        className={`relative flex items-center justify-between px-3 py-1.5 rounded-lg transition-all text-[13px] ${
                           active
                             ? 'bg-red-600 text-white hover:bg-red-700'
                             : 'text-gray-400 hover:text-white hover:bg-gray-800/50'
                         }`}
                       >
-                        <div className="flex items-center gap-3">
-                          <ItemIcon className="w-4 h-4" />
+                        <div className="flex items-center gap-2.5">
+                          <ItemIcon className="w-[15px] h-[15px]" />
                           <span>{item.label}</span>
                         </div>
                         {item.badge && (
-                          <span className="px-2 py-0.5 bg-red-600 text-white text-xs font-bold rounded-full">
+                          <span className="px-1.5 py-0.5 bg-red-600 text-white text-[10px] font-bold rounded-full">
                             {item.badge}
                           </span>
                         )}
@@ -329,10 +329,10 @@ const AdminSidebar: React.FC = () => {
       <div className="px-6 mt-4 pt-4 border-t border-gray-800">
         <Link
           to="/"
-          className="flex items-center gap-3 px-3 py-2 text-gray-400 hover:text-white transition-colors rounded-lg hover:bg-gray-800/50"
+          className="flex items-center gap-2.5 px-3 py-2 text-gray-400 hover:text-white transition-colors rounded-lg hover:bg-gray-800/50"
         >
-          <Music className="w-5 h-5" />
-          <span className="text-sm">Voltar ao Site</span>
+          <Music className="w-[18px] h-[18px]" />
+          <span className="text-[13px]">Voltar ao Site</span>
         </Link>
       </div>
     </div>

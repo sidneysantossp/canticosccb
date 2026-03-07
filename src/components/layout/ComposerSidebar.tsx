@@ -167,7 +167,7 @@ const ComposerSidebar: React.FC = () => {
               {/* Cabeçalho da seção */}
               <button
                 onClick={() => toggleSection(section.category)}
-                className="w-full flex items-center justify-between px-3 py-2 text-sm font-semibold text-gray-300 hover:text-white hover:bg-background-secondary/40 rounded-lg"
+                className="w-full flex items-center justify-between px-3 py-1.5 text-[13px] font-semibold text-gray-300 hover:text-white hover:bg-background-secondary/40 rounded-lg"
               >
                 <span className="tracking-wide">{section.category}</span>
                 <span className={`transition-transform ${isOpen ? 'rotate-90' : ''}`}>
@@ -189,20 +189,20 @@ const ComposerSidebar: React.FC = () => {
                       <Link
                         key={itemIdx}
                         to={item.path}
-                        className={`relative flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-all group ${
+                        className={`relative flex items-center gap-2.5 px-3 py-2 rounded-lg text-[13px] transition-all group ${
                           active
                             ? 'bg-background-secondary text-white'
                             : 'text-gray-400 hover:text-white hover:bg-background-secondary/50'
                         }`}
                       >
                         <Icon
-                          className={`w-5 h-5 ${
+                          className={`w-[18px] h-[18px] ${
                             active ? 'text-primary-500' : 'text-gray-400 group-hover:text-white'
                           }`}
                         />
                         <span className="font-medium leading-none">{item.label}</span>
                         {showBadge && (
-                          <span className="ml-auto inline-flex items-center justify-center text-[11px] font-semibold text-white bg-red-500 rounded-full min-w-[20px] h-5 px-1">
+                          <span className="ml-auto inline-flex items-center justify-center text-[10px] font-semibold text-white bg-red-500 rounded-full min-w-[18px] h-[18px] px-1">
                             {item.label === 'Seguidores'
                               ? unreadCount > 99 ? '99+' : unreadCount
                               : unreadClaimsForComposer > 99 ? '99+' : unreadClaimsForComposer}
@@ -222,10 +222,10 @@ const ComposerSidebar: React.FC = () => {
       <div className="px-6 mt-auto">
         <Link
           to="/"
-          className="flex items-center gap-3 px-3 py-2 text-gray-400 hover:text-white transition-colors"
+          className="flex items-center gap-2.5 px-3 py-2 text-gray-400 hover:text-white transition-colors"
         >
-          <LogOut className="w-5 h-5" />
-          <span className="text-sm">Voltar ao Player</span>
+          <LogOut className="w-[18px] h-[18px]" />
+          <span className="text-[13px]">Voltar ao Player</span>
         </Link>
       </div>
     </div>

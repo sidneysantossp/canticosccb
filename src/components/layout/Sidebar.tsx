@@ -45,18 +45,18 @@ const Sidebar: React.FC = () => {
               <Link
                 key={path}
                 to={path}
-                className={`flex items-center gap-4 px-3 py-3 rounded-lg transition-all group ${
+                className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all group ${
                   active
                     ? 'bg-background-secondary text-white'
                     : 'text-gray-400 hover:text-white hover:bg-background-secondary/50'
                 }`}
               >
                 <Icon
-                  className={`w-6 h-6 ${
+                  className={`w-5 h-5 ${
                     active ? 'text-primary-500' : 'text-gray-400 group-hover:text-white'
                   }`}
                 />
-                <span className="font-medium">{label}</span>
+                <span className="text-sm font-medium">{label}</span>
               </Link>
             );
           })}

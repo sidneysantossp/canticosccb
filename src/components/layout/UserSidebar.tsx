@@ -124,19 +124,19 @@ const UserSidebar: React.FC = () => {
                   <Link
                     key={itemIdx}
                     to={item.path}
-                    className={`relative flex items-center gap-4 px-3 py-3 rounded-lg transition-all group ${active
+                    className={`relative flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all group ${active
                         ? 'bg-background-secondary text-white'
                         : 'text-gray-400 hover:text-white hover:bg-background-secondary/50'
                       }`}
                   >
                     <Icon
-                      className={`w-6 h-6 ${active ? 'text-primary-500' : 'text-gray-400 group-hover:text-white'
+                      className={`w-5 h-5 ${active ? 'text-primary-500' : 'text-gray-400 group-hover:text-white'
                         }`}
                     />
-                    <span className="font-medium">{item.label}</span>
+                    <span className="text-sm font-medium">{item.label}</span>
                     {/* Indicador ativo/hover (barra direita) */}
                     <span
-                      className={`absolute right-0 top-1/2 -translate-y-1/2 w-1 h-5 rounded-l ${active ? 'bg-yellow-500' : 'bg-yellow-500/0 group-hover:bg-yellow-500/60'
+                      className={`absolute right-0 top-1/2 -translate-y-1/2 w-1 h-4 rounded-l ${active ? 'bg-yellow-500' : 'bg-yellow-500/0 group-hover:bg-yellow-500/60'
                         }`}
                     />
                   </Link>
