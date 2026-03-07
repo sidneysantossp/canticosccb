@@ -12,9 +12,22 @@ if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
 }
 
 // Cliente Supabase para autenticação
-export const supabase = SUPABASE_URL && SUPABASE_ANON_KEY
-  ? createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
-  : createClient('https://placeholder.supabase.co', 'placeholder');
+const createSupabaseClient = (options?: Parameters<typeof createClient>[2]) => (
+  SUPABASE_URL && SUPABASE_ANON_KEY
+    ? createClient(SUPABASE_URL, SUPABASE_ANON_KEY, options)
+    : createClient('https://placeholder.supabase.co', 'placeholder', options)
+);
+
+export const supabase = createSupabaseClient();
+
+// Cliente público sem sessão do usuário, para buscas e listagens abertas.
+export const publicSupabase = createSupabaseClient({
+  auth: {
+    persistSession: false,
+    autoRefreshToken: false,
+    detectSessionInUrl: false,
+  },
+});
 
 // Interface usando a estrutura real da tabela users
 export interface Usuario {

@@ -1,5 +1,5 @@
 // APIs de Busca usando Supabase
-import { supabase } from '@/lib/supabase-auth';
+import { publicSupabase } from '@/lib/supabase-auth';
 
 export interface HymnSearchResult {
   id: string;
@@ -116,7 +116,8 @@ function getSearchContext(query: string): SearchContext | null {
 }
 
 async function searchHymns(context: SearchContext, limit: number): Promise<HymnSearchResult[]> {
-  const { data, error } = await supabase
+  const client = publicSupabase;
+  const { data, error } = await client
     .from('hinos')
     .select('id, numero, titulo, compositor_nome, categoria, cover_url, audio_url, youtube_source')
     .or(context.hymnFilter)
@@ -149,9 +150,10 @@ async function searchHymns(context: SearchContext, limit: number): Promise<HymnS
 }
 
 async function searchComposers(context: SearchContext, limit: number): Promise<ComposerSearchResult[]> {
-  const { data, error } = await supabase
+  const client = publicSupabase;
+  const { data, error } = await client
     .from('composers')
-    .select('id, name, artistic_name, bio, photo_url')
+    .select('id, name, artistic_name, email, bio, biography, photo_url, avatar_url')
     .or(context.composerFilter)
     .limit(limit);
 
@@ -177,7 +179,8 @@ async function searchComposers(context: SearchContext, limit: number): Promise<C
 }
 
 async function searchAlbums(context: SearchContext, limit: number): Promise<AlbumSearchResult[]> {
-  const { data, error } = await supabase
+  const client = publicSupabase;
+  const { data, error } = await client
     .from('albums')
     .select('id, title, artist, cover_url')
     .or(context.albumFilter)
@@ -205,7 +208,8 @@ async function searchAlbums(context: SearchContext, limit: number): Promise<Albu
 }
 
 async function searchPlaylists(context: SearchContext, limit: number): Promise<PlaylistSearchResult[]> {
-  const { data, error } = await supabase
+  const client = publicSupabase;
+  const { data, error } = await client
     .from('playlists')
     .select('id, name, description, cover_url')
     .or(context.playlistFilter)

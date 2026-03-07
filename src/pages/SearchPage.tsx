@@ -7,7 +7,7 @@ import { generateWebsiteSchema } from '@/utils/schemaGenerator';
 import { buildHinoUrl, buildCompositorUrl, buildAlbumUrl } from '@/utils/slugUrl';
 import { advancedSearch, type HymnSearchResult, type ComposerSearchResult, type AlbumSearchResult, type PlaylistSearchResult } from '@/lib/mockApis';
 import { useAuth } from '@/contexts/AuthContext';
-import { supabase } from '@/lib/supabase-auth';
+import { publicSupabase, supabase } from '@/lib/supabase-auth';
 
 const SearchPage: React.FC = () => {
   const { play } = usePlayerStore();
@@ -38,7 +38,7 @@ const SearchPage: React.FC = () => {
   useEffect(() => {
     const loadCategories = async () => {
       try {
-        const { data, error } = await supabase
+        const { data, error } = await publicSupabase
           .from('categorias')
           .select('id, nome, slug, descricao, imagem_url')
           .eq('ativo', true)
