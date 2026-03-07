@@ -14,17 +14,76 @@ const AuthCallbackPage: React.FC = () => {
         const callbackType = searchParams.get('type');
         const isEmailVerification = callbackType === 'email_verification';
 
+        const resolvePostAuthDestination = async (sessionUser: { id: string; email?: string | null; user_metadata?: Record<string, any> }) => {
+          const { data: dbUser } = await supabase
+            .from('users')
+            .select('id,email,name,is_admin,is_composer')
+            .eq('id', sessionUser.id)
+            .maybeSingle();
+
+          if (dbUser?.is_admin) {
+            return '/admin';
+          }
+
+          let composer: { id: string } | null = null;
+
+          const { data: composerByUserId } = await supabase
+            .from('composers')
+            .select('id')
+            .eq('user_id', sessionUser.id)
+            .maybeSingle();
+
+          composer = composerByUserId || null;
+
+          if (!composer && sessionUser.email) {
+            const { data: composerByEmail } = await supabase
+              .from('composers')
+              .select('id')
+              .eq('email', sessionUser.email)
+              .maybeSingle();
+
+            composer = composerByEmail || null;
+
+            if (composer) {
+              await supabase
+                .from('composers')
+                .update({ user_id: sessionUser.id })
+                .eq('id', composer.id);
+            }
+          }
+
+          if (composer || dbUser?.is_composer) {
+            await supabase
+              .from('users')
+              .upsert({
+                id: sessionUser.id,
+                email: sessionUser.email || dbUser?.email || '',
+                name: dbUser?.name || sessionUser.user_metadata?.name || sessionUser.email?.split('@')[0] || 'Usuário',
+                plan: 'free',
+                status: 'active',
+                is_admin: dbUser?.is_admin || false,
+                is_composer: true,
+                is_blocked: false,
+              }, { onConflict: 'id' });
+
+            return '/composer/dashboard';
+          }
+
+          return '/onboarding';
+        };
+
         // Supabase email confirmation links use hash fragments with access_token
         // The Supabase client auto-exchanges these tokens on page load
         // Wait for the session to be established
-        const { data: { session } } = await supabase.auth.getSession();
+        let { data: { session } } = await supabase.auth.getSession();
         
         if (!session) {
           // Wait a bit for Supabase to process the hash token
           await new Promise(resolve => setTimeout(resolve, 1500));
           const { data: { session: retrySession } } = await supabase.auth.getSession();
+          session = retrySession;
           
-          if (!retrySession) {
+          if (!session) {
             // Try OAuth callback as fallback
             const result = await handleOAuthCallback();
             if (result.success) {
@@ -44,8 +103,11 @@ const AuthCallbackPage: React.FC = () => {
         // If this is an email verification callback, go to onboarding
         if (isEmailVerification || session) {
           console.log('✅ Email verificado com sucesso!');
+          const destination = session?.user
+            ? await resolvePostAuthDestination(session.user)
+            : '/onboarding';
           await new Promise(resolve => setTimeout(resolve, 500));
-          navigate('/onboarding', { replace: true });
+          navigate(destination, { replace: true });
           return;
         }
 

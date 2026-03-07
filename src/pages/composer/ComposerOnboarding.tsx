@@ -61,7 +61,7 @@ interface OnboardingData {
 
 const ComposerOnboarding: React.FC = () => {
   const navigate = useNavigate();
-  const { signIn } = useAuth();
+  const { user, profile, signIn } = useAuth();
   const [currentStep, setCurrentStep] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
@@ -118,9 +118,23 @@ const ComposerOnboarding: React.FC = () => {
   const [managerSearchError, setManagerSearchError] = useState('');
 
   const totalSteps = 7;
+  const isExistingUser = Boolean(user?.id);
+  const requiresDocumentBack = formData.documentType !== 'passport';
 
   const [availableGenres, setAvailableGenres] = useState<string[]>([]);
   const [loadingGenres, setLoadingGenres] = useState(true);
+
+  useEffect(() => {
+    if (!user) return;
+
+    setFormData((prev) => ({
+      ...prev,
+      name: prev.name || profile?.nome || user.nome || '',
+      artisticName: prev.artisticName || profile?.nome || user.nome || '',
+      email: prev.email || user.email || '',
+    }));
+    setEmailExists(false);
+  }, [user, profile]);
 
   // Carregar categorias do banco de dados
   useEffect(() => {
@@ -499,6 +513,13 @@ const ComposerOnboarding: React.FC = () => {
   const checkEmailExists = async (email: string) => {
     if (!email || !email.includes('@')) return;
 
+    const normalizedEmail = email.trim().toLowerCase();
+    const normalizedCurrentUserEmail = user?.email?.trim().toLowerCase();
+    if (normalizedCurrentUserEmail && normalizedEmail === normalizedCurrentUserEmail) {
+      setEmailExists(false);
+      return;
+    }
+
     setCheckingEmail(true);
     try {
       const result = await checkEmailAvailability(email);
@@ -522,7 +543,7 @@ const ComposerOnboarding: React.FC = () => {
 
   const handleFinish = async () => {
     // Verificar email duplicado antes de enviar
-    if (emailExists) {
+    if (emailExists && !isExistingUser) {
       alert('❌ Este email já está cadastrado! Use outro email ou faça login.');
       setSubmitError('Este email já está cadastrado');
       return;
@@ -534,9 +555,9 @@ const ComposerOnboarding: React.FC = () => {
     try {
       // 1. Converter documentos para base64
       const documents = [];
-      if (formData.documentFront && formData.documentBack && formData.documentType) {
+      if (formData.documentFront && formData.documentType) {
         const frontBase64 = await fileToBase64(formData.documentFront);
-        const backBase64 = await fileToBase64(formData.documentBack);
+        const backBase64 = formData.documentBack ? await fileToBase64(formData.documentBack) : null;
 
         documents.push({
           type: formData.documentType,
@@ -567,47 +588,61 @@ const ComposerOnboarding: React.FC = () => {
         console.log('📄 Document back path:', documentBackPath ? 'OK' : 'FAILED');
       }
 
-      // 3. Criar conta via Supabase Auth (garante hash de senha correto)
-      console.log('🚀 Criando conta via Supabase Auth...');
-      const { data: authData, error: authError } = await supabase.auth.signUp({
-        email: formData.email,
-        password: formData.password,
-        options: {
-          data: { name: formData.name },
-          emailRedirectTo: `${import.meta.env.VITE_APP_URL || window.location.origin}/composer/dashboard`,
-        },
-      });
+      // 3. Criar conta via Supabase Auth para novos usuários
+      let userId = user?.id || null;
+      let shouldVerifyEmail = false;
 
-      if (authError) {
-        if (authError.message.includes('already registered')) {
-          throw new Error('Este email já está cadastrado. Tente fazer login.');
-        }
-        throw new Error(authError.message);
-      }
-
-      if (!authData.user) {
-        throw new Error('Erro ao criar conta. Tente novamente.');
-      }
-
-      const userId = authData.user.id;
-      console.log('✅ Conta criada no Supabase Auth:', userId);
-
-      // 4. Criar perfil na tabela users (como compositor)
-      console.log('📝 Criando perfil de usuário...');
-      try {
-        await supabase.from('users').upsert({
-          id: userId,
+      if (!isExistingUser) {
+        console.log('🚀 Criando conta via Supabase Auth...');
+        const { data: authData, error: authError } = await supabase.auth.signUp({
           email: formData.email,
-          name: formData.name,
-          phone: formData.phone || null,
-          plan: 'free',
-          status: 'active',
-          is_admin: false,
-          is_composer: true,
-          is_blocked: false,
-        }, { onConflict: 'id' });
+          password: formData.password,
+          options: {
+            data: { name: formData.name },
+            emailRedirectTo: `${import.meta.env.VITE_APP_URL || window.location.origin}/auth/callback?type=email_verification`,
+          },
+        });
+
+        if (authError) {
+          if (authError.message.includes('already registered')) {
+            throw new Error('Este email já está cadastrado. Tente fazer login.');
+          }
+          throw new Error(authError.message);
+        }
+
+        if (!authData.user) {
+          throw new Error('Erro ao criar conta. Tente novamente.');
+        }
+
+        userId = authData.user.id;
+        shouldVerifyEmail = !authData.session;
+        console.log('✅ Conta criada no Supabase Auth:', userId);
+      }
+
+      // 4. Garantir perfil base na tabela users antes de vincular o compositor
+      console.log('📝 Garantindo perfil base de usuário...');
+      let canLinkComposerToUser = Boolean(userId);
+      try {
+        if (userId) {
+          const { error: userUpsertError } = await supabase.from('users').upsert({
+            id: userId,
+            email: formData.email,
+            name: formData.name,
+            phone: formData.phone || null,
+            plan: 'free',
+            status: 'active',
+            is_admin: false,
+            is_composer: false,
+            is_blocked: false,
+          }, { onConflict: 'id' });
+
+          if (userUpsertError) {
+            throw userUpsertError;
+          }
+        }
       } catch (e) {
-        console.warn('⚠️ Erro ao criar perfil (pode já existir via trigger):', e);
+        canLinkComposerToUser = false;
+        console.warn('⚠️ Erro ao preparar perfil base de usuário. O vínculo será resolvido por email após a confirmação/login:', e);
       }
 
       // 5. Criar perfil de compositor
@@ -622,12 +657,39 @@ const ComposerOnboarding: React.FC = () => {
         documento_numero: formData.documentNumber || '',
         documento_imagem: documentImagePath || undefined,
         documento_imagem_verso: documentBackPath || undefined,
-        user_id: userId,
+        user_id: canLinkComposerToUser ? userId || undefined : undefined,
       });
+
+      if (!composerResult.success || !composerResult.compositor_id) {
+        throw new Error(composerResult.error || 'Não foi possível criar o perfil de compositor.');
+      }
 
       console.log('✅ Compositor registrado:', composerResult);
 
-      // 6. Enviar convite ao gerente (se configurado)
+      // 6. Promover o usuário para compositor somente depois que o perfil existir
+      if (userId) {
+        try {
+          const { error: promoteUserError } = await supabase.from('users').upsert({
+            id: userId,
+            email: formData.email,
+            name: formData.name,
+            phone: formData.phone || null,
+            plan: 'free',
+            status: 'active',
+            is_admin: false,
+            is_composer: true,
+            is_blocked: false,
+          }, { onConflict: 'id' });
+
+          if (promoteUserError) {
+            throw promoteUserError;
+          }
+        } catch (promotionError) {
+          console.warn('⚠️ Perfil de compositor criado, mas a promoção do usuário falhou. O vínculo será corrigido no próximo login/callback:', promotionError);
+        }
+      }
+
+      // 7. Enviar convite ao gerente (se configurado)
       const compositorId = composerResult?.compositor_id;
       if (formData.hasManager && formData.managerData && compositorId) {
         try {
@@ -648,15 +710,32 @@ const ComposerOnboarding: React.FC = () => {
         }
       }
 
-      // 7. Fazer login automático (agora funciona porque Auth hash é correto)
+      if (isExistingUser) {
+        localStorage.setItem('user', JSON.stringify({
+          ...(user || {}),
+          nome: formData.name || user?.nome,
+          email: formData.email || user?.email,
+          tipo: 'compositor',
+          ativo: true,
+        }));
+        window.location.href = '/composer/dashboard';
+        return;
+      }
+
+      if (shouldVerifyEmail) {
+        navigate('/verify-email', { state: { email: formData.email } });
+        return;
+      }
+
+      // 8. Fazer login automático quando a sessão já estiver liberada
       console.log('🔑 Fazendo login automático...');
       await signIn(formData.email, formData.password);
 
       await new Promise(resolve => setTimeout(resolve, 1000));
 
-      // 8. Redirecionar para o dashboard de compositor
+      // 9. Redirecionar para o dashboard de compositor
       console.log('✅ Login concluído, redirecionando para dashboard de compositor...');
-      navigate('/composer/dashboard');
+      window.location.href = '/composer/dashboard';
 
     } catch (error: any) {
       console.error('\u274c Erro no cadastro:', error);
@@ -678,9 +757,15 @@ const ComposerOnboarding: React.FC = () => {
         return formData.name && formData.artisticName && formData.bio;
       case 3:
         // Validar email, senha e endereço
-        const emailValid = formData.email && formData.email.includes('@') && !emailExists;
-        const passwordValid = formData.password && formData.password.length >= 6;
-        const passwordMatch = formData.password === formData.passwordConfirm;
+        const normalizedCurrentUserEmail = user?.email?.trim().toLowerCase();
+        const normalizedFormEmail = formData.email.trim().toLowerCase();
+        const emailValid = Boolean(
+          formData.email &&
+          formData.email.includes('@') &&
+          (!emailExists || (normalizedCurrentUserEmail && normalizedCurrentUserEmail === normalizedFormEmail))
+        );
+        const passwordValid = isExistingUser || Boolean(formData.password && formData.password.length >= 6);
+        const passwordMatch = isExistingUser || formData.password === formData.passwordConfirm;
         const addressValid = formData.cep && formData.street && formData.number && formData.city && formData.state;
 
         if (!emailValid || !passwordValid || !passwordMatch || !addressValid) {
@@ -688,7 +773,7 @@ const ComposerOnboarding: React.FC = () => {
         }
         return true;
       case 5:
-        return formData.documentType !== '' && formData.documentFront !== null && formData.documentBack !== null && formData.acceptedTerms;
+        return formData.documentType !== '' && formData.documentFront !== null && (!requiresDocumentBack || formData.documentBack !== null) && formData.acceptedTerms;
       default:
         return true;
     }
@@ -965,6 +1050,12 @@ const ComposerOnboarding: React.FC = () => {
               Adicione seu endereço completo para contato
             </p>
             <div className="bg-background-secondary rounded-xl p-8 space-y-6">
+              {isExistingUser && (
+                <div className="rounded-lg border border-primary-500/30 bg-primary-500/10 p-4 text-sm text-primary-300">
+                  Esta conta ja existe. Voce esta apenas ativando o perfil de compositor para o usuario atual.
+                </div>
+              )}
+
               <div>
                 <label className="block text-white font-medium mb-2">
                   Email *
@@ -978,8 +1069,11 @@ const ComposerOnboarding: React.FC = () => {
                       handleInputChange('email', e.target.value);
                       setEmailExists(false);
                     }}
-                    onBlur={(e) => checkEmailExists(e.target.value)}
+                    onBlur={(e) => {
+                      if (!isExistingUser) checkEmailExists(e.target.value);
+                    }}
                     placeholder="seu@email.com"
+                    readOnly={isExistingUser}
                     className={`w-full pl-10 pr-4 py-3 bg-background-tertiary border rounded-lg text-white focus:outline-none focus:ring-2 ${emailExists
                       ? 'border-red-500 focus:ring-red-500'
                       : 'border-gray-700 focus:ring-primary-500'
@@ -998,78 +1092,80 @@ const ComposerOnboarding: React.FC = () => {
                 )}
               </div>
 
-              <div className="grid md:grid-cols-2 gap-6">
-                <div>
-                  <label className="block text-white font-medium mb-2">
-                    Senha *
-                  </label>
-                  <div className="relative">
-                    <input
-                      type={showPassword ? "text" : "password"}
-                      value={formData.password}
-                      onChange={(e) => handleInputChange('password', e.target.value)}
-                      placeholder="Mínimo 6 caracteres"
-                      className="w-full px-4 py-3 pr-12 bg-background-tertiary border border-gray-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-primary-500"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-3 top-1/2 transform -translate-y-1/2 text-text-muted hover:text-white transition-colors"
-                    >
-                      {showPassword ? (
-                        <EyeOff className="w-5 h-5" />
-                      ) : (
-                        <Eye className="w-5 h-5" />
-                      )}
-                    </button>
-                  </div>
-                  {formData.password && formData.password.length < 6 && (
-                    <p className="text-red-400 text-sm mt-1">
-                      Senha deve ter no mínimo 6 caracteres
-                    </p>
-                  )}
-                </div>
-
-                <div>
-                  <label className="block text-white font-medium mb-2">
-                    Confirmar Senha *
-                  </label>
-                  <div className="relative">
-                    <input
-                      type={showPasswordConfirm ? "text" : "password"}
-                      value={formData.passwordConfirm}
-                      onChange={(e) => handleInputChange('passwordConfirm', e.target.value)}
-                      placeholder="Digite a senha novamente"
-                      className="w-full px-4 py-3 pr-12 bg-background-tertiary border border-gray-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-primary-500"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowPasswordConfirm(!showPasswordConfirm)}
-                      className="absolute right-3 top-1/2 transform -translate-y-1/2 text-text-muted hover:text-white transition-colors"
-                    >
-                      {showPasswordConfirm ? (
-                        <EyeOff className="w-5 h-5" />
-                      ) : (
-                        <Eye className="w-5 h-5" />
-                      )}
-                    </button>
-                  </div>
-                  {formData.password && formData.passwordConfirm &&
-                    formData.password !== formData.passwordConfirm && (
+              {!isExistingUser && (
+                <div className="grid md:grid-cols-2 gap-6">
+                  <div>
+                    <label className="block text-white font-medium mb-2">
+                      Senha *
+                    </label>
+                    <div className="relative">
+                      <input
+                        type={showPassword ? "text" : "password"}
+                        value={formData.password}
+                        onChange={(e) => handleInputChange('password', e.target.value)}
+                        placeholder="Mínimo 6 caracteres"
+                        className="w-full px-4 py-3 pr-12 bg-background-tertiary border border-gray-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-primary-500"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute right-3 top-1/2 transform -translate-y-1/2 text-text-muted hover:text-white transition-colors"
+                      >
+                        {showPassword ? (
+                          <EyeOff className="w-5 h-5" />
+                        ) : (
+                          <Eye className="w-5 h-5" />
+                        )}
+                      </button>
+                    </div>
+                    {formData.password && formData.password.length < 6 && (
                       <p className="text-red-400 text-sm mt-1">
-                        As senhas não coincidem
+                        Senha deve ter no mínimo 6 caracteres
                       </p>
                     )}
-                  {formData.password && formData.passwordConfirm &&
-                    formData.password === formData.passwordConfirm &&
-                    formData.password.length >= 6 && (
-                      <p className="text-green-400 text-sm mt-1 flex items-center gap-2">
-                        <CheckCircle className="w-4 h-4" />
-                        Senhas conferem
-                      </p>
-                    )}
+                  </div>
+
+                  <div>
+                    <label className="block text-white font-medium mb-2">
+                      Confirmar Senha *
+                    </label>
+                    <div className="relative">
+                      <input
+                        type={showPasswordConfirm ? "text" : "password"}
+                        value={formData.passwordConfirm}
+                        onChange={(e) => handleInputChange('passwordConfirm', e.target.value)}
+                        placeholder="Digite a senha novamente"
+                        className="w-full px-4 py-3 pr-12 bg-background-tertiary border border-gray-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-primary-500"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPasswordConfirm(!showPasswordConfirm)}
+                        className="absolute right-3 top-1/2 transform -translate-y-1/2 text-text-muted hover:text-white transition-colors"
+                      >
+                        {showPasswordConfirm ? (
+                          <EyeOff className="w-5 h-5" />
+                        ) : (
+                          <Eye className="w-5 h-5" />
+                        )}
+                      </button>
+                    </div>
+                    {formData.password && formData.passwordConfirm &&
+                      formData.password !== formData.passwordConfirm && (
+                        <p className="text-red-400 text-sm mt-1">
+                          As senhas não coincidem
+                        </p>
+                      )}
+                    {formData.password && formData.passwordConfirm &&
+                      formData.password === formData.passwordConfirm &&
+                      formData.password.length >= 6 && (
+                        <p className="text-green-400 text-sm mt-1 flex items-center gap-2">
+                          <CheckCircle className="w-4 h-4" />
+                          Senhas conferem
+                        </p>
+                      )}
+                  </div>
                 </div>
-              </div>
+              )}
 
               <div>
                 <label className="block text-white font-medium mb-2">
@@ -1278,7 +1374,14 @@ const ComposerOnboarding: React.FC = () => {
                 </label>
                 <select
                   value={formData.documentType}
-                  onChange={(e) => handleInputChange('documentType', e.target.value)}
+                  onChange={(e) => {
+                    const nextType = e.target.value as OnboardingData['documentType'];
+                    setFormData((prev) => ({
+                      ...prev,
+                      documentType: nextType,
+                      documentBack: nextType === 'passport' ? null : prev.documentBack,
+                    }));
+                  }}
                   className="w-full px-4 py-3 bg-background-tertiary border border-gray-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-primary-500"
                 >
                   <option value="">Selecione o tipo de documento</option>
@@ -1291,7 +1394,7 @@ const ComposerOnboarding: React.FC = () => {
               </div>
 
               {formData.documentType && (
-                <div className="grid md:grid-cols-2 gap-6 animate-fadeIn">
+                <div className={`animate-fadeIn ${requiresDocumentBack ? 'grid md:grid-cols-2 gap-6' : 'space-y-4'}`}>
                   <div>
                     <label className="block text-white font-medium mb-2">
                       Frente do Documento *
@@ -1339,52 +1442,58 @@ const ComposerOnboarding: React.FC = () => {
                     </div>
                   </div>
 
-                  <div>
-                    <label className="block text-white font-medium mb-2">
-                      Verso do Documento *
-                    </label>
-                    <div
-                      onDrop={(e) => handleDrop(e, 'back')}
-                      onDragOver={handleDragOver}
-                      onDragEnter={() => handleDragEnter('back')}
-                      onDragLeave={() => handleDragLeave('back')}
-                      className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors ${dragActiveBack
-                        ? 'border-primary-400 bg-primary-500/10'
-                        : 'border-gray-700 hover:border-gray-600'
-                        }`}
-                    >
-                      {formData.documentBack ? (
-                        <div className="space-y-2">
-                          <CheckCircle className="w-12 h-12 text-green-500 mx-auto" />
-                          <p className="text-white font-medium">{formData.documentBack.name}</p>
-                          <button
-                            onClick={() => setFormData(prev => ({ ...prev, documentBack: null }))}
-                            className="text-red-400 hover:text-red-300 text-sm"
-                          >
-                            Remover
-                          </button>
-                        </div>
-                      ) : (
-                        <div className="space-y-2">
-                          <Upload className="w-12 h-12 text-text-muted mx-auto" />
-                          <p className="text-white">Arraste a foto aqui</p>
-                          <p className="text-text-muted text-sm">ou</p>
-                          <label className="inline-block px-4 py-2 bg-primary-500 text-white rounded-lg cursor-pointer hover:bg-primary-600 transition-colors">
-                            Escolher arquivo
-                            <input
-                              type="file"
-                              accept="image/*"
-                              onChange={(e) => {
-                                const file = e.target.files?.[0];
-                                if (file) handleFileUpload(file, 'back');
-                              }}
-                              className="hidden"
-                            />
-                          </label>
-                        </div>
-                      )}
+                  {requiresDocumentBack ? (
+                    <div>
+                      <label className="block text-white font-medium mb-2">
+                        Verso do Documento *
+                      </label>
+                      <div
+                        onDrop={(e) => handleDrop(e, 'back')}
+                        onDragOver={handleDragOver}
+                        onDragEnter={() => handleDragEnter('back')}
+                        onDragLeave={() => handleDragLeave('back')}
+                        className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors ${dragActiveBack
+                          ? 'border-primary-400 bg-primary-500/10'
+                          : 'border-gray-700 hover:border-gray-600'
+                          }`}
+                      >
+                        {formData.documentBack ? (
+                          <div className="space-y-2">
+                            <CheckCircle className="w-12 h-12 text-green-500 mx-auto" />
+                            <p className="text-white font-medium">{formData.documentBack.name}</p>
+                            <button
+                              onClick={() => setFormData(prev => ({ ...prev, documentBack: null }))}
+                              className="text-red-400 hover:text-red-300 text-sm"
+                            >
+                              Remover
+                            </button>
+                          </div>
+                        ) : (
+                          <div className="space-y-2">
+                            <Upload className="w-12 h-12 text-text-muted mx-auto" />
+                            <p className="text-white">Arraste a foto aqui</p>
+                            <p className="text-text-muted text-sm">ou</p>
+                            <label className="inline-block px-4 py-2 bg-primary-500 text-white rounded-lg cursor-pointer hover:bg-primary-600 transition-colors">
+                              Escolher arquivo
+                              <input
+                                type="file"
+                                accept="image/*"
+                                onChange={(e) => {
+                                  const file = e.target.files?.[0];
+                                  if (file) handleFileUpload(file, 'back');
+                                }}
+                                className="hidden"
+                              />
+                            </label>
+                          </div>
+                        )}
+                      </div>
                     </div>
-                  </div>
+                  ) : (
+                    <div className="rounded-lg border border-primary-500/30 bg-primary-500/10 p-4 text-sm text-primary-300">
+                      Para passaporte, envie apenas a pagina principal com foto. O verso nao e obrigatorio.
+                    </div>
+                  )}
                 </div>
               )}
 

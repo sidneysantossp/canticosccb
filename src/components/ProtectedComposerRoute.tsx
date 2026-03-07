@@ -12,6 +12,7 @@ export const ProtectedComposerRoute: React.FC<ProtectedComposerRouteProps> = ({ 
   const { user } = useAuth();
   const navigate = useNavigate();
   const [isVerified, setIsVerified] = useState<boolean | null>(null);
+  const [hasComposerProfile, setHasComposerProfile] = useState(false);
   const [loading, setLoading] = useState(true);
 
   const checkComposerStatus = React.useCallback(async () => {
@@ -20,46 +21,25 @@ export const ProtectedComposerRoute: React.FC<ProtectedComposerRouteProps> = ({ 
       return;
     }
 
-    // Se não é compositor, permite acesso normal
-    if (user.tipo !== 'compositor') {
-      setIsVerified(true);
-      setLoading(false);
-      return;
-    }
-
     try {
-      // Buscar todos os compositores e encontrar pelo usuario_id
-      const response = await compositoresApi.list({ limit: 100 });
-
-      if (response.error) {
-        console.error('Erro ao verificar status:', response.error);
-        setIsVerified(false);
-        setLoading(false);
-        return;
-      }
-
-      const apiData = response.data as any;
-      const compositores = apiData?.compositores || [];
-
-      // Encontrar o compositor pelo usuario_id (comparação por string, pois são UUIDs)
-      console.log('🔍 Buscando compositor com usuario_id:', user.id, 'entre', compositores.length, 'compositores');
-      const compositor = compositores.find((c: any) => {
-        const cUserId = String(c?.usuario_id || c?.user_id || '');
-        return cUserId === String(user.id);
-      });
+      const response = await compositoresApi.getByUsuarioId(String(user.id), user.email);
+      const compositor = response.data as any;
 
       if (compositor) {
+        setHasComposerProfile(true);
         console.log('🔍 Compositor encontrado:', compositor);
         const verified = compositor.verificado === true || compositor.verificado === 1 || compositor.verified === true;
         console.log('✅ Status verificado (normalizado):', verified, '| verificado:', compositor.verificado, '| status:', compositor.status);
         setIsVerified(verified);
       } else {
+        setHasComposerProfile(false);
         console.log('❌ Compositor não encontrado para usuario_id:', user.id);
-        setIsVerified(false);
+        setIsVerified(user.tipo !== 'compositor');
       }
     } catch (error) {
       console.error('Erro ao verificar compositor:', error);
-      setIsVerified(false);
+      setHasComposerProfile(false);
+      setIsVerified(user.tipo !== 'compositor');
     } finally {
       setLoading(false);
     }
@@ -71,7 +51,7 @@ export const ProtectedComposerRoute: React.FC<ProtectedComposerRouteProps> = ({ 
 
   // Ocultar sidebar quando compositor não está verificado
   useEffect(() => {
-    if (user?.tipo === 'compositor' && isVerified === false) {
+    if (hasComposerProfile && isVerified === false) {
       document.body.classList.add('hide-sidebar');
       return () => {
         document.body.classList.remove('hide-sidebar');
@@ -79,7 +59,7 @@ export const ProtectedComposerRoute: React.FC<ProtectedComposerRouteProps> = ({ 
     } else {
       document.body.classList.remove('hide-sidebar');
     }
-  }, [user, isVerified]);
+  }, [hasComposerProfile, isVerified]);
 
   if (loading) {
     return (
@@ -98,7 +78,7 @@ export const ProtectedComposerRoute: React.FC<ProtectedComposerRouteProps> = ({ 
   }
 
   // Se é compositor mas não está verificado, mostra mensagem SEM SIDEBAR
-  if (user.tipo === 'compositor' && isVerified === false) {
+  if (hasComposerProfile && isVerified === false) {
     return (
       <div className="min-h-screen bg-gray-950 flex items-center justify-center p-6">
         <div className="max-w-md w-full bg-gray-900 border border-gray-800 rounded-xl p-8 text-center">
