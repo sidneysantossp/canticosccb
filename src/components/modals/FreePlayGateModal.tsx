@@ -24,7 +24,7 @@ const FreePlayGateModal: React.FC = () => {
 
   const handleEmailRegister = () => {
     closeGate();
-    navigate('/registro', { state: { from: window.location.pathname } });
+    navigate('/register', { state: { from: window.location.pathname } });
   };
 
   const handleLogin = () => {
