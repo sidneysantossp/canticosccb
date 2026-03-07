@@ -206,7 +206,7 @@ export async function register(data: { nome: string; email: string; senha: strin
             is_admin: false,
             is_composer: false,
             is_blocked: false,
-            email_verified: false,
+            email_verified: !!authData.user.email_confirmed_at,
           }, { onConflict: 'id' })
           .select()
           .single();
@@ -260,8 +260,14 @@ export async function register(data: { nome: string; email: string; senha: strin
     const usuario = mapUserForCompatibility(user);
     console.log('✅ Registro concluído:', usuario.email);
 
-    // 3. Salvar no localStorage
-    localStorage.setItem('user', JSON.stringify(usuario));
+    // Só persiste no cliente quando existe sessão ativa.
+    if (authData.session) {
+      localStorage.setItem('user', JSON.stringify(usuario));
+      localStorage.removeItem('auth_fallback');
+    } else {
+      localStorage.removeItem('user');
+      localStorage.removeItem('auth_fallback');
+    }
 
     return {
       success: true,
@@ -337,25 +343,26 @@ export async function handleOAuthCallback(): Promise<LoginResponse> {
       .eq('id', session.user.id)
       .single();
 
-    if (!user) {
-      // Criar novo usuário
-      const { data: newUser, error: insertError } = await supabase
+    if (!user || !user.email_verified) {
+      const { data: syncedUser, error: upsertError } = await supabase
         .from('users')
-        .insert({
+        .upsert({
           id: session.user.id,
-          name: session.user.user_metadata?.full_name || session.user.email?.split('@')[0] || 'Usuário',
+          name: user?.name || session.user.user_metadata?.name || session.user.user_metadata?.full_name || session.user.email?.split('@')[0] || 'Usuário',
           email: session.user.email!,
-          avatar_url: session.user.user_metadata?.avatar_url,
-          plan: 'free',
-          status: 'active',
-          is_admin: false,
-          is_composer: false,
-        })
+          avatar_url: session.user.user_metadata?.avatar_url || session.user.user_metadata?.picture || user?.avatar_url,
+          plan: user?.plan || 'free',
+          status: user?.status || 'active',
+          is_admin: user?.is_admin || false,
+          is_composer: user?.is_composer || false,
+          is_blocked: user?.is_blocked || false,
+          email_verified: !!session.user.email_confirmed_at,
+        }, { onConflict: 'id' })
         .select()
         .single();
 
-      if (insertError) throw insertError;
-      user = newUser;
+      if (upsertError) throw upsertError;
+      user = syncedUser;
     }
 
     const usuario = mapUserForCompatibility(user);
@@ -379,6 +386,7 @@ export async function logout(): Promise<void> {
   await supabase.auth.signOut();
   localStorage.removeItem('user');
   localStorage.removeItem('auth_token');
+  localStorage.removeItem('auth_fallback');
 }
 
 /**

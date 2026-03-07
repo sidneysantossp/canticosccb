@@ -39,7 +39,7 @@ const RegisterPage: React.FC = () => {
               const idToken = response?.credential;
               if (!idToken) throw new Error('Credencial inválida');
               await googleLogin(idToken);
-              navigate('/onboarding');
+              navigate('/auth/callback', { replace: true });
             } catch (err) {
               console.error('Google Sign-In error:', err);
               setError('Falha no login com Google. Tente novamente.');

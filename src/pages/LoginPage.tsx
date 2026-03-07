@@ -1,9 +1,9 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { Eye, EyeOff, Mail, Lock, ArrowLeft } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useMobileMenu } from '@/contexts/MobileMenuContext';
-import { googleLogin } from '@/lib/supabase-auth';
+import { googleOAuthLogin } from '@/lib/supabase-auth';
 
 const LoginPage: React.FC = () => {
   const navigate = useNavigate();
@@ -19,8 +19,6 @@ const LoginPage: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const logoSrc = 'https://canticosccb.com.br/logo-canticos-ccb.png';
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
-  const [isGsiReady, setIsGsiReady] = useState(false);
-  const googleBtnRef = useRef<HTMLDivElement | null>(null);
 
   // Redirecionar quando o perfil carregar após login
   useEffect(() => {
@@ -48,7 +46,7 @@ const LoginPage: React.FC = () => {
     try {
       setIsGoogleLoading(true);
       setError('');
-      await googleLogin();
+      await googleOAuthLogin();
       // O redirecionamento será feito automaticamente pelo Supabase
     } catch (err: any) {
       console.error('Erro no Google Login:', err);

@@ -7,10 +7,25 @@ const VerifyEmailPage: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const email = (location.state as any)?.email || '';
+  const [hasActiveSession, setHasActiveSession] = useState(false);
   const [resending, setResending] = useState(false);
   const [resent, setResent] = useState(false);
   const [resendError, setResendError] = useState('');
   const [countdown, setCountdown] = useState(0);
+
+  useEffect(() => {
+    let mounted = true;
+
+    supabase.auth.getSession().then(({ data }) => {
+      if (mounted) {
+        setHasActiveSession(!!data.session);
+      }
+    });
+
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
   useEffect(() => {
     if (countdown > 0) {
@@ -52,7 +67,7 @@ const VerifyEmailPage: React.FC = () => {
   };
 
   const handleSkip = () => {
-    navigate('/onboarding', { replace: true });
+    navigate(hasActiveSession ? '/onboarding' : '/login', { replace: true });
   };
 
   return (
@@ -168,6 +183,14 @@ const VerifyEmailPage: React.FC = () => {
             </button>
           )}
 
+          {!hasActiveSession && (
+            <div className="mb-4 rounded-lg border border-blue-500/30 bg-blue-500/10 p-3 text-left">
+              <p className="text-blue-200 text-xs">
+                Seu acesso sera liberado depois da confirmacao do email. Se preferir, voce pode voltar para o login e concluir quando o link chegar.
+              </p>
+            </div>
+          )}
+
           {/* Separador */}
           <div className="relative my-5">
             <div className="absolute inset-0 flex items-center">
@@ -183,7 +206,7 @@ const VerifyEmailPage: React.FC = () => {
             onClick={handleSkip}
             className="w-full py-3 px-4 text-gray-400 hover:text-white text-sm transition-colors mb-4"
           >
-            Continuar sem verificar agora
+            {hasActiveSession ? 'Continuar sem verificar agora' : 'Voltar para o login'}
           </button>
 
           {/* Link para login */}

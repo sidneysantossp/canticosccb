@@ -44,6 +44,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [managingComposerName, setManagingComposerName] = useState<string | null>(null);
 
   useEffect(() => {
+    const clearStoredUser = () => {
+      setUser(null);
+      setProfile(null);
+      localStorage.removeItem('user');
+    };
+
     // Verificar se há usuário logado no localStorage
     const loadUser = () => {
       const currentUser = authClient.getCurrentUser();
@@ -77,13 +83,44 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
       try {
         // Buscar usuário pelo id (UUID)
-        const { data: user } = await authClient.supabase
+        const { data: dbUser } = await authClient.supabase
           .from('users')
           .select('*')
           .eq('id', session.user.id)
           .single();
+
+        let user = dbUser;
         
         if (user) {
+          const updates: Record<string, any> = {};
+          const sessionName = session.user.user_metadata?.name || session.user.user_metadata?.full_name;
+          const sessionAvatar = session.user.user_metadata?.avatar_url || session.user.user_metadata?.picture;
+
+          if (session.user.email_confirmed_at && !user.email_verified) {
+            updates.email_verified = true;
+          }
+
+          if (!user.name && sessionName) {
+            updates.name = sessionName;
+          }
+
+          if (sessionAvatar && sessionAvatar !== user.avatar_url) {
+            updates.avatar_url = sessionAvatar;
+          }
+
+          if (Object.keys(updates).length > 0) {
+            const { data: updatedUser, error: updateError } = await authClient.supabase
+              .from('users')
+              .update(updates)
+              .eq('id', session.user.id)
+              .select('*')
+              .single();
+
+            if (!updateError && updatedUser) {
+              user = updatedUser;
+            }
+          }
+
           console.log('✅ Usuário encontrado no banco:', user.name);
           console.log('🔐 Permissões:', { is_admin: user.is_admin, is_composer: user.is_composer });
           
@@ -121,7 +158,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
               is_admin: false,
               is_composer: false,
               is_blocked: false,
-              email_verified: session.user.email_confirmed_at ? true : false,
+              email_verified: !!session.user.email_confirmed_at,
             }, { onConflict: 'id' })
             .select()
             .single();
@@ -181,6 +218,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     // Carregar usuário imediatamente
     const hasUser = loadUser();
+    const hasFallbackAuth = localStorage.getItem('auth_fallback') === 'true';
     console.log('🔐 Auth init, hasUser:', hasUser);
     
     // Restaurar estado de gerenciamento se existir
@@ -209,12 +247,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
               // Se não encontrou, sincronizar do banco
               await syncUserFromSession(session);
             }
+          } else if (!hasFallbackAuth) {
+            clearStoredUser();
           }
           setLoading(false);
         } else if (event === 'SIGNED_OUT') {
-          setUser(null);
-          setProfile(null);
-          localStorage.removeItem('user');
+          clearStoredUser();
           setLoading(false);
         } else if (event === 'TOKEN_REFRESHED') {
           // Token atualizado, recarregar usuário
@@ -224,7 +262,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     );
     
     // Se já tem usuário carregado, podemos marcar como não loading
-    if (hasUser) {
+    if (hasUser && hasFallbackAuth) {
       setLoading(false);
     } else {
       // Timeout de segurança - se depois de 3s ainda estiver loading, desmarcar
