@@ -1,16 +1,25 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Copyright, MessageSquare, Clock, CheckCircle, XCircle, AlertCircle, Plus } from 'lucide-react';
 import useCopyrightClaimsStore, { CopyrightClaim } from '@/stores/copyrightClaimsStore';
 import CopyrightClaimChat from '@/components/CopyrightClaimChat';
 import { useActiveComposer } from '@/hooks/useActiveComposer';
+import { useAuth } from '@/contexts/AuthContext';
+import { Link } from 'react-router-dom';
 
 const ComposerCopyrightClaims = () => {
-  const { claims, getClaimsByComposer } = useCopyrightClaimsStore();
-  const { composerId, composerName } = useActiveComposer();
+  const { user } = useAuth();
+  const { claims, error, getClaimById, getClaimsByComposer, isLoading, loadClaims } = useCopyrightClaimsStore();
+  const { composerId, composerName, loading: loadingComposer } = useActiveComposer();
   const [selectedClaim, setSelectedClaim] = useState<CopyrightClaim | null>(null);
   const [showChat, setShowChat] = useState(false);
 
+  useEffect(() => {
+    if (!composerId || loadingComposer) return;
+    void loadClaims({ composerId });
+  }, [composerId, loadingComposer, loadClaims]);
+
   const myClaims = composerId ? getClaimsByComposer(composerId) : [];
+  const activeSelectedClaim = selectedClaim ? getClaimById(selectedClaim.id) || selectedClaim : null;
 
   const getStatusColor = (status: CopyrightClaim['status']) => {
     const colors = {
@@ -43,6 +52,17 @@ const ComposerCopyrightClaims = () => {
     };
     return texts[status];
   };
+
+  if ((isLoading || loadingComposer) && myClaims.length === 0) {
+    return (
+      <div className="min-h-screen bg-background-primary flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-amber-500 mx-auto mb-4"></div>
+          <p className="text-gray-400">Carregando reivindicações...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background-primary">
@@ -126,6 +146,12 @@ const ComposerCopyrightClaims = () => {
         {/* Claims List */}
         <div className="space-y-4">
           <h2 className="text-xl font-semibold text-white">Suas Reivindicações</h2>
+
+          {error && (
+            <div className="bg-red-900/30 border border-red-900/40 rounded-lg p-4">
+              <p className="text-sm text-red-200">{error}</p>
+            </div>
+          )}
           
           {myClaims.length === 0 ? (
             <div className="bg-background-secondary rounded-lg p-12 text-center">
@@ -136,10 +162,13 @@ const ComposerCopyrightClaims = () => {
               <p className="text-gray-500 mb-6">
                 Você ainda não fez nenhuma reivindicação de direitos autorais.
               </p>
-              <button className="px-6 py-3 bg-amber-600 hover:bg-amber-500 text-white font-medium rounded-lg transition-colors inline-flex items-center gap-2">
+              <Link
+                to="/content-claim"
+                className="px-6 py-3 bg-amber-600 hover:bg-amber-500 text-white font-medium rounded-lg transition-colors inline-flex items-center gap-2"
+              >
                 <Plus className="w-5 h-5" />
                 Nova Reivindicação
-              </button>
+              </Link>
             </div>
           ) : (
             myClaims.map((claim) => (
@@ -160,7 +189,7 @@ const ComposerCopyrightClaims = () => {
                         <h3 className="text-lg font-semibold text-white">
                           {claim.songTitle}
                         </h3>
-                        {claim.hasUnreadMessages && (
+                        {claim.hasUnreadForComposer && (
                           <span className="px-2 py-1 bg-blue-500 text-white text-xs font-bold rounded-full animate-pulse">
                             NOVA MENSAGEM
                           </span>
@@ -197,7 +226,7 @@ const ComposerCopyrightClaims = () => {
                       className="px-4 py-2 bg-amber-600 hover:bg-amber-500 text-white font-medium rounded-lg transition-colors flex items-center gap-2"
                     >
                       <MessageSquare className="w-4 h-4" />
-                      {claim.hasUnreadMessages ? 'Ver Mensagens' : 'Abrir Chat'}
+                      {claim.hasUnreadForComposer ? 'Ver Mensagens' : 'Abrir Chat'}
                     </button>
                   </div>
                 </div>
@@ -223,13 +252,13 @@ const ComposerCopyrightClaims = () => {
       </div>
 
       {/* Chat Modal */}
-      {selectedClaim && showChat && (
+      {activeSelectedClaim && showChat && (
         <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-gray-900 rounded-xl max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col border border-gray-700">
             <div className="p-4 border-b border-gray-700 flex items-center justify-between bg-gray-800">
               <div>
                 <h2 className="text-xl font-bold text-white">Chat - Direitos Autorais</h2>
-                <p className="text-sm text-gray-400">{selectedClaim.songTitle}</p>
+                <p className="text-sm text-gray-400">{activeSelectedClaim.songTitle}</p>
               </div>
               <button
                 onClick={() => {
@@ -244,9 +273,9 @@ const ComposerCopyrightClaims = () => {
             
             <div className="flex-1 overflow-hidden">
               <CopyrightClaimChat
-                claim={selectedClaim}
+                claim={activeSelectedClaim}
                 userRole="composer"
-                userId={composerId || ''}
+                userId={user?.id || ''}
                 userName={composerName || 'Compositor'}
               />
             </div>

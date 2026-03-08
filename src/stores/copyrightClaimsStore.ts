@@ -1,263 +1,180 @@
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
-// import { sendTemplateEmail } from '@/lib/admin/emailAdminApi';
+import {
+  createCopyrightClaim,
+  getCopyrightClaimById,
+  listCopyrightClaims,
+  markCopyrightClaimMessagesAsRead,
+  sendCopyrightClaimMessage,
+  updateCopyrightClaimStatus,
+  uploadClaimAttachment,
+  type ChatMessage,
+  type ClaimAttachment,
+  type ClaimSenderRole,
+  type CopyrightClaim,
+  type CreateCopyrightClaimInput,
+  type LoadCopyrightClaimsOptions,
+} from '@/lib/copyrightClaimsApi';
 
-export interface ChatMessage {
-  id: string;
-  claimId: string;
-  senderId: string;
-  senderName: string;
-  senderRole: 'admin' | 'composer';
-  message: string;
-  attachments?: {
-    id: string;
-    type: 'image' | 'video' | 'pdf' | 'audio';
-    url: string;
-    name: string;
-    size: number;
-  }[];
-  timestamp: string;
-  read: boolean;
-}
-
-export interface CopyrightClaim {
-  id: string;
-  songId: number;
-  songTitle: string;
-  songArtist: string;
-  songCoverUrl: string;
-  composerId: string;
-  composerName: string;
-  composerEmail: string;
-  
-  // Formulário de reivindicação
-  claimType: 'composer' | 'author' | 'both';
-  description: string;
-  proofDocuments?: string[];
-  
-  // Status e flags
-  status: 'pending' | 'in_review' | 'approved' | 'rejected' | 'resolved';
-  priority: 'low' | 'medium' | 'high' | 'urgent';
-  
-  // Datas
-  createdAt: string;
-  updatedAt: string;
-  reviewedAt?: string;
-  resolvedAt?: string;
-  
-  // Admin
-  reviewedBy?: string;
-  reviewerNotes?: string;
-  
-  // Chat
-  chatMessages: ChatMessage[];
-  // unread por papel
-  hasUnreadForAdmin: boolean;
-  hasUnreadForComposer: boolean;
-  lastMessageAt?: string;
-}
+export type { ChatMessage, ClaimAttachment, CopyrightClaim } from '@/lib/copyrightClaimsApi';
 
 interface CopyrightClaimsState {
   claims: CopyrightClaim[];
   isLoading: boolean;
   error: string | null;
-  
-  // Actions
-  createClaim: (claim: Omit<CopyrightClaim, 'id' | 'createdAt' | 'updatedAt' | 'chatMessages' | 'hasUnreadMessages' | 'status'>) => CopyrightClaim;
-  updateClaimStatus: (claimId: string, status: CopyrightClaim['status'], reviewerNotes?: string) => void;
-  sendMessage: (claimId: string, message: Omit<ChatMessage, 'id' | 'timestamp' | 'read'>) => void;
-  markMessagesAsRead: (claimId: string, userId: string, userRole?: 'admin' | 'composer') => void;
-  uploadAttachment: (claimId: string, messageId: string, file: File) => Promise<string>;
+  createClaim: (claim: CreateCopyrightClaimInput) => Promise<CopyrightClaim>;
+  updateClaimStatus: (
+    claimId: string,
+    status: CopyrightClaim['status'],
+    reviewerNotes?: string,
+    reviewer?: { id?: string; name?: string }
+  ) => Promise<CopyrightClaim>;
+  sendMessage: (claimId: string, message: Omit<ChatMessage, 'id' | 'timestamp' | 'read'>) => Promise<CopyrightClaim>;
+  markMessagesAsRead: (claimId: string, userId: string, userRole?: ClaimSenderRole) => Promise<CopyrightClaim | undefined>;
+  uploadAttachment: (claimId: string, messageId: string, file: File) => Promise<ClaimAttachment>;
   getClaimById: (claimId: string) => CopyrightClaim | undefined;
   getClaimsBySong: (songId: number) => CopyrightClaim[];
   getClaimsByComposer: (composerId: string) => CopyrightClaim[];
   getPendingClaimsCount: () => number;
-  loadClaims: () => Promise<void>;
+  loadClaims: (options?: LoadCopyrightClaimsOptions) => Promise<void>;
 }
 
-const useCopyrightClaimsStore = create<CopyrightClaimsState>()(
-  persist(
-    (set, get) => ({
-      claims: [],
-      isLoading: false,
-      error: null,
+function toFriendlyError(error: unknown) {
+  const message = error instanceof Error ? error.message : 'Erro ao processar reivindicações';
+  if (
+    /copyright_claims|copyright_claim_messages|copyright_claim_attachments/i.test(message) &&
+    /(does not exist|Could not find the table|42P01)/i.test(message)
+  ) {
+    return 'O backend de direitos autorais ainda não foi criado no banco. Execute a migration CREATE_COPYRIGHT_CLAIMS_MODULE.sql no Supabase.';
+  }
+  return message;
+}
 
-      createClaim: (claimData) => {
-        const now = new Date().toISOString();
-        const newClaim: CopyrightClaim = {
-          ...claimData,
-          id: `claim_${Date.now()}`,
-          status: 'pending',
-          createdAt: now,
-          updatedAt: now,
-          chatMessages: [],
-          hasUnreadForAdmin: true,
-          hasUnreadForComposer: false
-        };
+function upsertClaim(stateClaims: CopyrightClaim[], claim: CopyrightClaim) {
+  const nextClaims = stateClaims.filter((item) => item.id !== claim.id);
+  nextClaims.unshift(claim);
+  return nextClaims.sort((a, b) => {
+    const left = a.updatedAt || a.createdAt;
+    const right = b.updatedAt || b.createdAt;
+    return right.localeCompare(left);
+  });
+}
 
-        // Mensagem automática de recebimento para o compositor (marcada como lida para ele)
-        const autoMsg: ChatMessage = {
-          id: `msg_${Date.now()}_auto`,
-          claimId: newClaim.id,
-          senderId: 'system',
-          senderName: 'Equipe Cânticos CCB',
-          senderRole: 'admin',
-          message: 'Recebemos sua solicitação. Em breve nossa equipe entrará em contato para os devidos esclarecimentos.',
-          timestamp: now,
-          read: true
-        };
-        newClaim.chatMessages = [autoMsg];
-        newClaim.lastMessageAt = now;
+const useCopyrightClaimsStore = create<CopyrightClaimsState>((set, get) => ({
+  claims: [],
+  isLoading: false,
+  error: null,
 
-        set((state) => ({
-          claims: [newClaim, ...state.claims]
-        }));
-
-        // Notificação por email (best-effort): aviso ao compositor e alerta ao admin
-        // (async () => {
-        //   try {
-        //     if (newClaim.composerEmail) {
-        //       await sendTemplateEmail('claim-received', newClaim.composerEmail, {
-        //         composer_name: newClaim.composerName || 'Usuário',
-        //         claim_id: newClaim.id
-        //       });
-        //     }
-        //     // TODO: substituir por email(s) de admin via settings ou role
-        //     const adminFallback = 'admin@canticosccb.com.br';
-        //     await sendTemplateEmail('claim-new', adminFallback, {
-        //       claim_id: newClaim.id,
-        //       composer_name: newClaim.composerName || 'Usuário',
-        //       composer_email: newClaim.composerEmail || ''
-        //     });
-        //   } catch (e) {
-        //     console.warn('Email notification (claim create) failed:', e);
-        //   }
-        // })();
-
-        return newClaim;
-      },
-
-      updateClaimStatus: (claimId, status, reviewerNotes) => {
-        const now = new Date().toISOString();
-        
-        set((state) => ({
-          claims: state.claims.map((claim) =>
-            claim.id === claimId
-              ? {
-                  ...claim,
-                  status,
-                  reviewerNotes,
-                  updatedAt: now,
-                  reviewedAt: now,
-                  resolvedAt: status === 'resolved' ? now : claim.resolvedAt
-                }
-              : claim
-          )
-        }));
-      },
-
-      sendMessage: (claimId, messageData) => {
-        const now = new Date().toISOString();
-        const newMessage: ChatMessage = {
-          ...messageData,
-          id: `msg_${Date.now()}`,
-          timestamp: now,
-          read: false,
-          claimId
-        };
-
-        set((state) => ({
-          claims: state.claims.map((claim) =>
-            claim.id === claimId
-              ? {
-                  ...claim,
-                  chatMessages: [...claim.chatMessages, newMessage],
-                  hasUnreadForAdmin: messageData.senderRole !== 'admin' ? true : claim.hasUnreadForAdmin,
-                  hasUnreadForComposer: messageData.senderRole === 'admin' ? true : claim.hasUnreadForComposer,
-                  lastMessageAt: now,
-                  updatedAt: now
-                }
-              : claim
-          )
-        }));
-
-        // Email para o compositor quando admin enviar mensagem
-        // if (messageData.senderRole === 'admin') {
-        //   (async () => {
-        //     try {
-        //       const claim = get().claims.find(c => c.id === claimId);
-        //       if (claim?.composerEmail) {
-        //         await sendTemplateEmail('claim-admin-message', claim.composerEmail, {
-        //           composer_name: claim.composerName || 'Usuário',
-        //           claim_id: claim.id
-        //         });
-        //       }
-        //     } catch (e) {
-        //       console.warn('Email notification (admin message) failed:', e);
-        //     }
-        //   })();
-        // }
-      },
-
-      markMessagesAsRead: (claimId, userId, userRole) => {
-        set((state) => ({
-          claims: state.claims.map((claim) =>
-            claim.id === claimId
-              ? {
-                  ...claim,
-                  chatMessages: claim.chatMessages.map((msg) =>
-                    msg.senderId !== userId ? { ...msg, read: true } : msg
-                  ),
-                  hasUnreadForAdmin: userRole === 'admin' ? false : claim.hasUnreadForAdmin,
-                  hasUnreadForComposer: userRole === 'composer' ? false : claim.hasUnreadForComposer
-                }
-              : claim
-          )
-        }));
-      },
-
-      uploadAttachment: async (claimId, messageId, file) => {
-        // TODO: Implementar upload real
-        // Simular upload por enquanto
-        const mockUrl = URL.createObjectURL(file);
-        return mockUrl;
-      },
-
-      getClaimById: (claimId) => {
-        return get().claims.find((c) => c.id === claimId);
-      },
-
-      getClaimsBySong: (songId) => {
-        return get().claims.filter((c) => c.songId === songId);
-      },
-
-      getClaimsByComposer: (composerId) => {
-        return get().claims.filter((c) => c.composerId === composerId);
-      },
-
-      getPendingClaimsCount: () => {
-        return get().claims.filter((c) => c.status === 'pending').length;
-      },
-
-      loadClaims: async () => {
-        set({ isLoading: true, error: null });
-        
-        try {
-          // TODO: Implementar carregamento da API
-          set({ isLoading: false });
-        } catch (error) {
-          set({ 
-            isLoading: false, 
-            error: error instanceof Error ? error.message : 'Erro ao carregar reivindicações'
-          });
-        }
-      }
-    }),
-    {
-      name: 'copyright-claims-storage',
-      partialize: (state) => ({ claims: state.claims })
+  createClaim: async (claimData) => {
+    set({ isLoading: true, error: null });
+    try {
+      const claim = await createCopyrightClaim(claimData);
+      set((state) => ({
+        claims: upsertClaim(state.claims, claim),
+        isLoading: false,
+        error: null,
+      }));
+      return claim;
+    } catch (error) {
+      const friendlyError = toFriendlyError(error);
+      set({ isLoading: false, error: friendlyError });
+      throw new Error(friendlyError);
     }
-  )
-);
+  },
+
+  updateClaimStatus: async (claimId, status, reviewerNotes, reviewer) => {
+    set({ isLoading: true, error: null });
+    try {
+      const claim = await updateCopyrightClaimStatus(claimId, {
+        status,
+        reviewerNotes,
+        reviewerId: reviewer?.id,
+        reviewerName: reviewer?.name,
+      });
+      set((state) => ({
+        claims: upsertClaim(state.claims, claim),
+        isLoading: false,
+        error: null,
+      }));
+      return claim;
+    } catch (error) {
+      const friendlyError = toFriendlyError(error);
+      set({ isLoading: false, error: friendlyError });
+      throw new Error(friendlyError);
+    }
+  },
+
+  sendMessage: async (claimId, messageData) => {
+    try {
+      const claim = await sendCopyrightClaimMessage(claimId, {
+        senderId: messageData.senderId,
+        senderName: messageData.senderName,
+        senderRole: messageData.senderRole,
+        message: messageData.message,
+        attachments: messageData.attachments,
+      });
+      set((state) => ({
+        claims: upsertClaim(state.claims, claim),
+        error: null,
+      }));
+      return claim;
+    } catch (error) {
+      const friendlyError = toFriendlyError(error);
+      set({ error: friendlyError });
+      throw new Error(friendlyError);
+    }
+  },
+
+  markMessagesAsRead: async (claimId, userId, userRole) => {
+    if (!userRole) return undefined;
+    try {
+      const claim = await markCopyrightClaimMessagesAsRead(claimId, userId, userRole);
+      set((state) => ({
+        claims: upsertClaim(state.claims, claim),
+        error: null,
+      }));
+      return claim;
+    } catch (error) {
+      const friendlyError = toFriendlyError(error);
+      set({ error: friendlyError });
+      throw new Error(friendlyError);
+    }
+  },
+
+  uploadAttachment: async (claimId, _messageId, file) => {
+    try {
+      return await uploadClaimAttachment(claimId, file);
+    } catch (error) {
+      const friendlyError = toFriendlyError(error);
+      set({ error: friendlyError });
+      throw new Error(friendlyError);
+    }
+  },
+
+  getClaimById: (claimId) => get().claims.find((claim) => claim.id === claimId),
+
+  getClaimsBySong: (songId) => get().claims.filter((claim) => claim.songId === songId),
+
+  getClaimsByComposer: (composerId) => get().claims.filter((claim) => claim.composerId === composerId),
+
+  getPendingClaimsCount: () => get().claims.filter((claim) => claim.status === 'pending').length,
+
+  loadClaims: async (options = {}) => {
+    set({ isLoading: true, error: null });
+    try {
+      const claims = await listCopyrightClaims(options);
+      set({
+        claims,
+        isLoading: false,
+        error: null,
+      });
+    } catch (error) {
+      set({
+        claims: [],
+        isLoading: false,
+        error: toFriendlyError(error),
+      });
+    }
+  },
+}));
 
 export default useCopyrightClaimsStore;

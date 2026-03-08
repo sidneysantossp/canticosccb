@@ -42,9 +42,13 @@ import {
 const AdminSidebar: React.FC = () => {
   const location = useLocation();
   const [expandedSections, setExpandedSections] = useState<string[]>([]);
-  const { getPendingClaimsCount } = useCopyrightClaimsStore();
+  const { getPendingClaimsCount, loadClaims } = useCopyrightClaimsStore();
   const [pendingComposersCount, setPendingComposersCount] = useState(0);
   const [logoSrc, setLogoSrc] = useState<string>('https://canticosccb.com.br/logo-canticos-ccb.png');
+
+  useEffect(() => {
+    void loadClaims();
+  }, [loadClaims]);
 
   // Carregar contagem de compositores pendentes
   useEffect(() => {

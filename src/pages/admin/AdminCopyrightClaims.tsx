@@ -2,17 +2,30 @@ import { useState, useEffect } from 'react';
 import { Copyright, MessageSquare, AlertCircle, CheckCircle, XCircle, Clock, Search, Filter, X } from 'lucide-react';
 import useCopyrightClaimsStore, { CopyrightClaim } from '@/stores/copyrightClaimsStore';
 import CopyrightClaimChat from '@/components/CopyrightClaimChat';
+import { useAuth } from '@/contexts/AuthContext';
 
 const AdminCopyrightClaims = () => {
-  const { claims, isLoading, error, getPendingClaimsCount, loadClaims } = useCopyrightClaimsStore();
+  const { user } = useAuth();
+  const { claims, isLoading, error, getClaimById, getPendingClaimsCount, loadClaims, updateClaimStatus } = useCopyrightClaimsStore();
   const [selectedClaim, setSelectedClaim] = useState<CopyrightClaim | null>(null);
   const [showChat, setShowChat] = useState(false);
   const [filterStatus, setFilterStatus] = useState<'all' | CopyrightClaim['status']>('all');
   const [searchQuery, setSearchQuery] = useState('');
+  const [statusDraft, setStatusDraft] = useState<CopyrightClaim['status']>('pending');
+  const [reviewNotes, setReviewNotes] = useState('');
+  const [savingStatus, setSavingStatus] = useState(false);
 
   useEffect(() => {
-    loadClaims();
+    void loadClaims();
   }, [loadClaims]);
+
+  const activeSelectedClaim = selectedClaim ? getClaimById(selectedClaim.id) || selectedClaim : null;
+
+  useEffect(() => {
+    if (!activeSelectedClaim) return;
+    setStatusDraft(activeSelectedClaim.status);
+    setReviewNotes(activeSelectedClaim.reviewerNotes || '');
+  }, [activeSelectedClaim?.id, activeSelectedClaim?.status, activeSelectedClaim?.reviewerNotes]);
 
   if (isLoading && claims.length === 0) {
     return (
@@ -33,7 +46,7 @@ const AdminCopyrightClaims = () => {
           <h2 className="text-xl font-bold text-red-200 mb-2">Erro ao carregar reivindicações</h2>
           <p className="text-red-300 mb-4">{error}</p>
           <button
-            onClick={() => loadClaims()}
+            onClick={() => void loadClaims()}
             className="px-6 py-2 bg-amber-500 hover:bg-amber-400 text-black font-medium rounded-lg transition-colors"
           >
             Tentar Novamente
@@ -178,7 +191,7 @@ const AdminCopyrightClaims = () => {
                         <h3 className="text-lg font-semibold text-white">
                           {claim.songTitle}
                         </h3>
-                        {claim.hasUnreadMessages && (
+                        {claim.hasUnreadForAdmin && (
                           <span className="px-2 py-1 bg-amber-500 text-black text-xs font-bold rounded-full">
                             NOVA
                           </span>
@@ -187,7 +200,7 @@ const AdminCopyrightClaims = () => {
                       <p className="text-gray-400 text-sm mb-2">{claim.songArtist}</p>
                       
                       <div className="flex items-center gap-4 text-sm text-gray-400">
-                        <span>Compositor: <strong className="text-white">{claim.composerName}</strong></span>
+                        <span>Solicitante: <strong className="text-white">{claim.composerName}</strong></span>
                         <span>•</span>
                         <span>Tipo: <strong className="text-white capitalize">{claim.claimType}</strong></span>
                         <span>•</span>
@@ -240,7 +253,7 @@ const AdminCopyrightClaims = () => {
       </div>
 
       {/* Detail/Chat Modal */}
-      {selectedClaim && (
+      {activeSelectedClaim && (
         <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-gray-900 rounded-xl max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col border border-gray-700">
             <div className="p-4 border-b border-gray-700 flex items-center justify-between bg-gray-800">
@@ -248,7 +261,7 @@ const AdminCopyrightClaims = () => {
                 <h2 className="text-xl font-bold text-white">
                   {showChat ? 'Chat com Compositor' : 'Detalhes da Reivindicação'}
                 </h2>
-                <p className="text-sm text-gray-400">{selectedClaim.songTitle} - {selectedClaim.composerName}</p>
+                <p className="text-sm text-gray-400">{activeSelectedClaim.songTitle} - {activeSelectedClaim.composerName}</p>
               </div>
               <button
                 onClick={() => {
@@ -264,10 +277,10 @@ const AdminCopyrightClaims = () => {
             <div className="flex-1 overflow-hidden">
               {showChat ? (
                 <CopyrightClaimChat
-                  claim={selectedClaim}
+                  claim={activeSelectedClaim}
                   userRole="admin"
-                  userId="admin_1"
-                  userName="Administrador"
+                  userId={user?.id || ''}
+                  userName={user?.nome || 'Administrador'}
                 />
               ) : (
                 <div className="p-6 overflow-y-auto h-full">
@@ -277,26 +290,111 @@ const AdminCopyrightClaims = () => {
                       <div className="grid grid-cols-2 gap-4">
                         <div>
                           <label className="text-sm text-gray-400">Tipo</label>
-                          <p className="text-white capitalize">{selectedClaim.claimType}</p>
+                          <p className="text-white capitalize">{activeSelectedClaim.claimType}</p>
                         </div>
                         <div>
                           <label className="text-sm text-gray-400">Status</label>
-                          <p className="text-white capitalize">{selectedClaim.status}</p>
+                          <p className="text-white capitalize">{activeSelectedClaim.status}</p>
                         </div>
                         <div>
                           <label className="text-sm text-gray-400">Data</label>
-                          <p className="text-white">{new Date(selectedClaim.createdAt).toLocaleString('pt-BR')}</p>
+                          <p className="text-white">{new Date(activeSelectedClaim.createdAt).toLocaleString('pt-BR')}</p>
                         </div>
                         <div>
                           <label className="text-sm text-gray-400">Prioridade</label>
-                          <p className="text-white capitalize">{selectedClaim.priority}</p>
+                          <p className="text-white capitalize">{activeSelectedClaim.priority}</p>
+                        </div>
+                        <div>
+                          <label className="text-sm text-gray-400">Solicitante</label>
+                          <p className="text-white">{activeSelectedClaim.composerName}</p>
+                        </div>
+                        <div>
+                          <label className="text-sm text-gray-400">Email</label>
+                          <p className="text-white break-all">{activeSelectedClaim.composerEmail || '-'}</p>
                         </div>
                       </div>
                     </div>
                     
                     <div>
                       <h3 className="text-lg font-semibold text-white mb-2">Descrição</h3>
-                      <p className="text-gray-300 bg-gray-800 p-4 rounded-lg">{selectedClaim.description}</p>
+                      <p className="text-gray-300 bg-gray-800 p-4 rounded-lg">{activeSelectedClaim.description}</p>
+                    </div>
+
+                    {activeSelectedClaim.proofDocuments && activeSelectedClaim.proofDocuments.length > 0 && (
+                      <div>
+                        <h3 className="text-lg font-semibold text-white mb-3">Documentos Anexados</h3>
+                        <div className="space-y-2">
+                          {activeSelectedClaim.proofDocuments.map((document) => (
+                            <a
+                              key={document.id}
+                              href={document.url}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="flex items-center justify-between rounded-lg border border-gray-700 bg-gray-800 px-4 py-3 hover:bg-gray-700/60 transition-colors"
+                            >
+                              <div>
+                                <p className="text-white text-sm font-medium">{document.name}</p>
+                                <p className="text-xs text-gray-400">{document.type.toUpperCase()}</p>
+                              </div>
+                              <span className="text-sm text-amber-400">Abrir</span>
+                            </a>
+                          ))}
+                        </div>
+                    </div>
+                    )}
+
+                    <div>
+                      <h3 className="text-lg font-semibold text-white mb-3">Análise do Admin</h3>
+                      <div className="space-y-4">
+                        <div>
+                          <label className="block text-sm text-gray-400 mb-1">Status</label>
+                          <select
+                            value={statusDraft}
+                            onChange={(e) => setStatusDraft(e.target.value as CopyrightClaim['status'])}
+                            className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 text-white"
+                          >
+                            <option value="pending">Pendente</option>
+                            <option value="in_review">Em análise</option>
+                            <option value="approved">Aprovado</option>
+                            <option value="rejected">Rejeitado</option>
+                            <option value="resolved">Resolvido</option>
+                          </select>
+                        </div>
+
+                        <div>
+                          <label className="block text-sm text-gray-400 mb-1">Observações</label>
+                          <textarea
+                            value={reviewNotes}
+                            onChange={(e) => setReviewNotes(e.target.value)}
+                            rows={5}
+                            className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-3 text-white"
+                            placeholder="Explique a decisão ou peça documentação complementar."
+                          />
+                        </div>
+
+                        <div className="flex justify-end">
+                          <button
+                            onClick={async () => {
+                              if (!activeSelectedClaim) return;
+                              setSavingStatus(true);
+                              try {
+                                await updateClaimStatus(
+                                  activeSelectedClaim.id,
+                                  statusDraft,
+                                  reviewNotes,
+                                  { id: user?.id, name: user?.nome || 'Administrador' }
+                                );
+                              } finally {
+                                setSavingStatus(false);
+                              }
+                            }}
+                            disabled={savingStatus}
+                            className="px-5 py-2 bg-amber-500 hover:bg-amber-400 disabled:opacity-60 text-black font-medium rounded-lg transition-colors"
+                          >
+                            {savingStatus ? 'Salvando...' : 'Salvar análise'}
+                          </button>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>

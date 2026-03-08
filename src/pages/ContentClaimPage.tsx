@@ -1,14 +1,15 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import SEOHead from '@/components/SEO/SEOHead';
 import { Link } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import useCopyrightClaimsStore from '@/stores/copyrightClaimsStore';
 import { AlertCircle, CheckCircle2, Upload } from 'lucide-react';
+import { resolveActiveComposer } from '@/lib/activeComposer';
 
 const ContentClaimPage: React.FC = () => {
   const updatedAt = 'Outubro/2025';
   const { createClaim } = useCopyrightClaimsStore();
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [url, setUrl] = useState('');
@@ -22,6 +23,12 @@ const ContentClaimPage: React.FC = () => {
   const isValidUrl = useMemo(() => {
     try { if (!url) return false; new URL(url); return true; } catch { return false; }
   }, [url]);
+
+  useEffect(() => {
+    if (!user) return;
+    setName((current) => current || user.nome || '');
+    setEmail((current) => current || user.email || '');
+  }, [user]);
 
   const canSubmit = name.trim() && /.+@.+\..+/.test(email) && isValidUrl && description.trim();
 
@@ -37,25 +44,32 @@ const ContentClaimPage: React.FC = () => {
     if (!canSubmit) return;
     setSubmitting(true);
     try {
-      // Mapeia para o fluxo existente (dados mínimos quando não há hino aberto)
-      const created = createClaim({
-        songId: 0,
+      const activeComposer = profile?.is_composer
+        ? await resolveActiveComposer({
+            userId: user?.id,
+            userEmail: user?.email,
+          })
+        : null;
+
+      const created = await createClaim({
+        songId: null,
         songTitle: 'Conteúdo informado via URL pública',
         songArtist: 'Desconhecido',
         songCoverUrl: 'https://canticosccb.com.br/logo-canticos-ccb.png',
-        composerId: 'public_user',
+        contentUrl: url,
+        composerId: activeComposer?.id || null,
         composerName: name.trim(),
         composerEmail: email.trim(),
         claimType,
-        description: `${description}\n\nURL do conteúdo: ${url}`,
-        proofDocuments: files.map(f => f.name),
+        description,
+        proofDocuments: files,
         priority: 'medium'
-      } as any);
+      });
       setProtocol(created.id);
-      setSubmitting(false);
     } catch (err) {
-      setSubmitting(false);
       setError('Não foi possível enviar sua reivindicação agora. Tente novamente em instantes.');
+    } finally {
+      setSubmitting(false);
     }
   };
 

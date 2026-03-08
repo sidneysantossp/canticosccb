@@ -11,22 +11,24 @@ interface CopyrightClaimChatProps {
 }
 
 const CopyrightClaimChat: React.FC<CopyrightClaimChatProps> = ({ claim, userRole, userId, userName }) => {
-  const { sendMessage, markMessagesAsRead, uploadAttachment } = useCopyrightClaimsStore();
+  const { sendMessage, markMessagesAsRead, uploadAttachment, getClaimById } = useCopyrightClaimsStore();
   const [message, setMessage] = useState('');
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [uploading, setUploading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const activeClaim = getClaimById(claim.id) || claim;
 
   useEffect(() => {
+    if (!userId) return;
     // Marcar mensagens como lidas quando abrir o chat
-    markMessagesAsRead(claim.id, userId);
+    void markMessagesAsRead(claim.id, userId, userRole);
     scrollToBottom();
-  }, [claim.id, userId, markMessagesAsRead]);
+  }, [claim.id, userId, userRole, markMessagesAsRead]);
 
   useEffect(() => {
     scrollToBottom();
-  }, [claim.chatMessages]);
+  }, [activeClaim.chatMessages]);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -50,7 +52,7 @@ const CopyrightClaimChat: React.FC<CopyrightClaimChatProps> = ({ claim, userRole
     return <FileText className="w-5 h-5" />;
   };
 
-  const getFileType = (mimeType: string): ChatMessage['attachments'][0]['type'] => {
+  const getFileType = (mimeType: string): NonNullable<ChatMessage['attachments']>[number]['type'] => {
     if (mimeType.startsWith('image/')) return 'image';
     if (mimeType.startsWith('video/')) return 'video';
     if (mimeType.startsWith('audio/')) return 'audio';
@@ -67,18 +69,19 @@ const CopyrightClaimChat: React.FC<CopyrightClaimChatProps> = ({ claim, userRole
     try {
       const attachments = await Promise.all(
         selectedFiles.map(async (file) => {
-          const url = await uploadAttachment(claim.id, `temp_${Date.now()}`, file);
+          const uploaded = await uploadAttachment(claim.id, `temp_${Date.now()}`, file);
           return {
-            id: `file_${Date.now()}_${Math.random()}`,
-            type: getFileType(file.type),
-            url,
-            name: file.name,
-            size: file.size
+            id: uploaded.id,
+            type: uploaded.type || getFileType(file.type),
+            url: uploaded.url,
+            name: uploaded.name || file.name,
+            size: uploaded.size || file.size,
+            mimeType: uploaded.mimeType || file.type,
           };
         })
       );
 
-      sendMessage(claim.id, {
+      await sendMessage(claim.id, {
         senderId: userId,
         senderName: userName,
         senderRole: userRole,
@@ -138,7 +141,7 @@ const CopyrightClaimChat: React.FC<CopyrightClaimChatProps> = ({ claim, userRole
 
       {/* Messages */}
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
-        {claim.chatMessages.length === 0 ? (
+        {activeClaim.chatMessages.length === 0 ? (
           <div className="flex items-center justify-center h-full">
             <div className="text-center">
               <div className="w-16 h-16 bg-amber-900/20 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -150,10 +153,10 @@ const CopyrightClaimChat: React.FC<CopyrightClaimChatProps> = ({ claim, userRole
           </div>
         ) : (
           <>
-            {claim.chatMessages.map((msg, index) => {
+            {activeClaim.chatMessages.map((msg, index) => {
               const isOwnMessage = msg.senderId === userId;
               const showDate = index === 0 || 
-                new Date(claim.chatMessages[index - 1].timestamp).toDateString() !== new Date(msg.timestamp).toDateString();
+                new Date(activeClaim.chatMessages[index - 1].timestamp).toDateString() !== new Date(msg.timestamp).toDateString();
 
               return (
                 <div key={msg.id}>

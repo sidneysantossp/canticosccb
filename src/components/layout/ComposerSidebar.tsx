@@ -20,12 +20,19 @@ import {
 import { getLogoByType } from '@/lib/mockApis';
 import useNotificationsStore from '@/stores/notificationsStore';
 import useCopyrightClaimsStore from '@/stores/copyrightClaimsStore';
+import { useActiveComposer } from '@/hooks/useActiveComposer';
 
 const ComposerSidebar: React.FC = () => {
   const location = useLocation();
   const { unreadCount } = useNotificationsStore();
-  const { claims } = useCopyrightClaimsStore();
+  const { composerId } = useActiveComposer();
+  const { claims, loadClaims } = useCopyrightClaimsStore();
   const unreadClaimsForComposer = claims.filter(c => c.hasUnreadForComposer).length;
+
+  useEffect(() => {
+    if (!composerId) return;
+    void loadClaims({ composerId });
+  }, [composerId, loadClaims]);
 
   // Carregar logo oficial configurada no painel (cache em sessionStorage)
   const [logoSrc, setLogoSrc] = useState<string>('https://canticosccb.com.br/logo-canticos-ccb.png');

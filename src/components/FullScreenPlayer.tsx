@@ -22,6 +22,7 @@ import PlayerControls from '@/components/player/PlayerControls';
 import { useToast } from '@/contexts/ToastContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { buildHinoUrl, buildAlbumCoverUrl } from '@/lib/media-helper';
+import { resolveActiveComposer } from '@/lib/activeComposer';
 import * as playlistsApi from '@/lib/playlistsApi';
 import { useState, useEffect } from 'react';
 
@@ -514,7 +515,7 @@ export default function FullScreenPlayer({ isOpen, onClose }: FullScreenPlayerPr
     setShowInfoModal(true);
   };
 
-  const handleSubmitClaim = (e: React.FormEvent) => {
+  const handleSubmitClaim = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!claimDescription.trim()) {
@@ -522,30 +523,37 @@ export default function FullScreenPlayer({ isOpen, onClose }: FullScreenPlayerPr
       return;
     }
 
-    // Criar reivindicação
-    const newClaim = createClaim({
-      songId: parseInt(currentTrack.id),
-      songTitle: currentTrack.title,
-      songArtist: currentTrack.artist,
-      songCoverUrl: currentTrack.coverUrl,
-      composerId: String(user?.id || 'unknown'),
-      composerName: (profile as any)?.name || 'Usuário',
-      composerEmail: (profile as any)?.email || (user as any)?.email || '',
-      claimType,
-      description: claimDescription,
-      priority: 'medium',
-      hasUnreadForAdmin: true,
-      hasUnreadForComposer: false
-    });
+    try {
+      const activeComposer = await resolveActiveComposer({
+        userId: user?.id,
+        userEmail: user?.email,
+      });
 
-    // Limpar formulário
-    setClaimType('composer');
-    setClaimDescription('');
-    setShowCopyrightClaim(false);
+      const newClaim = await createClaim({
+        songId: parseInt(currentTrack.id),
+        songTitle: currentTrack.title,
+        songArtist: currentTrack.artist,
+        songCoverUrl: currentTrack.coverUrl,
+        composerId: activeComposer?.id || null,
+        composerName: activeComposer?.nome_artistico || activeComposer?.nome || (profile as any)?.name || user?.nome || 'Usuário',
+        composerEmail: user?.email || '',
+        claimType,
+        description: claimDescription,
+        priority: 'medium',
+      });
 
-    // Mostrar modal de sucesso
-    setSuccessMessage(`Número do protocolo: ${newClaim.id}\n\nNossa equipe analisará sua solicitação e entrará em contato em breve.\nVocê pode acompanhar o status em "Minhas Reivindicações" no menu do compositor.`);
-    setShowSuccessAlert(true);
+      // Limpar formulário
+      setClaimType('composer');
+      setClaimDescription('');
+      setShowCopyrightClaim(false);
+
+      // Mostrar modal de sucesso
+      setSuccessMessage(`Número do protocolo: ${newClaim.id}\n\nNossa equipe analisará sua solicitação e entrará em contato em breve.\nVocê pode acompanhar o status em "Minhas Reivindicações" no menu do compositor.`);
+      setShowSuccessAlert(true);
+    } catch (error) {
+      console.error('Erro ao criar reivindicação:', error);
+      showToast('error', 'Erro ao enviar reivindicação', 'Não foi possível registrar sua reivindicação agora.');
+    }
   };
 
   const handleCopyrightClaim = () => {

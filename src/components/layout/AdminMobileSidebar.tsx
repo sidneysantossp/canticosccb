@@ -34,7 +34,8 @@ import {
   FileText,
   Layers,
   Book,
-  BookOpen
+  BookOpen,
+  Copyright
 } from 'lucide-react';
 
 interface AdminMobileSidebarProps {
@@ -45,8 +46,12 @@ interface AdminMobileSidebarProps {
 const AdminMobileSidebar: React.FC<AdminMobileSidebarProps> = ({ isOpen, onClose }) => {
   const location = useLocation();
   const [expandedSections, setExpandedSections] = useState<string[]>([]);
-  const { getPendingClaimsCount } = useCopyrightClaimsStore();
+  const { getPendingClaimsCount, loadClaims } = useCopyrightClaimsStore();
   const [pendingComposersCount, setPendingComposersCount] = useState(0);
+
+  useEffect(() => {
+    void loadClaims();
+  }, [loadClaims]);
 
   // Carregar contagem de compositores pendentes
   useEffect(() => {
@@ -138,6 +143,7 @@ const AdminMobileSidebar: React.FC<AdminMobileSidebarProps> = ({ isOpen, onClose
       items: [
         { path: '/admin/approvals', label: 'Aprovações', icon: CheckCircle, badge: 8 },
         { path: '/admin/reports', label: 'Denúncias', icon: Flag, badge: 15 },
+        { path: '/admin/copyright-claims', label: 'Direitos Autorais', icon: Copyright, badge: getPendingClaimsCount() },
         { path: '/admin/comments', label: 'Comentários', icon: MessageSquare }
       ]
     },
