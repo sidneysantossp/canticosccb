@@ -175,6 +175,7 @@ import HinarioViewPage from '@/pages/HinarioViewPage';
 import GlobalAudioPlayer from '@/components/GlobalAudioPlayer';
 import FreePlayGateModal from '@/components/modals/FreePlayGateModal';
 import AnalyticsScripts from '@/components/AnalyticsScripts';
+import SiteConfigRuntime from '@/components/SiteConfigRuntime';
 import { usePresence } from '@/hooks/usePresence';
 import { Navigate, useParams as useRouteParams } from 'react-router-dom';
 
@@ -537,6 +538,7 @@ function App() {
                 <FreePlayGateModal />
                 <PresenceTracker />
                 <AnalyticsScripts />
+                <SiteConfigRuntime />
                 <AppContent />
               </MobileMenuProvider>
             </PlayerProvider>

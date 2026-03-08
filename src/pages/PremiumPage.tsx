@@ -1,20 +1,34 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Check, X, Crown, Zap, Music, Download, Users, Headphones } from 'lucide-react';
 import { useNavigate, Navigate } from 'react-router-dom';
 import SEOHead from '@/components/SEO/SEOHead';
 import { usePremiumEnabled } from '@/hooks/usePremiumEnabled';
+import { getActivePublicPromotions, type PublicPromotion } from '@/lib/publicSiteConfig';
 
 const PremiumPage: React.FC = () => {
   const navigate = useNavigate();
   const premiumEnabled = usePremiumEnabled();
   const [billingPeriod, setBillingPeriod] = useState<'monthly' | 'yearly'>('monthly');
+  const [promotions, setPromotions] = useState<PublicPromotion[]>([]);
+
+  const seoTitle = 'Premium - Ouça Sem Limites';
+  const seoDescription = 'Assine o Premium e desfrute de hinos sem anúncios, downloads ilimitados, qualidade superior e acesso offline. A partir de R$ 19,90/mês.';
+
+  useEffect(() => {
+    const loadPromotions = async () => {
+      try {
+        setPromotions(await getActivePublicPromotions());
+      } catch (error) {
+        console.error('Erro ao carregar promoções públicas:', error);
+      }
+    };
+
+    void loadPromotions();
+  }, []);
 
   if (!premiumEnabled) {
     return <Navigate to="/" replace />;
   }
-
-  const seoTitle = 'Premium - Ouça Sem Limites';
-  const seoDescription = 'Assine o Premium e desfrute de hinos sem anúncios, downloads ilimitados, qualidade superior e acesso offline. A partir de R$ 19,90/mês.';
 
   const plans = [
     {
@@ -155,6 +169,34 @@ const PremiumPage: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {promotions.length > 0 && (
+        <div className="max-w-7xl mx-auto px-6 -mt-6 mb-10">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {promotions.slice(0, 2).map((promotion) => (
+              <div
+                key={promotion.id}
+                className="rounded-2xl border border-primary-500/30 bg-primary-500/10 p-5"
+              >
+                <div className="flex items-center justify-between gap-4 mb-2">
+                  <h2 className="text-lg font-bold text-white">{promotion.title}</h2>
+                  <span className="px-3 py-1 rounded-full bg-black/30 text-primary-300 text-sm font-semibold">
+                    {promotion.promo_code}
+                  </span>
+                </div>
+                {promotion.description && (
+                  <p className="text-text-secondary text-sm mb-3">{promotion.description}</p>
+                )}
+                <p className="text-white font-semibold">
+                  {promotion.discount_type === 'percentage' && `${promotion.discount_value}% de desconto`}
+                  {promotion.discount_type === 'fixed' && `R$ ${promotion.discount_value.toFixed(2)} de desconto`}
+                  {promotion.discount_type === 'free' && `${promotion.discount_value} dias grátis`}
+                </p>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Pricing Cards */}
       <div className="max-w-7xl mx-auto px-6 -mt-8">

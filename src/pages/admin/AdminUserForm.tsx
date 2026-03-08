@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useParams, Link } from 'react-router-dom';
-import { ArrowLeft, Save, Upload, User as UserIcon, Mail, Shield, Ban } from 'lucide-react';
+import { ArrowLeft, Save, Upload, User as UserIcon, Mail, Shield, Ban, AlertTriangle } from 'lucide-react';
 import { getUserById, updateUser, createUser, User } from '@/lib/admin/usersAdminApi';
 import { uploadApi } from '@/lib/api-client';
 import { buildAvatarUrl } from '@/lib/media-helper';
@@ -147,6 +147,11 @@ const AdminUserForm: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    if (!isEditing) {
+      setError('A criação direta de usuários pelo admin está desabilitada porque o projeto ainda não possui um endpoint seguro para criar credenciais reais no Supabase Auth. Use o cadastro público da plataforma.');
+      return;
+    }
+
     console.log('🔍 [AdminUserForm] Submit iniciado');
     console.log('🔍 [AdminUserForm] Form data:', formData);
 
@@ -235,6 +240,21 @@ const AdminUserForm: React.FC = () => {
         {error && (
           <div className="mb-6 p-4 bg-red-500/10 border border-red-500 rounded-lg text-red-500">
             {error}
+          </div>
+        )}
+
+        {!isEditing && (
+          <div className="mb-6 p-4 bg-yellow-500/10 border border-yellow-500/30 rounded-lg text-yellow-100">
+            <div className="flex items-start gap-3">
+              <AlertTriangle className="w-5 h-5 text-yellow-400 mt-0.5" />
+              <div>
+                <p className="font-semibold text-yellow-200">Criação administrativa indisponível</p>
+                <p className="text-sm text-yellow-100/90 mt-1">
+                  Este formulário não cria a credencial real no Supabase Auth. Para evitar usuários sem login funcional,
+                  o cadastro deve ocorrer pelo fluxo público em <span className="font-semibold">/cadastro</span>.
+                </p>
+              </div>
+            </div>
           </div>
         )}
 
@@ -420,7 +440,7 @@ const AdminUserForm: React.FC = () => {
             </Link>
             <button
               type="submit"
-              disabled={isSaving || isUploading}
+              disabled={!isEditing || isSaving || isUploading}
               className="flex-1 bg-green-600 hover:bg-green-700 disabled:bg-gray-700 disabled:cursor-not-allowed text-white px-6 py-3 rounded-lg font-semibold flex items-center justify-center gap-2 transition-colors"
             >
               {isSaving || isUploading ? (
@@ -431,7 +451,7 @@ const AdminUserForm: React.FC = () => {
               ) : (
                 <>
                   <Save className="w-5 h-5" />
-                  <span>{isEditing ? 'Salvar Alterações' : 'Criar Usuário'}</span>
+                  <span>{isEditing ? 'Salvar Alterações' : 'Criação Indisponível'}</span>
                 </>
               )}
             </button>

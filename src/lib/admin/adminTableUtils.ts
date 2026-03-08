@@ -1,4 +1,5 @@
 import { supabase } from '@/lib/supabase-auth';
+import { invalidateSiteRuntimeConfigCache } from '@/lib/publicSiteConfig';
 
 export const parseBooleanConfig = (value: unknown, fallback = false): boolean => {
   if (value == null) return fallback;
@@ -91,6 +92,8 @@ export async function upsertSiteConfigEntries(
 
     if (error) throw error;
   }
+
+  invalidateSiteRuntimeConfigCache();
 }
 
 export const downloadTextFile = (

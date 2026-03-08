@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Helmet } from 'react-helmet-async';
+import { getSiteRuntimeConfig, type RuntimeSeoSettings } from '@/lib/publicSiteConfig';
 
 interface SEOProps {
   title: string;
@@ -21,36 +22,66 @@ const SEOHead: React.FC<SEOProps> = ({
   keywords,
   canonical,
   ogType = 'website',
-  ogImage = '/logo-canticos-ccb.png',
+  ogImage,
   ogUrl,
-  twitterCard = 'summary_large_image',
+  twitterCard,
   schemaData,
   noindex = false,
   nofollow = false
 }) => {
-  const siteName = 'Cânticos CCB';
+  const [runtimeSeo, setRuntimeSeo] = useState<RuntimeSeoSettings | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const loadRuntimeSeo = async () => {
+      try {
+        const config = await getSiteRuntimeConfig();
+        if (!cancelled) {
+          setRuntimeSeo(config.seo);
+        }
+      } catch {
+        // Keep hardcoded SEO defaults when runtime config is unavailable.
+      }
+    };
+
+    void loadRuntimeSeo();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const siteName = runtimeSeo?.site_title || 'Cânticos CCB';
   const fullTitle = title.includes(siteName) ? title : `${title} | ${siteName}`;
-  const baseUrl = import.meta.env.VITE_APP_URL || 'https://canticosccb.com.br';
+  const baseUrl = runtimeSeo?.site_url || import.meta.env.VITE_APP_URL || 'https://canticosccb.com.br';
   const cleanPath = window.location.pathname;
   const defaultUrl = `${baseUrl}${cleanPath}`;
   const canonicalUrl = canonical ? (canonical.startsWith('http') ? canonical : `${baseUrl}${canonical}`) : defaultUrl;
-  const resolvedImage = ogImage || '/logo-canticos-ccb.png';
+  const resolvedDescription = description || runtimeSeo?.site_description || '';
+  const resolvedKeywords = keywords || runtimeSeo?.site_keywords || undefined;
+  const resolvedImage = ogImage || runtimeSeo?.og_image || '/logo-canticos-ccb.png';
   const imageUrl = resolvedImage.startsWith('http') ? resolvedImage : `${baseUrl}${resolvedImage}`;
   const pageUrl = ogUrl ? (ogUrl.startsWith('http') ? ogUrl : `${baseUrl}${ogUrl}`) : canonicalUrl;
-
-  // Robots meta tag
+  const resolvedTwitterCard = twitterCard || runtimeSeo?.twitter_card || 'summary_large_image';
   const robotsContent = [
-    noindex ? 'noindex' : 'index',
-    nofollow ? 'nofollow' : 'follow'
+    noindex || runtimeSeo?.robots_index === false ? 'noindex' : 'index',
+    nofollow || runtimeSeo?.robots_follow === false ? 'nofollow' : 'follow'
   ].join(', ');
+
+  const twitterSite = runtimeSeo?.twitter_site || '@canticosccb';
+  const searchConsoleVerification = runtimeSeo?.google_search_console_id || '';
 
   return (
     <Helmet>
       {/* Basic Meta Tags */}
       <title>{fullTitle}</title>
-      <meta name="description" content={description} />
-      {keywords && <meta name="keywords" content={keywords} />}
+      <meta name="description" content={resolvedDescription} />
+      {resolvedKeywords && <meta name="keywords" content={resolvedKeywords} />}
       <meta name="robots" content={robotsContent} />
+      {searchConsoleVerification && (
+        <meta name="google-site-verification" content={searchConsoleVerification} />
+      )}
       
       {/* Canonical URL */}
       <link rel="canonical" href={canonicalUrl} />
@@ -59,7 +90,7 @@ const SEOHead: React.FC<SEOProps> = ({
       <meta property="og:type" content={ogType} />
       <meta property="og:site_name" content={siteName} />
       <meta property="og:title" content={fullTitle} />
-      <meta property="og:description" content={description} />
+      <meta property="og:description" content={resolvedDescription} />
       <meta property="og:image" content={imageUrl} />
       <meta property="og:image:width" content="1200" />
       <meta property="og:image:height" content="630" />
@@ -67,12 +98,12 @@ const SEOHead: React.FC<SEOProps> = ({
       <meta property="og:locale" content="pt_BR" />
 
       {/* Twitter Card */}
-      <meta name="twitter:card" content={twitterCard} />
+      <meta name="twitter:card" content={resolvedTwitterCard} />
       <meta name="twitter:title" content={fullTitle} />
-      <meta name="twitter:description" content={description} />
+      <meta name="twitter:description" content={resolvedDescription} />
       <meta name="twitter:image" content={imageUrl} />
-      <meta name="twitter:site" content="@canticosccb" />
-      <meta name="twitter:creator" content="@canticosccb" />
+      <meta name="twitter:site" content={twitterSite} />
+      <meta name="twitter:creator" content={twitterSite} />
 
       {/* Additional Meta Tags */}
       <meta name="author" content="Cânticos CCB" />

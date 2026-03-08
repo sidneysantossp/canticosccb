@@ -25,6 +25,21 @@ export interface LogFilters {
   limit?: number;
 }
 
+const LOG_SOURCE_TABLES: Record<string, string> = {
+  security: 'security_logs',
+  security_logs: 'security_logs',
+  email: 'email_logs',
+  email_logs: 'email_logs',
+  backup: 'backups',
+  backups: 'backups',
+  import: 'imports',
+  imports: 'imports',
+  export: 'exports',
+  exports: 'exports',
+  report: 'reports',
+  reports: 'reports',
+};
+
 const toLogLevelFromSeverity = (severity?: string | null): LogLevel => {
   switch ((severity || '').toLowerCase()) {
     case 'critical':
@@ -238,8 +253,11 @@ export async function getLogStats(): Promise<{ total: number; byLevel: Record<Lo
 const deleteBySource = async (source: string, sourceIds: string[]) => {
   if (sourceIds.length === 0) return;
 
+  const table = LOG_SOURCE_TABLES[source];
+  if (!table) return;
+
   const numericIds = sourceIds.map((value) => (/^\d+$/.test(value) ? Number(value) : value));
-  const { error } = await supabase.from(source).delete().in('id', numericIds as any[]);
+  const { error } = await supabase.from(table).delete().in('id', numericIds as any[]);
   if (error) {
     throw error;
   }

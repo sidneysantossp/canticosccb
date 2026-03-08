@@ -315,11 +315,11 @@ const AdminDashboard: React.FC = () => {
             <p className="text-white font-semibold text-sm">Criar Hino</p>
           </Link>
           <Link
-            to="/admin/users/create"
+            to="/admin/users"
             className="bg-gray-800/50 border border-gray-700 rounded-lg p-4 hover:border-red-600 transition-all hover:scale-105 text-center"
           >
             <Users className="w-8 h-8 text-blue-500 mx-auto mb-2" />
-            <p className="text-white font-semibold text-sm">Novo Usuário</p>
+            <p className="text-white font-semibold text-sm">Usuários</p>
           </Link>
           <Link
             to="/admin/composers/create"

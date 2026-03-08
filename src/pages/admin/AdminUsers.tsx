@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { Search, Shield, Ban, Trash2, Users, UserCheck, UserX, Edit, Plus } from 'lucide-react';
+import { Search, Shield, Ban, Trash2, Users, UserCheck, UserX, Edit, AlertTriangle } from 'lucide-react';
 import { usuariosApi, type Usuario } from '@/lib/api-client';
 import { useRealtimeUsers } from '@/hooks/useRealtimeUsers';
 import ConfirmModal from '@/components/ConfirmModal';
@@ -258,13 +258,10 @@ const AdminUsers: React.FC = () => {
           <h1 className="text-3xl font-bold text-white mb-2">Gerenciar Usuários</h1>
           <p className="text-gray-400">Total: {totalCount} usuários</p>
         </div>
-        <Link
-          to="/admin/users/criar"
-          className="flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-semibold transition-colors"
-        >
-          <Plus className="w-5 h-5" />
-          Novo Usuário
-        </Link>
+        <div className="flex items-center gap-2 px-4 py-2 rounded-lg border border-yellow-500/30 bg-yellow-500/10 text-yellow-200 text-sm">
+          <AlertTriangle className="w-4 h-4 text-yellow-400" />
+          Novos usuários devem usar o cadastro público.
+        </div>
       </div>
 
       {/* Stats Cards */}

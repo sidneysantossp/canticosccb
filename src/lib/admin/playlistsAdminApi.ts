@@ -1,4 +1,12 @@
-// Mock implementation - Replace with real Supabase queries when backend is ready
+import { getCurrentUser, publicSupabase, supabase } from '@/lib/supabase-auth';
+import { upsertSiteConfigEntries } from '@/lib/admin/adminTableUtils';
+import { supabaseDelete, supabaseInsert, supabaseUpdate } from '@/lib/supabaseRest';
+import {
+  EDITORIAL_PLAYLISTS_CONFIG_KEY,
+  getEditorialPlaylistMetadataMap,
+  invalidateSiteRuntimeConfigCache,
+  type EditorialPlaylistMetadata,
+} from '@/lib/publicSiteConfig';
 
 export interface EditorialPlaylist {
   id: string;
@@ -29,42 +37,130 @@ export interface CreatePlaylistData {
   is_active?: boolean;
 }
 
-export type Playlist = EditorialPlaylist;
+type PlaylistRow = {
+  id: string;
+  user_id?: string | null;
+  name?: string | null;
+  description?: string | null;
+  cover_url?: string | null;
+  is_public?: boolean | null;
+  created_at?: string | null;
+  updated_at?: string | null;
+};
 
-// Mock data removed - using Supabase real data
+const PLAYLIST_SELECT = 'id,user_id,name,description,cover_url,is_public,created_at,updated_at';
+
+const defaultMetadata = (playlistId: string): EditorialPlaylistMetadata => {
+  const now = new Date().toISOString();
+  return {
+    playlist_id: playlistId,
+    category: 'special',
+    mood: undefined,
+    curator_name: 'Equipe Editorial CCB',
+    is_featured: false,
+    is_active: true,
+    created_at: now,
+    updated_at: now,
+  };
+};
+
+const mapRowToEditorialPlaylist = (
+  row: PlaylistRow,
+  metadata: EditorialPlaylistMetadata,
+  itemsCount: number
+): EditorialPlaylist => ({
+  id: String(row.id),
+  title: row.name || 'Playlist sem título',
+  description: row.description || '',
+  category: metadata.category,
+  mood: metadata.mood,
+  curator_name: metadata.curator_name,
+  cover_url: row.cover_url || '',
+  is_featured: metadata.is_featured,
+  is_active: metadata.is_active,
+  plays_count: 0,
+  likes_count: 0,
+  followers_count: 0,
+  items_count: itemsCount,
+  created_at: row.created_at || metadata.created_at,
+  updated_at: row.updated_at || metadata.updated_at,
+});
+
+const sortEditorialPlaylists = (a: EditorialPlaylist, b: EditorialPlaylist) => {
+  if (a.is_featured !== b.is_featured) {
+    return a.is_featured ? -1 : 1;
+  }
+  return new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime();
+};
+
+async function loadMetadataMap(): Promise<Record<string, EditorialPlaylistMetadata>> {
+  return getEditorialPlaylistMetadataMap();
+}
+
+async function saveMetadataMap(map: Record<string, EditorialPlaylistMetadata>) {
+  await upsertSiteConfigEntries({
+    [EDITORIAL_PLAYLISTS_CONFIG_KEY]: JSON.stringify(Object.values(map)),
+  });
+  invalidateSiteRuntimeConfigCache();
+}
+
+async function loadTrackCounts(playlistIds: string[]): Promise<Record<string, number>> {
+  if (playlistIds.length === 0) return {};
+
+  const { data, error } = await publicSupabase
+    .from('playlist_tracks')
+    .select('playlist_id')
+    .in('playlist_id', playlistIds);
+
+  if (error) {
+    console.warn('⚠️ [playlistsAdminApi] Error loading playlist tracks:', error.message);
+    return {};
+  }
+
+  return (data || []).reduce<Record<string, number>>((acc, row: any) => {
+    const key = String(row.playlist_id);
+    acc[key] = (acc[key] || 0) + 1;
+    return acc;
+  }, {});
+}
+
+async function resolveCurrentUserId(): Promise<string> {
+  const { data } = await supabase.auth.getSession();
+  const sessionUserId = data.session?.user?.id;
+  if (sessionUserId) return sessionUserId;
+
+  const localUser = getCurrentUser();
+  if (localUser?.id) return localUser.id;
+
+  throw new Error('Não foi possível identificar o administrador atual para criar a playlist.');
+}
+
+export type Playlist = EditorialPlaylist;
 
 export const getAll = async (): Promise<EditorialPlaylist[]> => {
   try {
-    const { supabaseFetch } = await import('@/lib/supabaseRest');
-    console.log('🔍 [playlistsAdminApi] Fetching playlists from Supabase...');
-    
-    const rows = await supabaseFetch<any>('playlists', {
-      select: '*',
-      order: 'created_at.desc'
-    });
-    
-    console.log(`✅ [playlistsAdminApi] Found ${rows.length} playlists`);
-    
-    // Map Supabase data to EditorialPlaylist interface
-    const playlists: EditorialPlaylist[] = rows.map(row => ({
-      id: String(row.id),
-      title: row.titulo || row.title || '',
-      description: row.descricao || row.description || '',
-      category: row.categoria || row.category || 'general',
-      mood: row.mood || undefined,
-      curator_name: row.curator_name || 'Equipe Editorial CCB',
-      cover_url: row.cover_url || row.imagem_url || '',
-      is_featured: row.is_featured || row.destaque || false,
-      is_active: row.is_active != null ? row.is_active : (row.ativo != null ? row.ativo === 1 : true),
-      plays_count: row.plays_count || row.total_plays || 0,
-      likes_count: row.likes_count || row.total_likes || 0,
-      followers_count: row.followers_count || row.total_followers || 0,
-      items_count: row.items_count || row.total_items || 0,
-      created_at: row.created_at || new Date().toISOString(),
-      updated_at: row.updated_at || row.created_at || new Date().toISOString()
-    }));
-    
-    return playlists;
+    const [metadataMap, rowsResponse] = await Promise.all([
+      loadMetadataMap(),
+      publicSupabase.from('playlists').select(PLAYLIST_SELECT).order('updated_at', { ascending: false }),
+    ]);
+
+    if (rowsResponse.error) {
+      throw rowsResponse.error;
+    }
+
+    const rows = (rowsResponse.data || []) as PlaylistRow[];
+    const editorialRows = rows.filter((row) => metadataMap[String(row.id)]);
+    const trackCounts = await loadTrackCounts(editorialRows.map((row) => String(row.id)));
+
+    return editorialRows
+      .map((row) =>
+        mapRowToEditorialPlaylist(
+          row,
+          metadataMap[String(row.id)] || defaultMetadata(String(row.id)),
+          trackCounts[String(row.id)] || 0
+        )
+      )
+      .sort(sortEditorialPlaylists);
   } catch (error) {
     console.error('❌ [playlistsAdminApi] Error fetching playlists:', error);
     return [];
@@ -75,104 +171,115 @@ export const getAllPlaylists = getAll;
 
 export const getById = async (id: string): Promise<EditorialPlaylist | null> => {
   try {
-    const { supabaseFetch } = await import('@/lib/supabaseRest');
-    const rows = await supabaseFetch<any>('playlists', {
-      id: `eq.${id}`,
-      select: '*',
-      limit: '1'
-    });
-    
-    if (rows.length === 0) return null;
-    
-    const row = rows[0];
-    return {
-      id: String(row.id),
-      title: row.titulo || row.title || '',
-      description: row.descricao || row.description || '',
-      category: row.categoria || row.category || 'general',
-      mood: row.mood || undefined,
-      curator_name: row.curator_name || 'Equipe Editorial CCB',
-      cover_url: row.cover_url || row.imagem_url || '',
-      is_featured: row.is_featured || row.destaque || false,
-      is_active: row.is_active != null ? row.is_active : (row.ativo != null ? row.ativo === 1 : true),
-      plays_count: row.plays_count || row.total_plays || 0,
-      likes_count: row.likes_count || row.total_likes || 0,
-      followers_count: row.followers_count || row.total_followers || 0,
-      items_count: row.items_count || row.total_items || 0,
-      created_at: row.created_at || new Date().toISOString(),
-      updated_at: row.updated_at || row.created_at || new Date().toISOString()
-    };
+    const [metadataMap, playlistResponse, trackCountResponse] = await Promise.all([
+      loadMetadataMap(),
+      publicSupabase.from('playlists').select(PLAYLIST_SELECT).eq('id', id).maybeSingle(),
+      publicSupabase.from('playlist_tracks').select('playlist_id').eq('playlist_id', id),
+    ]);
+
+    if (playlistResponse.error) {
+      throw playlistResponse.error;
+    }
+
+    if (!playlistResponse.data || !metadataMap[id]) {
+      return null;
+    }
+
+    return mapRowToEditorialPlaylist(
+      playlistResponse.data as PlaylistRow,
+      metadataMap[id],
+      trackCountResponse.data?.length || 0
+    );
   } catch (error) {
     console.error('❌ [playlistsAdminApi.getById] Error:', error);
     return null;
   }
 };
 
-export const create = async (data: CreatePlaylistData): Promise<{ success: boolean; playlist?: EditorialPlaylist }> => {
+export const create = async (
+  data: CreatePlaylistData
+): Promise<{ success: boolean; playlist?: EditorialPlaylist }> => {
   try {
-    const { supabaseInsert } = await import('@/lib/supabaseRest');
-    
-    const insertData = {
-      titulo: data.title,
-      descricao: data.description || '',
-      categoria: data.category,
-      mood: data.mood,
-      curator_name: data.curator_name || 'Equipe Editorial CCB',
-      cover_url: data.cover_url || '',
-      is_featured: data.is_featured || false,
-      is_active: data.is_active !== false,
-      plays_count: 0,
-      likes_count: 0,
-      followers_count: 0,
-      items_count: 0
-    };
-    
-    const result = await supabaseInsert('playlists', insertData) as any;
-    
-    const newPlaylist: EditorialPlaylist = {
-      id: String(result.id || result[0]?.id),
-      title: data.title,
+    const ownerId = await resolveCurrentUserId();
+    const result = await supabaseInsert<any>('playlists', {
+      user_id: ownerId,
+      name: data.title.trim(),
       description: data.description || '',
-      category: data.category,
-      mood: data.mood,
-      curator_name: data.curator_name || 'Equipe Editorial CCB',
       cover_url: data.cover_url || '',
-      is_featured: data.is_featured || false,
+      is_public: true,
+    });
+
+    const playlistId = String(result?.id || '');
+    if (!playlistId) {
+      throw new Error('Falha ao criar a playlist editorial.');
+    }
+
+    const metadataMap = await loadMetadataMap();
+    const now = new Date().toISOString();
+    metadataMap[playlistId] = {
+      playlist_id: playlistId,
+      category: data.category,
+      mood: data.mood || undefined,
+      curator_name: (data.curator_name || 'Equipe Editorial CCB').trim(),
+      is_featured: Boolean(data.is_featured),
       is_active: data.is_active !== false,
-      plays_count: 0,
-      likes_count: 0,
-      followers_count: 0,
-      items_count: 0,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString()
+      created_at: now,
+      updated_at: now,
     };
-    
-    return { success: true, playlist: newPlaylist };
+    await saveMetadataMap(metadataMap);
+
+    return {
+      success: true,
+      playlist: mapRowToEditorialPlaylist(
+        {
+          id: playlistId,
+          user_id: ownerId,
+          name: data.title.trim(),
+          description: data.description || '',
+          cover_url: data.cover_url || '',
+          is_public: true,
+          created_at: now,
+          updated_at: now,
+        },
+        metadataMap[playlistId],
+        0
+      ),
+    };
   } catch (error) {
     console.error('❌ [playlistsAdminApi.create] Error:', error);
-    return { success: false };
+    throw error;
   }
 };
 
 export const createPlaylist = create;
 
-export const update = async (id: string, data: Partial<EditorialPlaylist>): Promise<{ success: boolean }> => {
+export const update = async (
+  id: string,
+  data: Partial<EditorialPlaylist>
+): Promise<{ success: boolean }> => {
   try {
-    const { supabaseUpdate } = await import('@/lib/supabaseRest');
-    
-    const updateData: any = {};
-    if (data.title !== undefined) updateData.titulo = data.title;
-    if (data.description !== undefined) updateData.descricao = data.description;
-    if (data.category !== undefined) updateData.categoria = data.category;
-    if (data.mood !== undefined) updateData.mood = data.mood;
-    if (data.curator_name !== undefined) updateData.curator_name = data.curator_name;
-    if (data.cover_url !== undefined) updateData.cover_url = data.cover_url;
-    if (data.is_featured !== undefined) updateData.is_featured = data.is_featured;
-    if (data.is_active !== undefined) updateData.is_active = data.is_active;
-    
-    updateData.updated_at = new Date().toISOString();
-    
-    await supabaseUpdate('playlists', { id: `eq.${id}` }, updateData);
+    const playlistPayload: Record<string, unknown> = {};
+    if (data.title !== undefined) playlistPayload.name = data.title;
+    if (data.description !== undefined) playlistPayload.description = data.description;
+    if (data.cover_url !== undefined) playlistPayload.cover_url = data.cover_url;
+
+    if (Object.keys(playlistPayload).length > 0) {
+      await supabaseUpdate('playlists', { id: `eq.${id}` }, playlistPayload);
+    }
+
+    const metadataMap = await loadMetadataMap();
+    const currentMetadata = metadataMap[id] || defaultMetadata(id);
+    metadataMap[id] = {
+      ...currentMetadata,
+      category: data.category ?? currentMetadata.category,
+      mood: data.mood !== undefined ? data.mood || undefined : currentMetadata.mood,
+      curator_name: data.curator_name ?? currentMetadata.curator_name,
+      is_featured: data.is_featured ?? currentMetadata.is_featured,
+      is_active: data.is_active ?? currentMetadata.is_active,
+      updated_at: new Date().toISOString(),
+    };
+    await saveMetadataMap(metadataMap);
+
     return { success: true };
   } catch (error) {
     console.error('❌ [playlistsAdminApi.update] Error:', error);
@@ -184,8 +291,12 @@ export const updatePlaylist = update;
 
 export const deleteItem = async (id: string): Promise<{ success: boolean }> => {
   try {
-    const { supabaseDelete } = await import('@/lib/supabaseRest');
     await supabaseDelete('playlists', { id: `eq.${id}` });
+
+    const metadataMap = await loadMetadataMap();
+    delete metadataMap[id];
+    await saveMetadataMap(metadataMap);
+
     return { success: true };
   } catch (error) {
     console.error('❌ [playlistsAdminApi.deleteItem] Error:', error);

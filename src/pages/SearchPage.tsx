@@ -8,6 +8,7 @@ import { buildHinoUrl, buildCompositorUrl, buildAlbumUrl } from '@/utils/slugUrl
 import { advancedSearch, type HymnSearchResult, type ComposerSearchResult, type AlbumSearchResult, type PlaylistSearchResult } from '@/lib/mockApis';
 import { useAuth } from '@/contexts/AuthContext';
 import { publicSupabase, supabase } from '@/lib/supabase-auth';
+import { getPublicTags, type PublicTag } from '@/lib/publicSiteConfig';
 
 const SearchPage: React.FC = () => {
   const { play } = usePlayerStore();
@@ -22,6 +23,7 @@ const SearchPage: React.FC = () => {
   const [albums, setAlbums] = useState<AlbumSearchResult[]>([]);
   const [playlists, setPlaylists] = useState<PlaylistSearchResult[]>([]);
   const [recentSearches, setRecentSearches] = useState<string[]>([]);
+  const [tags, setTags] = useState<PublicTag[]>([]);
   const [categories, setCategories] = useState<Array<{ id: string; nome: string; slug: string; descricao?: string; imagem_url?: string }>>([]);
 
   const schema = generateWebsiteSchema();
@@ -55,6 +57,19 @@ const SearchPage: React.FC = () => {
     };
 
     loadCategories();
+  }, []);
+
+  useEffect(() => {
+    const loadTags = async () => {
+      try {
+        const fetchedTags = await getPublicTags();
+        setTags(fetchedTags.slice(0, 8));
+      } catch (error) {
+        console.error('Erro ao carregar tags públicas:', error);
+      }
+    };
+
+    void loadTags();
   }, []);
 
   // Carregar buscas recentes do histórico do usuário
@@ -355,6 +370,29 @@ const SearchPage: React.FC = () => {
                 ))}
               </div>
             </section>
+
+            {tags.length > 0 && (
+              <section>
+                <div className="mb-6">
+                  <h2 className="text-2xl font-bold text-white flex items-center gap-2">
+                    <Sparkles className="w-5 h-5 text-primary-400" />
+                    Tags em destaque
+                  </h2>
+                  <p className="text-gray-400 text-sm mt-1">Atalhos rápidos definidos pelo admin</p>
+                </div>
+                <div className="flex flex-wrap gap-3">
+                  {tags.map((tag) => (
+                    <button
+                      key={tag.id}
+                      onClick={() => handleSearch(tag.name)}
+                      className="px-4 py-2 rounded-full bg-background-tertiary border border-gray-700 text-white hover:bg-primary-600 hover:border-primary-600 transition-colors"
+                    >
+                      #{tag.name}
+                    </button>
+                  ))}
+                </div>
+              </section>
+            )}
 
             {/* Categories */}
             {categories.length > 0 && (

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Music, Search, Edit, Trash2, Shield, Mail, Calendar, MoreVertical, Plus, UserPlus, Award, Star, AlertTriangle } from 'lucide-react';
+import { Music, Search, Edit, Trash2, Shield, Calendar, Plus, Award, Star, AlertTriangle } from 'lucide-react';
 import {
   getComposers,
   getComposerStats,
@@ -40,10 +40,9 @@ const AdminSettingsComposers: React.FC = () => {
 
   const statuses = [
     { value: 'all', label: 'Todos os Status' },
-    { value: 'active', label: 'Ativo', color: 'text-green-400', bg: 'bg-green-500/20' },
-    { value: 'inactive', label: 'Inativo', color: 'text-gray-400', bg: 'bg-gray-500/20' },
-    { value: 'verified', label: 'Verificado', color: 'text-blue-400', bg: 'bg-blue-500/20' },
-    { value: 'pending', label: 'Pendente', color: 'text-yellow-400', bg: 'bg-yellow-500/20' }
+    { value: 'approved', label: 'Aprovado', color: 'text-green-400', bg: 'bg-green-500/20' },
+    { value: 'pending', label: 'Pendente', color: 'text-yellow-400', bg: 'bg-yellow-500/20' },
+    { value: 'rejected', label: 'Rejeitado', color: 'text-red-400', bg: 'bg-red-500/20' }
   ];
 
   const verificationStatuses = [
@@ -142,10 +141,10 @@ const AdminSettingsComposers: React.FC = () => {
           await deleteComposers(selectedComposers);
           break;
         case 'activate':
-          await updateComposersStatus(selectedComposers, 'active');
+          await updateComposersStatus(selectedComposers, 'approved');
           break;
         case 'deactivate':
-          await updateComposersStatus(selectedComposers, 'inactive');
+          await updateComposersStatus(selectedComposers, 'rejected');
           break;
       }
       
@@ -161,19 +160,27 @@ const AdminSettingsComposers: React.FC = () => {
     try {
       switch (action) {
         case 'verify':
+          await verifyComposers([composerId]);
+          await Promise.all([loadComposers(), loadStats()]);
           break;
         case 'reject':
+          if (!confirm('Rejeitar a verificação deste compositor?')) {
+            return;
+          }
+          await rejectComposers([composerId]);
+          await Promise.all([loadComposers(), loadStats()]);
           break;
         case 'delete':
           if (confirm('Deletar este compositor?')) {
-            loadComposers();
-            loadStats();
+            await deleteComposers([composerId]);
+            await Promise.all([loadComposers(), loadStats()]);
           }
           break;
         case 'edit':
           navigate(`/admin/composers/edit/${composerId}`);
           break;
         case 'view':
+          navigate(`/compositor/${composerId}`);
           break;
       }
     } catch (error) {
@@ -241,7 +248,10 @@ const AdminSettingsComposers: React.FC = () => {
               </button>
             </>
           )}
-          <button className="flex items-center gap-2 px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-lg transition-colors">
+          <button
+            onClick={() => navigate('/admin/composers/create')}
+            className="flex items-center gap-2 px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-lg transition-colors"
+          >
             <Plus className="w-5 h-5" />
             Novo Compositor
           </button>
@@ -417,7 +427,7 @@ const AdminSettingsComposers: React.FC = () => {
                     <div className="flex items-center gap-3">
                       <div className="w-10 h-10 bg-gray-700 rounded-full flex items-center justify-center">
                         <span className="text-white font-medium">
-                          {composer.name.charAt(0).toUpperCase()}
+                          {(composer.name || composer.email || '?').charAt(0).toUpperCase()}
                         </span>
                       </div>
                       <div>
