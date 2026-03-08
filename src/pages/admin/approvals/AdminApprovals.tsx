@@ -3,6 +3,7 @@ import { CheckCircle, Music, Mic2, AlertCircle } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { getPendingComposers } from '@/lib/admin/composersAdminApi';
 import { getAllSongs } from '@/lib/admin/songsAdminApi';
+import { getOpenReportsCount } from '@/lib/admin/reportsApi';
 
 const AdminApprovals: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
@@ -36,8 +37,7 @@ const AdminApprovals: React.FC = () => {
         console.warn('Could not load pending songs count:', e);
       }
       
-      // TODO: Integrar com tabela 'reports' do Supabase quando disponível
-      const reportsCount = 0;
+      const reportsCount = await getOpenReportsCount();
       
       setPendingCounts({
         songs: songsCount,

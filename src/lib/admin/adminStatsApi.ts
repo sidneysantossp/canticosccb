@@ -1,5 +1,6 @@
 import { supabase } from '@/lib/supabase-auth';
 import { supabaseFetch } from '@/lib/supabaseRest';
+import { getOpenReportsCount } from '@/lib/admin/reportsApi';
 
 export type AdminStats = {
   totalUsers: number;
@@ -25,14 +26,16 @@ export const getAdminStats = async (): Promise<AdminStats> => {
       allSongs,
       publishedSongsData,
       pendingSongsData,
-      pendingComposersData
+      pendingComposersData,
+      openReports
     ] = await Promise.all([
       supabaseFetch<any>('users', { select: 'id,created_at' }),
       supabaseFetch<any>('composers', { select: 'id,status' }),
       supabaseFetch<any>('hinos', { select: 'id,plays,likes' }),
       supabaseFetch<any>('hinos', { status: 'eq.published', select: 'id' }),
       supabaseFetch<any>('hinos', { status: 'eq.draft', select: 'id' }),
-      supabaseFetch<any>('composers', { status: 'eq.pending', select: 'id' })
+      supabaseFetch<any>('composers', { status: 'eq.pending', select: 'id' }),
+      getOpenReportsCount()
     ]);
 
     // Calcular total de plays e likes
@@ -57,7 +60,7 @@ export const getAdminStats = async (): Promise<AdminStats> => {
       newUsersToday,
       pendingSongs: pendingSongsData.length,
       pendingComposers: pendingComposersData.length,
-      openReports: 0 // Será implementado quando criar tabela de reports
+      openReports
     };
 
     console.log('✅ [getAdminStats] Stats calculated:', stats);

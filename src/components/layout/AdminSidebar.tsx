@@ -3,6 +3,7 @@ import { Link, useLocation } from 'react-router-dom';
 import useCopyrightClaimsStore from '@/stores/copyrightClaimsStore';
 import { compositoresApi } from '@/lib/api-client';
 import { getLogoByType } from '@/lib/mockApis';
+import { getOpenReportsCount } from '@/lib/admin/reportsApi';
 import {
   LayoutDashboard,
   Music,
@@ -44,6 +45,7 @@ const AdminSidebar: React.FC = () => {
   const [expandedSections, setExpandedSections] = useState<string[]>([]);
   const { getPendingClaimsCount, loadClaims } = useCopyrightClaimsStore();
   const [pendingComposersCount, setPendingComposersCount] = useState(0);
+  const [openReportsCount, setOpenReportsCount] = useState(0);
   const [logoSrc, setLogoSrc] = useState<string>('https://canticosccb.com.br/logo-canticos-ccb.png');
 
   useEffect(() => {
@@ -69,6 +71,21 @@ const AdminSidebar: React.FC = () => {
     loadPendingCount();
     // Recarregar a cada 30 segundos
     const interval = setInterval(loadPendingCount, 30000);
+    return () => clearInterval(interval);
+  }, []);
+
+  useEffect(() => {
+    const loadOpenCount = async () => {
+      try {
+        const count = await getOpenReportsCount();
+        setOpenReportsCount(count);
+      } catch (error) {
+        console.error('Erro ao carregar contagem de denúncias abertas:', error);
+      }
+    };
+
+    void loadOpenCount();
+    const interval = setInterval(loadOpenCount, 30000);
     return () => clearInterval(interval);
   }, []);
 
@@ -160,7 +177,7 @@ const AdminSidebar: React.FC = () => {
       icon: Flag,
       items: [
         { path: '/admin/approvals', label: 'Aprovações', icon: CheckCircle, badge: 8 },
-        { path: '/admin/reports', label: 'Denúncias', icon: Flag, badge: 15 },
+        { path: '/admin/reports', label: 'Denúncias', icon: Flag, badge: openReportsCount },
         { path: '/admin/copyright-claims', label: 'Direitos Autorais', icon: Copyright, badge: getPendingClaimsCount() },
         { path: '/admin/comments', label: 'Comentários', icon: MessageSquare }
       ]

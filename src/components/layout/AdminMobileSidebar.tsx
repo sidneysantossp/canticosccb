@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import useCopyrightClaimsStore from '@/stores/copyrightClaimsStore';
 import { compositoresApi } from '@/lib/api-client';
+import { getOpenReportsCount } from '@/lib/admin/reportsApi';
 import {
   X,
   LayoutDashboard,
@@ -48,6 +49,7 @@ const AdminMobileSidebar: React.FC<AdminMobileSidebarProps> = ({ isOpen, onClose
   const [expandedSections, setExpandedSections] = useState<string[]>([]);
   const { getPendingClaimsCount, loadClaims } = useCopyrightClaimsStore();
   const [pendingComposersCount, setPendingComposersCount] = useState(0);
+  const [openReportsCount, setOpenReportsCount] = useState(0);
 
   useEffect(() => {
     void loadClaims();
@@ -71,6 +73,21 @@ const AdminMobileSidebar: React.FC<AdminMobileSidebarProps> = ({ isOpen, onClose
 
     loadPendingCount();
     const interval = setInterval(loadPendingCount, 30000);
+    return () => clearInterval(interval);
+  }, []);
+
+  useEffect(() => {
+    const loadOpenCount = async () => {
+      try {
+        const count = await getOpenReportsCount();
+        setOpenReportsCount(count);
+      } catch (error) {
+        console.error('Erro ao carregar contagem de denúncias abertas:', error);
+      }
+    };
+
+    void loadOpenCount();
+    const interval = setInterval(loadOpenCount, 30000);
     return () => clearInterval(interval);
   }, []);
 
@@ -142,7 +159,7 @@ const AdminMobileSidebar: React.FC<AdminMobileSidebarProps> = ({ isOpen, onClose
       icon: Flag,
       items: [
         { path: '/admin/approvals', label: 'Aprovações', icon: CheckCircle, badge: 8 },
-        { path: '/admin/reports', label: 'Denúncias', icon: Flag, badge: 15 },
+        { path: '/admin/reports', label: 'Denúncias', icon: Flag, badge: openReportsCount },
         { path: '/admin/copyright-claims', label: 'Direitos Autorais', icon: Copyright, badge: getPendingClaimsCount() },
         { path: '/admin/comments', label: 'Comentários', icon: MessageSquare }
       ]
