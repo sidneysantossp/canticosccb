@@ -30,14 +30,14 @@ CREATE TABLE IF NOT EXISTS public.copyright_claims (
   composer_id text NULL,
   composer_name text NOT NULL,
   composer_email text NOT NULL,
-  created_by_user_id uuid NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,
+  created_by_user_id uuid NOT NULL,
   claim_type text NOT NULL CHECK (claim_type IN ('composer', 'author', 'both')),
   description text NOT NULL,
   proof_documents jsonb NOT NULL DEFAULT '[]'::jsonb,
   status text NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'in_review', 'approved', 'rejected', 'resolved')),
   priority text NOT NULL DEFAULT 'medium' CHECK (priority IN ('low', 'medium', 'high', 'urgent')),
   reviewer_notes text NULL,
-  reviewed_by_user_id uuid NULL REFERENCES public.users(id) ON DELETE SET NULL,
+  reviewed_by_user_id uuid NULL,
   reviewed_at timestamptz NULL,
   resolved_at timestamptz NULL,
   last_message_at timestamptz NULL,
@@ -50,7 +50,7 @@ CREATE TABLE IF NOT EXISTS public.copyright_claims (
 CREATE TABLE IF NOT EXISTS public.copyright_claim_messages (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   claim_id uuid NOT NULL REFERENCES public.copyright_claims(id) ON DELETE CASCADE,
-  sender_user_id uuid NULL REFERENCES public.users(id) ON DELETE SET NULL,
+  sender_user_id uuid NULL,
   sender_name text NOT NULL,
   sender_role text NOT NULL CHECK (sender_role IN ('admin', 'composer')),
   message text NOT NULL DEFAULT '',
@@ -64,7 +64,7 @@ CREATE TABLE IF NOT EXISTS public.copyright_claim_attachments (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   claim_id uuid NOT NULL REFERENCES public.copyright_claims(id) ON DELETE CASCADE,
   message_id uuid NULL REFERENCES public.copyright_claim_messages(id) ON DELETE CASCADE,
-  created_by_user_id uuid NULL REFERENCES public.users(id) ON DELETE SET NULL,
+  created_by_user_id uuid NULL,
   file_name text NOT NULL,
   file_url text NOT NULL,
   file_type text NOT NULL CHECK (file_type IN ('image', 'video', 'pdf', 'audio')),
@@ -103,31 +103,125 @@ EXECUTE FUNCTION public.handle_updated_at();
 
 CREATE OR REPLACE FUNCTION public.is_admin_user(p_user_id uuid)
 RETURNS boolean
-LANGUAGE sql
+LANGUAGE plpgsql
 STABLE
 AS $$
-  SELECT EXISTS (
-    SELECT 1
-    FROM public.users u
-    WHERE u.id = p_user_id
-      AND COALESCE(u.is_admin, false) = true
-  );
+DECLARE
+  v_is_admin boolean := false;
+BEGIN
+  IF p_user_id IS NULL THEN
+    RETURN false;
+  END IF;
+
+  IF to_regclass('public.users') IS NOT NULL THEN
+    BEGIN
+      EXECUTE 'SELECT COALESCE(is_admin, false) FROM public.users WHERE id = $1 LIMIT 1'
+      INTO v_is_admin
+      USING p_user_id;
+    EXCEPTION WHEN OTHERS THEN
+      v_is_admin := false;
+    END;
+
+    IF COALESCE(v_is_admin, false) THEN
+      RETURN true;
+    END IF;
+  END IF;
+
+  BEGIN
+    RETURN
+      COALESCE((auth.jwt() -> 'app_metadata' ->> 'is_admin')::boolean, false)
+      OR COALESCE((auth.jwt() -> 'user_metadata' ->> 'is_admin')::boolean, false)
+      OR COALESCE(auth.jwt() ->> 'role', '') = 'admin';
+  EXCEPTION WHEN OTHERS THEN
+    RETURN false;
+  END;
+END;
 $$;
 
 CREATE OR REPLACE FUNCTION public.can_access_copyright_claim(p_claim_id uuid, p_user_id uuid DEFAULT auth.uid())
 RETURNS boolean
-LANGUAGE sql
+LANGUAGE plpgsql
 STABLE
 AS $$
-  SELECT EXISTS (
-    SELECT 1
-    FROM public.copyright_claims cc
-    WHERE cc.id = p_claim_id
-      AND (
-        cc.created_by_user_id = p_user_id
-        OR public.is_admin_user(p_user_id)
-      )
-  );
+DECLARE
+  v_claim public.copyright_claims%ROWTYPE;
+  v_email text := NULL;
+  v_has_access boolean := false;
+BEGIN
+  IF p_user_id IS NULL THEN
+    RETURN false;
+  END IF;
+
+  SELECT *
+  INTO v_claim
+  FROM public.copyright_claims
+  WHERE id = p_claim_id;
+
+  IF NOT FOUND THEN
+    RETURN false;
+  END IF;
+
+  IF v_claim.created_by_user_id = p_user_id OR public.is_admin_user(p_user_id) THEN
+    RETURN true;
+  END IF;
+
+  BEGIN
+    v_email := lower(COALESCE(auth.jwt() ->> 'email', ''));
+  EXCEPTION WHEN OTHERS THEN
+    v_email := NULL;
+  END;
+
+  IF v_email IS NOT NULL AND v_email <> '' AND lower(COALESCE(v_claim.composer_email, '')) = v_email THEN
+    RETURN true;
+  END IF;
+
+  IF v_claim.composer_id IS NULL OR v_claim.composer_id = '' THEN
+    RETURN false;
+  END IF;
+
+  IF to_regclass('public.composers') IS NOT NULL THEN
+    BEGIN
+      EXECUTE '
+        SELECT EXISTS (
+          SELECT 1
+          FROM public.composers c
+          WHERE c.id::text = $1
+            AND c.user_id = $2
+        )'
+      INTO v_has_access
+      USING v_claim.composer_id, p_user_id;
+    EXCEPTION WHEN OTHERS THEN
+      v_has_access := false;
+    END;
+
+    IF v_has_access THEN
+      RETURN true;
+    END IF;
+  END IF;
+
+  IF to_regclass('public.composer_managers') IS NOT NULL THEN
+    BEGIN
+      EXECUTE '
+        SELECT EXISTS (
+          SELECT 1
+          FROM public.composer_managers cm
+          WHERE cm.composer_id::text = $1
+            AND cm.manager_user_id = $2
+            AND cm.status = ''active''
+        )'
+      INTO v_has_access
+      USING v_claim.composer_id, p_user_id;
+    EXCEPTION WHEN OTHERS THEN
+      v_has_access := false;
+    END;
+
+    IF v_has_access THEN
+      RETURN true;
+    END IF;
+  END IF;
+
+  RETURN false;
+END;
 $$;
 
 ALTER TABLE public.copyright_claims ENABLE ROW LEVEL SECURITY;
