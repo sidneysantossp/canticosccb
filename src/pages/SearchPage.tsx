@@ -11,6 +11,27 @@ import { publicSupabase, supabase } from '@/lib/supabase-auth';
 import { getPublicTags, type PublicTag } from '@/lib/publicSiteConfig';
 import { useVoiceSearch } from '@/hooks/useVoiceSearch';
 
+type DiscoveryComposer = {
+  id: string;
+  name: string;
+  imageUrl?: string;
+  totalHymns?: number;
+};
+
+type DiscoveryAlbum = {
+  id: string;
+  title: string;
+  artist?: string;
+  coverUrl?: string;
+};
+
+type DiscoveryPlaylist = {
+  id: string;
+  name: string;
+  description?: string;
+  coverUrl?: string;
+};
+
 const SearchPage: React.FC = () => {
   const { play } = usePlayerStore();
   const { user } = useAuth();
@@ -26,6 +47,9 @@ const SearchPage: React.FC = () => {
   const [recentSearches, setRecentSearches] = useState<string[]>([]);
   const [tags, setTags] = useState<PublicTag[]>([]);
   const [categories, setCategories] = useState<Array<{ id: string; nome: string; slug: string; descricao?: string; imagem_url?: string }>>([]);
+  const [discoveryComposers, setDiscoveryComposers] = useState<DiscoveryComposer[]>([]);
+  const [discoveryAlbums, setDiscoveryAlbums] = useState<DiscoveryAlbum[]>([]);
+  const [discoveryPlaylists, setDiscoveryPlaylists] = useState<DiscoveryPlaylist[]>([]);
   const {
     supported: voiceSupported,
     isListening: isVoiceListening,
@@ -49,25 +73,77 @@ const SearchPage: React.FC = () => {
 
   // Carregar categorias do banco de dados
   useEffect(() => {
-    const loadCategories = async () => {
+    const loadDiscoveryData = async () => {
       try {
-        const { data, error } = await publicSupabase
-          .from('categorias')
-          .select('id, nome, slug, descricao, imagem_url')
-          .eq('ativo', true)
-          .order('nome', { ascending: true })
-          .limit(8);
+        const [categoriesRes, composersRes, albumsRes, playlistsRes] = await Promise.all([
+          publicSupabase
+            .from('categorias')
+            .select('id, nome, slug, descricao, imagem_url')
+            .eq('ativo', true)
+            .order('nome', { ascending: true })
+            .limit(8),
+          publicSupabase
+            .from('composers')
+            .select('id, name, artistic_name, photo_url, avatar_url, total_hymns')
+            .or('verified.eq.true,status.eq.approved')
+            .order('created_at', { ascending: false })
+            .limit(8),
+          publicSupabase
+            .from('albums')
+            .select('id, title, artist, cover_url')
+            .eq('is_published', true)
+            .order('created_at', { ascending: false })
+            .limit(8),
+          publicSupabase
+            .from('playlists')
+            .select('id, name, description, cover_url')
+            .eq('is_public', true)
+            .order('updated_at', { ascending: false })
+            .limit(8),
+        ]);
 
-        if (error) throw error;
-        if (data) {
-          setCategories(data);
+        if (!categoriesRes.error && categoriesRes.data) {
+          setCategories(categoriesRes.data);
+        }
+
+        if (!composersRes.error && composersRes.data) {
+          setDiscoveryComposers(
+            composersRes.data.map((composer: any) => ({
+              id: String(composer.id),
+              name: composer.artistic_name || composer.name || 'Compositor',
+              imageUrl: composer.photo_url || composer.avatar_url || undefined,
+              totalHymns: composer.total_hymns ? Number(composer.total_hymns) : undefined,
+            }))
+          );
+        }
+
+        if (!albumsRes.error && albumsRes.data) {
+          setDiscoveryAlbums(
+            albumsRes.data.map((album: any) => ({
+              id: String(album.id),
+              title: album.title || 'Álbum',
+              artist: album.artist || 'Acervo Cânticos CCB',
+              coverUrl: album.cover_url || undefined,
+            }))
+          );
+        }
+
+        if (!playlistsRes.error && playlistsRes.data) {
+          setDiscoveryPlaylists(
+            playlistsRes.data.map((playlist: any) => ({
+              id: String(playlist.id),
+              name: playlist.name || 'Playlist',
+              description: playlist.description || undefined,
+              coverUrl: playlist.cover_url || undefined,
+            }))
+          );
         }
       } catch (error) {
-        console.error('Erro ao carregar categorias:', error);
+        console.error('Erro ao carregar dados de descoberta:', error);
       }
     };
 
-    loadCategories();
+    loadDiscoveryData();
   }, []);
 
   useEffect(() => {
@@ -178,12 +254,18 @@ const SearchPage: React.FC = () => {
   };
 
   const hasResults = searchQuery.trim().length > 0 && ((hymns.length > 0) || (composers.length > 0) || (albums.length > 0) || (playlists.length > 0));
+  const hasSearchQuery = searchQuery.trim().length > 0;
   const sectionPriority: Record<string, number> = {
     composers: 4,
     albums: 3,
     hymns: 2,
     playlists: 1,
   };
+  const showAllFilters = activeFilter === 'all';
+  const showSongsFilter = showAllFilters || activeFilter === 'songs';
+  const showArtistsFilter = showAllFilters || activeFilter === 'artists';
+  const showAlbumsFilter = showAllFilters || activeFilter === 'albums';
+  const showPlaylistsFilter = showAllFilters || activeFilter === 'playlists';
 
   return (
     <>
@@ -261,7 +343,7 @@ const SearchPage: React.FC = () => {
         {hasResults ? (
           <div className="space-y-12">
             {[
-              (activeFilter !== 'artists' && hymns.length > 0) ? {
+              (showSongsFilter && hymns.length > 0) ? {
                 key: 'hymns',
                 score: hymns[0]?.matchScore || 0,
                 node: (
@@ -309,7 +391,7 @@ const SearchPage: React.FC = () => {
                   </section>
                 ),
               } : null,
-              (activeFilter !== 'songs' && composers.length > 0) ? {
+              (showArtistsFilter && composers.length > 0) ? {
                 key: 'composers',
                 score: composers[0]?.matchScore || 0,
                 node: (
@@ -331,7 +413,7 @@ const SearchPage: React.FC = () => {
                   </section>
                 ),
               } : null,
-              ((activeFilter !== 'artists' && activeFilter !== 'songs' && albums.length > 0) || (activeFilter === 'albums' && albums.length > 0)) ? {
+              (showAlbumsFilter && albums.length > 0) ? {
                 key: 'albums',
                 score: albums[0]?.matchScore || 0,
                 node: (
@@ -349,7 +431,7 @@ const SearchPage: React.FC = () => {
                   </section>
                 ),
               } : null,
-              ((activeFilter !== 'artists' && activeFilter !== 'songs' && playlists.length > 0) || (activeFilter === 'playlists' && playlists.length > 0)) ? {
+              (showPlaylistsFilter && playlists.length > 0) ? {
                 key: 'playlists',
                 score: playlists[0]?.matchScore || 0,
                 node: (
@@ -380,29 +462,30 @@ const SearchPage: React.FC = () => {
           </div>
         ) : (
           <div className="space-y-12">
-            {/* Recent Searches */}
-            <section>
-              <h2 className="text-2xl font-bold text-white mb-6">Buscas recentes</h2>
-              <div className="space-y-2">
-                {recentSearches.map((term, index) => (
-                  <button
-                    key={index}
-                    onClick={() => handleSearch(term)}
-                    className="flex items-center gap-4 p-3 rounded-lg hover:bg-background-hover transition-colors group w-full text-left"
-                  >
-                    <div className="w-12 h-12 bg-background-tertiary rounded flex items-center justify-center">
-                      <Search className="w-5 h-5 text-text-muted" />
-                    </div>
-                    <span className="text-white font-medium flex-1">{term}</span>
-                    <button className="opacity-0 group-hover:opacity-100 transition-opacity">
-                      <X className="w-5 h-5 text-text-muted hover:text-white" />
+            {showAllFilters && recentSearches.length > 0 && (
+              <section>
+                <h2 className="text-2xl font-bold text-white mb-6">Buscas recentes</h2>
+                <div className="space-y-2">
+                  {recentSearches.map((term, index) => (
+                    <button
+                      key={index}
+                      onClick={() => handleSearch(term)}
+                      className="flex items-center gap-4 p-3 rounded-lg hover:bg-background-hover transition-colors group w-full text-left"
+                    >
+                      <div className="w-12 h-12 bg-background-tertiary rounded flex items-center justify-center">
+                        <Search className="w-5 h-5 text-text-muted" />
+                      </div>
+                      <span className="text-white font-medium flex-1">{term}</span>
+                      <span className="opacity-0 group-hover:opacity-100 transition-opacity">
+                        <X className="w-5 h-5 text-text-muted hover:text-white" />
+                      </span>
                     </button>
-                  </button>
-                ))}
-              </div>
-            </section>
+                  ))}
+                </div>
+              </section>
+            )}
 
-            {tags.length > 0 && (
+            {showSongsFilter && tags.length > 0 && (
               <section>
                 <div className="mb-6">
                   <h2 className="text-2xl font-bold text-white flex items-center gap-2">
@@ -425,8 +508,7 @@ const SearchPage: React.FC = () => {
               </section>
             )}
 
-            {/* Categories */}
-            {categories.length > 0 && (
+            {showSongsFilter && categories.length > 0 && (
               <section>
                 <div className="mb-6">
                   <h2 className="text-2xl md:text-3xl font-bold text-white">Explore por Categoria</h2>
@@ -461,6 +543,100 @@ const SearchPage: React.FC = () => {
                 </div>
               </section>
             )}
+
+            {showArtistsFilter && discoveryComposers.length > 0 && (
+              <section>
+                <div className="mb-6">
+                  <h2 className="text-2xl md:text-3xl font-bold text-white">Compositores em destaque</h2>
+                  <p className="text-gray-400 text-sm mt-1">Perfis públicos para você explorar</p>
+                </div>
+                <div className="space-y-3">
+                  {discoveryComposers.map((composer) => (
+                    <Link
+                      key={composer.id}
+                      to={buildCompositorUrl(composer.id, composer.name)}
+                      className="group flex items-center gap-4 bg-background-secondary hover:bg-background-tertiary p-4 rounded-lg transition-all duration-300"
+                    >
+                      <img
+                        src={composer.imageUrl || `https://picsum.photos/seed/composer-${composer.id}/200/200`}
+                        alt={composer.name}
+                        className="w-12 h-12 rounded-full object-cover"
+                      />
+                      <div className="flex-1 min-w-0">
+                        <h3 className="font-semibold text-white truncate group-hover:text-primary-400 transition-colors">
+                          {composer.name}
+                        </h3>
+                        <p className="text-sm text-gray-400 truncate">
+                          {composer.totalHymns ? `${composer.totalHymns} hinos publicados` : 'Compositor'}
+                        </p>
+                      </div>
+                    </Link>
+                  ))}
+                </div>
+              </section>
+            )}
+
+            {showAlbumsFilter && discoveryAlbums.length > 0 && (
+              <section>
+                <div className="mb-6">
+                  <h2 className="text-2xl md:text-3xl font-bold text-white">Álbuns em destaque</h2>
+                  <p className="text-gray-400 text-sm mt-1">Coleções para ouvir agora</p>
+                </div>
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                  {discoveryAlbums.map((album) => (
+                    <Link
+                      key={album.id}
+                      to={buildAlbumUrl(album.id, album.title, album.artist)}
+                      className="p-3 rounded-lg hover:bg-background-hover transition-colors"
+                    >
+                      <img
+                        src={album.coverUrl || `https://picsum.photos/seed/discovery-album-${album.id}/300/300`}
+                        alt={album.title}
+                        className="w-full h-36 object-cover rounded mb-3"
+                      />
+                      <div className="text-white font-medium truncate">{album.title}</div>
+                      <div className="text-text-muted text-sm truncate">{album.artist || 'Álbum'}</div>
+                    </Link>
+                  ))}
+                </div>
+              </section>
+            )}
+
+            {showPlaylistsFilter && discoveryPlaylists.length > 0 && (
+              <section>
+                <div className="mb-6">
+                  <h2 className="text-2xl md:text-3xl font-bold text-white">Playlists públicas</h2>
+                  <p className="text-gray-400 text-sm mt-1">Seleções para ouvir sem buscar</p>
+                </div>
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                  {discoveryPlaylists.map((playlist) => (
+                    <Link
+                      key={playlist.id}
+                      to={`/playlist/${playlist.id}`}
+                      className="p-3 rounded-lg hover:bg-background-hover transition-colors"
+                    >
+                      <img
+                        src={playlist.coverUrl || `https://picsum.photos/seed/discovery-playlist-${playlist.id}/300/300`}
+                        alt={playlist.name}
+                        className="w-full h-36 object-cover rounded mb-3"
+                      />
+                      <div className="text-white font-medium truncate">{playlist.name}</div>
+                      <div className="text-text-muted text-sm truncate">{playlist.description || 'Playlist'}</div>
+                    </Link>
+                  ))}
+                </div>
+              </section>
+            )}
+
+            {!hasSearchQuery &&
+              ((showArtistsFilter && discoveryComposers.length === 0) ||
+                (showAlbumsFilter && discoveryAlbums.length === 0) ||
+                (showPlaylistsFilter && discoveryPlaylists.length === 0)) &&
+              !showAllFilters && (
+                <section className="text-center py-12">
+                  <p className="text-gray-400">Nenhum conteúdo disponível para este filtro no momento.</p>
+                </section>
+              )}
           </div>
         )}
       </div>

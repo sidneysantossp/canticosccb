@@ -17,6 +17,7 @@ interface ThemeSettings {
   fontSize: string;
   borderRadius: string;
   mode: 'light' | 'dark';
+  applyPublicTheme: boolean;
 }
 
 const AdminTheme: React.FC = () => {
@@ -27,17 +28,18 @@ const AdminTheme: React.FC = () => {
 
   const defaultTheme: ThemeSettings = {
     colors: {
-      primary: '#dc2626',
-      secondary: '#1e293b',
-      accent: '#3b82f6',
-      background: '#0f172a',
-      text: '#f1f5f9',
-      border: '#334155'
+      primary: '#1db954',
+      secondary: '#16a34a',
+      accent: '#4ade80',
+      background: '#121212',
+      text: '#ffffff',
+      border: '#374151'
     },
     fontFamily: 'Inter',
     fontSize: '16px',
     borderRadius: '8px',
-    mode: 'dark'
+    mode: 'dark',
+    applyPublicTheme: false,
   };
 
   const [theme, setTheme] = useState<ThemeSettings>(defaultTheme);
@@ -54,6 +56,7 @@ const AdminTheme: React.FC = () => {
           setTheme({
             ...defaultTheme,
             ...parsed,
+            applyPublicTheme: parsed?.applyPublicTheme === true,
             colors: {
               ...defaultTheme.colors,
               ...(parsed?.colors || {}),
@@ -211,6 +214,20 @@ const AdminTheme: React.FC = () => {
                 <Moon className="w-6 h-6 text-blue-400 mx-auto mb-2" />
                 <p className="text-white font-medium">Escuro</p>
               </button>
+            </div>
+          </div>
+
+          <div className="bg-gray-900/50 border border-gray-800 rounded-xl p-6">
+            <h3 className="text-white font-semibold text-lg mb-2 flex items-center gap-2">
+              <Palette className="w-5 h-5" />
+              Tema Público
+            </h3>
+            <div className="rounded-lg border border-gray-800 bg-gray-950/40 p-4">
+              <div className="text-white font-medium mb-1">Identidade visual oficial protegida</div>
+              <div className="text-sm text-gray-400">
+                O site público está travado no tema oficial verde/preto para evitar sobrescritas globais acidentais.
+                As configurações abaixo continuam úteis como referência e preview administrativo.
+              </div>
             </div>
           </div>
 

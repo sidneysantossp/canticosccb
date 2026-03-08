@@ -15,6 +15,7 @@ export interface RuntimeThemeSettings {
   fontSize: string;
   borderRadius: string;
   mode: 'light' | 'dark';
+  applyPublicTheme: boolean;
 }
 
 export interface RuntimeSeoSettings {
@@ -113,17 +114,18 @@ const defaultSeoSettings: RuntimeSeoSettings = {
 
 export const defaultRuntimeTheme: RuntimeThemeSettings = {
   colors: {
-    primary: '#dc2626',
-    secondary: '#1e293b',
-    accent: '#3b82f6',
-    background: '#0f172a',
-    text: '#f1f5f9',
-    border: '#334155',
+    primary: '#1db954',
+    secondary: '#16a34a',
+    accent: '#4ade80',
+    background: '#121212',
+    text: '#ffffff',
+    border: '#374151',
   },
   fontFamily: 'Inter',
   fontSize: '16px',
   borderRadius: '8px',
   mode: 'dark',
+  applyPublicTheme: false,
 };
 
 let runtimeConfigCache: { value: SiteRuntimeConfig; timestamp: number } | null = null;
@@ -235,6 +237,7 @@ const parseThemeSettings = (value?: string): RuntimeThemeSettings => {
     return {
       ...defaultRuntimeTheme,
       ...parsed,
+      applyPublicTheme: parseBoolean(parsed?.applyPublicTheme, defaultRuntimeTheme.applyPublicTheme),
       colors: {
         ...defaultRuntimeTheme.colors,
         ...(parsed?.colors || {}),
