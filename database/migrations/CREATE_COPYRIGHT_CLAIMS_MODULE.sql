@@ -27,7 +27,7 @@ CREATE TABLE IF NOT EXISTS public.copyright_claims (
   song_artist text NULL,
   song_cover_url text NULL,
   content_url text NULL,
-  composer_id uuid NULL REFERENCES public.composers(id) ON DELETE SET NULL,
+  composer_id text NULL,
   composer_name text NOT NULL,
   composer_email text NOT NULL,
   created_by_user_id uuid NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,
@@ -126,19 +126,6 @@ AS $$
       AND (
         cc.created_by_user_id = p_user_id
         OR public.is_admin_user(p_user_id)
-        OR EXISTS (
-          SELECT 1
-          FROM public.composers c
-          WHERE c.id = cc.composer_id
-            AND c.user_id = p_user_id
-        )
-        OR EXISTS (
-          SELECT 1
-          FROM public.composer_managers cm
-          WHERE cm.composer_id = cc.composer_id
-            AND cm.manager_user_id = p_user_id
-            AND cm.status = 'active'
-        )
       )
   );
 $$;
