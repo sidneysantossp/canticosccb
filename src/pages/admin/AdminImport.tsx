@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { Upload, FileText, CheckCircle, XCircle, AlertCircle, RefreshCw, Download, Trash2, Eye, AlertTriangle } from 'lucide-react';
 import ImportStatsCards from '@/pages/admin/components/imports/ImportStatsCards';
 import ImportUploadModal from '@/pages/admin/components/imports/ImportUploadModal';
+import { createImport, deleteImport, getImportStats, getImports, updateImportStatus } from '@/lib/admin/importAdminApi';
 
 interface Import {
   id: string;
@@ -65,17 +66,9 @@ const AdminImport: React.FC = () => {
     try {
       setIsLoading(true);
       setError(null);
-      
-      // TODO: Integrar com tabela 'imports' do Supabase quando disponível
-      setImports([]);
-
-      setStats({
-        total: 0,
-        completed: 0,
-        processing: 0,
-        totalRows: 0,
-        successRate: 0
-      });
+      const [importsList, statsData] = await Promise.all([getImports(), getImportStats()]);
+      setImports(importsList as Import[]);
+      setStats(statsData);
 
     } catch (err: any) {
       console.error('Error loading imports:', err);
@@ -105,8 +98,16 @@ const AdminImport: React.FC = () => {
         return;
       }
 
-      // Simular upload
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      await createImport({
+        file: selectedFile,
+        name: formData.name,
+        description: formData.description,
+        import_type: formData.import_type,
+        has_header: formData.has_header,
+        skip_duplicates: formData.skip_duplicates,
+        update_existing: formData.update_existing,
+        validate_only: formData.validate_only,
+      });
       setShowModal(false);
       setSelectedFile(null);
       setFormData({
@@ -127,8 +128,8 @@ const AdminImport: React.FC = () => {
   const handleDelete = async (id: string) => {
     try {
       if (!confirm('Deseja realmente excluir este registro de importação?')) return;
-      await new Promise(resolve => setTimeout(resolve, 500));
-      loadData();
+      await deleteImport(id);
+      await loadData();
     } catch (error) {
       console.error('Error deleting import:', error);
     }
@@ -137,8 +138,8 @@ const AdminImport: React.FC = () => {
   const handleCancel = async (id: string) => {
     try {
       if (!confirm('Deseja realmente cancelar esta importação?')) return;
-      await new Promise(resolve => setTimeout(resolve, 500));
-      loadData();
+      await updateImportStatus(id, 'cancelled');
+      await loadData();
     } catch (error) {
       console.error('Error cancelling import:', error);
     }

@@ -1,217 +1,200 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, Flag, User, Music, CheckCircle, XCircle, Ban, Trash2 } from 'lucide-react';
+import { ArrowLeft, AlertTriangle, CheckCircle, Clock, Eye, Flag, XCircle } from 'lucide-react';
+import { getReportById, updateReportStatus, type Report } from '@/lib/admin/reportsApi';
+
+const statusOptions: Array<{ value: Report['status']; label: string; icon: React.ComponentType<any> }> = [
+  { value: 'open', label: 'Aberta', icon: Flag },
+  { value: 'in_review', label: 'Em análise', icon: Eye },
+  { value: 'resolved', label: 'Resolvida', icon: CheckCircle },
+  { value: 'rejected', label: 'Rejeitada', icon: XCircle },
+];
 
 const AdminReportDetail: React.FC = () => {
   const navigate = useNavigate();
-  const { id } = useParams();
-  const [action, setAction] = useState('');
+  const { id } = useParams<{ id: string }>();
+  const [report, setReport] = useState<Report | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [isUpdating, setIsUpdating] = useState(false);
 
-  const report = {
-    id: 1,
-    type: 'song',
-    targetTitle: 'Hino Impróprio',
-    targetId: 123,
-    reporterName: 'João Silva',
-    reporterEmail: 'joao@email.com',
-    reason: 'Conteúdo Impróprio',
-    description: 'Este hino contém conteúdo que não é apropriado para a plataforma. A letra possui palavras ofensivas e não condiz com os valores da CCB.',
-    status: 'open',
-    priority: 'high',
-    date: '2024-01-20 14:30',
-    evidence: ['screenshot1.jpg', 'screenshot2.jpg'],
-    targetAuthor: 'Compositor X',
-    reportHistory: 2
+  useEffect(() => {
+    const loadReport = async () => {
+      if (!id) return;
+
+      try {
+        setIsLoading(true);
+        setError(null);
+        const fetched = await getReportById(id);
+        if (!fetched) {
+          setError('Denúncia não encontrada.');
+          return;
+        }
+        setReport(fetched);
+      } catch (err: any) {
+        console.error('Erro ao carregar denúncia:', err);
+        setError(err?.message || 'Erro ao carregar denúncia.');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    void loadReport();
+  }, [id]);
+
+  const handleStatusChange = async (status: Report['status']) => {
+    if (!report || isUpdating) return;
+
+    try {
+      setIsUpdating(true);
+      await updateReportStatus(report.id, status);
+      setReport({ ...report, status });
+    } catch (err) {
+      console.error('Erro ao atualizar denúncia:', err);
+      alert('Não foi possível atualizar o status da denúncia.');
+    } finally {
+      setIsUpdating(false);
+    }
   };
+
+  if (isLoading) {
+    return (
+      <div className="p-6 flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-500 mx-auto mb-4"></div>
+          <p className="text-gray-400">Carregando denúncia...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error || !report) {
+    return (
+      <div className="p-6">
+        <div className="bg-red-900/50 border border-red-500 rounded-lg p-6 text-center">
+          <AlertTriangle className="w-12 h-12 text-red-400 mx-auto mb-4" />
+          <h2 className="text-xl font-bold text-red-200 mb-2">Falha ao abrir denúncia</h2>
+          <p className="text-red-300 mb-4">{error || 'Denúncia não encontrada.'}</p>
+          <button
+            onClick={() => navigate('/admin/reports')}
+            className="px-6 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-lg transition-colors"
+          >
+            Voltar para denúncias
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="p-6 space-y-6">
-      <div className="flex items-center gap-4 mb-6">
+      <div className="flex items-center gap-4">
         <button
           onClick={() => navigate('/admin/reports')}
           className="p-2 hover:bg-gray-800 rounded-lg transition-colors"
         >
           <ArrowLeft className="w-6 h-6 text-white" />
         </button>
-        <h1 className="text-3xl font-bold text-white">Detalhes da Denúncia</h1>
+        <div>
+          <h1 className="text-3xl font-bold text-white">Denúncia #{report.id}</h1>
+          <p className="text-gray-400">Acompanhe e trate esta ocorrência.</p>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 space-y-6">
-          <div className="bg-gray-900/50 border border-red-800 rounded-xl p-6">
-            <div className="flex items-start gap-4 mb-4">
-              <div className="p-3 bg-red-500/20 rounded-lg">
-                <Flag className="w-8 h-8 text-red-400" />
-              </div>
-              <div className="flex-1">
-                <div className="flex items-center gap-3 mb-2">
-                  <h2 className="text-2xl font-bold text-white">{report.targetTitle}</h2>
-                  <span className="px-2 py-1 bg-red-500/20 text-red-400 text-xs font-semibold rounded-full">
-                    Prioridade Alta
-                  </span>
-                </div>
-                <p className="text-gray-400 text-sm">Tipo: {report.type} • ID: {report.targetId}</p>
-              </div>
+          <div className="bg-gray-900/50 border border-gray-800 rounded-xl p-6">
+            <div className="flex items-center gap-3 mb-3">
+              <Flag className="w-6 h-6 text-red-400" />
+              <h2 className="text-2xl font-bold text-white">{report.title}</h2>
             </div>
-
-            <div className="bg-gray-800/50 rounded-lg p-4 mb-4">
-              <h3 className="text-white font-semibold mb-2">Motivo da Denúncia</h3>
-              <p className="text-red-400 font-medium mb-2">{report.reason}</p>
-              <p className="text-gray-300 text-sm">{report.description}</p>
-            </div>
-
-            {report.evidence.length > 0 && (
-              <div className="bg-gray-800/50 rounded-lg p-4">
-                <h3 className="text-white font-semibold mb-3">Evidências</h3>
-                <div className="grid grid-cols-2 gap-3">
-                  {report.evidence.map((file, index) => (
-                    <div key={index} className="aspect-video bg-gray-700 rounded-lg flex items-center justify-center">
-                      <span className="text-gray-400 text-sm">{file}</span>
-                    </div>
-                  ))}
-                </div>
+            <p className="text-gray-300 mb-4">{report.description || 'Sem descrição adicional informada.'}</p>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+              <div>
+                <p className="text-gray-400 mb-1">Tipo</p>
+                <p className="text-white capitalize">{report.type}</p>
               </div>
-            )}
+              <div>
+                <p className="text-gray-400 mb-1">Motivo</p>
+                <p className="text-white">{report.reason}</p>
+              </div>
+              <div>
+                <p className="text-gray-400 mb-1">Denunciante</p>
+                <p className="text-white">{report.reporter || 'Anônimo'}</p>
+              </div>
+              <div>
+                <p className="text-gray-400 mb-1">Data</p>
+                <p className="text-white">{new Date(report.date).toLocaleString('pt-BR')}</p>
+              </div>
+              {report.target_song_id ? (
+                <div>
+                  <p className="text-gray-400 mb-1">Alvo: hino</p>
+                  <p className="text-white">#{report.target_song_id}</p>
+                </div>
+              ) : null}
+              {report.target_user_id ? (
+                <div>
+                  <p className="text-gray-400 mb-1">Alvo: usuário</p>
+                  <p className="text-white">#{report.target_user_id}</p>
+                </div>
+              ) : null}
+            </div>
           </div>
 
           <div className="bg-gray-900/50 border border-gray-800 rounded-xl p-6">
-            <h3 className="text-white font-semibold mb-4">Ações Disponíveis</h3>
-            
-            <div className="space-y-3">
-              <div className="p-4 bg-gray-800/50 rounded-lg">
-                <label className="flex items-center gap-3 cursor-pointer">
-                  <input
-                    type="radio"
-                    name="action"
-                    value="remove_content"
-                    checked={action === 'remove_content'}
-                    onChange={(e) => setAction(e.target.value)}
-                    className="w-4 h-4"
-                  />
-                  <div>
-                    <p className="text-white font-medium">Remover Conteúdo</p>
-                    <p className="text-gray-400 text-sm">Remove o hino da plataforma</p>
-                  </div>
-                </label>
-              </div>
+            <h3 className="text-white font-semibold mb-4">Ações rápidas</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              {statusOptions.map((option) => {
+                const Icon = option.icon;
+                const active = report.status === option.value;
 
-              <div className="p-4 bg-gray-800/50 rounded-lg">
-                <label className="flex items-center gap-3 cursor-pointer">
-                  <input
-                    type="radio"
-                    name="action"
-                    value="warn_user"
-                    checked={action === 'warn_user'}
-                    onChange={(e) => setAction(e.target.value)}
-                    className="w-4 h-4"
-                  />
-                  <div>
-                    <p className="text-white font-medium">Advertir Usuário</p>
-                    <p className="text-gray-400 text-sm">Envia advertência ao autor</p>
-                  </div>
-                </label>
-              </div>
-
-              <div className="p-4 bg-gray-800/50 rounded-lg">
-                <label className="flex items-center gap-3 cursor-pointer">
-                  <input
-                    type="radio"
-                    name="action"
-                    value="suspend"
-                    checked={action === 'suspend'}
-                    onChange={(e) => setAction(e.target.value)}
-                    className="w-4 h-4"
-                  />
-                  <div>
-                    <p className="text-white font-medium">Suspender Conta</p>
-                    <p className="text-gray-400 text-sm">Suspende temporariamente a conta</p>
-                  </div>
-                </label>
-              </div>
-
-              <div className="p-4 bg-gray-800/50 rounded-lg">
-                <label className="flex items-center gap-3 cursor-pointer">
-                  <input
-                    type="radio"
-                    name="action"
-                    value="ban"
-                    checked={action === 'ban'}
-                    onChange={(e) => setAction(e.target.value)}
-                    className="w-4 h-4"
-                  />
-                  <div>
-                    <p className="text-white font-medium">Banir Permanentemente</p>
-                    <p className="text-gray-400 text-sm">Remove definitivamente da plataforma</p>
-                  </div>
-                </label>
-              </div>
-
-              <div className="p-4 bg-gray-800/50 rounded-lg">
-                <label className="flex items-center gap-3 cursor-pointer">
-                  <input
-                    type="radio"
-                    name="action"
-                    value="dismiss"
-                    checked={action === 'dismiss'}
-                    onChange={(e) => setAction(e.target.value)}
-                    className="w-4 h-4"
-                  />
-                  <div>
-                    <p className="text-white font-medium">Arquivar (Denúncia Falsa)</p>
-                    <p className="text-gray-400 text-sm">Marca como denúncia sem fundamento</p>
-                  </div>
-                </label>
-              </div>
-            </div>
-
-            <div className="mt-6 flex gap-3">
-              <button
-                disabled={!action}
-                className="flex-1 px-6 py-3 bg-red-600 hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold rounded-lg"
-              >
-                Aplicar Ação
-              </button>
+                return (
+                  <button
+                    key={option.value}
+                    onClick={() => handleStatusChange(option.value)}
+                    disabled={isUpdating || active}
+                    className={`flex items-center gap-3 p-4 rounded-lg border transition-colors ${
+                      active
+                        ? 'border-primary-500 bg-primary-500/10 text-primary-300'
+                        : 'border-gray-700 hover:border-gray-600 text-white'
+                    } disabled:opacity-60`}
+                  >
+                    <Icon className="w-5 h-5" />
+                    <span>{option.label}</span>
+                  </button>
+                );
+              })}
             </div>
           </div>
         </div>
 
         <div className="space-y-6">
           <div className="bg-gray-900/50 border border-gray-800 rounded-xl p-6">
-            <h3 className="text-white font-semibold mb-4">Denunciante</h3>
+            <h3 className="text-white font-semibold mb-4">Resumo</h3>
             <div className="space-y-3 text-sm">
-              <div>
-                <p className="text-gray-400 mb-1">Nome</p>
-                <p className="text-white">{report.reporterName}</p>
+              <div className="flex items-center justify-between">
+                <span className="text-gray-400">Status</span>
+                <span className="text-white capitalize">{report.status}</span>
               </div>
-              <div>
-                <p className="text-gray-400 mb-1">Email</p>
-                <p className="text-white">{report.reporterEmail}</p>
+              <div className="flex items-center justify-between">
+                <span className="text-gray-400">Prioridade</span>
+                <span className="text-white capitalize">{report.priority}</span>
               </div>
-              <div>
-                <p className="text-gray-400 mb-1">Data da Denúncia</p>
-                <p className="text-white">{report.date}</p>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-gray-900/50 border border-gray-800 rounded-xl p-6">
-            <h3 className="text-white font-semibold mb-4">Alvo da Denúncia</h3>
-            <div className="space-y-3 text-sm">
-              <div>
-                <p className="text-gray-400 mb-1">Autor</p>
-                <p className="text-white">{report.targetAuthor}</p>
-              </div>
-              <div>
-                <p className="text-gray-400 mb-1">Denúncias Anteriores</p>
-                <p className="text-white">{report.reportHistory}</p>
+              <div className="flex items-center justify-between">
+                <span className="text-gray-400">Atualização</span>
+                <span className="text-white">{isUpdating ? 'Salvando...' : 'Pronta'}</span>
               </div>
             </div>
           </div>
 
           <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-xl p-4">
-            <p className="text-yellow-500 text-sm">
-              ⚠️ Esta ação é irreversível. Certifique-se de revisar todas as informações antes de proceder.
-            </p>
+            <div className="flex items-start gap-3">
+              <Clock className="w-5 h-5 text-yellow-400 mt-0.5" />
+              <p className="text-yellow-200 text-sm">
+                Esta tela atualiza o status da denúncia no backend real. Se precisar tratar o conteúdo alvo,
+                faça a moderação no módulo correspondente depois.
+              </p>
+            </div>
           </div>
         </div>
       </div>

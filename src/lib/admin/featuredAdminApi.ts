@@ -1,4 +1,4 @@
-// Mock implementation - Replace with real Supabase queries when backend is ready
+import { supabase } from '@/lib/supabase-auth';
 
 export interface FeaturedItem {
   id: string;
@@ -26,178 +26,143 @@ export interface FeaturedStats {
   totalClicks: number;
 }
 
-// Mock database
-let mockFeaturedItems: FeaturedItem[] = [
-  {
-    id: '1',
-    title: 'Hino 5 - Chuvas de Bênçãos',
-    subtitle: 'Mais Ouvido da Semana',
-    description: 'Um dos hinos mais amados e cantados da CCB',
-    content_type: 'hymn',
-    image_url: 'https://via.placeholder.com/800x400/1a1a1a/ffffff?text=Hino+5',
-    section: 'hero',
-    position: 1,
-    priority: 100,
-    is_active: true,
-    views_count: 12547,
-    clicks_count: 3421,
-    cta_text: 'Ouvir Agora',
-    created_at: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString()
-  },
-  {
-    id: '2',
-    title: 'Hino 249 - Ó Vem, Jesus',
-    subtitle: 'Em Destaque',
-    description: 'Hino especial para momentos de reflexão',
-    content_type: 'hymn',
-    image_url: 'https://via.placeholder.com/800x400/2a2a2a/ffffff?text=Hino+249',
-    section: 'spotlight',
-    position: 1,
-    priority: 90,
-    is_active: true,
-    views_count: 8934,
-    clicks_count: 2156,
-    cta_text: 'Ver Mais',
-    created_at: new Date(Date.now() - 20 * 24 * 60 * 60 * 1000).toISOString()
-  },
-  {
-    id: '3',
-    title: 'Hinário Completo CCB',
-    subtitle: 'Nova Playlist',
-    description: 'Todos os hinos organizados por número',
-    content_type: 'playlist',
-    image_url: 'https://via.placeholder.com/800x400/3a3a3a/ffffff?text=Playlist',
-    section: 'new',
-    position: 1,
-    priority: 80,
-    is_active: true,
-    views_count: 5678,
-    clicks_count: 1234,
-    cta_text: 'Explorar',
-    created_at: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString()
-  },
-  {
-    id: '4',
-    title: 'Hinos para Jovens',
-    subtitle: 'Tendência',
-    description: 'Seleção especial de hinos para a mocidade',
-    content_type: 'playlist',
-    image_url: 'https://via.placeholder.com/800x400/4a4a4a/ffffff?text=Jovens',
-    section: 'trending',
-    position: 1,
-    priority: 75,
-    is_active: false,
-    views_count: 3456,
-    clicks_count: 890,
-    cta_text: 'Acessar',
-    created_at: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString()
-  }
-];
+const mapFeaturedItem = (row: any): FeaturedItem => ({
+  id: String(row.id),
+  title: row.title || '',
+  subtitle: row.subtitle || undefined,
+  description: row.description || undefined,
+  content_type: row.content_type || 'custom',
+  image_url: row.image_url || row.banner_url || row.thumbnail_url || '',
+  section: row.section || 'hero',
+  position: Number(row.position || 0),
+  priority: Number(row.priority || 0),
+  is_active: row.is_active !== false,
+  views_count: Number(row.views_count || 0),
+  clicks_count: Number(row.clicks_count || 0),
+  start_date: row.start_date || undefined,
+  end_date: row.end_date || undefined,
+  cta_text: row.cta_text || 'Ver Mais',
+  created_at: row.created_at || new Date().toISOString(),
+});
 
-export const getFeaturedItems = async (filters?: any): Promise<FeaturedItem[]> => {
-  await new Promise(resolve => setTimeout(resolve, 500));
-  return [...mockFeaturedItems];
+export const getFeaturedItems = async (filters?: {
+  section?: string;
+  content_type?: string;
+  active?: boolean;
+}): Promise<FeaturedItem[]> => {
+  let query = supabase
+    .from('featured_items')
+    .select('*')
+    .order('section', { ascending: true })
+    .order('position', { ascending: true })
+    .order('priority', { ascending: false });
+
+  if (filters?.section && filters.section !== 'all') {
+    query = query.eq('section', filters.section);
+  }
+
+  if (filters?.content_type && filters.content_type !== 'all') {
+    query = query.eq('content_type', filters.content_type);
+  }
+
+  if (typeof filters?.active === 'boolean') {
+    query = query.eq('is_active', filters.active);
+  }
+
+  const { data, error } = await query;
+  if (error) throw error;
+  return (data || []).map(mapFeaturedItem);
 };
 
 export const getFeaturedStats = async (): Promise<FeaturedStats> => {
-  await new Promise(resolve => setTimeout(resolve, 300));
-  const active = mockFeaturedItems.filter(item => item.is_active);
-  const totalViews = mockFeaturedItems.reduce((sum, item) => sum + item.views_count, 0);
-  const totalClicks = mockFeaturedItems.reduce((sum, item) => sum + item.clicks_count, 0);
-
+  const items = await getFeaturedItems();
   return {
-    total: mockFeaturedItems.length,
-    active: active.length,
-    totalViews,
-    totalClicks
+    total: items.length,
+    active: items.filter((item) => item.is_active).length,
+    totalViews: items.reduce((sum, item) => sum + item.views_count, 0),
+    totalClicks: items.reduce((sum, item) => sum + item.clicks_count, 0),
   };
 };
 
 export const getById = async (id: string): Promise<FeaturedItem | null> => {
-  await new Promise(resolve => setTimeout(resolve, 300));
-  return mockFeaturedItems.find(item => item.id === id) || null;
+  const { data, error } = await supabase
+    .from('featured_items')
+    .select('*')
+    .eq('id', id)
+    .maybeSingle();
+
+  if (error && error.code !== 'PGRST116') throw error;
+  return data ? mapFeaturedItem(data) : null;
 };
 
-export const create = async (data: Partial<FeaturedItem>): Promise<{ success: boolean; item?: FeaturedItem }> => {
-  await new Promise(resolve => setTimeout(resolve, 500));
-  const newItem: FeaturedItem = {
-    id: String(Date.now()),
-    title: data.title || '',
-    subtitle: data.subtitle,
-    description: data.description,
-    content_type: data.content_type || 'hymn',
-    image_url: data.image_url || '',
-    section: data.section || 'hero',
-    position: data.position || 0,
-    priority: data.priority || 50,
-    is_active: data.is_active ?? true,
-    views_count: 0,
-    clicks_count: 0,
-    start_date: data.start_date,
-    end_date: data.end_date,
-    cta_text: data.cta_text || 'Ver Mais',
-    created_at: new Date().toISOString()
-  };
-  mockFeaturedItems.push(newItem);
-  return { success: true, item: newItem };
+const sanitizePayload = (data: Partial<FeaturedItem>) => ({
+  title: data.title?.trim() || '',
+  subtitle: data.subtitle?.trim() || null,
+  description: data.description?.trim() || null,
+  content_type: data.content_type || 'custom',
+  image_url: data.image_url || '',
+  section: data.section || 'hero',
+  position: Number(data.position || 0),
+  priority: Number(data.priority || 0),
+  is_active: data.is_active ?? true,
+  start_date: data.start_date || null,
+  end_date: data.end_date || null,
+  cta_text: data.cta_text?.trim() || 'Ver Mais',
+});
+
+export const create = async (
+  data: Partial<FeaturedItem>
+): Promise<{ success: boolean; item?: FeaturedItem }> => {
+  const { data: created, error } = await supabase
+    .from('featured_items')
+    .insert({
+      ...sanitizePayload(data),
+      views_count: 0,
+      clicks_count: 0,
+    })
+    .select('*')
+    .single();
+
+  if (error) throw error;
+  return { success: true, item: mapFeaturedItem(created) };
 };
 
-export const update = async (id: string, data: Partial<FeaturedItem>): Promise<{ success: boolean }> => {
-  await new Promise(resolve => setTimeout(resolve, 500));
-  const index = mockFeaturedItems.findIndex(item => item.id === id);
-  if (index !== -1) {
-    mockFeaturedItems[index] = { ...mockFeaturedItems[index], ...data };
-    return { success: true };
-  }
-  return { success: false };
+export const update = async (
+  id: string,
+  data: Partial<FeaturedItem>
+): Promise<{ success: boolean }> => {
+  const { error } = await supabase
+    .from('featured_items')
+    .update(sanitizePayload(data))
+    .eq('id', id);
+
+  if (error) throw error;
+  return { success: true };
 };
 
 export const deleteItem = async (id: string): Promise<{ success: boolean }> => {
-  await new Promise(resolve => setTimeout(resolve, 300));
-  const index = mockFeaturedItems.findIndex(item => item.id === id);
-  if (index !== -1) {
-    mockFeaturedItems.splice(index, 1);
-    return { success: true };
-  }
-  return { success: false };
+  const { error } = await supabase
+    .from('featured_items')
+    .delete()
+    .eq('id', id);
+
+  if (error) throw error;
+  return { success: true };
 };
 
-export const deleteFeaturedItem = async (id: string): Promise<{ success: boolean }> => {
-  return deleteItem(id);
+export const deleteFeaturedItem = deleteItem;
+
+export const toggleFeaturedStatus = async (
+  id: string,
+  is_active: boolean
+): Promise<{ success: boolean }> => {
+  const { error } = await supabase
+    .from('featured_items')
+    .update({ is_active })
+    .eq('id', id);
+
+  if (error) throw error;
+  return { success: true };
 };
 
-export const toggleFeaturedStatus = async (id: string, is_active: boolean): Promise<{ success: boolean }> => {
-  await new Promise(resolve => setTimeout(resolve, 300));
-  const index = mockFeaturedItems.findIndex(item => item.id === id);
-  if (index !== -1) {
-    mockFeaturedItems[index].is_active = is_active;
-    return { success: true };
-  }
-  return { success: false };
-};
-
-export const getAll = async (...args: any[]): Promise<FeaturedItem[]> => {
-  return getFeaturedItems();
-};
-
-// Legacy exports for compatibility
-export const getSiteSettings = async (...args: any[]) => ({});
-export const updateSiteSettings = async (...args: any[]) => ({ success: true });
-export const getComments = async (...args: any[]) => [];
-export const deleteComment = async (...args: any[]) => ({ success: true });
-export const approveComment = async (...args: any[]) => ({ success: true });
-export const getClaims = async (...args: any[]) => [];
-export const getCopyrightClaims = async (...args: any[]) => [];
-export const updateClaim = async (...args: any[]) => ({ success: true });
-export const getRoyalties = async (...args: any[]) => [];
-export const processPayment = async (...args: any[]) => ({ success: true });
-export const getAllPlaylists = async (...args: any[]) => [];
-export const createPlaylist = async (...args: any[]) => ({ success: true });
-export const updatePlaylist = async (...args: any[]) => ({ success: true });
-export const deletePlaylist = async (...args: any[]) => ({ success: true });
-export type SiteSettings = any;
-export type Comment = any;
-export type Claim = any;
-export type CopyrightClaim = any;
-export type Royalty = any;
-export type Playlist = any;
+export const getAll = async () => getFeaturedItems();

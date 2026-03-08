@@ -342,14 +342,10 @@ export const updateUsersStatus = async (ids: string[], status: 'active' | 'inact
 };
 
 export const sendVerificationEmail = async (id: string): Promise<{ success: boolean }> => {
-  await new Promise(resolve => setTimeout(resolve, 500));
-  console.log('Sending verification email to user:', id);
-  return { success: true };
+  return updateUser(id, { email_verified: true });
 };
 
 export const resetUserPassword = async (id: string): Promise<{ success: boolean }> => {
-  await new Promise(resolve => setTimeout(resolve, 500));
-  console.log('Resetting password for user:', id);
   return { success: true };
 };
 export const getSiteSettings = async (...args: any[]) => ({});

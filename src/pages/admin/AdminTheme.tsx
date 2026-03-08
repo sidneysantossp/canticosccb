@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Palette, Type, Save, RotateCcw, Eye, Moon, Sun, AlertTriangle } from 'lucide-react';
+import { getSiteConfigMap, upsertSiteConfigEntries } from '@/lib/admin/adminTableUtils';
 
 interface ThemeColors {
   primary: string;
@@ -22,6 +23,7 @@ const AdminTheme: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+  const [success, setSuccess] = useState<string | null>(null);
 
   const defaultTheme: ThemeSettings = {
     colors: {
@@ -42,17 +44,30 @@ const AdminTheme: React.FC = () => {
   const [previewMode, setPreviewMode] = useState(false);
 
   useEffect(() => {
-    // Simulate loading theme settings from API
-    const timer = setTimeout(() => {
+    const loadTheme = async () => {
       try {
-        // In production, load from API: const settings = await getThemeSettings();
+        const config = await getSiteConfigMap(['admin_theme_settings']);
+        const rawTheme = config.admin_theme_settings;
+
+        if (rawTheme) {
+          const parsed = JSON.parse(rawTheme);
+          setTheme({
+            ...defaultTheme,
+            ...parsed,
+            colors: {
+              ...defaultTheme.colors,
+              ...(parsed?.colors || {}),
+            },
+          });
+        }
         setIsLoading(false);
       } catch (err: any) {
         setError(err?.message || 'Erro ao carregar configura\u00e7\u00f5es do tema');
         setIsLoading(false);
       }
-    }, 500);
-    return () => clearTimeout(timer);
+    };
+
+    void loadTheme();
   }, []);
 
   const handleColorChange = (key: keyof ThemeColors, value: string) => {
@@ -68,9 +83,15 @@ const AdminTheme: React.FC = () => {
   const handleSave = async () => {
     try {
       setIsSaving(true);
-      // Simular salvamento
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      setError(null);
+      await upsertSiteConfigEntries({
+        admin_theme_settings: JSON.stringify(theme),
+      });
+      setSuccess('Tema salvo com sucesso.');
+      window.setTimeout(() => setSuccess(null), 3000);
     } catch (error) {
+      console.error('Erro ao salvar tema:', error);
+      setError('Erro ao salvar configurações do tema.');
     } finally {
       setIsSaving(false);
     }
@@ -151,6 +172,12 @@ const AdminTheme: React.FC = () => {
           </button>
         </div>
       </div>
+
+      {success && (
+        <div className="p-4 bg-green-500/10 border border-green-500 rounded-lg text-green-400">
+          {success}
+        </div>
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Configurações */}

@@ -1,5 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { Menu, Plus, Edit, Trash2, GripVertical, Eye, EyeOff, X, Save, AlertTriangle } from 'lucide-react';
+import {
+  createMenuItem,
+  deleteMenuItem,
+  getMenuItems,
+  saveMenuOrder,
+  updateMenuItem,
+} from '@/lib/admin/menusAdminApi';
 
 interface MenuItem {
   id: string;
@@ -28,9 +35,29 @@ const AdminMenus: React.FC = () => {
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
 
   useEffect(() => {
-    // TODO: Integrar com tabela 'menus' do Supabase quando disponível
-    setMenuItems([]);
-    setIsLoading(false);
+    const loadMenuItems = async () => {
+      try {
+        setIsLoading(true);
+        setError(null);
+        const items = await getMenuItems();
+        setMenuItems(items.map((item) => ({
+          id: item.id,
+          label: item.label,
+          url: item.url,
+          icon: item.icon,
+          position: item.position,
+          isActive: item.isActive,
+          children: [],
+        })));
+      } catch (err: any) {
+        console.error('Erro ao carregar menus:', err);
+        setError(err?.message || 'Erro ao carregar menus');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    void loadMenuItems();
   }, []);
 
   const handleOpenModal = (item?: MenuItem) => {
@@ -60,44 +87,91 @@ const AdminMenus: React.FC = () => {
     setFormData({ label: '', url: '', icon: '', isActive: true });
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.label.trim() || !formData.url.trim()) return;
 
-    const itemData: MenuItem = {
-      id: editingItem?.id || Date.now().toString(),
-      label: formData.label,
-      url: formData.url,
-      icon: formData.icon,
-      position: editingItem?.position || menuItems.length + 1,
-      isActive: formData.isActive
-    };
+    try {
+      const payload = {
+        label: formData.label,
+        url: formData.url,
+        icon: formData.icon,
+        position: editingItem?.position || menuItems.length + 1,
+        isActive: formData.isActive,
+        parentId: null,
+      };
 
-    if (editingItem) {
-      setMenuItems(menuItems.map(item => item.id === editingItem.id ? itemData : item));
-    } else {
-      setMenuItems([...menuItems, itemData]);
+      if (editingItem) {
+        await updateMenuItem(editingItem.id, payload);
+        setMenuItems((current) =>
+          current.map((item) =>
+            item.id === editingItem.id
+              ? { ...item, label: payload.label, url: payload.url, icon: payload.icon, isActive: payload.isActive }
+              : item
+          )
+        );
+      } else {
+        const created = await createMenuItem(payload);
+        setMenuItems((current) => [
+          ...current,
+          {
+            id: created.id,
+            label: created.label,
+            url: created.url,
+            icon: created.icon,
+            position: created.position,
+            isActive: created.isActive,
+            children: [],
+          },
+        ]);
+      }
+
+      handleCloseModal();
+    } catch (err) {
+      console.error('Erro ao salvar item de menu:', err);
     }
-
-    handleCloseModal();
   };
 
-  const handleToggleActive = (id: string) => {
-    setMenuItems(menuItems.map(item =>
-      item.id === id ? { ...item, isActive: !item.isActive } : item
-    ));
+  const handleToggleActive = async (id: string) => {
     const item = menuItems.find(i => i.id === id);
+    if (!item) return;
+
+    try {
+      await updateMenuItem(id, { isActive: !item.isActive });
+      setMenuItems(menuItems.map(entry =>
+        entry.id === id ? { ...entry, isActive: !entry.isActive } : entry
+      ));
+    } catch (err) {
+      console.error('Erro ao alterar status do menu:', err);
+    }
   };
 
-  const handleDelete = (id: string, label: string) => {
+  const handleDelete = async (id: string, label: string) => {
     if (!window.confirm(`Deletar "${label}"?`)) return;
-    setMenuItems(menuItems.filter(item => item.id !== id));
+
+    try {
+      await deleteMenuItem(id);
+      setMenuItems(menuItems.filter(item => item.id !== id));
+    } catch (err) {
+      console.error('Erro ao excluir item de menu:', err);
+    }
   };
 
   const handleSaveOrder = async () => {
     try {
       setIsSaving(true);
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      const ordered = [...menuItems].sort((a, b) => a.position - b.position);
+      await saveMenuOrder(
+        ordered.map((item) => ({
+          id: item.id,
+          label: item.label,
+          url: item.url,
+          icon: item.icon,
+          position: item.position,
+          isActive: item.isActive,
+          parentId: null,
+        }))
+      );
     } finally {
       setIsSaving(false);
     }

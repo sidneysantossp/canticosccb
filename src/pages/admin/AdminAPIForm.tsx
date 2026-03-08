@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { ArrowLeft, Save, Key, Shield, Zap } from 'lucide-react';
+import { createApiKey } from '@/lib/admin/apiAdminApi';
 
 const API_SCOPES = [
   { value: 'read', label: 'Leitura', description: 'Acessar dados (GET)' },
@@ -59,14 +60,17 @@ const AdminAPIForm: React.FC = () => {
         rate_limit: formData.rate_limit === 'unlimited' ? null : parseInt(formData.rate_limit),
         ip_whitelist: formData.ip_whitelist.trim() || undefined,
         expires_at: formData.expires_at || undefined,
-        is_active: formData.is_active
+        is_active: formData.is_active,
+        environment: 'production' as const,
       };
 
-      // TODO: Implementar criação de API key quando backend estiver pronto
-      // const result = await createAPIKey(apiKeyData);
-      // Show API key to user only once
-
-      navigate('/admin/api');
+      const result = await createApiKey(apiKeyData);
+      navigate('/admin/api', {
+        state: {
+          createdKey: result.apiKey?.key,
+          createdKeyName: result.apiKey?.name,
+        },
+      });
     } catch (error: any) {
       console.error('Erro ao criar chave API:', error);
       setError(error?.message || 'Erro ao criar chave API');

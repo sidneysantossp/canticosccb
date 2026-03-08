@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { ArrowLeft, Save, Upload, Star, Calendar } from 'lucide-react';
+import { create, getById, update } from '@/lib/admin/featuredAdminApi';
+import { uploadBanner } from '@/lib/supabase-upload';
 
 interface FeaturedItem {
   id: string;
@@ -72,9 +74,27 @@ const AdminFeaturedForm: React.FC = () => {
   const loadFeatured = async (featuredId: string) => {
     try {
       setIsLoading(true);
-      // TODO: Implementar getFeaturedById quando backend estiver pronto
-      // const item = await getFeaturedById(featuredId);
-      // if (item) { setFormData(...); setImagePreview(item.image_url); }
+      const item = await getById(featuredId);
+      if (!item) {
+        setError('Destaque não encontrado.');
+        return;
+      }
+
+      setFormData({
+        title: item.title,
+        subtitle: item.subtitle || '',
+        description: item.description || '',
+        content_type: item.content_type,
+        image_url: item.image_url,
+        section: item.section,
+        position: item.position,
+        priority: item.priority,
+        cta_text: item.cta_text,
+        start_date: item.start_date || '',
+        end_date: item.end_date || '',
+        is_active: item.is_active,
+      });
+      setImagePreview(item.image_url);
     } catch (error: any) {
       console.error('Erro ao carregar destaque:', error);
       setError(error?.message || 'Erro ao carregar destaque');
@@ -125,8 +145,13 @@ const AdminFeaturedForm: React.FC = () => {
     try {
       let imageUrl = formData.image_url;
 
-      // TODO: Upload de imagem quando backend estiver pronto
-      // if (imageFile) { imageUrl = await uploadFeaturedImage(imageFile); }
+      if (imageFile) {
+        imageUrl = await uploadBanner(imageFile);
+      }
+
+      if (!imageUrl) {
+        throw new Error('Envie uma imagem ou informe a URL da arte.');
+      }
 
       const featuredData = {
         title: formData.title.trim(),
@@ -144,9 +169,9 @@ const AdminFeaturedForm: React.FC = () => {
       };
 
       if (isEditing && id) {
-        // await updateFeatured(id, featuredData);
+        await update(id, featuredData);
       } else {
-        // await createFeatured(featuredData);
+        await create(featuredData);
       }
 
       navigate('/admin/featured');

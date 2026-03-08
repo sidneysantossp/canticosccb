@@ -8,7 +8,6 @@ import {
   deleteUsers,
   updateUsersStatus,
   sendVerificationEmail,
-  resetUserPassword,
   User
 } from '@/lib/admin/usersAdminApi';
 
@@ -149,14 +148,13 @@ const AdminSettingsUsers: React.FC = () => {
     }
   };
 
-  const handleUserAction = async (userId: string, action: 'edit' | 'delete' | 'verify' | 'reset') => {
+  const handleUserAction = async (userId: string, action: 'edit' | 'delete' | 'verify') => {
     try {
       switch (action) {
         case 'verify':
           await sendVerificationEmail(userId);
-          break;
-        case 'reset':
-          await resetUserPassword(userId);
+          loadUsers();
+          loadStats();
           break;
         case 'delete':
           if (confirm('Deletar este usuário?')) {
@@ -391,11 +389,11 @@ const AdminSettingsUsers: React.FC = () => {
                     <div className="flex items-center gap-3">
                       <div className="w-10 h-10 bg-gray-700 rounded-full flex items-center justify-center">
                         <span className="text-white font-medium">
-                          {user.name.charAt(0).toUpperCase()}
+                          {(user.name || user.email || '?').charAt(0).toUpperCase()}
                         </span>
                       </div>
                       <div>
-                        <p className="text-white font-medium">{user.name}</p>
+                        <p className="text-white font-medium">{user.name || 'Usuário sem nome'}</p>
                         <p className="text-gray-400 text-sm">{user.email}</p>
                       </div>
                     </div>
@@ -437,18 +435,11 @@ const AdminSettingsUsers: React.FC = () => {
                         <button 
                           onClick={() => handleUserAction(user.id, 'verify')}
                           className="p-2 hover:bg-gray-700 rounded-lg transition-colors"
-                          title="Reenviar verificação"
+                          title="Marcar como verificado"
                         >
                           <Mail className="w-4 h-4 text-yellow-400" />
                         </button>
                       )}
-                      <button 
-                        onClick={() => handleUserAction(user.id, 'reset')}
-                        className="p-2 hover:bg-gray-700 rounded-lg transition-colors"
-                        title="Resetar senha"
-                      >
-                        <Shield className="w-4 h-4 text-blue-400" />
-                      </button>
                       <button 
                         onClick={() => handleUserAction(user.id, 'delete')}
                         className="p-2 hover:bg-gray-700 rounded-lg transition-colors"

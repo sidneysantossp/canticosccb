@@ -1,4 +1,5 @@
-// Mock implementation - Replace with real Supabase queries when backend is ready
+import { supabase } from '@/lib/supabase-auth';
+import { slugifyAdminText } from '@/lib/admin/adminTableUtils';
 
 export interface EmailSettings {
   id?: string;
@@ -25,6 +26,7 @@ export interface EmailTemplate {
   category: string;
   is_active: boolean;
   created_at: string;
+  updated_at?: string;
 }
 
 export interface EmailLog {
@@ -36,262 +38,257 @@ export interface EmailLog {
   error_message?: string;
   sent_at?: string;
   created_at: string;
+  metadata?: Record<string, unknown>;
 }
 
 export interface EmailStats {
   totalSent: number;
   totalFailed: number;
+  totalPending: number;
   activeTemplates: number;
   todayCount: number;
 }
 
-// Mock database
-let mockEmailSettings: EmailSettings = {
-  id: '1',
-  smtp_host: 'smtp.gmail.com',
+const defaultEmailSettings: EmailSettings = {
+  smtp_host: '',
   smtp_port: 587,
-  smtp_username: 'noreply@canticosccb.com.br',
-  smtp_password: '********',
+  smtp_username: '',
+  smtp_password: '',
   smtp_encryption: 'tls',
-  from_email: 'noreply@canticosccb.com.br',
+  from_email: '',
   from_name: 'Cânticos CCB',
-  reply_to_email: 'contato@canticosccb.com.br',
-  is_active: true,
-  daily_limit: 1000
+  reply_to_email: '',
+  is_active: false,
+  daily_limit: 1000,
 };
 
-let mockEmailTemplates: EmailTemplate[] = [
-  {
-    id: '1',
-    name: 'Boas-vindas',
-    slug: 'welcome',
-    subject: 'Bem-vindo ao Cânticos CCB!',
-    body_html: '<h1>Olá, {{name}}!</h1><p>Obrigado por se cadastrar.</p>',
-    body_text: 'Olá, {{name}}! Obrigado por se cadastrar.',
-    variables: ['name'],
-    category: 'onboarding',
-    is_active: true,
-    created_at: new Date(Date.now() - 365 * 24 * 60 * 60 * 1000).toISOString()
-  },
-  {
-    id: '2',
-    name: 'Recuperação de senha',
-    slug: 'password-reset',
-    subject: 'Recupere sua senha',
-    body_html: '<h1>Olá!</h1><p>Clique no link para redefinir sua senha: {{reset_link}}</p>',
-    body_text: 'Olá! Clique no link para redefinir sua senha: {{reset_link}}',
-    variables: ['reset_link'],
-    category: 'security',
-    is_active: true,
-    created_at: new Date(Date.now() - 300 * 24 * 60 * 60 * 1000).toISOString()
-  },
-  {
-    id: '3',
-    name: 'Confirmação de email',
-    slug: 'email-confirmation',
-    subject: 'Confirme seu email',
-    body_html: '<h1>Olá, {{name}}!</h1><p>Confirme seu email clicando aqui: {{confirmation_link}}</p>',
-    body_text: 'Olá, {{name}}! Confirme seu email clicando aqui: {{confirmation_link}}',
-    variables: ['name', 'confirmation_link'],
-    category: 'security',
-    is_active: true,
-    created_at: new Date(Date.now() - 200 * 24 * 60 * 60 * 1000).toISOString()
-  },
-  {
-    id: '4',
-    name: 'Newsletter semanal',
-    slug: 'weekly-newsletter',
-    subject: 'Novidades da semana',
-    body_html: '<h1>Novidades desta semana</h1><p>{{content}}</p>',
-    body_text: 'Novidades desta semana: {{content}}',
-    variables: ['content'],
-    category: 'marketing',
-    is_active: false,
-    created_at: new Date(Date.now() - 60 * 24 * 60 * 60 * 1000).toISOString()
-  }
-];
+const mapEmailSettings = (row: any): EmailSettings => ({
+  id: row?.id ? String(row.id) : undefined,
+  smtp_host: row?.smtp_host || '',
+  smtp_port: Number(row?.smtp_port || 587),
+  smtp_username: row?.smtp_username || '',
+  smtp_password: row?.smtp_password || '',
+  smtp_encryption: row?.smtp_encryption || 'tls',
+  from_email: row?.from_email || '',
+  from_name: row?.from_name || 'Cânticos CCB',
+  reply_to_email: row?.reply_to_email || '',
+  is_active: Boolean(row?.is_active),
+  daily_limit: Number(row?.daily_limit || 1000),
+});
 
-let mockEmailLogs: EmailLog[] = [
-  {
-    id: '1',
-    recipient_email: 'joao.silva@example.com',
-    recipient_name: 'João Silva',
-    subject: 'Bem-vindo ao Cânticos CCB!',
-    status: 'sent',
-    sent_at: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
-    created_at: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString()
-  },
-  {
-    id: '2',
-    recipient_email: 'maria.santos@example.com',
-    recipient_name: 'Maria Santos',
-    subject: 'Confirme seu email',
-    status: 'sent',
-    sent_at: new Date(Date.now() - 5 * 60 * 60 * 1000).toISOString(),
-    created_at: new Date(Date.now() - 5 * 60 * 60 * 1000).toISOString()
-  },
-  {
-    id: '3',
-    recipient_email: 'pedro.oliveira@example.com',
-    recipient_name: 'Pedro Oliveira',
-    subject: 'Recupere sua senha',
-    status: 'failed',
-    error_message: 'Endereço de email inválido',
-    created_at: new Date(Date.now() - 10 * 60 * 60 * 1000).toISOString()
-  },
-  {
-    id: '4',
-    recipient_email: 'ana.costa@example.com',
-    recipient_name: 'Ana Costa',
-    subject: 'Bem-vindo ao Cânticos CCB!',
-    status: 'sent',
-    sent_at: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(),
-    created_at: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()
-  },
-  {
-    id: '5',
-    recipient_email: 'carlos.ferreira@example.com',
-    recipient_name: 'Carlos Ferreira',
-    subject: 'Newsletter semanal',
-    status: 'bounced',
-    error_message: 'Caixa de entrada cheia',
-    created_at: new Date(Date.now() - 48 * 60 * 60 * 1000).toISOString()
-  }
-];
+const mapTemplate = (row: any): EmailTemplate => ({
+  id: String(row.id),
+  name: row.name || '',
+  slug: row.slug || slugifyAdminText(row.name || `template-${row.id}`),
+  subject: row.subject || '',
+  body_html: row.body_html || '',
+  body_text: row.body_text || undefined,
+  variables: Array.isArray(row.variables) ? row.variables : [],
+  category: row.category || 'general',
+  is_active: row.is_active !== false,
+  created_at: row.created_at || new Date().toISOString(),
+  updated_at: row.updated_at || undefined,
+});
+
+const mapLog = (row: any): EmailLog => ({
+  id: String(row.id),
+  recipient_email: row.recipient_email || '',
+  recipient_name: row.recipient_name || undefined,
+  subject: row.subject || '',
+  status: row.status || 'pending',
+  error_message: row.error_message || undefined,
+  sent_at: row.sent_at || undefined,
+  created_at: row.created_at || new Date().toISOString(),
+  metadata: row.metadata || undefined,
+});
 
 export const getEmailSettings = async (): Promise<EmailSettings> => {
-  await new Promise(resolve => setTimeout(resolve, 500));
-  return { ...mockEmailSettings };
+  const { data, error } = await supabase
+    .from('email_settings')
+    .select('*')
+    .order('updated_at', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (error && error.code !== 'PGRST116') {
+    throw error;
+  }
+
+  return data ? mapEmailSettings(data) : { ...defaultEmailSettings };
 };
 
 export const updateEmailSettings = async (data: Partial<EmailSettings>): Promise<{ success: boolean }> => {
-  await new Promise(resolve => setTimeout(resolve, 500));
-  mockEmailSettings = { ...mockEmailSettings, ...data };
+  const current = await getEmailSettings();
+  const payload = {
+    ...current,
+    ...data,
+    smtp_port: Number(data.smtp_port ?? current.smtp_port),
+    daily_limit: Number(data.daily_limit ?? current.daily_limit),
+    reply_to_email: data.reply_to_email ?? current.reply_to_email ?? null,
+  };
+
+  if (current.id) {
+    const { error } = await supabase
+      .from('email_settings')
+      .update(payload)
+      .eq('id', current.id);
+
+    if (error) throw error;
+    return { success: true };
+  }
+
+  const { error } = await supabase
+    .from('email_settings')
+    .insert(payload);
+
+  if (error) throw error;
   return { success: true };
 };
 
 export const getEmailTemplates = async (): Promise<EmailTemplate[]> => {
-  await new Promise(resolve => setTimeout(resolve, 500));
-  return [...mockEmailTemplates];
+  const { data, error } = await supabase
+    .from('email_templates')
+    .select('*')
+    .order('updated_at', { ascending: false });
+
+  if (error) throw error;
+  return (data || []).map(mapTemplate);
 };
 
-export const getEmailLogs = async (): Promise<EmailLog[]> => {
-  await new Promise(resolve => setTimeout(resolve, 500));
-  return [...mockEmailLogs];
+export const getEmailLogs = async (limit = 100): Promise<EmailLog[]> => {
+  const { data, error } = await supabase
+    .from('email_logs')
+    .select('*')
+    .order('created_at', { ascending: false })
+    .limit(limit);
+
+  if (error) throw error;
+  return (data || []).map(mapLog);
 };
 
 export const getEmailStats = async (): Promise<EmailStats> => {
-  await new Promise(resolve => setTimeout(resolve, 300));
-  const sent = mockEmailLogs.filter(log => log.status === 'sent').length;
-  const failed = mockEmailLogs.filter(log => log.status === 'failed' || log.status === 'bounced').length;
-  const activeTemplates = mockEmailTemplates.filter(t => t.is_active).length;
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const todayCount = mockEmailLogs.filter(log => 
-    new Date(log.created_at).getTime() >= today.getTime()
-  ).length;
+  const [logs, templates] = await Promise.all([getEmailLogs(500), getEmailTemplates()]);
+  const todayStart = new Date();
+  todayStart.setHours(0, 0, 0, 0);
 
   return {
-    totalSent: sent,
-    totalFailed: failed,
-    activeTemplates,
-    todayCount
+    totalSent: logs.filter((log) => log.status === 'sent').length,
+    totalFailed: logs.filter((log) => ['failed', 'bounced'].includes(log.status)).length,
+    totalPending: logs.filter((log) => log.status === 'pending').length,
+    activeTemplates: templates.filter((template) => template.is_active).length,
+    todayCount: logs.filter((log) => new Date(log.created_at).getTime() >= todayStart.getTime()).length,
   };
 };
 
-export const sendTestEmail = async (recipient: string, settings: EmailSettings): Promise<{ success: boolean }> => {
-  await new Promise(resolve => setTimeout(resolve, 1000));
-  const newLog: EmailLog = {
-    id: String(Date.now()),
-    recipient_email: recipient,
-    subject: 'Email de Teste - Cânticos CCB',
-    status: 'sent',
-    sent_at: new Date().toISOString(),
-    created_at: new Date().toISOString()
-  };
-  mockEmailLogs.unshift(newLog);
+export const sendTestEmail = async (
+  recipient: string,
+  settings: EmailSettings
+): Promise<{ success: boolean }> => {
+  await updateEmailSettings(settings);
+
+  const { error } = await supabase
+    .from('email_logs')
+    .insert({
+      recipient_email: recipient,
+      recipient_name: 'Teste Admin',
+      subject: 'Email de teste - Cânticos CCB',
+      status: 'pending',
+      metadata: {
+        requested_via_admin: true,
+        smtp_host: settings.smtp_host,
+      },
+      created_at: new Date().toISOString(),
+    });
+
+  if (error) throw error;
   return { success: true };
 };
 
-export const createEmailTemplate = async (data: Partial<EmailTemplate>): Promise<{ success: boolean; template?: EmailTemplate }> => {
-  await new Promise(resolve => setTimeout(resolve, 500));
-  const newTemplate: EmailTemplate = {
-    id: String(Date.now()),
-    name: data.name || '',
-    slug: data.slug || '',
-    subject: data.subject || '',
+export const createEmailTemplate = async (
+  data: Partial<EmailTemplate>
+): Promise<{ success: boolean; template?: EmailTemplate }> => {
+  const payload = {
+    name: data.name?.trim() || 'Novo template',
+    slug: data.slug?.trim() || slugifyAdminText(data.name || 'novo-template'),
+    subject: data.subject?.trim() || '',
     body_html: data.body_html || '',
-    body_text: data.body_text,
+    body_text: data.body_text || null,
     variables: data.variables || [],
     category: data.category || 'general',
     is_active: data.is_active ?? true,
-    created_at: new Date().toISOString()
   };
-  mockEmailTemplates.push(newTemplate);
-  return { success: true, template: newTemplate };
+
+  const { data: created, error } = await supabase
+    .from('email_templates')
+    .insert(payload)
+    .select('*')
+    .single();
+
+  if (error) throw error;
+  return { success: true, template: mapTemplate(created) };
 };
 
-export const updateEmailTemplate = async (id: string, data: Partial<EmailTemplate>): Promise<{ success: boolean }> => {
-  await new Promise(resolve => setTimeout(resolve, 500));
-  const index = mockEmailTemplates.findIndex(t => t.id === id);
-  if (index !== -1) {
-    mockEmailTemplates[index] = { ...mockEmailTemplates[index], ...data };
-    return { success: true };
-  }
-  return { success: false };
+export const updateEmailTemplate = async (
+  id: string,
+  data: Partial<EmailTemplate>
+): Promise<{ success: boolean }> => {
+  const payload: Record<string, unknown> = {};
+  if (data.name !== undefined) payload.name = data.name.trim();
+  if (data.slug !== undefined) payload.slug = data.slug.trim();
+  if (data.subject !== undefined) payload.subject = data.subject;
+  if (data.body_html !== undefined) payload.body_html = data.body_html;
+  if (data.body_text !== undefined) payload.body_text = data.body_text;
+  if (data.variables !== undefined) payload.variables = data.variables;
+  if (data.category !== undefined) payload.category = data.category;
+  if (data.is_active !== undefined) payload.is_active = data.is_active;
+  payload.updated_at = new Date().toISOString();
+
+  const { error } = await supabase
+    .from('email_templates')
+    .update(payload)
+    .eq('id', id);
+
+  if (error) throw error;
+  return { success: true };
 };
 
 export const deleteEmailTemplate = async (id: string): Promise<{ success: boolean }> => {
-  await new Promise(resolve => setTimeout(resolve, 300));
-  const index = mockEmailTemplates.findIndex(t => t.id === id);
-  if (index !== -1) {
-    mockEmailTemplates.splice(index, 1);
-    return { success: true };
-  }
-  return { success: false };
-};
+  const { error } = await supabase
+    .from('email_templates')
+    .delete()
+    .eq('id', id);
 
-export const sendTemplateEmail = async (templateId: string, recipient: string, variables: Record<string, string>): Promise<{ success: boolean }> => {
-  await new Promise(resolve => setTimeout(resolve, 1000));
-  const template = mockEmailTemplates.find(t => t.id === templateId);
-  if (!template) return { success: false };
-  
-  const newLog: EmailLog = {
-    id: String(Date.now()),
-    recipient_email: recipient,
-    subject: template.subject,
-    status: 'sent',
-    sent_at: new Date().toISOString(),
-    created_at: new Date().toISOString()
-  };
-  mockEmailLogs.unshift(newLog);
+  if (error) throw error;
   return { success: true };
 };
 
-export const sendBulkEmail = async (templateId: string, recipients: string[], variables: Record<string, string>): Promise<{ success: boolean }> => {
-  await new Promise(resolve => setTimeout(resolve, 2000));
-  console.log('Sending bulk email to', recipients.length, 'recipients');
+export const sendTemplateEmail = async (
+  templateId: string,
+  recipient: string,
+  variables: Record<string, string>
+): Promise<{ success: boolean }> => {
+  const { data: template, error: templateError } = await supabase
+    .from('email_templates')
+    .select('*')
+    .eq('id', templateId)
+    .single();
+
+  if (templateError) throw templateError;
+
+  const { error } = await supabase
+    .from('email_logs')
+    .insert({
+      template_id: templateId,
+      recipient_email: recipient,
+      subject: template.subject || 'Template de email',
+      status: 'pending',
+      metadata: {
+        variables,
+        requested_via_admin: true,
+      },
+      created_at: new Date().toISOString(),
+    });
+
+  if (error) throw error;
   return { success: true };
 };
-
-// Legacy exports for compatibility
-export const getSiteSettings = async (...args: any[]) => ({});
-export const updateSiteSettings = async (...args: any[]) => ({ success: true });
-export const getComments = async (...args: any[]) => [];
-export const deleteComment = async (...args: any[]) => ({ success: true });
-export const approveComment = async (...args: any[]) => ({ success: true });
-export const getClaims = async (...args: any[]) => [];
-export const getCopyrightClaims = async (...args: any[]) => [];
-export const updateClaim = async (...args: any[]) => ({ success: true });
-export const getRoyalties = async (...args: any[]) => [];
-export const processPayment = async (...args: any[]) => ({ success: true });
-export const getAllPlaylists = async (...args: any[]) => [];
-export const createPlaylist = async (...args: any[]) => ({ success: true });
-export const updatePlaylist = async (...args: any[]) => ({ success: true });
-export const deletePlaylist = async (...args: any[]) => ({ success: true });
-export type SiteSettings = any;
-export type Comment = any;
-export type Claim = any;
-export type CopyrightClaim = any;
-export type Royalty = any;
-export type Playlist = any;

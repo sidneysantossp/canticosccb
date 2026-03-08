@@ -1,6 +1,18 @@
 import React, { useState, useEffect } from 'react';
 import { Mail, Send, Settings, FileText, Clock, CheckCircle, XCircle, Plus, Edit, Trash2, AlertTriangle } from 'lucide-react';
-import { getEmailSettings, updateEmailSettings, getEmailTemplates, getEmailLogs, getEmailStats, sendTestEmail, type EmailSettings as EmailSettingsDB, type EmailTemplate as EmailTemplateDB, type EmailLog as EmailLogDB } from '@/lib/admin/emailAdminApi';
+import {
+  getEmailSettings,
+  updateEmailSettings,
+  getEmailTemplates,
+  getEmailLogs,
+  getEmailStats,
+  sendTestEmail,
+  updateEmailTemplate,
+  deleteEmailTemplate,
+  type EmailSettings as EmailSettingsDB,
+  type EmailTemplate as EmailTemplateDB,
+  type EmailLog as EmailLogDB,
+} from '@/lib/admin/emailAdminApi';
 
 interface EmailSettings {
   id?: string;
@@ -106,7 +118,7 @@ const AdminSettingsEmail: React.FC = () => {
       setStats({
         totalSent: statsDb.totalSent,
         totalFailed: statsDb.totalFailed,
-        totalPending: statsDb.totalPending,
+        totalPending: statsDb.totalPending ?? statsDb.todayCount ?? 0,
         activeTemplates: statsDb.activeTemplates
       });
 
@@ -189,16 +201,37 @@ const AdminSettingsEmail: React.FC = () => {
 
   const handleTemplateAction = async (templateId: string, action: 'edit' | 'delete' | 'toggle') => {
     try {
+      const template = templates.find((item) => item.id === templateId);
+      if (!template) return;
+
       switch (action) {
-        case 'edit':
+        case 'edit': {
+          const nextName = window.prompt('Nome do template', template.name);
+          if (nextName == null) return;
+          const nextSubject = window.prompt('Assunto do email', template.subject);
+          if (nextSubject == null) return;
+          await updateEmailTemplate(templateId, {
+            name: nextName,
+            slug: template.slug,
+            subject: nextSubject,
+            body_html: template.body_html,
+            body_text: template.body_text,
+            variables: template.variables,
+            category: template.category,
+            is_active: template.is_active,
+          });
+          await loadData();
           break;
+        }
         case 'delete':
           if (confirm('Deletar este template?')) {
-            loadData();
+            await deleteEmailTemplate(templateId);
+            await loadData();
           }
           break;
         case 'toggle':
-          loadData();
+          await updateEmailTemplate(templateId, { is_active: !template.is_active });
+          await loadData();
           break;
       }
     } catch (error) {

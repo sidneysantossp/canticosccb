@@ -1,5 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { Shield, Lock, AlertTriangle, Eye, Ban, RefreshCw, CheckCircle, XCircle, Save } from 'lucide-react';
+import {
+  getBlockedIps,
+  getSecurityLogs,
+  getSecurityStats,
+  getSettings,
+  unblockIp,
+  updateSettings,
+} from '@/lib/admin/securitySettingsApi';
 
 interface SecuritySettings {
   password_min_length: number;
@@ -86,17 +94,17 @@ const AdminSettingsSecurity: React.FC = () => {
     try {
       setIsLoading(true);
       setError(null);
-      
-      // TODO: Integrar com tabela de segurança do Supabase quando disponível
-      setBlockedIPs([]);
-      setSecurityLogs([]);
-      
-      setStats({
-        totalAttempts: 0,
-        failedAttempts: 0,
-        blockedIPs: 0,
-        criticalAlerts: 0
-      });
+      const [settingsData, blockedData, logsData, statsData] = await Promise.all([
+        getSettings(),
+        getBlockedIps(),
+        getSecurityLogs(100),
+        getSecurityStats(),
+      ]);
+
+      setSettings(settingsData);
+      setBlockedIPs(blockedData as BlockedIP[]);
+      setSecurityLogs(logsData as SecurityLog[]);
+      setStats(statsData);
 
     } catch (err: any) {
       console.error('Error loading security data:', err);
@@ -109,7 +117,7 @@ const AdminSettingsSecurity: React.FC = () => {
   const handleSaveSettings = async () => {
     try {
       setIsSaving(true);
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      await updateSettings(settings as any);
     } catch (error) {
       console.error('Error saving security settings:', error);
     } finally {
@@ -120,8 +128,8 @@ const AdminSettingsSecurity: React.FC = () => {
   const handleUnblockIP = async (ipId: string) => {
     try {
       if (!confirm('Desbloquear este IP?')) return;
-      await new Promise(resolve => setTimeout(resolve, 500));
-      loadData();
+      await unblockIp(ipId);
+      await loadData();
     } catch (error) {
       console.error('Error unblocking IP:', error);
     }

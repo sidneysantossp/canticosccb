@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { ArrowLeft, Download, FileText, Database } from 'lucide-react';
+import { createExport } from '@/lib/admin/exportAdminApi';
 
 const EXPORT_TYPES = [
   { value: 'hymns', label: 'Hinos', icon: '🎵', description: 'Exportar todos os hinos' },
@@ -8,27 +9,30 @@ const EXPORT_TYPES = [
   { value: 'playlists', label: 'Playlists', icon: '📋', description: 'Exportar playlists criadas' },
   { value: 'composers', label: 'Compositores', icon: '👤', description: 'Exportar compositores' },
   { value: 'users', label: 'Usuários', icon: '👥', description: 'Exportar base de usuários' },
-  { value: 'complete', label: 'Backup Completo', icon: '💾', description: 'Exportar todos os dados' }
+  { value: 'reports', label: 'Relatórios', icon: '🚩', description: 'Exportar denúncias e moderação' },
+  { value: 'analytics', label: 'Analytics', icon: '📈', description: 'Exportar snapshot analítico' },
+  { value: 'complete', label: 'Backup Completo', icon: '💾', description: 'Exportar todos os dados suportados' },
 ];
 
 const EXPORT_FORMATS = [
   { value: 'csv', label: 'CSV', description: 'Arquivo separado por vírgulas' },
-  { value: 'xlsx', label: 'Excel', description: 'Planilha Excel (.xlsx)' },
   { value: 'json', label: 'JSON', description: 'JavaScript Object Notation' },
-  { value: 'sql', label: 'SQL', description: 'Script SQL com INSERT' }
+  { value: 'xml', label: 'XML', description: 'Estrutura XML compatível com integrações' },
+  { value: 'sql', label: 'SQL', description: 'Script SQL com INSERT' },
 ];
 
 const AdminExportForm: React.FC = () => {
   const navigate = useNavigate();
-
   const [formData, setFormData] = useState({
+    name: '',
+    description: '',
     export_type: 'hymns',
     format: 'csv',
+    include_headers: true,
     include_relations: true,
     include_media_links: true,
-    compress_file: false
+    compress_file: false,
   });
-
   const [isExporting, setIsExporting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -38,28 +42,37 @@ const AdminExportForm: React.FC = () => {
     setError(null);
 
     try {
-      // TODO: Implementar exportação quando backend estiver pronto
-      // const result = await createExport(formData);
-      // window.location.href = result.download_url;
+      const selectedType = EXPORT_TYPES.find((type) => type.value === formData.export_type);
+      const exportName =
+        formData.name.trim() ||
+        `${selectedType?.label || 'Exportacao'} ${new Date().toLocaleDateString('pt-BR')}`;
 
-      setTimeout(() => {
-        navigate('/admin/export');
-      }, 2000);
-    } catch (error: any) {
-      console.error('Erro ao exportar:', error);
-      setError(error?.message || 'Erro ao gerar exportação');
+      await createExport({
+        name: exportName,
+        description: formData.description.trim() || undefined,
+        export_type: formData.export_type,
+        format: formData.format,
+        include_headers: formData.include_headers,
+        include_relations: formData.include_relations,
+        include_media_links: formData.include_media_links,
+        compress: formData.compress_file,
+      });
+
+      navigate('/admin/export');
+    } catch (err: any) {
+      console.error('Erro ao exportar:', err);
+      setError(err?.message || 'Erro ao gerar exportação');
     } finally {
       setIsExporting(false);
     }
   };
 
-  const selectedType = EXPORT_TYPES.find(t => t.value === formData.export_type);
-  const selectedFormat = EXPORT_FORMATS.find(f => f.value === formData.format);
+  const selectedType = EXPORT_TYPES.find((type) => type.value === formData.export_type);
+  const selectedFormat = EXPORT_FORMATS.find((format) => format.value === formData.format);
 
   return (
     <div className="min-h-screen bg-gray-950 p-6">
       <div className="max-w-4xl mx-auto">
-        {/* Header */}
         <div className="flex items-center gap-4 mb-6">
           <Link
             to="/admin/export"
@@ -69,7 +82,7 @@ const AdminExportForm: React.FC = () => {
           </Link>
           <div>
             <h1 className="text-3xl font-bold text-white">Nova Exportação</h1>
-            <p className="text-gray-400 mt-1">Exporte dados em diversos formatos</p>
+            <p className="text-gray-400 mt-1">Configure uma exportação real dos dados do sistema</p>
           </div>
         </div>
 
@@ -80,13 +93,44 @@ const AdminExportForm: React.FC = () => {
         )}
 
         <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Tipo de Exportação */}
+          <div className="bg-gray-900/50 border border-gray-800 rounded-xl p-6">
+            <h2 className="text-xl font-bold text-white mb-4">Identificação</h2>
+
+            <div className="space-y-4">
+              <div>
+                <label className="block text-gray-400 text-sm font-semibold mb-2">
+                  Nome da exportação
+                </label>
+                <input
+                  type="text"
+                  value={formData.name}
+                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-green-600"
+                  placeholder="Ex: Hinos publicados de março"
+                />
+              </div>
+
+              <div>
+                <label className="block text-gray-400 text-sm font-semibold mb-2">
+                  Descrição
+                </label>
+                <textarea
+                  value={formData.description}
+                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                  rows={2}
+                  className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-3 text-white resize-none focus:outline-none focus:border-green-600"
+                  placeholder="Contexto opcional para identificar esta exportação"
+                />
+              </div>
+            </div>
+          </div>
+
           <div className="bg-gray-900/50 border border-gray-800 rounded-xl p-6">
             <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
               <Database className="w-5 h-5" />
               Tipo de Exportação
             </h2>
-            
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               {EXPORT_TYPES.map((type) => (
                 <label
@@ -117,13 +161,12 @@ const AdminExportForm: React.FC = () => {
             </div>
           </div>
 
-          {/* Formato de Exportação */}
           <div className="bg-gray-900/50 border border-gray-800 rounded-xl p-6">
             <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
               <FileText className="w-5 h-5" />
               Formato do Arquivo
             </h2>
-            
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               {EXPORT_FORMATS.map((format) => (
                 <label
@@ -151,15 +194,27 @@ const AdminExportForm: React.FC = () => {
             </div>
           </div>
 
-          {/* Opções de Exportação */}
           <div className="bg-gray-900/50 border border-gray-800 rounded-xl p-6">
             <h2 className="text-xl font-bold text-white mb-4">Opções</h2>
-            
+
             <div className="space-y-3">
               <label className="flex items-center justify-between p-4 bg-gray-800/50 rounded-lg cursor-pointer hover:bg-gray-800 transition-colors">
                 <div>
+                  <p className="text-white font-medium">Incluir cabeçalhos</p>
+                  <p className="text-gray-400 text-sm">Adicionar primeira linha com nomes das colunas</p>
+                </div>
+                <input
+                  type="checkbox"
+                  checked={formData.include_headers}
+                  onChange={(e) => setFormData({ ...formData, include_headers: e.target.checked })}
+                  className="w-5 h-5 rounded"
+                />
+              </label>
+
+              <label className="flex items-center justify-between p-4 bg-gray-800/50 rounded-lg cursor-pointer hover:bg-gray-800 transition-colors">
+                <div>
                   <p className="text-white font-medium">Incluir relações</p>
-                  <p className="text-gray-400 text-sm">Incluir dados relacionados (ex: álbuns de hinos)</p>
+                  <p className="text-gray-400 text-sm">Adicionar dados relacionados quando suportados</p>
                 </div>
                 <input
                   type="checkbox"
@@ -172,7 +227,7 @@ const AdminExportForm: React.FC = () => {
               <label className="flex items-center justify-between p-4 bg-gray-800/50 rounded-lg cursor-pointer hover:bg-gray-800 transition-colors">
                 <div>
                   <p className="text-white font-medium">Incluir links de mídia</p>
-                  <p className="text-gray-400 text-sm">Incluir URLs de áudios, imagens e vídeos</p>
+                  <p className="text-gray-400 text-sm">Adicionar URLs de áudios, imagens e vídeos</p>
                 </div>
                 <input
                   type="checkbox"
@@ -184,8 +239,8 @@ const AdminExportForm: React.FC = () => {
 
               <label className="flex items-center justify-between p-4 bg-gray-800/50 rounded-lg cursor-pointer hover:bg-gray-800 transition-colors">
                 <div>
-                  <p className="text-white font-medium">Comprimir arquivo</p>
-                  <p className="text-gray-400 text-sm">Gerar arquivo .zip comprimido</p>
+                  <p className="text-white font-medium">Marcar como compactada</p>
+                  <p className="text-gray-400 text-sm">Registra a intenção de compressão no pedido de exportação</p>
                 </div>
                 <input
                   type="checkbox"
@@ -197,15 +252,16 @@ const AdminExportForm: React.FC = () => {
             </div>
           </div>
 
-          {/* Preview */}
           <div className="bg-blue-500/10 border border-blue-500/20 rounded-xl p-4">
             <p className="text-blue-400 text-sm">
-              <strong>📦 Arquivo:</strong> {selectedType?.label || ''} - {selectedFormat?.label || ''}
-              {formData.compress_file && ' (comprimido)'}
+              <strong>Arquivo:</strong> {selectedType?.label || ''} - {selectedFormat?.label || ''}
+              {formData.compress_file ? ' (compactada)' : ''}
+            </p>
+            <p className="text-blue-300/80 text-sm mt-2">
+              A exportação será criada no backend do admin e aparecerá em seguida na listagem principal.
             </p>
           </div>
 
-          {/* Botões de Ação */}
           <div className="flex gap-3 sticky bottom-6 bg-gray-950/95 backdrop-blur-sm p-4 rounded-lg border border-gray-800">
             <Link
               to="/admin/export"

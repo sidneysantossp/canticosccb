@@ -79,16 +79,7 @@ const AdminLogs: React.FC = () => {
     }
   };
 
-  const filteredLogs = logs.filter(log => {
-    const matchesSearch = log.message.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         log.category.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         (log.user_name && log.user_name.toLowerCase().includes(searchQuery.toLowerCase()));
-    
-    const matchesLevel = selectedLevel === 'all' || log.level === selectedLevel;
-    const matchesCategory = selectedCategory === 'all' || log.category === selectedCategory;
-    
-    return matchesSearch && matchesLevel && matchesCategory;
-  });
+  const displayedLogs = logs;
 
   const getLogIcon = (level: string) => {
     switch (level) {
@@ -159,7 +150,7 @@ const AdminLogs: React.FC = () => {
     }
 
     try {
-      const deletedCount = await deleteOldLogs(90);
+      await deleteOldLogs(90);
       loadLogs();
     } catch (error) {
       console.error('Error deleting old logs:', error);
@@ -329,10 +320,10 @@ const AdminLogs: React.FC = () => {
                 <th className="text-left py-3 px-4 text-gray-300 font-medium w-12">
                   <input
                     type="checkbox"
-                    checked={selectedLogs.length === logs.length && logs.length > 0}
+                    checked={selectedLogs.length === displayedLogs.length && displayedLogs.length > 0}
                     onChange={(e) => {
                       if (e.target.checked) {
-                        setSelectedLogs(logs.map(log => log.id));
+                        setSelectedLogs(displayedLogs.map(log => log.id));
                       } else {
                         setSelectedLogs([]);
                       }
@@ -350,7 +341,7 @@ const AdminLogs: React.FC = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-800">
-              {logs.map((log) => (
+              {displayedLogs.map((log) => (
                 <tr key={log.id} className="hover:bg-gray-800/30 transition-colors">
                   <td className="py-3 px-4">
                     <input
@@ -420,7 +411,7 @@ const AdminLogs: React.FC = () => {
             </tbody>
           </table>
 
-          {filteredLogs.length === 0 && (
+          {displayedLogs.length === 0 && (
             <div className="text-center py-12">
               <Activity className="w-12 h-12 text-gray-600 mx-auto mb-4" />
               <p className="text-gray-400">Nenhum log encontrado</p>
@@ -487,18 +478,11 @@ const AdminLogs: React.FC = () => {
                 </div>
               )}
 
-              {selectedLog.user_agent && (
-                <div>
-                  <label className="block text-sm font-medium text-gray-400 mb-1">User Agent</label>
-                  <p className="text-white text-sm break-all">{selectedLog.user_agent}</p>
-                </div>
-              )}
-
-              {selectedLog.details && (
+              {selectedLog.metadata && Object.keys(selectedLog.metadata).length > 0 && (
                 <div>
                   <label className="block text-sm font-medium text-gray-400 mb-1">Detalhes Técnicos</label>
                   <pre className="bg-gray-800 p-4 rounded-lg text-gray-300 text-sm overflow-x-auto">
-                    {JSON.stringify(selectedLog.details, null, 2)}
+                    {JSON.stringify(selectedLog.metadata, null, 2)}
                   </pre>
                 </div>
               )}

@@ -17,7 +17,7 @@ export interface UploadResult {
  */
 export async function uploadFile(
   file: File, 
-  type: 'hinos' | 'albuns' | 'avatars' | 'covers' | 'banners'
+  type: 'hinos' | 'albuns' | 'avatars' | 'covers' | 'banners' | 'imports' | 'exports'
 ): Promise<string> {
   try {
     const sizeMB = (file.size / (1024 * 1024)).toFixed(2);
@@ -29,6 +29,8 @@ export async function uploadFile(
       covers: 10,   // 10 MB
       banners: 10,  // 10 MB
       albuns: 10,   // 10 MB
+      imports: 25,  // 25 MB
+      exports: 25,  // 25 MB
       hinos: 500,   // 500 MB (áudio)
     };
     const maxMB = maxSizes[type] || 50;

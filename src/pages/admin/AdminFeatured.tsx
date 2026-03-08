@@ -76,15 +76,14 @@ const AdminFeatured: React.FC = () => {
     try {
       setIsLoading(true);
       setError(null);
-      console.log('🔄 Loading featured items...');
-      const fetchedItems = await getFeaturedItems({ content_type: 'hymn' });
-      console.log('✅ Items loaded:', fetchedItems);
+      const fetchedItems = await getFeaturedItems({
+        section: selectedSection !== 'all' ? selectedSection : undefined,
+      });
       setItems(fetchedItems);
       const fetchedStats = await getFeaturedStats();
-      console.log('📊 Stats loaded:', fetchedStats);
       setStats(fetchedStats);
     } catch (err: any) {
-      console.error('❌ Error loading featured items:', err);
+      console.error('Error loading featured items:', err);
       setError(err?.message || 'Erro ao carregar itens em destaque');
     } finally {
       setIsLoading(false);

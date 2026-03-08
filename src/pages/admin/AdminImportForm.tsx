@@ -1,6 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { ArrowLeft, Save, Upload, FileText, AlertCircle } from 'lucide-react';
+import { createImport } from '@/lib/admin/importAdminApi';
 
 const IMPORT_TYPES = [
   { value: 'hymns', label: 'Hinos', icon: '🎵' },
@@ -95,18 +96,16 @@ const AdminImportForm: React.FC = () => {
     setError(null);
 
     try {
-      const importData = new FormData();
-      importData.append('file', selectedFile);
-      importData.append('name', formData.name.trim());
-      importData.append('description', formData.description.trim());
-      importData.append('import_type', formData.import_type);
-      importData.append('has_header', formData.has_header.toString());
-      importData.append('skip_duplicates', formData.skip_duplicates.toString());
-      importData.append('update_existing', formData.update_existing.toString());
-      importData.append('validate_only', formData.validate_only.toString());
-
-      // TODO: Implementar upload quando backend estiver pronto
-      // await uploadImport(importData);
+      await createImport({
+        file: selectedFile,
+        name: formData.name.trim(),
+        description: formData.description.trim(),
+        import_type: formData.import_type,
+        has_header: formData.has_header,
+        skip_duplicates: formData.skip_duplicates,
+        update_existing: formData.update_existing,
+        validate_only: formData.validate_only,
+      });
 
       navigate('/admin/import');
     } catch (error: any) {

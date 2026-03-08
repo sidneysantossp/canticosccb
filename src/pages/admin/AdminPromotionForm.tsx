@@ -1,6 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { ArrowLeft, Save, Tag, Calendar, Percent } from 'lucide-react';
+import {
+  createPromotion,
+  getPromotionById,
+  updatePromotion,
+  type PromotionInput,
+} from '@/lib/admin/promotionsAdminApi';
 
 interface Promotion {
   id: string;
@@ -61,9 +67,22 @@ const AdminPromotionForm: React.FC = () => {
   const loadPromotion = async (promotionId: string) => {
     try {
       setIsLoading(true);
-      // TODO: Implementar getPromotionById quando backend estiver pronto
-      // const promotion = await getPromotionById(promotionId);
-      // if (promotion) { setFormData(...); }
+      const promotion = await getPromotionById(promotionId);
+
+      if (promotion) {
+        setFormData({
+          title: promotion.title,
+          description: promotion.description || '',
+          promotion_type: promotion.promotion_type,
+          discount_type: promotion.discount_type,
+          discount_value: promotion.discount_value,
+          promo_code: promotion.promo_code,
+          max_uses: promotion.max_uses || 0,
+          start_date: promotion.start_date,
+          end_date: promotion.end_date,
+          is_active: promotion.is_active,
+        });
+      }
     } catch (error: any) {
       console.error('Erro ao carregar promoção:', error);
       setError(error?.message || 'Erro ao carregar promoção');
@@ -83,7 +102,7 @@ const AdminPromotionForm: React.FC = () => {
     setError(null);
 
     try {
-      const promotionData = {
+      const promotionData: PromotionInput = {
         title: formData.title.trim(),
         description: formData.description.trim() || undefined,
         promotion_type: formData.promotion_type,
@@ -97,9 +116,9 @@ const AdminPromotionForm: React.FC = () => {
       };
 
       if (isEditing && id) {
-        // await updatePromotion(id, promotionData);
+        await updatePromotion(id, promotionData);
       } else {
-        // await createPromotion(promotionData);
+        await createPromotion(promotionData);
       }
 
       navigate('/admin/promotions');

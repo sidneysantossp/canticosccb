@@ -1,182 +1,103 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Tag, Plus, Edit, Trash2, TrendingUp, DollarSign, RefreshCw, Percent, AlertTriangle } from 'lucide-react';
+import { Edit, Gift, Plus, RefreshCw, Tag, Trash2, AlertTriangle } from 'lucide-react';
 import PromotionsStatsCards from '@/pages/admin/components/promotions/PromotionsStatsCards';
-import PromotionsEditModal from '@/pages/admin/components/promotions/PromotionsEditModal';
+import {
+  deletePromotion,
+  getAllPromotions,
+  togglePromotionStatus,
+  type PromotionRecord,
+} from '@/lib/admin/promotionsAdminApi';
 
-interface Promotion {
-  id: string;
-  title: string;
-  description?: string;
-  promotion_type: 'discount' | 'trial' | 'upgrade' | 'bundle' | 'referral';
-  discount_type: 'percentage' | 'fixed' | 'free';
-  discount_value: number;
-  promo_code: string;
-  max_uses?: number;
-  uses_count: number;
-  start_date: string;
-  end_date: string;
-  is_active: boolean;
-  clicks_count: number;
-  conversions_count: number;
-  revenue_generated: number;
-  created_at: string;
-}
+const PROMOTION_TYPES = [
+  { value: 'discount', label: 'Desconto' },
+  { value: 'trial', label: 'Período de Teste' },
+  { value: 'upgrade', label: 'Upgrade' },
+  { value: 'bundle', label: 'Pacote' },
+  { value: 'referral', label: 'Indicação' },
+] as const;
+
+const getTypeBadgeClass = (type: string) => {
+  switch (type) {
+    case 'discount':
+      return 'bg-blue-500/20 text-blue-400 border-blue-500/30';
+    case 'trial':
+      return 'bg-green-500/20 text-green-400 border-green-500/30';
+    case 'upgrade':
+      return 'bg-purple-500/20 text-purple-400 border-purple-500/30';
+    case 'bundle':
+      return 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30';
+    case 'referral':
+      return 'bg-pink-500/20 text-pink-400 border-pink-500/30';
+    default:
+      return 'bg-gray-500/20 text-gray-400 border-gray-500/30';
+  }
+};
 
 const AdminPromotions: React.FC = () => {
-  const [promotions, setPromotions] = useState<Promotion[]>([]);
+  const [promotions, setPromotions] = useState<PromotionRecord[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [showModal, setShowModal] = useState(false);
-  const [editingPromotion, setEditingPromotion] = useState<Promotion | null>(null);
-  const [formData, setFormData] = useState({
-    title: '',
-    description: '',
-    promotion_type: 'discount' as Promotion['promotion_type'],
-    discount_type: 'percentage' as Promotion['discount_type'],
-    discount_value: 0,
-    promo_code: '',
-    max_uses: 0,
-    start_date: '',
-    end_date: '',
-    is_active: true
-  });
-
-  const [stats, setStats] = useState({
-    total: 0,
-    active: 0,
-    totalClicks: 0,
-    totalConversions: 0,
-    totalRevenue: 0
-  });
-
-  const promotionTypes = [
-    { value: 'discount', label: 'Desconto', color: 'blue' },
-    { value: 'trial', label: 'Período de Teste', color: 'green' },
-    { value: 'upgrade', label: 'Upgrade', color: 'purple' },
-    { value: 'bundle', label: 'Pacote', color: 'yellow' },
-    { value: 'referral', label: 'Indicação', color: 'pink' }
-  ];
-
-  const discountTypes = [
-    { value: 'percentage', label: 'Porcentagem (%)' },
-    { value: 'fixed', label: 'Valor Fixo (R$)' },
-    { value: 'free', label: 'Grátis' }
-  ];
 
   useEffect(() => {
-    loadData();
+    void loadData();
   }, []);
 
   const loadData = async () => {
     try {
       setIsLoading(true);
       setError(null);
-      
-      // TODO: Integrar com tabela 'promotions' do Supabase quando disponível
-      setPromotions([]);
-      
-      setStats({
-        total: 0,
-        active: 0,
-        totalClicks: 0,
-        totalConversions: 0,
-        totalRevenue: 0
-      });
-
+      setPromotions(await getAllPromotions());
     } catch (err: any) {
-      console.error('Error loading promotions:', err);
+      console.error('Erro ao carregar promoções:', err);
       setError(err?.message || 'Erro ao carregar promoções');
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleOpenModal = (promotion?: Promotion) => {
-    if (promotion) {
-      setEditingPromotion(promotion);
-      setFormData({
-        title: promotion.title,
-        description: promotion.description || '',
-        promotion_type: promotion.promotion_type,
-        discount_type: promotion.discount_type,
-        discount_value: promotion.discount_value,
-        promo_code: promotion.promo_code,
-        max_uses: promotion.max_uses || 0,
-        start_date: promotion.start_date,
-        end_date: promotion.end_date,
-        is_active: promotion.is_active
-      });
-    } else {
-      setEditingPromotion(null);
-      setFormData({
-        title: '',
-        description: '',
-        promotion_type: 'discount',
-        discount_type: 'percentage',
-        discount_value: 0,
-        promo_code: '',
-        max_uses: 0,
-        start_date: new Date().toISOString().split('T')[0],
-        end_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-        is_active: true
-      });
-    }
-    setShowModal(true);
-  };
-
-  const handleSave = async () => {
-    try {
-      if (!formData.title || !formData.promo_code) {
-        return;
-      }
-
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      setShowModal(false);
-      loadData();
-    } catch (error) {
-      console.error('Error saving promotion:', error);
-    }
-  };
+  const stats = useMemo(
+    () => ({
+      total: promotions.length,
+      active: promotions.filter((promotion) => promotion.is_active).length,
+      totalClicks: promotions.reduce((sum, promotion) => sum + promotion.clicks_count, 0),
+      totalConversions: promotions.reduce((sum, promotion) => sum + promotion.conversions_count, 0),
+      totalRevenue: promotions.reduce((sum, promotion) => sum + promotion.revenue_generated, 0),
+    }),
+    [promotions]
+  );
 
   const handleToggleStatus = async (id: string) => {
     try {
-      await new Promise(resolve => setTimeout(resolve, 500));
-      loadData();
-    } catch (error) {
-      console.error('Error toggling promotion status:', error);
+      await togglePromotionStatus(id);
+      setPromotions((current) =>
+        current.map((promotion) =>
+          promotion.id === id
+            ? { ...promotion, is_active: !promotion.is_active }
+            : promotion
+        )
+      );
+    } catch (err) {
+      console.error('Erro ao alterar status da promoção:', err);
     }
   };
 
   const handleDelete = async (id: string) => {
     try {
-      if (!confirm('Deseja realmente excluir esta promoção?')) return;
-      await new Promise(resolve => setTimeout(resolve, 500));
-      loadData();
-    } catch (error) {
-      console.error('Error deleting promotion:', error);
+      if (!window.confirm('Deseja realmente excluir esta promoção?')) return;
+      await deletePromotion(id);
+      setPromotions((current) => current.filter((promotion) => promotion.id !== id));
+    } catch (err) {
+      console.error('Erro ao excluir promoção:', err);
     }
   };
 
-  const getTypeColor = (type: string) => {
-    const typeObj = promotionTypes.find(t => t.value === type);
-    return typeObj?.color || 'gray';
-  };
+  const formatCurrency = (value: number) =>
+    new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
 
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('pt-BR', {
-      style: 'currency',
-      currency: 'BRL'
-    }).format(value);
-  };
+  const formatNumber = (value: number) => new Intl.NumberFormat('pt-BR').format(value);
 
-  const formatNumber = (num: number) => {
-    return new Intl.NumberFormat('pt-BR').format(num);
-  };
-
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('pt-BR');
-  };
+  const formatDate = (value: string) => new Date(value).toLocaleDateString('pt-BR');
 
   if (isLoading) {
     return (
@@ -209,11 +130,10 @@ const AdminPromotions: React.FC = () => {
 
   return (
     <div className="p-6 space-y-6">
-      {/* Header */}
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold text-white mb-2">Promoções</h1>
-          <p className="text-gray-400">Gerencie promoções e ofertas especiais</p>
+          <p className="text-gray-400">Gerencie promoções e ofertas especiais do admin</p>
         </div>
         <div className="flex gap-3">
           <button
@@ -233,39 +153,43 @@ const AdminPromotions: React.FC = () => {
         </div>
       </div>
 
-      {/* Stats Cards */}
       <PromotionsStatsCards
         stats={stats}
         formatNumber={formatNumber}
         formatCurrency={formatCurrency}
       />
 
-      {/* Promotions List */}
       <div className="space-y-4">
         {promotions.map((promotion) => (
           <div key={promotion.id} className="bg-gray-900/50 border border-gray-800 rounded-xl p-6">
-            <div className="flex items-start justify-between mb-4">
+            <div className="flex items-start justify-between gap-4">
               <div className="flex-1">
-                <div className="flex items-center gap-3 mb-2">
+                <div className="flex items-center gap-3 mb-2 flex-wrap">
                   <h3 className="text-white font-semibold text-lg">{promotion.title}</h3>
-                  <span className={`px-2 py-1 text-xs rounded-full border bg-${getTypeColor(promotion.promotion_type)}-500/20 text-${getTypeColor(promotion.promotion_type)}-400 border-${getTypeColor(promotion.promotion_type)}-500/30`}>
-                    {promotionTypes.find(t => t.value === promotion.promotion_type)?.label}
+                  <span className={`px-2 py-1 text-xs rounded-full border ${getTypeBadgeClass(promotion.promotion_type)}`}>
+                    {PROMOTION_TYPES.find((item) => item.value === promotion.promotion_type)?.label || promotion.promotion_type}
                   </span>
-                  <span className={`px-2 py-1 text-xs rounded-full border ${
-                    promotion.is_active
-                      ? 'bg-green-500/20 text-green-400 border-green-500/30'
-                      : 'bg-gray-500/20 text-gray-400 border-gray-500/30'
-                  }`}>
+                  <span
+                    className={`px-2 py-1 text-xs rounded-full border ${
+                      promotion.is_active
+                        ? 'bg-green-500/20 text-green-400 border-green-500/30'
+                        : 'bg-gray-500/20 text-gray-400 border-gray-500/30'
+                    }`}
+                  >
                     {promotion.is_active ? 'Ativa' : 'Inativa'}
                   </span>
                 </div>
-                {promotion.description && (
+
+                {promotion.description ? (
                   <p className="text-gray-400 text-sm mb-3">{promotion.description}</p>
-                )}
-                <div className="flex items-center gap-6 text-sm">
+                ) : null}
+
+                <div className="flex flex-wrap items-center gap-6 text-sm">
                   <div>
                     <span className="text-gray-400">Código: </span>
-                    <code className="text-primary-400 bg-primary-500/10 px-2 py-1 rounded">{promotion.promo_code}</code>
+                    <code className="text-primary-400 bg-primary-500/10 px-2 py-1 rounded">
+                      {promotion.promo_code}
+                    </code>
                   </div>
                   <div>
                     <span className="text-gray-400">Desconto: </span>
@@ -277,18 +201,22 @@ const AdminPromotions: React.FC = () => {
                   </div>
                   <div>
                     <span className="text-gray-400">Período: </span>
-                    <span className="text-white">{formatDate(promotion.start_date)} - {formatDate(promotion.end_date)}</span>
+                    <span className="text-white">
+                      {formatDate(promotion.start_date)} - {formatDate(promotion.end_date)}
+                    </span>
                   </div>
-                  {promotion.max_uses && (
+                  {promotion.max_uses ? (
                     <div>
                       <span className="text-gray-400">Usos: </span>
-                      <span className="text-white">{promotion.uses_count} / {promotion.max_uses}</span>
+                      <span className="text-white">
+                        {promotion.uses_count} / {promotion.max_uses}
+                      </span>
                     </div>
-                  )}
+                  ) : null}
                 </div>
               </div>
 
-              <div className="flex items-center gap-2 ml-4">
+              <div className="flex items-center gap-2">
                 <label className="relative inline-flex items-center cursor-pointer">
                   <input
                     type="checkbox"
@@ -316,8 +244,7 @@ const AdminPromotions: React.FC = () => {
               </div>
             </div>
 
-            {/* Metrics */}
-            <div className="flex items-center gap-6 pt-4 border-t border-gray-700">
+            <div className="flex flex-wrap items-center gap-6 pt-4 border-t border-gray-700 mt-4">
               <div className="text-sm">
                 <span className="text-gray-400">Cliques: </span>
                 <span className="text-white font-medium">{formatNumber(promotion.clicks_count)}</span>
@@ -329,7 +256,10 @@ const AdminPromotions: React.FC = () => {
               <div className="text-sm">
                 <span className="text-gray-400">Taxa de Conversão: </span>
                 <span className="text-yellow-400 font-medium">
-                  {promotion.clicks_count > 0 ? ((promotion.conversions_count / promotion.clicks_count) * 100).toFixed(1) : 0}%
+                  {promotion.clicks_count > 0
+                    ? ((promotion.conversions_count / promotion.clicks_count) * 100).toFixed(1)
+                    : 0}
+                  %
                 </span>
               </div>
               <div className="text-sm">
@@ -348,18 +278,6 @@ const AdminPromotions: React.FC = () => {
           <p className="text-gray-500 text-sm">Crie sua primeira promoção</p>
         </div>
       )}
-
-      {/* Modal de Edição/Criação */}
-      <PromotionsEditModal
-        show={showModal}
-        editingPromotion={editingPromotion}
-        formData={formData}
-        setFormData={setFormData}
-        onClose={() => setShowModal(false)}
-        onSave={handleSave}
-        promotionTypes={promotionTypes}
-        discountTypes={discountTypes}
-      />
     </div>
   );
 };

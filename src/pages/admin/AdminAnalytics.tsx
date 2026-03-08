@@ -92,11 +92,36 @@ const AdminAnalytics: React.FC = () => {
         getUserGrowth(period)
       ]);
 
+      const normalizedGrowthSource = growthData || [];
+      const totalNewUsers = normalizedGrowthSource.reduce(
+        (sum: number, row: any) => sum + Number(row.new ?? row.users ?? 0),
+        0
+      );
+      let runningTotal = Math.max((summaryData?.totalUsers || 0) - totalNewUsers, 0);
+
       setSummary(summaryData || { totalPlays: 0, totalLikes: 0, totalSongs: 0, totalUsers: 0 });
-      setPlaysByDay(playsData || []);
-      setTopSongs(topSongsData || []);
-      setGenreStats(genreData || []);
-      setUserGrowth(growthData || []);
+      setPlaysByDay((playsData || []).map((row: any) => ({
+        date: row.date,
+        plays: Number(row.plays || 0),
+      })));
+      setTopSongs((topSongsData || []).map((song: any) => ({
+        ...song,
+        plays: Number(song.plays ?? song.plays_count ?? 0),
+        likes: Number(song.likes ?? song.likes_count ?? 0),
+      })));
+      setGenreStats((genreData || []).map((item: any) => ({
+        ...item,
+        count: Number(item.count ?? item.value ?? 0),
+      })));
+      setUserGrowth(normalizedGrowthSource.map((row: any) => {
+        const newUsers = Number(row.new ?? row.users ?? 0);
+        runningTotal += newUsers;
+        return {
+          date: row.date,
+          new: newUsers,
+          total: runningTotal,
+        };
+      }));
     } catch (error: any) {
       console.error('Error loading analytics:', error);
       setError(error?.message || 'Erro ao carregar analytics');

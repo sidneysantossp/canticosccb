@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { ArrowLeft, Save, Database, HardDrive, Cloud } from 'lucide-react';
+import { createBackup } from '@/lib/admin/backupAdminApi';
 
 const BACKUP_TYPES = [
   { value: 'full', label: 'Backup Completo', icon: '💾', description: 'Banco de dados + arquivos de mídia' },
@@ -50,11 +51,10 @@ const AdminBackupForm: React.FC = () => {
         storage_location: formData.storage_location,
         compress: formData.compress,
         encrypt: formData.encrypt,
-        include_logs: formData.include_logs
+        description: formData.include_logs ? 'Solicitado com inclusão de logs' : undefined,
       };
 
-      // TODO: Implementar criação de backup quando backend estiver pronto
-      // await createBackup(backupData);
+      await createBackup(backupData as any);
 
       navigate('/admin/backup');
     } catch (error: any) {

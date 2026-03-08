@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { HardDrive, Plus, Download, RotateCcw, Trash2, RefreshCw, CheckCircle, XCircle, Clock, AlertTriangle } from 'lucide-react';
+import { createBackup, deleteBackup, getBackupStats, getBackups, updateBackupStatus } from '@/lib/admin/backupAdminApi';
 
 interface Backup {
   id: string;
@@ -72,16 +73,9 @@ const AdminBackup: React.FC = () => {
     try {
       setIsLoading(true);
       setError(null);
-      
-      // TODO: Integrar com tabela 'backups' do Supabase quando disponível
-      setBackups([]);
-
-      setStats({
-        total: 0,
-        completed: 0,
-        running: 0,
-        totalSize: 0
-      });
+      const [backupsList, statsData] = await Promise.all([getBackups(), getBackupStats()]);
+      setBackups(backupsList as Backup[]);
+      setStats(statsData);
 
     } catch (err: any) {
       console.error('Erro ao carregar backups:', err);
@@ -97,7 +91,15 @@ const AdminBackup: React.FC = () => {
         return;
       }
 
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      await createBackup({
+        name: formData.name,
+        description: formData.description,
+        backup_type: formData.backup_type,
+        scope: formData.scope,
+        compress: formData.compress,
+        encrypt: formData.encrypt,
+        retention_days: formData.retention_days,
+      });
       setShowModal(false);
       setFormData({
         name: '',
@@ -119,7 +121,7 @@ const AdminBackup: React.FC = () => {
       if (!backup.file_url) {
         return;
       }
-      await new Promise(resolve => setTimeout(resolve, 500));
+      window.open(backup.file_url, '_blank', 'noopener,noreferrer');
     } catch (error) {
       console.error('Erro ao fazer download:', error);
     }
@@ -128,8 +130,8 @@ const AdminBackup: React.FC = () => {
   const handleRestore = async (id: string) => {
     try {
       if (!confirm('Deseja realmente restaurar este backup? Esta ação substituirá os dados atuais.')) return;
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      loadData();
+      await updateBackupStatus(id, 'restoring');
+      await loadData();
     } catch (error) {
       console.error('Erro ao restaurar:', error);
     }
@@ -138,8 +140,8 @@ const AdminBackup: React.FC = () => {
   const handleCancel = async (id: string) => {
     try {
       if (!confirm('Deseja realmente cancelar este backup?')) return;
-      await new Promise(resolve => setTimeout(resolve, 500));
-      loadData();
+      await updateBackupStatus(id, 'cancelled');
+      await loadData();
     } catch (error) {
       console.error('Erro ao cancelar:', error);
     }
@@ -148,8 +150,8 @@ const AdminBackup: React.FC = () => {
   const handleDelete = async (id: string) => {
     try {
       if (!confirm('Deseja realmente excluir este backup?')) return;
-      await new Promise(resolve => setTimeout(resolve, 500));
-      loadData();
+      await deleteBackup(id);
+      await loadData();
     } catch (error) {
       console.error('Erro ao excluir:', error);
     }
@@ -238,13 +240,13 @@ const AdminBackup: React.FC = () => {
           <p className="text-gray-400">Gerencie backups do sistema e restaure dados</p>
         </div>
         <div className="flex gap-3">
-          <Link
-            to="/admin/backup/atualizar"
+          <button
+            onClick={() => loadData()}
             className="flex items-center gap-2 px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-lg transition-colors"
           >
             <RefreshCw className="w-5 h-5" />
             Atualizar
-          </Link>
+          </button>
           <Link
             to="/admin/backup/criar"
             className="flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-semibold transition-colors"

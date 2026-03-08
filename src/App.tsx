@@ -129,6 +129,7 @@ import AdminCoupons from '@/pages/admin/AdminCoupons';
 import AdminCouponForm from '@/pages/admin/AdminCouponForm';
 import AdminAnalytics from '@/pages/admin/AdminAnalytics';
 import AdminReports from '@/pages/admin/reports/AdminReports';
+import AdminReportDetail from '@/pages/admin/reports/AdminReportDetail';
 import AdminReportAnalytics from '@/pages/admin/reports/AdminReportAnalytics';
 import AdminReportLogs from '@/pages/admin/reports/AdminReportLogs';
 import AdminCustomReports from '@/pages/admin/AdminCustomReports';
@@ -156,7 +157,8 @@ import AdminImport from '@/pages/admin/AdminImport';
 import AdminImportForm from '@/pages/admin/AdminImportForm';
 import AdminExport from '@/pages/admin/AdminExport';
 import AdminExportForm from '@/pages/admin/AdminExportForm';
-// AdminAPI imports removed due to secrets
+import AdminAPI from '@/pages/admin/api/AdminAPI';
+import AdminAPIForm from '@/pages/admin/AdminAPIForm';
 import AdminNotices from '@/pages/admin/AdminNotices';
 import AdminNoticeForm from '@/pages/admin/AdminNoticeForm';
 import AdminBibleNarrated from '@/pages/admin/AdminBibleNarrated';
@@ -453,6 +455,7 @@ const AppContent: React.FC = () => {
           <Route path="admin/direitos-autorais" element={<ProtectedRoute requireAdmin><AdminCopyrightClaims /></ProtectedRoute>} />
           <Route path="admin/copyright-claims" element={<ProtectedRoute requireAdmin><AdminCopyrightClaims /></ProtectedRoute>} />
           <Route path="admin/reports" element={<ProtectedRoute requireAdmin><AdminReports /></ProtectedRoute>} />
+          <Route path="admin/reports/:id" element={<ProtectedRoute requireAdmin><AdminReportDetail /></ProtectedRoute>} />
           <Route path="admin/reports/analytics" element={<ProtectedRoute requireAdmin><AdminReportAnalytics /></ProtectedRoute>} />
           <Route path="admin/reports/logs" element={<ProtectedRoute requireAdmin><AdminReportLogs /></ProtectedRoute>} />
           <Route path="admin/reports/custom" element={<ProtectedRoute requireAdmin><AdminCustomReports /></ProtectedRoute>} />
@@ -486,7 +489,9 @@ const AppContent: React.FC = () => {
           <Route path="admin/export" element={<ProtectedRoute requireAdmin><AdminExport /></ProtectedRoute>} />
           <Route path="admin/export/criar" element={<ProtectedRoute requireAdmin><AdminExportForm /></ProtectedRoute>} />
           <Route path="admin/export/create" element={<ProtectedRoute requireAdmin><AdminExportForm /></ProtectedRoute>} />
-          {/* AdminAPI routes removed due to secrets */}
+          <Route path="admin/api" element={<ProtectedRoute requireAdmin><AdminAPI /></ProtectedRoute>} />
+          <Route path="admin/api/criar" element={<ProtectedRoute requireAdmin><AdminAPIForm /></ProtectedRoute>} />
+          <Route path="admin/api/create" element={<ProtectedRoute requireAdmin><AdminAPIForm /></ProtectedRoute>} />
           {/* Notices Management */}
           <Route path="admin/notices" element={<ProtectedRoute requireAdmin><AdminNotices /></ProtectedRoute>} />
           <Route path="admin/notices/create" element={<ProtectedRoute requireAdmin><AdminNoticeForm /></ProtectedRoute>} />

@@ -106,6 +106,21 @@ export async function getReports(filters?: { status?: string; type?: string }) {
     return (data || []).map(mapReportRow);
 }
 
+export async function getReportById(id: string | number) {
+    const { data, error } = await supabase
+        .from('reports')
+        .select('*')
+        .eq('id', id)
+        .limit(1)
+        .maybeSingle();
+
+    if (error && error.code !== 'PGRST116') {
+        throw error;
+    }
+
+    return data ? mapReportRow(data) : null;
+}
+
 export async function getOpenReportsCount() {
     const { count, error } = await supabase
         .from('reports')

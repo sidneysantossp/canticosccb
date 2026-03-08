@@ -1,5 +1,4 @@
 import { supabase } from '@/lib/supabase-auth';
-import { supabaseFetch } from '@/lib/supabaseRest';
 import { getOpenReportsCount } from '@/lib/admin/reportsApi';
 
 export type AdminStats = {
@@ -17,54 +16,51 @@ export type AdminStats = {
 
 export const getAdminStats = async (): Promise<AdminStats> => {
   try {
-    console.log('🔍 [getAdminStats] Fetching admin statistics...');
-    
-    // Buscar dados em paralelo
     const [
-      allUsers,
-      allComposers,
-      allSongs,
-      publishedSongsData,
-      pendingSongsData,
-      pendingComposersData,
+      usersRes,
+      composersRes,
+      songsRes,
       openReports
     ] = await Promise.all([
-      supabaseFetch<any>('users', { select: 'id,created_at' }),
-      supabaseFetch<any>('composers', { select: 'id,status' }),
-      supabaseFetch<any>('hinos', { select: 'id,plays,likes' }),
-      supabaseFetch<any>('hinos', { status: 'eq.published', select: 'id' }),
-      supabaseFetch<any>('hinos', { status: 'eq.draft', select: 'id' }),
-      supabaseFetch<any>('composers', { status: 'eq.pending', select: 'id' }),
+      supabase.from('users').select('id,created_at'),
+      supabase.from('composers').select('id,status,verified'),
+      supabase.from('hinos').select('id,plays_count,plays,views_count,likes_count,likes,status'),
       getOpenReportsCount()
     ]);
 
-    // Calcular total de plays e likes
-    const totalPlays = allSongs.reduce((sum, song) => sum + (song.plays || 0), 0);
-    const totalLikes = allSongs.reduce((sum, song) => sum + (song.likes || 0), 0);
+    if (usersRes.error) throw usersRes.error;
+    if (composersRes.error) throw composersRes.error;
+    if (songsRes.error) throw songsRes.error;
 
-    // Calcular novos usuários hoje
+    const allUsers = usersRes.data || [];
+    const allComposers = composersRes.data || [];
+    const allSongs = songsRes.data || [];
+
+    const totalPlays = allSongs.reduce((sum, song: any) => sum + Number(song.plays_count || song.plays || song.views_count || 0), 0);
+    const totalLikes = allSongs.reduce((sum, song: any) => sum + Number(song.likes_count || song.likes || 0), 0);
+    const publishedSongs = allSongs.filter((song: any) => song.status === 'published').length;
+    const pendingSongs = allSongs.filter((song: any) => ['draft', 'pending'].includes(song.status)).length;
+    const pendingComposers = allComposers.filter((composer: any) => composer.status === 'pending' || composer.verified === false).length;
+
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    const newUsersToday = allUsers.filter(user => {
+    const newUsersToday = allUsers.filter((user: any) => {
       const createdAt = new Date(user.created_at);
       return createdAt >= today;
     }).length;
 
-    const stats = {
+    return {
       totalUsers: allUsers.length,
       totalComposers: allComposers.length,
       totalSongs: allSongs.length,
       totalPlays,
-      publishedSongs: publishedSongsData.length,
+      publishedSongs,
       totalLikes,
       newUsersToday,
-      pendingSongs: pendingSongsData.length,
-      pendingComposers: pendingComposersData.length,
+      pendingSongs,
+      pendingComposers,
       openReports
     };
-
-    console.log('✅ [getAdminStats] Stats calculated:', stats);
-    return stats;
   } catch (error) {
     console.error('❌ [getAdminStats] Error:', error);
     return {
@@ -88,17 +84,19 @@ export const getTopSongs = async (limit = 5) => {
   try {
     const { data } = await supabase
       .from('hinos')
-      .select('id, titulo, composer_name, cover_url')
+      .select('id, titulo, compositor_nome, cover_url, capa_url, plays_count, plays, views_count')
+      .order('plays_count', { ascending: false, nullsFirst: false })
+      .order('plays', { ascending: false, nullsFirst: false })
       .limit(limit);
       
     // Adaptar para o formato esperado pela UI
     return (data || []).map(song => ({
       song_id: song.id,
-      total_plays: 0,
+      total_plays: Number((song as any).plays_count || (song as any).plays || (song as any).views_count || 0),
       songs: {
         title: song.titulo,
-        composer_name: song.composer_name,
-        cover_url: song.cover_url
+        composer_name: (song as any).compositor_nome,
+        cover_url: (song as any).cover_url || (song as any).capa_url
       }
     }));
   } catch (e) {
@@ -109,10 +107,13 @@ export const getTopSongs = async (limit = 5) => {
 
 export const getUserGrowth = async (months: number = 6) => {
   try {
-    const allUsers = await supabaseFetch<any>('users', { 
-      select: 'id,created_at',
-      order: 'created_at.asc'
-    });
+    const { data, error } = await supabase
+      .from('users')
+      .select('id,created_at')
+      .order('created_at', { ascending: true });
+
+    if (error) throw error;
+    const allUsers = data || [];
 
     // Agrupar usuários por mês
     const monthlyData: Record<string, number> = {};
@@ -146,11 +147,13 @@ export const getUserGrowth = async (months: number = 6) => {
 
 export const getRevenueStats = async () => {
   try {
-    // Buscar usuários premium
-    const premiumUsers = await supabaseFetch<any>('users', {
-      plan: 'neq.free',
-      select: 'id,plan,created_at'
-    });
+    const { data, error } = await supabase
+      .from('users')
+      .select('id,plan,created_at')
+      .neq('plan', 'free');
+
+    if (error) throw error;
+    const premiumUsers = data || [];
 
     // Calcular MRR (Monthly Recurring Revenue)
     const planPrices: Record<string, number> = {
@@ -182,32 +185,43 @@ export const getRevenueStats = async () => {
 
 export const getRecentActivity = async (limit = 10) => {
   try {
-    // Buscar atividades recentes (novos usuários, novos hinos, etc)
-    const [newUsers, newSongs] = await Promise.all([
-      supabaseFetch<any>('users', {
-        select: 'id,name,created_at',
-        order: 'created_at.desc',
-        limit: String(Math.floor(limit / 2))
-      }),
-      supabaseFetch<any>('hinos', {
-        select: 'id,titulo,created_at',
-        order: 'created_at.desc',
-        limit: String(Math.floor(limit / 2))
-      })
+    const [usersRes, songsRes] = await Promise.all([
+      supabase
+        .from('users')
+        .select('id,name,created_at')
+        .order('created_at', { ascending: false })
+        .limit(Math.floor(limit / 2)),
+      supabase
+        .from('hinos')
+        .select('id,titulo,created_at')
+        .order('created_at', { ascending: false })
+        .limit(Math.floor(limit / 2))
     ]);
+
+    if (usersRes.error) throw usersRes.error;
+    if (songsRes.error) throw songsRes.error;
+
+    const newUsers = usersRes.data || [];
+    const newSongs = songsRes.data || [];
 
     const activities = [
       ...newUsers.map(user => ({
         id: `user-${user.id}`,
         type: 'new_user',
+        user: user.name || 'Usuário',
+        item: '',
         description: `Novo usuário: ${user.name}`,
-        timestamp: user.created_at
+        timestamp: user.created_at,
+        time: user.created_at,
       })),
       ...newSongs.map(song => ({
         id: `song-${song.id}`,
         type: 'new_song',
+        user: 'Sistema',
+        item: song.titulo,
         description: `Novo hino: ${song.titulo}`,
-        timestamp: song.created_at
+        timestamp: song.created_at,
+        time: song.created_at,
       }))
     ];
 

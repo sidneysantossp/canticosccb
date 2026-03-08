@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import useCopyrightClaimsStore from '@/stores/copyrightClaimsStore';
-import { compositoresApi } from '@/lib/api-client';
 import { getOpenReportsCount } from '@/lib/admin/reportsApi';
+import { getAdminStats } from '@/lib/admin/adminStatsApi';
 import {
   X,
   LayoutDashboard,
@@ -31,7 +31,6 @@ import {
   Shield,
   ChevronDown,
   ChevronRight,
-  Crown,
   FileText,
   Layers,
   Book,
@@ -49,30 +48,28 @@ const AdminMobileSidebar: React.FC<AdminMobileSidebarProps> = ({ isOpen, onClose
   const [expandedSections, setExpandedSections] = useState<string[]>([]);
   const { getPendingClaimsCount, loadClaims } = useCopyrightClaimsStore();
   const [pendingComposersCount, setPendingComposersCount] = useState(0);
+  const [pendingSongsCount, setPendingSongsCount] = useState(0);
+  const [approvalsCount, setApprovalsCount] = useState(0);
   const [openReportsCount, setOpenReportsCount] = useState(0);
 
   useEffect(() => {
     void loadClaims();
   }, [loadClaims]);
 
-  // Carregar contagem de compositores pendentes
   useEffect(() => {
-    const loadPendingCount = async () => {
+    const loadCounts = async () => {
       try {
-        const response = await compositoresApi.list({ limit: 100 });
-        if (response.data) {
-          const apiData = response.data as any;
-          const allComposers = apiData.compositores || [];
-          const pending = allComposers.filter((c: any) => !c.verificado);
-          setPendingComposersCount(pending.length);
-        }
+        const stats = await getAdminStats();
+        setPendingComposersCount(stats.pendingComposers);
+        setPendingSongsCount(stats.pendingSongs);
+        setApprovalsCount(stats.pendingSongs + stats.pendingComposers);
       } catch (error) {
-        console.error('Erro ao carregar contagem de compositores pendentes:', error);
+        console.error('Erro ao carregar contagens do admin:', error);
       }
     };
 
-    loadPendingCount();
-    const interval = setInterval(loadPendingCount, 30000);
+    void loadCounts();
+    const interval = setInterval(loadCounts, 30000);
     return () => clearInterval(interval);
   }, []);
 
@@ -111,7 +108,7 @@ const AdminMobileSidebar: React.FC<AdminMobileSidebarProps> = ({ isOpen, onClose
       title: 'Dashboard',
       icon: LayoutDashboard,
       items: [
-        { path: '/admin/dashboard', label: 'Visão Geral', icon: LayoutDashboard },
+        { path: '/admin', label: 'Visão Geral', icon: LayoutDashboard },
         { path: '/admin/analytics', label: 'Analytics', icon: BarChart3 }
       ]
     },
@@ -120,8 +117,8 @@ const AdminMobileSidebar: React.FC<AdminMobileSidebarProps> = ({ isOpen, onClose
       title: 'Conteúdo',
       icon: Music,
       items: [
-        { path: '/admin/hymns', label: 'Hinos', icon: Music, badge: 13 },
-        { path: '/admin/songs/pending', label: 'Aprovação Pendente', icon: CheckCircle, badge: 5 },
+        { path: '/admin/hymns', label: 'Hinos', icon: Music },
+        { path: '/admin/songs/pending', label: 'Aprovação Pendente', icon: CheckCircle, badge: pendingSongsCount },
         { path: '/admin/albums', label: 'Álbuns', icon: Album },
         { path: '/admin/collections', label: 'Coletâneas', icon: Layers },
         { path: '/admin/cifras', label: 'Cifras', icon: FileText },
@@ -138,7 +135,6 @@ const AdminMobileSidebar: React.FC<AdminMobileSidebarProps> = ({ isOpen, onClose
       icon: Users,
       items: [
         { path: '/admin/users', label: 'Todos os Usuários', icon: Users },
-        { path: '/admin/users/premium', label: 'Planos Premium', icon: Crown },
         { path: '/admin/users/playlists', label: 'Playlists dos Usuários', icon: List }
       ]
     },
@@ -158,7 +154,7 @@ const AdminMobileSidebar: React.FC<AdminMobileSidebarProps> = ({ isOpen, onClose
       title: 'Moderação',
       icon: Flag,
       items: [
-        { path: '/admin/approvals', label: 'Aprovações', icon: CheckCircle, badge: 8 },
+        { path: '/admin/approvals', label: 'Aprovações', icon: CheckCircle, badge: approvalsCount },
         { path: '/admin/reports', label: 'Denúncias', icon: Flag, badge: openReportsCount },
         { path: '/admin/copyright-claims', label: 'Direitos Autorais', icon: Copyright, badge: getPendingClaimsCount() },
         { path: '/admin/comments', label: 'Comentários', icon: MessageSquare }
@@ -194,7 +190,6 @@ const AdminMobileSidebar: React.FC<AdminMobileSidebarProps> = ({ isOpen, onClose
         { path: '/admin/settings/general', label: 'Gerais', icon: Settings },
         { path: '/admin/settings/users', label: 'Usuários', icon: Users },
         { path: '/admin/settings/composers', label: 'Compositores', icon: Mic2 },
-        { path: '/admin/settings/premium', label: 'Premium', icon: Crown },
         { path: '/admin/settings/email', label: 'Emails', icon: Mail },
         { path: '/admin/settings/security', label: 'Segurança', icon: Shield },
         { path: '/admin/settings/integrations', label: 'Integrações', icon: Database }
@@ -208,7 +203,6 @@ const AdminMobileSidebar: React.FC<AdminMobileSidebarProps> = ({ isOpen, onClose
         { path: '/admin/featured', label: 'Destaque', icon: Target },
         { path: '/admin/playlists-editorial', label: 'Playlists Editoriais', icon: List },
         { path: '/admin/promotions', label: 'Promoções', icon: Gift },
-        { path: '/admin/coupons', label: 'Cupons', icon: Tag },
         { path: '/admin/campaigns', label: 'Campanhas', icon: Megaphone }
       ]
     },
@@ -250,7 +244,7 @@ const AdminMobileSidebar: React.FC<AdminMobileSidebarProps> = ({ isOpen, onClose
       <div className="fixed left-0 top-0 bottom-0 w-80 bg-black z-50 lg:hidden overflow-y-auto border-r border-gray-800">
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-gray-800">
-          <Link to="/admin/dashboard" className="flex items-center gap-2" onClick={onClose}>
+          <Link to="/admin" className="flex items-center gap-2" onClick={onClose}>
             <div className="w-10 h-10 bg-red-600 rounded-lg flex items-center justify-center">
               <Shield className="w-6 h-6 text-white" />
             </div>

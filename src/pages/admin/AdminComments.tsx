@@ -1,76 +1,110 @@
-import React, { useState, useEffect } from 'react';
-import { MessageSquare, Search, Eye, CheckCircle, XCircle, Trash2, Filter, AlertCircle } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import { AlertCircle, CheckCircle, Eye, Filter, MessageSquare, Search, Trash2, XCircle } from 'lucide-react';
+import {
+  approveComment,
+  deleteComment,
+  getComments,
+  rejectComment,
+  type AdminCommentRecord,
+} from '@/lib/admin/commentsAdminApi';
 
-interface Comment {
-  id: string;
-  user: string;
-  userEmail: string;
-  song: string;
-  content: string;
-  status: 'pending' | 'approved' | 'rejected';
-  created_at: string;
-}
+const getStatusBadge = (status: string) => {
+  const styles = {
+    approved: 'bg-green-500/20 text-green-400 border-green-500/30',
+    pending: 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30',
+    rejected: 'bg-red-500/20 text-red-400 border-red-500/30',
+  };
+
+  const labels = {
+    approved: 'Aprovado',
+    pending: 'Pendente',
+    rejected: 'Rejeitado',
+  };
+
+  return (
+    <span className={`px-2 py-1 rounded-lg text-xs font-semibold border ${styles[status as keyof typeof styles]}`}>
+      {labels[status as keyof typeof labels]}
+    </span>
+  );
+};
 
 const AdminComments: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [filterStatus, setFilterStatus] = useState<string>('all');
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-
-  const [comments, setComments] = useState<Comment[]>([]);
+  const [comments, setComments] = useState<AdminCommentRecord[]>([]);
+  const [selectedComment, setSelectedComment] = useState<AdminCommentRecord | null>(null);
 
   useEffect(() => {
-    // TODO: Integrar com tabela 'comments' do Supabase quando disponível
-    setComments([]);
-    setIsLoading(false);
+    void loadComments();
   }, []);
 
-  const handleApprove = (id: string) => {
-    setComments(comments.map(c => c.id === id ? { ...c, status: 'approved' as const } : c));
+  const loadComments = async () => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      setComments(await getComments());
+    } catch (err: any) {
+      console.error('Erro ao carregar comentários:', err);
+      setError(err?.message || 'Erro ao carregar comentários');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const handleReject = (id: string) => {
-    setComments(comments.map(c => c.id === id ? { ...c, status: 'rejected' as const } : c));
+  const handleApprove = async (id: string) => {
+    try {
+      await approveComment(id);
+      setComments((current) =>
+        current.map((comment) => (comment.id === id ? { ...comment, status: 'approved' } : comment))
+      );
+    } catch (err) {
+      console.error('Erro ao aprovar comentário:', err);
+    }
   };
 
-  const handleDelete = (id: string) => {
+  const handleReject = async (id: string) => {
+    try {
+      await rejectComment(id);
+      setComments((current) =>
+        current.map((comment) => (comment.id === id ? { ...comment, status: 'rejected' } : comment))
+      );
+    } catch (err) {
+      console.error('Erro ao rejeitar comentário:', err);
+    }
+  };
+
+  const handleDelete = async (id: string) => {
     if (!window.confirm('Tem certeza que deseja deletar este comentário?')) return;
-    setComments(comments.filter(c => c.id !== id));
-  };
 
-  const getStatusBadge = (status: string) => {
-    const styles = {
-      approved: 'bg-green-500/20 text-green-400 border-green-500/30',
-      pending: 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30',
-      rejected: 'bg-red-500/20 text-red-400 border-red-500/30'
-    };
-
-    const labels = {
-      approved: 'Aprovado',
-      pending: 'Pendente',
-      rejected: 'Rejeitado'
-    };
-
-    return (
-      <span className={`px-2 py-1 rounded-lg text-xs font-semibold border ${styles[status as keyof typeof styles]}`}>
-        {labels[status as keyof typeof labels]}
-      </span>
-    );
+    try {
+      await deleteComment(id);
+      setComments((current) => current.filter((comment) => comment.id !== id));
+      if (selectedComment?.id === id) {
+        setSelectedComment(null);
+      }
+    } catch (err) {
+      console.error('Erro ao excluir comentário:', err);
+    }
   };
 
   const filteredComments = comments
-    .filter(c => filterStatus === 'all' || c.status === filterStatus)
-    .filter(c =>
-      c.user.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      c.song.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      c.content.toLowerCase().includes(searchQuery.toLowerCase())
-    );
+    .filter((comment) => filterStatus === 'all' || comment.status === filterStatus)
+    .filter((comment) => {
+      const term = searchQuery.toLowerCase();
+      return (
+        comment.user.toLowerCase().includes(term) ||
+        comment.song.toLowerCase().includes(term) ||
+        comment.content.toLowerCase().includes(term)
+      );
+    });
 
   const stats = {
     total: comments.length,
-    pending: comments.filter(c => c.status === 'pending').length,
-    approved: comments.filter(c => c.status === 'approved').length,
-    rejected: comments.filter(c => c.status === 'rejected').length
+    pending: comments.filter((comment) => comment.status === 'pending').length,
+    approved: comments.filter((comment) => comment.status === 'approved').length,
+    rejected: comments.filter((comment) => comment.status === 'rejected').length,
   };
 
   if (isLoading) {
@@ -91,10 +125,7 @@ const AdminComments: React.FC = () => {
           <AlertCircle className="w-12 h-12 text-red-400 mx-auto mb-4" />
           <h2 className="text-xl font-bold text-red-200 mb-2">Erro ao carregar comentários</h2>
           <p className="text-red-300 mb-4">{error}</p>
-          <button
-            onClick={() => window.location.reload()}
-            className="btn-primary"
-          >
+          <button onClick={() => loadComments()} className="btn-primary">
             Tentar Novamente
           </button>
         </div>
@@ -104,13 +135,11 @@ const AdminComments: React.FC = () => {
 
   return (
     <div className="p-6 space-y-6">
-      {/* Header */}
       <div>
         <h1 className="text-3xl font-bold text-white mb-2">Comentários</h1>
-        <p className="text-gray-400">Gerencie comentários dos usuários</p>
+        <p className="text-gray-400">Gerencie comentários enviados pelos usuários</p>
       </div>
 
-      {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <div className="bg-gray-900/50 border border-gray-800 rounded-xl p-4">
           <div className="flex items-center gap-3">
@@ -153,7 +182,6 @@ const AdminComments: React.FC = () => {
         </div>
       </div>
 
-      {/* Filters */}
       <div className="bg-gray-900/50 border border-gray-800 rounded-xl p-4">
         <div className="flex gap-4">
           <div className="flex-1 relative">
@@ -182,7 +210,6 @@ const AdminComments: React.FC = () => {
         </div>
       </div>
 
-      {/* Comments List */}
       <div className="space-y-4">
         {filteredComments.map((comment) => (
           <div
@@ -191,15 +218,15 @@ const AdminComments: React.FC = () => {
           >
             <div className="flex items-start justify-between mb-4">
               <div className="flex-1">
-                <div className="flex items-center gap-3 mb-2">
+                <div className="flex items-center gap-3 mb-2 flex-wrap">
                   <p className="text-white font-semibold">{comment.user}</p>
-                  <p className="text-gray-500 text-sm">{comment.userEmail}</p>
+                  <p className="text-gray-500 text-sm">{comment.userEmail || 'Sem email'}</p>
                   {getStatusBadge(comment.status)}
                 </div>
                 <p className="text-gray-400 text-sm mb-3">
                   Comentário em: <span className="text-blue-400">{comment.song}</span>
                 </p>
-                <p className="text-gray-300">{comment.content}</p>
+                <p className="text-gray-300 whitespace-pre-wrap">{comment.content}</p>
               </div>
             </div>
 
@@ -228,6 +255,7 @@ const AdminComments: React.FC = () => {
                   </>
                 )}
                 <button
+                  onClick={() => setSelectedComment(comment)}
                   className="p-2 hover:bg-gray-700 rounded-lg transition-colors"
                   title="Ver detalhes"
                 >
@@ -246,11 +274,48 @@ const AdminComments: React.FC = () => {
         ))}
       </div>
 
-      {/* Empty State */}
       {filteredComments.length === 0 && (
         <div className="text-center py-12 text-gray-400">
           <MessageSquare className="w-16 h-16 mx-auto mb-4 text-gray-600" />
           <p className="text-lg">Nenhum comentário encontrado</p>
+        </div>
+      )}
+
+      {selectedComment && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <div className="w-full max-w-2xl bg-gray-900 border border-gray-800 rounded-xl p-6">
+            <div className="flex items-start justify-between gap-4 mb-6">
+              <div>
+                <h2 className="text-2xl font-bold text-white">Detalhes do comentário</h2>
+                <p className="text-gray-400 mt-1">
+                  {selectedComment.user} • {selectedComment.userEmail || 'Sem email'}
+                </p>
+              </div>
+              <button
+                onClick={() => setSelectedComment(null)}
+                className="p-2 hover:bg-gray-800 rounded-lg transition-colors"
+              >
+                <XCircle className="w-5 h-5 text-gray-400" />
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              <div>
+                <p className="text-gray-400 text-sm mb-1">Conteúdo relacionado</p>
+                <p className="text-white">{selectedComment.song}</p>
+              </div>
+              <div>
+                <p className="text-gray-400 text-sm mb-1">Comentário</p>
+                <p className="text-white whitespace-pre-wrap">{selectedComment.content}</p>
+              </div>
+              <div>
+                <p className="text-gray-400 text-sm mb-1">Criado em</p>
+                <p className="text-white">
+                  {new Date(selectedComment.created_at).toLocaleString('pt-BR')}
+                </p>
+              </div>
+            </div>
+          </div>
         </div>
       )}
     </div>

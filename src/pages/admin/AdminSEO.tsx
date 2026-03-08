@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { Search, Save, Globe, FileText, Code, BarChart, AlertTriangle } from 'lucide-react';
+import { getSiteConfigMap, parseBooleanConfig, upsertSiteConfigEntries } from '@/lib/admin/adminTableUtils';
 
 const AdminSEO: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+  const [success, setSuccess] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState('general');
 
   const [settings, setSettings] = useState({
@@ -38,25 +40,83 @@ const AdminSEO: React.FC = () => {
   });
 
   useEffect(() => {
-    // Simulate loading SEO settings from API
-    const timer = setTimeout(() => {
+    const loadSeoSettings = async () => {
       try {
-        // In production, load from API: const data = await getSEOSettings();
+        const config = await getSiteConfigMap([
+          'site_title',
+          'site_description',
+          'site_keywords',
+          'site_url',
+          'og_title',
+          'og_description',
+          'og_image',
+          'twitter_card',
+          'twitter_site',
+          'robots_index',
+          'robots_follow',
+          'robots_txt',
+          'schema_name',
+          'schema_type',
+          'google_analytics_id',
+          'google_search_console_id'
+        ]);
+
+        setSettings((current) => ({
+          ...current,
+          site_title: config.site_title || current.site_title,
+          site_description: config.site_description || current.site_description,
+          site_keywords: config.site_keywords || current.site_keywords,
+          site_url: config.site_url || current.site_url,
+          og_title: config.og_title || current.og_title,
+          og_description: config.og_description || current.og_description,
+          og_image: config.og_image || current.og_image,
+          twitter_card: config.twitter_card || current.twitter_card,
+          twitter_site: config.twitter_site || current.twitter_site,
+          robots_index: parseBooleanConfig(config.robots_index, current.robots_index),
+          robots_follow: parseBooleanConfig(config.robots_follow, current.robots_follow),
+          robots_txt: config.robots_txt || current.robots_txt,
+          schema_name: config.schema_name || current.schema_name,
+          schema_type: config.schema_type || current.schema_type,
+          google_analytics_id: config.google_analytics_id || current.google_analytics_id,
+          google_search_console_id: config.google_search_console_id || current.google_search_console_id,
+        }));
         setIsLoading(false);
       } catch (err: any) {
         setError(err?.message || 'Erro ao carregar configura\u00e7\u00f5es de SEO');
         setIsLoading(false);
       }
-    }, 500);
-    return () => clearTimeout(timer);
+    };
+
+    void loadSeoSettings();
   }, []);
 
   const handleSave = async () => {
     setIsSaving(true);
     try {
-      await new Promise(r => setTimeout(r, 1000));
+      setError(null);
+      await upsertSiteConfigEntries({
+        site_title: settings.site_title,
+        site_description: settings.site_description,
+        site_keywords: settings.site_keywords,
+        site_url: settings.site_url,
+        og_title: settings.og_title,
+        og_description: settings.og_description,
+        og_image: settings.og_image,
+        twitter_card: settings.twitter_card,
+        twitter_site: settings.twitter_site,
+        robots_index: settings.robots_index,
+        robots_follow: settings.robots_follow,
+        robots_txt: settings.robots_txt,
+        schema_name: settings.schema_name,
+        schema_type: settings.schema_type,
+        google_analytics_id: settings.google_analytics_id,
+        google_search_console_id: settings.google_search_console_id,
+      });
+      setSuccess('Configurações de SEO salvas com sucesso.');
+      window.setTimeout(() => setSuccess(null), 3000);
     } catch (error) {
       console.error('Error saving SEO settings:', error);
+      setError('Erro ao salvar configurações de SEO');
     } finally {
       setIsSaving(false);
     }
@@ -114,6 +174,12 @@ const AdminSEO: React.FC = () => {
           <Save className="w-5 h-5" />Salvar
         </button>
       </div>
+
+      {success && (
+        <div className="p-4 bg-green-500/10 border border-green-500 rounded-lg text-green-400">
+          {success}
+        </div>
+      )}
 
       {/* Tabs */}
       <div className="flex gap-2 overflow-x-auto">

@@ -34,17 +34,7 @@ const AdminCustomReports: React.FC = () => {
   const [lastGeneratedReport, setLastGeneratedReport] = useState<ReportData | null>(null);
 
   useEffect(() => {
-    // Simulate loading templates from API
-    const timer = setTimeout(() => {
-      try {
-        // In production, load from API: const templates = await getReportTemplates();
-        setIsLoading(false);
-      } catch (err: any) {
-        setError(err?.message || 'Erro ao carregar relatórios customizados');
-        setIsLoading(false);
-      }
-    }, 500);
-    return () => clearTimeout(timer);
+    setIsLoading(false);
   }, []);
 
   const [reportConfig, setReportConfig] = useState<ReportConfig>({
