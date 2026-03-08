@@ -10,13 +10,21 @@ Cânticos CCB é a plataforma digital mais completa para ouvir, ler e estudar hi
 - Hinos cantados e tocados do Hinário 5 da CCB
 - Streaming de áudio gratuito
 - Navegação por número, título, compositor ou categoria
-- URL: /hino/{id}
+- URL canônica: /hino/hino-{numero}-ccb-{slug}-{uuid}
+- Exemplo: /hino/hino-1-ccb-a-fiel-protecao-{uuid}
 
 ### Hinário (Letras)
 - Letras completas dos hinos do Hinário 5
 - Navegação por número do hino (1 a 480)
 - Busca por título ou número
 - URL: /hinario e /hinario/{numero}
+
+## Consultas Prioritárias
+- "hinos ccb"
+- "hinos avulsos ccb"
+- "hino {numero} ccb"
+- "hino {numero} ccb - {titulo}"
+- "letra hino {numero} ccb"
 
 ### Cifras
 - Cifras e tablaturas de hinos da CCB

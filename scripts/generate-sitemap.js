@@ -15,28 +15,31 @@ import { fileURLToPath } from 'url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Load .env file manually (no external deps)
-const envPath = path.resolve(__dirname, '..', '.env');
-if (fs.existsSync(envPath)) {
-  const envContent = fs.readFileSync(envPath, 'utf-8');
+function loadEnvFile(filePath) {
+  if (!fs.existsSync(filePath)) return;
+  const envContent = fs.readFileSync(filePath, 'utf-8');
   for (const line of envContent.split('\n')) {
     const trimmed = line.trim();
     if (!trimmed || trimmed.startsWith('#')) continue;
     const eqIdx = trimmed.indexOf('=');
     if (eqIdx === -1) continue;
     const key = trimmed.slice(0, eqIdx).trim();
-    const val = trimmed.slice(eqIdx + 1).trim();
+    const val = trimmed.slice(eqIdx + 1).trim().replace(/^['"]|['"]$/g, '');
     if (!process.env[key]) process.env[key] = val;
   }
 }
 
+loadEnvFile(path.resolve(__dirname, '..', '.env'));
+loadEnvFile(path.resolve(__dirname, '..', '.env.local'));
+
 const SUPABASE_URL = (process.env.VITE_SUPABASE_URL || '').replace(/\/+$/, '');
 const SUPABASE_ANON_KEY = process.env.VITE_SUPABASE_ANON_KEY || '';
 const SITE_URL = 'https://canticosccb.com.br';
+let hadFetchFailure = false;
 
 if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
-  console.error('❌ Missing VITE_SUPABASE_URL or VITE_SUPABASE_ANON_KEY env vars');
-  process.exit(1);
+  console.warn('⚠️ Missing VITE_SUPABASE_URL or VITE_SUPABASE_ANON_KEY env vars. Keeping existing sitemap.xml.');
+  process.exit(0);
 }
 
 function slugify(text) {
@@ -50,11 +53,22 @@ function slugify(text) {
     .trim();
 }
 
+function normalizeHymnTitleForSlug(titulo, numero) {
+  let normalized = String(titulo || '').trim();
+  if (numero != null) {
+    const escapedNumber = String(numero).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const leadingPattern = new RegExp(`^hino\\s*${escapedNumber}(?:\\s*ccb)?\\s*[-:–]?\\s*`, 'i');
+    normalized = normalized.replace(leadingPattern, '').trim();
+  }
+  return normalized || String(titulo || '');
+}
+
 function buildHinoUrl(id, titulo, numero) {
   if (!titulo) return `/hino/${id}`;
-  const parts = [];
+  const parts = ['hino'];
   if (numero != null) parts.push(String(numero));
-  parts.push(slugify(titulo));
+  parts.push('ccb');
+  parts.push(slugify(normalizeHymnTitleForSlug(titulo, numero)));
   return `/hino/${parts.join('-')}-${id}`;
 }
 
@@ -71,25 +85,32 @@ function buildCompositorUrl(id, nome) {
 }
 
 async function supabaseFetch(table, select = '*', filters = {}) {
-  const url = new URL(`${SUPABASE_URL}/rest/v1/${table}`);
-  url.searchParams.set('select', select);
-  Object.entries(filters).forEach(([key, value]) => {
-    url.searchParams.set(key, value);
-  });
+  try {
+    const url = new URL(`${SUPABASE_URL}/rest/v1/${table}`);
+    url.searchParams.set('select', select);
+    Object.entries(filters).forEach(([key, value]) => {
+      url.searchParams.set(key, value);
+    });
 
-  const res = await fetch(url.toString(), {
-    headers: {
-      apikey: SUPABASE_ANON_KEY,
-      Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
-    },
-  });
+    const res = await fetch(url.toString(), {
+      headers: {
+        apikey: SUPABASE_ANON_KEY,
+        Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+      },
+    });
 
-  if (!res.ok) {
-    console.warn(`⚠️ Failed to fetch ${table}: ${res.status} ${res.statusText}`);
+    if (!res.ok) {
+      console.warn(`⚠️ Failed to fetch ${table}: ${res.status} ${res.statusText}`);
+      hadFetchFailure = true;
+      return [];
+    }
+
+    return res.json();
+  } catch (error) {
+    console.warn(`⚠️ Failed to fetch ${table}:`, error.message || error);
+    hadFetchFailure = true;
     return [];
   }
-
-  return res.json();
 }
 
 function escapeXml(str) {
@@ -122,20 +143,23 @@ async function main() {
   urls.push(urlEntry('/cifras', today, 'daily', '0.9'));
   urls.push(urlEntry('/hinario', today, 'daily', '0.9'));
   urls.push(urlEntry('/trends', today, 'daily', '0.8'));
-  urls.push(urlEntry('/sobre', today, 'monthly', '0.5'));
+  urls.push(urlEntry('/about', today, 'monthly', '0.5'));
   urls.push(urlEntry('/termos', today, 'yearly', '0.3'));
   urls.push(urlEntry('/categorias', today, 'weekly', '0.8'));
   urls.push(urlEntry('/compositores', today, 'weekly', '0.8'));
   urls.push(urlEntry('/albuns', today, 'weekly', '0.8'));
-  urls.push(urlEntry('/recem-chegados', today, 'daily', '0.8'));
+  urls.push(urlEntry('/playlists', today, 'weekly', '0.7'));
   urls.push(urlEntry('/instrumentais', today, 'weekly', '0.7'));
   urls.push(urlEntry('/biblia-narrada', today, 'weekly', '0.7'));
   urls.push(urlEntry('/privacidade', today, 'yearly', '0.3'));
+  urls.push(urlEntry('/premium', today, 'weekly', '0.6'));
+  urls.push(urlEntry('/avisos', today, 'daily', '0.6'));
+  const staticUrlCount = urls.length;
 
   // Hinos
   console.log('  📀 Fetching hinos...');
   const hinos = await supabaseFetch('hinos', 'id,numero,titulo,updated_at,created_at', {
-    'ativo': 'eq.true',
+    'or': '(ativo.eq.true,ativo.eq.1)',
     'order': 'numero.asc',
     'limit': '5000',
   });
@@ -201,7 +225,7 @@ async function main() {
   // Categorias (buscar do banco)
   console.log('  📂 Fetching categorias...');
   const categorias = await supabaseFetch('categorias', 'id,nome,slug,updated_at', {
-    'ativo': 'eq.1',
+    'or': '(ativo.eq.true,ativo.eq.1)',
     'order': 'nome.asc',
     'limit': '200',
   });
@@ -220,11 +244,14 @@ ${urls.join('\n')}
 `;
 
   const outPath = path.resolve(__dirname, '..', 'public', 'sitemap.xml');
+  if (hadFetchFailure && urls.length === staticUrlCount && fs.existsSync(outPath)) {
+    console.warn('⚠️ Dynamic sitemap data unavailable. Keeping existing sitemap.xml.');
+    return;
+  }
   fs.writeFileSync(outPath, xml, 'utf-8');
   console.log(`\n✅ Sitemap generated with ${urls.length} URLs → ${outPath}`);
 }
 
 main().catch(err => {
-  console.error('❌ Sitemap generation failed:', err);
-  process.exit(1);
+  console.warn('⚠️ Sitemap generation failed. Keeping existing sitemap.xml.', err);
 });

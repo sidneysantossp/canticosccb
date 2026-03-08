@@ -25,6 +25,15 @@ interface Hymn {
   youtube_source?: string;
 }
 
+const stripHtml = (value?: string) =>
+  String(value || '')
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+
+const truncateText = (value: string, maxLength: number) =>
+  value.length > maxLength ? `${value.slice(0, maxLength - 1).trim()}…` : value;
+
 const HymnDetailPage: React.FC = () => {
   const { id: rawId } = useParams<{ id: string }>();
   const id = rawId ? extractUUID(rawId) : undefined;
@@ -306,28 +315,64 @@ const HymnDetailPage: React.FC = () => {
     );
   }
 
+  const hymnPrimaryTitle = hymn.numero
+    ? `Hino ${hymn.numero} CCB - ${hymn.titulo}`
+    : `${hymn.titulo} - Hino CCB`;
+  const lyricsExcerpt = truncateText(stripHtml(hymn.letra), 180);
+  const hymnDescription = truncateText(
+    [
+      `Ouça ${hymnPrimaryTitle}${hymn.compositor_nome ? `, composto por ${hymn.compositor_nome}` : ''}.`,
+      hymn.categoria ? `Categoria: ${hymn.categoria}.` : '',
+      lyricsExcerpt ? `Letra: ${lyricsExcerpt}` : 'Áudio, letra e informações completas no Cânticos CCB.',
+    ]
+      .filter(Boolean)
+      .join(' '),
+    320
+  );
+  const hymnKeywords = [
+    hymnPrimaryTitle,
+    hymn.numero ? `hino ${hymn.numero} ccb` : null,
+    hymn.titulo,
+    hymn.compositor_nome,
+    hymn.categoria,
+    'hinos ccb',
+    'hinário 5',
+  ]
+    .filter(Boolean)
+    .join(', ');
+  const categorySlug = hymn.categoria
+    ? hymn.categoria
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/^-+|-+$/g, '')
+    : '';
+
   return (
     <>
       <SEOHead
-        title={`${hymn.titulo}${hymn.compositor_nome ? ` - ${hymn.compositor_nome}` : ''}`}
-        description={`Ouça ${hymn.titulo}${hymn.compositor_nome ? ` de ${hymn.compositor_nome}` : ''} na Cânticos CCB. ${hymn.categoria ? `Categoria: ${hymn.categoria}.` : ''}`}
-        keywords={`${hymn.titulo}, ${hymn.compositor_nome || 'CCB'}, hino, ${hymn.categoria || 'hinos'}, congregação cristã`}
+        title={`${hymnPrimaryTitle}${hymn.compositor_nome ? ` - ${hymn.compositor_nome}` : ''}`}
+        description={hymnDescription}
+        keywords={hymnKeywords}
         canonical={buildHinoUrl(hymn.id, hymn.titulo, hymn.numero)}
         ogType="music.song"
         ogImage={hymn.cover_url}
         schemaData={[
           generateMusicRecordingSchema({
-            name: hymn.titulo,
+            name: hymnPrimaryTitle,
             url: buildHinoUrl(hymn.id, hymn.titulo, hymn.numero),
             artist: hymn.compositor_nome || 'Cânticos CCB',
             artistUrl: hymn.compositor_id ? buildCompositorUrl(hymn.compositor_id, hymn.compositor_nome || undefined) : '/',
             genre: hymn.categoria || 'Hinos CCB',
             image: hymn.cover_url,
+            description: hymnDescription,
+            audioUrl: hymn.youtube_source ? undefined : hymn.audio_url,
           }),
           generateBreadcrumbSchema([
             { name: 'Início', url: '/' },
-            { name: hymn.categoria || 'Hinos', url: hymn.categoria ? `/categoria/${hymn.categoria.toLowerCase()}` : '/' },
-            { name: hymn.titulo, url: buildHinoUrl(hymn.id, hymn.titulo, hymn.numero) },
+            { name: hymn.categoria || 'Hinos', url: categorySlug ? `/categoria/${categorySlug}` : '/' },
+            { name: hymnPrimaryTitle, url: buildHinoUrl(hymn.id, hymn.titulo, hymn.numero) },
           ]),
         ]}
       />

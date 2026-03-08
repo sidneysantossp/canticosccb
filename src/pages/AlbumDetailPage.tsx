@@ -393,9 +393,9 @@ const AlbumDetailPage: React.FC = () => {
   return (
     <>
       <SEOHead
-        title={`${album.title} - ${album.artist}`}
-        description={album.description || `Álbum ${album.title} de ${album.artist} - Cânticos CCB`}
-        keywords={`${album.title}, ${album.artist}, álbum, hinos, CCB, congregação cristã`}
+        title={`${album.title} - ${album.artist} | Álbum CCB`}
+        description={album.description || `Ouça o álbum ${album.title} de ${album.artist} no Cânticos CCB. Faixas, capa, duração e repertório completo.`}
+        keywords={`${album.title}, ${album.artist}, álbum ccb, álbuns de hinos ccb, hinos ccb`}
         canonical={buildAlbumUrl(album.id, album.title, album.artist)}
         ogType="music.album"
         ogImage={album.coverUrl}
@@ -417,7 +417,7 @@ const AlbumDetailPage: React.FC = () => {
           }),
           generateBreadcrumbSchema([
             { name: 'Início', url: '/' },
-            { name: 'Álbuns', url: '/albums' },
+            { name: 'Álbuns', url: '/albuns' },
             { name: album.title, url: buildAlbumUrl(album.id, album.title, album.artist) },
           ]),
         ]}

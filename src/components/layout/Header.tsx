@@ -12,6 +12,7 @@ import AdminMobileSidebar from './AdminMobileSidebar';
 import PublicMobileSidebar from './PublicMobileSidebar';
 import { quickSearch } from '@/lib/mockApis';
 import { buildAlbumUrl, buildCompositorUrl, buildHinoUrl } from '@/utils/slugUrl';
+import { useVoiceSearch } from '@/hooks/useVoiceSearch';
 
 type HeaderSearchItem = {
   id: string;
@@ -39,6 +40,21 @@ const Header: React.FC = () => {
   const premiumEnabled = usePremiumEnabled();
   const navigate = useNavigate();
   const location = useLocation();
+  const {
+    supported: voiceSupported,
+    isListening: isVoiceListening,
+    error: voiceError,
+    clearError: clearVoiceError,
+    toggleListening,
+  } = useVoiceSearch({
+    onInterimResult: (text) => setSearchQuery(text),
+    onFinalResult: (text) => {
+      setSearchQuery(text);
+      handleSearch(text);
+      navigate(`/search?q=${encodeURIComponent(text)}`);
+      setShowResults(false);
+    },
+  });
 
   // Fechar dropdowns ao clicar fora do header (sem overlay bloqueante)
   useEffect(() => {
@@ -107,6 +123,9 @@ const Header: React.FC = () => {
 
   // Função de busca com debounce manual
   const handleSearch = (query: string) => {
+    if (voiceError) {
+      clearVoiceError();
+    }
     setSearchQuery(query);
     
     // Limpar timeout anterior
@@ -260,9 +279,19 @@ const Header: React.FC = () => {
                 onFocus={() => searchQuery && setShowResults(true)}
                 className="w-full pl-10 pr-12 py-2 bg-background-tertiary border border-gray-700 rounded-full text-text-primary placeholder-text-muted focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
               />
-              <button className="absolute right-3 top-1/2 transform -translate-y-1/2 p-1 rounded-full hover:bg-background-hover transition-colors">
-                <Mic className="w-4 h-4 text-text-muted hover:text-white" />
-              </button>
+              {voiceSupported && (
+                <button
+                  type="button"
+                  onClick={toggleListening}
+                  className={`absolute right-3 top-1/2 transform -translate-y-1/2 p-1 rounded-full transition-colors ${
+                    isVoiceListening ? 'bg-primary-500/20 text-primary-400' : 'hover:bg-background-hover text-text-muted hover:text-white'
+                  }`}
+                  aria-label={isVoiceListening ? 'Parar busca por voz' : 'Iniciar busca por voz'}
+                  title={isVoiceListening ? 'Ouvindo...' : 'Buscar por voz'}
+                >
+                  <Mic className="w-4 h-4" />
+                </button>
+              )}
             </div>
           </form>
 
@@ -309,6 +338,11 @@ const Header: React.FC = () => {
           {isSearching && (
             <div className="absolute top-full left-0 right-0 mt-2 bg-background-secondary border border-gray-700 rounded-lg shadow-xl z-50 p-4 text-center">
               <p className="text-text-muted text-sm">Buscando...</p>
+            </div>
+          )}
+          {voiceError && !isSearching && (
+            <div className="absolute top-full left-0 right-0 mt-2 bg-background-secondary border border-red-500/30 rounded-lg shadow-xl z-50 p-3 text-center">
+              <p className="text-red-300 text-sm">{voiceError}</p>
             </div>
           )}
         </div>

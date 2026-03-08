@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Search, BookOpen, Eye } from 'lucide-react';
 import SEOHead from '@/components/SEO/SEOHead';
-import { generateBreadcrumbSchema } from '@/utils/schemaGenerator';
+import { generateBreadcrumbSchema, generateItemListSchema } from '@/utils/schemaGenerator';
 import { fetchHinarioList, HinarioHymn, HINARIO_CATEGORIES } from '@/api/hinario';
 
 const normalize = (str: string) =>
@@ -43,15 +43,24 @@ const HinarioListPage: React.FC = () => {
   return (
     <>
       <SEOHead
-        title="Hinário CCB - Letras dos Hinos"
-        description="Leia as letras dos hinos do Hinário da Congregação Cristã no Brasil. Navegue por número ou busque por título."
-        keywords="hinário, CCB, letras, hinos, congregação cristã, hinário 5"
+        title="Hinário CCB Completo - Letras dos 480 Hinos"
+        description="Leia as letras dos 480 hinos do Hinário 5 da CCB. Navegue por número, título e categoria no hinário completo da Congregação Cristã no Brasil."
+        keywords="hinário ccb completo, 480 hinos ccb, letras dos hinos ccb, hinário 5, hino 1 ccb, hino 480 ccb"
         canonical="/hinario"
         schemaData={[
           generateBreadcrumbSchema([
             { name: 'Início', url: '/' },
             { name: 'Hinário', url: '/hinario' },
           ]),
+          generateItemListSchema({
+            name: 'Hinário CCB',
+            description: 'Lista dos hinos do Hinário 5 da Congregação Cristã no Brasil.',
+            url: '/hinario',
+            items: hymns.slice(0, 120).map((hymn) => ({
+              name: `Hino ${hymn.numero} CCB - ${hymn.titulo}`,
+              url: `/hinario/${hymn.numero}`,
+            })),
+          }),
         ]}
       />
 

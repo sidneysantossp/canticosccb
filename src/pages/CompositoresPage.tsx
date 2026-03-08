@@ -5,6 +5,7 @@ import { getFeaturedComposers } from '@/lib/admin/composersAdminApi';
 import { supabaseFetch } from '@/lib/supabaseRest';
 import SEOHead from '@/components/SEO/SEOHead';
 import { buildCompositorUrl } from '@/utils/slugUrl';
+import { generateItemListSchema } from '@/utils/schemaGenerator';
 
 interface Compositor {
   id: string;
@@ -20,6 +21,7 @@ interface Compositor {
 export default function CompositoresPage() {
   const [composers, setComposers] = useState<Compositor[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isUsingMockData, setIsUsingMockData] = useState(false);
   const [selectedPeriod, setSelectedPeriod] = useState<'hoje' | 'semana' | 'mes'>('hoje');
   const navigate = useNavigate();
 
@@ -105,6 +107,7 @@ export default function CompositoresPage() {
       });
 
       if (dbComposers && dbComposers.length > 0) {
+        setIsUsingMockData(false);
         // Buscar contagem real de seguidores da tabela user_follows
         let followCounts: Record<string, number> = {};
         try {
@@ -169,6 +172,7 @@ export default function CompositoresPage() {
       } else {
         // Fallback para dados mock (sem filtro de período)
         console.log('⚠️ Nenhum compositor no banco, usando mock data');
+        setIsUsingMockData(true);
         let filteredMock = [...mockComposers];
 
         // Ordenar por seguidores
@@ -180,6 +184,7 @@ export default function CompositoresPage() {
     } catch (error) {
       console.error('❌ Erro ao carregar compositores:', error);
       console.log('🔄 Usando mock data como fallback');
+      setIsUsingMockData(true);
       let filteredMock = [...mockComposers];
       filteredMock.sort((a, b) => b.followers - a.followers);
       filteredMock = filteredMock.map((c, i) => ({ ...c, rank: i + 1 }));
@@ -237,9 +242,23 @@ export default function CompositoresPage() {
   return (
     <>
       <SEOHead
-        title="Compositores - Ranking por Seguidores"
-        description="Descubra os compositores mais seguidos e populares. Veja o ranking completo dos compositores da CCB."
-        keywords="compositores, ranking, seguidores, CCB, hinos"
+        title="Compositores CCB - Perfis e Ranking"
+        description="Conheça compositores da CCB, descubra perfis públicos, hinos associados e o ranking de seguidores da plataforma."
+        keywords="compositores ccb, compositores dos hinos ccb, perfil de compositor ccb, ranking compositores ccb"
+        canonical="/compositores"
+        noindex={isUsingMockData}
+        schemaData={[
+          generateItemListSchema({
+            name: 'Compositores CCB',
+            description: 'Lista pública de compositores da Congregação Cristã no Brasil.',
+            url: '/compositores',
+            items: composers.slice(0, 60).map((composer, index) => ({
+              position: index + 1,
+              name: composer.name,
+              url: buildCompositorUrl(composer.id, composer.name),
+            })),
+          }),
+        ]}
       />
 
       <div className="min-h-screen bg-gradient-to-br from-background-primary via-background-secondary to-background-primary pb-24">

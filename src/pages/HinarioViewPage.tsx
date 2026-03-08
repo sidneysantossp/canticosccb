@@ -161,15 +161,15 @@ const HinarioViewPage: React.FC = () => {
   return (
     <>
       <SEOHead
-        title={`Hino ${hymn.numero} - ${hymn.titulo} | Hinário CCB`}
-        description={`Letra do hino ${hymn.numero} - ${hymn.titulo}. Hinário da Congregação Cristã no Brasil.`}
-        keywords={`hino ${hymn.numero}, ${hymn.titulo}, hinário, CCB, letra, congregação cristã`}
+        title={`Hino ${hymn.numero} CCB - ${hymn.titulo} | Letra do Hinário`}
+        description={`Leia a letra do Hino ${hymn.numero} CCB - ${hymn.titulo}. Página do Hinário da Congregação Cristã no Brasil com navegação por número e título.`}
+        keywords={`hino ${hymn.numero} ccb, ${hymn.titulo}, letra hino ${hymn.numero}, hinário ccb, hinário 5`}
         canonical={`/hinario/${hymn.numero}`}
         schemaData={[
           generateBreadcrumbSchema([
             { name: 'Início', url: '/' },
             { name: 'Hinário', url: '/hinario' },
-            { name: `Hino ${hymn.numero}`, url: `/hinario/${hymn.numero}` },
+            { name: `Hino ${hymn.numero} CCB - ${hymn.titulo}`, url: `/hinario/${hymn.numero}` },
           ]),
         ]}
       />

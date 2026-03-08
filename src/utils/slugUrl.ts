@@ -1,7 +1,7 @@
 /**
  * Utilitários para gerar URLs SEO-friendly com slug + UUID embutido.
  *
- * Formato: /hino/hino-13-confiemos-em-deus-7c1db2a1-99a9-4f22-b92a-d8b76590b096
+ * Formato: /hino/hino-13-ccb-confiemos-em-deus-7c1db2a1-99a9-4f22-b92a-d8b76590b096
  *
  * O UUID (padrão 8-4-4-4-12 hex) é preservado no final da URL para lookup confiável.
  * A parte slug antes do UUID é puramente cosmética/SEO.
@@ -12,7 +12,7 @@ const UUID_REGEX = /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}
 /**
  * Gera um slug URL-friendly a partir de um texto.
  */
-function slugify(text: string): string {
+export function slugifyText(text: string): string {
   return text
     .toLowerCase()
     .normalize('NFD')
@@ -22,6 +22,16 @@ function slugify(text: string): string {
     .replace(/-+/g, '-')              // hífens duplicados
     .replace(/^-|-$/g, '')            // trim hífens
     .substring(0, 80);                // limita tamanho
+}
+
+function normalizeHymnTitleForSlug(titulo: string, numero?: number): string {
+  let normalized = titulo.trim();
+  if (numero != null) {
+    const escapedNumber = String(numero).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const leadingPattern = new RegExp(`^hino\\s*${escapedNumber}(?:\\s*ccb)?\\s*[-:–]?\\s*`, 'i');
+    normalized = normalized.replace(leadingPattern, '').trim();
+  }
+  return normalized || titulo;
 }
 
 /**
@@ -44,8 +54,10 @@ export function extractUUID(param: string): string {
 export function buildHinoUrl(id: string, titulo?: string, numero?: number): string {
   if (!titulo) return `/hino/${id}`;
   const parts: string[] = [];
+  parts.push('hino');
   if (numero != null) parts.push(String(numero));
-  parts.push(slugify(titulo));
+  parts.push('ccb');
+  parts.push(slugifyText(normalizeHymnTitleForSlug(titulo, numero)));
   const slug = parts.join('-');
   return `/hino/${slug}-${id}`;
 }
@@ -56,8 +68,8 @@ export function buildHinoUrl(id: string, titulo?: string, numero?: number): stri
  */
 export function buildAlbumUrl(id: string, titulo?: string, artista?: string): string {
   if (!titulo) return `/album/${id}`;
-  const parts = [slugify(titulo)];
-  if (artista) parts.push(slugify(artista));
+  const parts = [slugifyText(titulo)];
+  if (artista) parts.push(slugifyText(artista));
   const slug = parts.join('-');
   return `/album/${slug}-${id}`;
 }
@@ -68,5 +80,5 @@ export function buildAlbumUrl(id: string, titulo?: string, artista?: string): st
  */
 export function buildCompositorUrl(id: string, nome?: string): string {
   if (!nome) return `/compositor/${id}`;
-  return `/compositor/${slugify(nome)}-${id}`;
+  return `/compositor/${slugifyText(nome)}-${id}`;
 }

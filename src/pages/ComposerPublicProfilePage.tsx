@@ -510,9 +510,9 @@ export default function ComposerPublicProfilePage() {
   return (
     <>
       <SEOHead
-        title={`${composer.name} - Perfil do Compositor`}
-        description={composer.bio || `Conheça ${composer.name}, compositor da CCB. Ouça seus hinos e acompanhe suas publicações.`}
-        keywords={`${composer.name}, compositor, CCB, hinos, congregação cristã`}
+        title={`${composer.name} | Compositor CCB`}
+        description={composer.bio || `Conheça ${composer.name}, compositor da CCB. Veja perfil público, hinos publicados, álbuns e acompanhe suas publicações.`}
+        keywords={`${composer.name}, compositor ccb, hinos de ${composer.name}, compositor da congregação cristã`}
         canonical={buildCompositorUrl(composer.id, composer.name)}
         ogType="profile"
         ogImage={composer.avatar_url || composer.photo_url}

@@ -556,8 +556,8 @@ const HomePage: React.FC = () => {
     <>
       <SEOHead
         title="Cânticos CCB — Ouça Hinos da Congregação Cristã no Brasil | Hinário 5, Cifras e Compositores"
-        description="Ouça hinos da CCB online grátis. Hinário 5 completo com hinos cantados e tocados, cifras, compositores e playlists da Congregação Cristã no Brasil. Crie sua conta e salve seus hinos favoritos."
-        keywords="hinos CCB, hinário 5, congregação cristã no brasil, cifras CCB, hinos cantados, hinos tocados, compositores CCB, ouvir hinos CCB online grátis, hinos de louvores e súplicas a deus"
+        description="Ouça hinos da CCB online grátis. Acesse hinos cantados, hinos tocados, hinos avulsos CCB, Hinário 5 completo, cifras, compositores e playlists da Congregação Cristã no Brasil."
+        keywords="hinos CCB, hinos avulsos ccb, hinário 5, congregação cristã no brasil, cifras CCB, hinos cantados, hinos tocados, compositores CCB, ouvir hinos CCB online grátis, hinos de louvores e súplicas a deus"
         canonical="/"
         ogImage="/logo-canticos-ccb.png"
         schemaData={schemas}
@@ -672,7 +672,6 @@ const HomePage: React.FC = () => {
 };
 
 export default HomePage;
-
 
 
 

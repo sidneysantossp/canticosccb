@@ -30,11 +30,13 @@ Allow: /cifras
 Allow: /cifras/*
 Allow: /hinario
 Allow: /hinario/*
-Allow: /search
-Allow: /categorias/*
+Allow: /albuns
+Allow: /compositores
+Allow: /playlists
+Allow: /categoria/*
 Allow: /trends
 Allow: /about
-Allow: /terms
+Allow: /termos
 
 # AI Crawlers - explicitly allowed
 User-agent: GPTBot
@@ -56,7 +58,4 @@ User-agent: Bytespider
 Allow: /
 
 # Content signals for AI
-# search=yes: content should appear in search results
-# ai-input=yes: content may be cited in AI responses (RAG)
-# ai-train=no: content should NOT be used for model training
 Content-Signal: search=yes,ai-input=yes,ai-train=no

@@ -9,6 +9,7 @@ import { advancedSearch, type HymnSearchResult, type ComposerSearchResult, type 
 import { useAuth } from '@/contexts/AuthContext';
 import { publicSupabase, supabase } from '@/lib/supabase-auth';
 import { getPublicTags, type PublicTag } from '@/lib/publicSiteConfig';
+import { useVoiceSearch } from '@/hooks/useVoiceSearch';
 
 const SearchPage: React.FC = () => {
   const { play } = usePlayerStore();
@@ -25,6 +26,16 @@ const SearchPage: React.FC = () => {
   const [recentSearches, setRecentSearches] = useState<string[]>([]);
   const [tags, setTags] = useState<PublicTag[]>([]);
   const [categories, setCategories] = useState<Array<{ id: string; nome: string; slug: string; descricao?: string; imagem_url?: string }>>([]);
+  const {
+    supported: voiceSupported,
+    isListening: isVoiceListening,
+    error: voiceError,
+    clearError: clearVoiceError,
+    toggleListening,
+  } = useVoiceSearch({
+    onInterimResult: (text) => setSearchQuery(text),
+    onFinalResult: (text) => handleSearch(text),
+  });
 
   const schema = generateWebsiteSchema();
 
@@ -145,6 +156,9 @@ const SearchPage: React.FC = () => {
   }, [searchQuery, activeFilter]);
 
   const handleSearch = (query: string) => {
+    if (voiceError) {
+      clearVoiceError();
+    }
     setSearchQuery(query);
     setSearchParams((prev) => {
       const next = new URLSearchParams(prev);
@@ -179,6 +193,7 @@ const SearchPage: React.FC = () => {
         keywords="buscar hinos, busca ccb, compositores ccb, álbuns ccb, playlists ccb"
         canonical="/search"
         schemaData={schema}
+        noindex={Boolean(searchQuery.trim())}
       />
 
       <div className="p-6 min-h-screen">
@@ -191,14 +206,30 @@ const SearchPage: React.FC = () => {
               placeholder="Digite um título, número, compositor, álbum ou playlist"
               value={searchQuery}
               onChange={(e) => handleSearch(e.target.value)}
-              className="w-full pl-12 pr-12 py-3 bg-background-tertiary border border-gray-700 rounded-full text-text-primary placeholder-text-muted focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+              className="w-full pl-12 pr-20 py-3 bg-background-tertiary border border-gray-700 rounded-full text-text-primary placeholder-text-muted focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
             />
             {searchQuery && (
               <button onClick={handleClearSearch} className="absolute right-4 top-1/2 transform -translate-y-1/2 p-1 rounded-full hover:bg-background-hover transition-colors">
                 <X className="w-5 h-5 text-text-muted hover:text-white" />
               </button>
             )}
+            {voiceSupported && (
+              <button
+                type="button"
+                onClick={toggleListening}
+                className={`absolute ${searchQuery ? 'right-12' : 'right-4'} top-1/2 transform -translate-y-1/2 p-1 rounded-full transition-colors ${
+                  isVoiceListening ? 'bg-primary-500/20 text-primary-400' : 'hover:bg-background-hover text-text-muted hover:text-white'
+                }`}
+                aria-label={isVoiceListening ? 'Parar busca por voz' : 'Iniciar busca por voz'}
+                title={isVoiceListening ? 'Ouvindo...' : 'Buscar por voz'}
+              >
+                <Mic2 className="w-5 h-5" />
+              </button>
+            )}
           </div>
+          {voiceError && (
+            <p className="text-red-300 text-sm mt-3 text-center">{voiceError}</p>
+          )}
         </div>
 
         {/* Filter Tabs */}

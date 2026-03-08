@@ -7,6 +7,8 @@ import { Hino } from '@/types';
 import AddToPlaylistModal from '@/components/modals/AddToPlaylistModal';
 import * as playlistsApi from '@/lib/playlistsApi';
 import { useToast } from '@/contexts/ToastContext';
+import SEOHead from '@/components/SEO/SEOHead';
+import { generateBreadcrumbSchema, generateMusicPlaylistSchema } from '@/utils/schemaGenerator';
 
 const PlaylistDetailPage: React.FC = () => {
   const { id } = useParams();
@@ -50,6 +52,8 @@ const PlaylistDetailPage: React.FC = () => {
     ? `${Math.floor(totalSeconds / 3600)}h ${Math.floor((totalSeconds % 3600) / 60)}min`.
         replace(/^0h\s/, '')
     : '—';
+  const playlistTitle = playlist?.name || 'Playlist de Hinos CCB';
+  const playlistDescription = playlist?.description || `Ouça ${tracks.length} hinos organizados nesta playlist do Cânticos CCB.`;
 
   const handlePlayPlaylist = () => {
     if (tracks.length > 0) {
@@ -119,6 +123,34 @@ const PlaylistDetailPage: React.FC = () => {
 
   return (
     <>
+    <SEOHead
+      title={`${playlistTitle} | Playlist CCB`}
+      description={playlistDescription}
+      keywords={`${playlistTitle}, playlist ccb, playlist de hinos ccb, hinos ccb`}
+      canonical={`/playlist/${id}`}
+      schemaData={[
+        generateMusicPlaylistSchema({
+          name: playlistTitle,
+          url: `/playlist/${id}`,
+          description: playlistDescription,
+          creator: 'Cânticos CCB',
+          creatorUrl: '/',
+          creatorType: 'Organization',
+          numTracks: tracks.length,
+          image: playlist?.coverUrl,
+          tracks: tracks.slice(0, 50).map((track) => ({
+            name: track.title,
+            url: `/playlist/${id}`,
+          })),
+        }),
+        generateBreadcrumbSchema([
+          { name: 'Início', url: '/' },
+          { name: 'Playlists', url: '/playlists' },
+          { name: playlistTitle, url: `/playlist/${id}` },
+        ]),
+      ]}
+      noindex={!playlist}
+    />
     <div className="min-h-screen">
       {/* Header with Gradient Background */}
       <div className="relative bg-gradient-to-b from-primary-900 to-background-primary pt-16 pb-6 px-6">

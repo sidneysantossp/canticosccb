@@ -3,31 +3,34 @@
  * Referência: https://schema.org/
  */
 
-const BASE_URL = import.meta.env.VITE_APP_URL || 'https://canticosccb.com.br';
+const FALLBACK_BASE_URL = 'https://canticosccb.com.br';
+
+const getBaseUrl = () => {
+  const envUrl = (import.meta.env.VITE_APP_URL || '').trim();
+  if (envUrl) return envUrl.replace(/\/+$/, '');
+  if (typeof window !== 'undefined' && window.location?.origin) {
+    return window.location.origin.replace(/\/+$/, '');
+  }
+  return FALLBACK_BASE_URL;
+};
 
 /**
  * Schema para a organização/website
  */
 export const generateOrganizationSchema = () => {
+  const BASE_URL = getBaseUrl();
   return {
     '@context': 'https://schema.org',
     '@type': 'Organization',
     name: 'Cânticos CCB',
     url: BASE_URL,
-    logo: `${BASE_URL}/logo.png`,
+    logo: `${BASE_URL}/logo-canticos-ccb.png`,
     description: 'Plataforma de hinos da Congregação Cristã no Brasil',
+    inLanguage: 'pt-BR',
     sameAs: [
-      'https://www.facebook.com/canticosccb',
-      'https://www.instagram.com/canticosccb',
-      'https://www.youtube.com/@canticosccb',
-      'https://twitter.com/canticosccb'
-    ],
-    contactPoint: {
-      '@type': 'ContactPoint',
-      telephone: '+55-11-0000-0000',
-      contactType: 'Customer Service',
-      availableLanguage: ['Portuguese']
-    }
+      'https://www.instagram.com/canticosccb.com.br/',
+      'https://www.facebook.com/canticosccbsiteoficial/'
+    ]
   };
 };
 
@@ -35,11 +38,13 @@ export const generateOrganizationSchema = () => {
  * Schema para Website com SearchAction
  */
 export const generateWebsiteSchema = () => {
+  const BASE_URL = getBaseUrl();
   return {
     '@context': 'https://schema.org',
     '@type': 'WebSite',
     name: 'Cânticos CCB',
     url: BASE_URL,
+    inLanguage: 'pt-BR',
     potentialAction: {
       '@type': 'SearchAction',
       target: {
@@ -55,6 +60,7 @@ export const generateWebsiteSchema = () => {
  * Schema para Breadcrumb
  */
 export const generateBreadcrumbSchema = (items: Array<{ name: string; url: string }>) => {
+  const BASE_URL = getBaseUrl();
   return {
     '@context': 'https://schema.org',
     '@type': 'BreadcrumbList',
@@ -82,12 +88,21 @@ export const generateMusicRecordingSchema = (song: {
   datePublished?: string;
   image?: string;
   description?: string;
+  audioUrl?: string;
 }) => {
+  const BASE_URL = getBaseUrl();
   const schema: any = {
     '@context': 'https://schema.org',
     '@type': 'MusicRecording',
     name: song.name,
     url: `${BASE_URL}${song.url}`,
+    inLanguage: 'pt-BR',
+    isFamilyFriendly: true,
+    publisher: {
+      '@type': 'Organization',
+      name: 'Cânticos CCB',
+      url: BASE_URL,
+    },
     byArtist: {
       '@type': 'MusicGroup',
       name: song.artist,
@@ -100,6 +115,14 @@ export const generateMusicRecordingSchema = (song: {
   if (song.datePublished) schema.datePublished = song.datePublished;
   if (song.image) schema.image = song.image;
   if (song.description) schema.description = song.description;
+  if (song.audioUrl) {
+    schema.associatedMedia = {
+      '@type': 'AudioObject',
+      contentUrl: song.audioUrl.startsWith('http') ? song.audioUrl : `${BASE_URL}${song.audioUrl}`,
+      encodingFormat: 'audio/mpeg',
+      inLanguage: 'pt-BR',
+    };
+  }
   
   if (song.album && song.albumUrl) {
     schema.inAlbum = {
@@ -127,11 +150,18 @@ export const generateMusicAlbumSchema = (album: {
   numTracks?: number;
   tracks?: Array<{ name: string; url: string; duration?: string }>;
 }) => {
+  const BASE_URL = getBaseUrl();
   const schema: any = {
     '@context': 'https://schema.org',
     '@type': 'MusicAlbum',
     name: album.name,
     url: `${BASE_URL}${album.url}`,
+    inLanguage: 'pt-BR',
+    publisher: {
+      '@type': 'Organization',
+      name: 'Cânticos CCB',
+      url: BASE_URL,
+    },
     byArtist: {
       '@type': 'MusicGroup',
       name: album.artist,
@@ -170,11 +200,13 @@ export const generatePersonSchema = (person: {
   birthDate?: string;
   nationality?: string;
 }) => {
+  const BASE_URL = getBaseUrl();
   const schema: any = {
     '@context': 'https://schema.org',
     '@type': 'Person',
     name: person.name,
-    url: `${BASE_URL}${person.url}`
+    url: `${BASE_URL}${person.url}`,
+    inLanguage: 'pt-BR',
   };
 
   if (person.image) schema.image = person.image;
@@ -200,6 +232,7 @@ export const generateMusicGroupSchema = (group: {
   foundingDate?: string;
   members?: Array<{ name: string; role?: string }>;
 }) => {
+  const BASE_URL = getBaseUrl();
   const schema: any = {
     '@context': 'https://schema.org',
     '@type': 'MusicGroup',
@@ -233,17 +266,20 @@ export const generateMusicPlaylistSchema = (playlist: {
   description?: string;
   creator: string;
   creatorUrl: string;
+  creatorType?: 'Person' | 'Organization';
   numTracks?: number;
   image?: string;
   tracks?: Array<{ name: string; url: string }>;
 }) => {
+  const BASE_URL = getBaseUrl();
   const schema: any = {
     '@context': 'https://schema.org',
     '@type': 'MusicPlaylist',
     name: playlist.name,
     url: `${BASE_URL}${playlist.url}`,
+    inLanguage: 'pt-BR',
     creator: {
-      '@type': 'Person',
+      '@type': playlist.creatorType || 'Person',
       name: playlist.creator,
       url: `${BASE_URL}${playlist.creatorUrl}`
     }
@@ -314,12 +350,14 @@ export const generateItemListSchema = (list: {
   url: string;
   items: Array<{ name: string; url: string; position?: number }>;
 }) => {
+  const BASE_URL = getBaseUrl();
   return {
     '@context': 'https://schema.org',
     '@type': 'ItemList',
     name: list.name,
     description: list.description,
     url: list.url.startsWith('http') ? list.url : `${BASE_URL}${list.url}`,
+    inLanguage: 'pt-BR',
     numberOfItems: list.items.length,
     itemListElement: list.items.map((item, index) => ({
       '@type': 'ListItem',

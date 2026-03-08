@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { Music, Play, Search, ArrowLeft, MoreVertical, Heart, Share2, ListPlus, Info } from 'lucide-react';
 import SEOHead from '@/components/SEO/SEOHead';
 import { buildAlbumUrl } from '@/utils/slugUrl';
+import { generateItemListSchema } from '@/utils/schemaGenerator';
 import { getAlbums } from '@/lib/supabase-api';
 import useFavoritesStore from '@/stores/favoritesStore';
 import { usePlayerStore } from '@/stores/playerStore';
@@ -149,9 +150,22 @@ const AlbumsPage: React.FC = () => {
   return (
     <>
       <SEOHead
-        title="Álbuns - Cânticos CCB"
-        description="Explore nossa coleção completa de álbuns de hinos da Congregação Cristã no Brasil"
-        keywords="álbuns, hinários, CCB, coleções, hinos"
+        title="Álbuns de Hinos CCB"
+        description="Explore álbuns de hinos da CCB, coleções cantadas e tocadas, lançamentos e repertórios completos da Congregação Cristã no Brasil."
+        keywords="álbuns de hinos ccb, álbuns ccb, hinos cantados ccb, hinos tocados ccb, coleções ccb"
+        canonical="/albuns"
+        schemaData={[
+          generateItemListSchema({
+            name: 'Álbuns de Hinos CCB',
+            description: 'Coleção pública de álbuns de hinos da Congregação Cristã no Brasil.',
+            url: '/albuns',
+            items: filteredAlbums.slice(0, 60).map((album, index) => ({
+              position: index + 1,
+              name: `${album.title} - ${album.artist}`,
+              url: buildAlbumUrl(album.id, album.title, album.artist),
+            })),
+          }),
+        ]}
       />
 
       <div className="min-h-screen bg-background pb-24">

@@ -79,12 +79,16 @@ const SEOHead: React.FC<SEOProps> = ({
       <meta name="description" content={resolvedDescription} />
       {resolvedKeywords && <meta name="keywords" content={resolvedKeywords} />}
       <meta name="robots" content={robotsContent} />
+      <meta name="googlebot" content={robotsContent} />
       {searchConsoleVerification && (
         <meta name="google-site-verification" content={searchConsoleVerification} />
       )}
       
       {/* Canonical URL */}
       <link rel="canonical" href={canonicalUrl} />
+      <link rel="alternate" hrefLang="pt-BR" href={canonicalUrl} />
+      <link rel="alternate" hrefLang="pt" href={canonicalUrl} />
+      <link rel="alternate" hrefLang="x-default" href={canonicalUrl} />
 
       {/* Open Graph / Facebook */}
       <meta property="og:type" content={ogType} />
@@ -92,6 +96,7 @@ const SEOHead: React.FC<SEOProps> = ({
       <meta property="og:title" content={fullTitle} />
       <meta property="og:description" content={resolvedDescription} />
       <meta property="og:image" content={imageUrl} />
+      <meta property="og:image:alt" content={fullTitle} />
       <meta property="og:image:width" content="1200" />
       <meta property="og:image:height" content="630" />
       <meta property="og:url" content={pageUrl} />
@@ -102,6 +107,7 @@ const SEOHead: React.FC<SEOProps> = ({
       <meta name="twitter:title" content={fullTitle} />
       <meta name="twitter:description" content={resolvedDescription} />
       <meta name="twitter:image" content={imageUrl} />
+      <meta name="twitter:image:alt" content={fullTitle} />
       <meta name="twitter:site" content={twitterSite} />
       <meta name="twitter:creator" content={twitterSite} />
 
