@@ -22,7 +22,7 @@ $$;
 
 CREATE TABLE IF NOT EXISTS public.copyright_claims (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  song_id bigint NULL REFERENCES public.hinos(id) ON DELETE SET NULL,
+  song_id bigint NULL,
   song_title text NOT NULL,
   song_artist text NULL,
   song_cover_url text NULL,
