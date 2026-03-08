@@ -32,6 +32,27 @@ type DiscoveryPlaylist = {
   coverUrl?: string;
 };
 
+const mapComposerDiscovery = (composer: any): DiscoveryComposer => ({
+  id: String(composer.id),
+  name: composer.artistic_name || composer.name || 'Compositor',
+  imageUrl: composer.photo_url || composer.avatar_url || undefined,
+  totalHymns: composer.total_hymns ? Number(composer.total_hymns) : undefined,
+});
+
+const mapAlbumDiscovery = (album: any): DiscoveryAlbum => ({
+  id: String(album.id),
+  title: album.title || 'Álbum',
+  artist: album.artist || 'Acervo Cânticos CCB',
+  coverUrl: album.cover_url || undefined,
+});
+
+const mapPlaylistDiscovery = (playlist: any): DiscoveryPlaylist => ({
+  id: String(playlist.id),
+  name: playlist.name || 'Playlist',
+  description: playlist.description || undefined,
+  coverUrl: playlist.cover_url || undefined,
+});
+
 const SearchPage: React.FC = () => {
   const { play } = usePlayerStore();
   const { user } = useAuth();
@@ -50,6 +71,9 @@ const SearchPage: React.FC = () => {
   const [discoveryComposers, setDiscoveryComposers] = useState<DiscoveryComposer[]>([]);
   const [discoveryAlbums, setDiscoveryAlbums] = useState<DiscoveryAlbum[]>([]);
   const [discoveryPlaylists, setDiscoveryPlaylists] = useState<DiscoveryPlaylist[]>([]);
+  const [catalogComposers, setCatalogComposers] = useState<DiscoveryComposer[]>([]);
+  const [catalogAlbums, setCatalogAlbums] = useState<DiscoveryAlbum[]>([]);
+  const [catalogPlaylists, setCatalogPlaylists] = useState<DiscoveryPlaylist[]>([]);
   const {
     supported: voiceSupported,
     isListening: isVoiceListening,
@@ -107,36 +131,19 @@ const SearchPage: React.FC = () => {
         }
 
         if (!composersRes.error && composersRes.data) {
-          setDiscoveryComposers(
-            composersRes.data.map((composer: any) => ({
-              id: String(composer.id),
-              name: composer.artistic_name || composer.name || 'Compositor',
-              imageUrl: composer.photo_url || composer.avatar_url || undefined,
-              totalHymns: composer.total_hymns ? Number(composer.total_hymns) : undefined,
-            }))
-          );
+          setDiscoveryComposers(composersRes.data.map(mapComposerDiscovery));
         }
 
         if (!albumsRes.error && albumsRes.data) {
           setDiscoveryAlbums(
-            albumsRes.data.map((album: any) => ({
-              id: String(album.id),
-              title: album.title || 'Álbum',
-              artist: album.artist || 'Acervo Cânticos CCB',
-              coverUrl: album.cover_url || undefined,
-            }))
+            albumsRes.data
+              .filter((album: any) => album.active !== false)
+              .map(mapAlbumDiscovery)
           );
         }
 
         if (!playlistsRes.error && playlistsRes.data) {
-          setDiscoveryPlaylists(
-            playlistsRes.data.map((playlist: any) => ({
-              id: String(playlist.id),
-              name: playlist.name || 'Playlist',
-              description: playlist.description || undefined,
-              coverUrl: playlist.cover_url || undefined,
-            }))
-          );
+          setDiscoveryPlaylists(playlistsRes.data.map(mapPlaylistDiscovery));
         }
       } catch (error) {
         console.error('Erro ao carregar dados de descoberta:', error);
@@ -231,6 +238,90 @@ const SearchPage: React.FC = () => {
     };
   }, [searchQuery, activeFilter]);
 
+  useEffect(() => {
+    let isMounted = true;
+
+    const loadFullCatalogForActiveFilter = async () => {
+      if (searchQuery.trim()) return;
+
+      if (activeFilter === 'artists' && catalogComposers.length === 0) {
+        setIsLoading(true);
+        try {
+          const { data, error } = await publicSupabase
+            .from('composers')
+            .select('id, name, artistic_name, photo_url, avatar_url, total_hymns')
+            .or('verified.eq.true,status.eq.approved')
+            .order('name', { ascending: true })
+            .limit(1000);
+
+          if (!error && data && isMounted) {
+            setCatalogComposers(data.map(mapComposerDiscovery));
+          }
+        } catch (error) {
+          console.error('Erro ao carregar catálogo de compositores:', error);
+        } finally {
+          if (isMounted) setIsLoading(false);
+        }
+      }
+
+      if (activeFilter === 'albums' && catalogAlbums.length === 0) {
+        setIsLoading(true);
+        try {
+          const { data, error } = await publicSupabase
+            .from('albums')
+            .select('id, title, artist, cover_url, active')
+            .eq('is_published', true)
+            .order('title', { ascending: true })
+            .limit(1000);
+
+          if (!error && data && isMounted) {
+            setCatalogAlbums(
+              data
+                .filter((album: any) => album.active !== false)
+                .map(mapAlbumDiscovery)
+            );
+          }
+        } catch (error) {
+          console.error('Erro ao carregar catálogo de álbuns:', error);
+        } finally {
+          if (isMounted) setIsLoading(false);
+        }
+      }
+
+      if (activeFilter === 'playlists' && catalogPlaylists.length === 0) {
+        setIsLoading(true);
+        try {
+          const { data, error } = await publicSupabase
+            .from('playlists')
+            .select('id, name, description, cover_url')
+            .eq('is_public', true)
+            .order('name', { ascending: true })
+            .limit(1000);
+
+          if (!error && data && isMounted) {
+            setCatalogPlaylists(data.map(mapPlaylistDiscovery));
+          }
+        } catch (error) {
+          console.error('Erro ao carregar catálogo de playlists:', error);
+        } finally {
+          if (isMounted) setIsLoading(false);
+        }
+      }
+    };
+
+    void loadFullCatalogForActiveFilter();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [
+    activeFilter,
+    searchQuery,
+    catalogAlbums.length,
+    catalogComposers.length,
+    catalogPlaylists.length,
+  ]);
+
   const handleSearch = (query: string) => {
     if (voiceError) {
       clearVoiceError();
@@ -266,6 +357,15 @@ const SearchPage: React.FC = () => {
   const showArtistsFilter = showAllFilters || activeFilter === 'artists';
   const showAlbumsFilter = showAllFilters || activeFilter === 'albums';
   const showPlaylistsFilter = showAllFilters || activeFilter === 'playlists';
+  const displayedComposers = !hasSearchQuery && activeFilter === 'artists' && catalogComposers.length > 0
+    ? catalogComposers
+    : discoveryComposers;
+  const displayedAlbums = !hasSearchQuery && activeFilter === 'albums' && catalogAlbums.length > 0
+    ? catalogAlbums
+    : discoveryAlbums;
+  const displayedPlaylists = !hasSearchQuery && activeFilter === 'playlists' && catalogPlaylists.length > 0
+    ? catalogPlaylists
+    : discoveryPlaylists;
 
   return (
     <>
@@ -544,14 +644,20 @@ const SearchPage: React.FC = () => {
               </section>
             )}
 
-            {showArtistsFilter && discoveryComposers.length > 0 && (
+            {showArtistsFilter && displayedComposers.length > 0 && (
               <section>
                 <div className="mb-6">
-                  <h2 className="text-2xl md:text-3xl font-bold text-white">Compositores em destaque</h2>
-                  <p className="text-gray-400 text-sm mt-1">Perfis públicos para você explorar</p>
+                  <h2 className="text-2xl md:text-3xl font-bold text-white">
+                    {activeFilter === 'artists' && !hasSearchQuery ? 'Todos os compositores' : 'Compositores em destaque'}
+                  </h2>
+                  <p className="text-gray-400 text-sm mt-1">
+                    {activeFilter === 'artists' && !hasSearchQuery
+                      ? `${displayedComposers.length} compositores públicos encontrados`
+                      : 'Perfis públicos para você explorar'}
+                  </p>
                 </div>
                 <div className="space-y-3">
-                  {discoveryComposers.map((composer) => (
+                  {displayedComposers.map((composer) => (
                     <Link
                       key={composer.id}
                       to={buildCompositorUrl(composer.id, composer.name)}
@@ -576,14 +682,20 @@ const SearchPage: React.FC = () => {
               </section>
             )}
 
-            {showAlbumsFilter && discoveryAlbums.length > 0 && (
+            {showAlbumsFilter && displayedAlbums.length > 0 && (
               <section>
                 <div className="mb-6">
-                  <h2 className="text-2xl md:text-3xl font-bold text-white">Álbuns em destaque</h2>
-                  <p className="text-gray-400 text-sm mt-1">Coleções para ouvir agora</p>
+                  <h2 className="text-2xl md:text-3xl font-bold text-white">
+                    {activeFilter === 'albums' && !hasSearchQuery ? 'Todos os álbuns' : 'Álbuns em destaque'}
+                  </h2>
+                  <p className="text-gray-400 text-sm mt-1">
+                    {activeFilter === 'albums' && !hasSearchQuery
+                      ? `${displayedAlbums.length} álbuns públicos encontrados`
+                      : 'Coleções para ouvir agora'}
+                  </p>
                 </div>
                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                  {discoveryAlbums.map((album) => (
+                  {displayedAlbums.map((album) => (
                     <Link
                       key={album.id}
                       to={buildAlbumUrl(album.id, album.title, album.artist)}
@@ -602,14 +714,20 @@ const SearchPage: React.FC = () => {
               </section>
             )}
 
-            {showPlaylistsFilter && discoveryPlaylists.length > 0 && (
+            {showPlaylistsFilter && displayedPlaylists.length > 0 && (
               <section>
                 <div className="mb-6">
-                  <h2 className="text-2xl md:text-3xl font-bold text-white">Playlists públicas</h2>
-                  <p className="text-gray-400 text-sm mt-1">Seleções para ouvir sem buscar</p>
+                  <h2 className="text-2xl md:text-3xl font-bold text-white">
+                    {activeFilter === 'playlists' && !hasSearchQuery ? 'Todas as playlists públicas' : 'Playlists públicas'}
+                  </h2>
+                  <p className="text-gray-400 text-sm mt-1">
+                    {activeFilter === 'playlists' && !hasSearchQuery
+                      ? `${displayedPlaylists.length} playlists públicas encontradas`
+                      : 'Seleções para ouvir sem buscar'}
+                  </p>
                 </div>
                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                  {discoveryPlaylists.map((playlist) => (
+                  {displayedPlaylists.map((playlist) => (
                     <Link
                       key={playlist.id}
                       to={`/playlist/${playlist.id}`}
@@ -629,9 +747,9 @@ const SearchPage: React.FC = () => {
             )}
 
             {!hasSearchQuery &&
-              ((showArtistsFilter && discoveryComposers.length === 0) ||
-                (showAlbumsFilter && discoveryAlbums.length === 0) ||
-                (showPlaylistsFilter && discoveryPlaylists.length === 0)) &&
+              ((showArtistsFilter && displayedComposers.length === 0) ||
+                (showAlbumsFilter && displayedAlbums.length === 0) ||
+                (showPlaylistsFilter && displayedPlaylists.length === 0)) &&
               !showAllFilters && (
                 <section className="text-center py-12">
                   <p className="text-gray-400">Nenhum conteúdo disponível para este filtro no momento.</p>

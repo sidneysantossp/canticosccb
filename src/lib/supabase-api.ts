@@ -195,8 +195,7 @@ export async function getAlbums(params?: {
   let query = supabase
     .from('albums')
     .select('*')
-    .eq('is_published', true)
-    .eq('active', true);
+    .eq('is_published', true);
 
   if (params?.compositor_id) {
     query = query.eq('composer_id', params.compositor_id);
@@ -209,7 +208,7 @@ export async function getAlbums(params?: {
 
   const { data, error } = await query;
   if (error) throw error;
-  return data || [];
+  return (data || []).filter((album: any) => album.active !== false);
 }
 
 export async function getAlbumById(id: string) {

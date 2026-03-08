@@ -182,10 +182,9 @@ async function searchAlbums(context: SearchContext, limit: number): Promise<Albu
   const client = publicSupabase;
   const { data, error } = await client
     .from('albums')
-    .select('id, title, artist, cover_url')
+    .select('id, title, artist, cover_url, active')
     .or(context.albumFilter)
     .eq('is_published', true)
-    .eq('active', true)
     .limit(limit);
 
   if (error) {
@@ -194,6 +193,7 @@ async function searchAlbums(context: SearchContext, limit: number): Promise<Albu
   }
 
   return (data || [])
+    .filter((a: any) => a.active !== false)
     .map((a: any) => ({
       id: String(a.id),
       title: a.title || 'Álbum',
