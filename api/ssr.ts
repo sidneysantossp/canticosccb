@@ -46,9 +46,74 @@ function extractUUID(param: string): string {
   return m ? m[0] : param;
 }
 
+function slugifyText(text: string): string {
+  return String(text || '')
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^\w\s-]/g, '')
+    .replace(/\s+/g, '-')
+    .replace(/-+/g, '-')
+    .replace(/^-|-$/g, '')
+    .slice(0, 80);
+}
+
+function normalizeHymnTitle(title: string, numero?: number | string): string {
+  let normalized = String(title || '').trim();
+  if (numero != null && numero !== '') {
+    const escapedNumber = String(numero).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const leadingPattern = new RegExp(`^hino\\s*${escapedNumber}(?:\\s*ccb)?\\s*[-:–]?\\s*`, 'i');
+    normalized = normalized.replace(leadingPattern, '').trim();
+  }
+  return normalized || String(title || '').trim();
+}
+
+function stripHtml(value: string): string {
+  return String(value || '')
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function compactWhitespace(value: string): string {
+  return String(value || '').replace(/\s+/g, ' ').trim();
+}
+
+function truncate(value: string, maxLength: number): string {
+  const normalized = compactWhitespace(value);
+  if (normalized.length <= maxLength) return normalized;
+  return `${normalized.slice(0, maxLength - 1).trim()}…`;
+}
+
+function buildHinoUrl(id: string, titulo?: string, numero?: number | string): string {
+  if (!titulo) return `/hino/${id}`;
+  const parts = ['hino'];
+  if (numero != null && numero !== '') parts.push(String(numero));
+  parts.push('ccb');
+  const normalizedTitle = normalizeHymnTitle(titulo, numero);
+  if (normalizedTitle) parts.push(slugifyText(normalizedTitle));
+  return `/hino/${parts.join('-')}-${id}`;
+}
+
+function buildAlbumUrl(id: string, titulo?: string, artista?: string): string {
+  if (!titulo) return `/album/${id}`;
+  const parts = [slugifyText(titulo)];
+  if (artista) parts.push(slugifyText(artista));
+  return `/album/${parts.join('-')}-${id}`;
+}
+
+function buildCompositorUrl(id: string, nome?: string): string {
+  if (!nome) return `/compositor/${id}`;
+  return `/compositor/${slugifyText(nome)}-${id}`;
+}
+
 // ─── HTML Builder ────────────────────────────────────────────────────────────
 function esc(s: string): string {
-  return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  return String(s ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
 }
 
 interface PageMeta {
@@ -59,11 +124,13 @@ interface PageMeta {
   ogImage?: string;
   schemas?: object[];
   bodyHtml: string;
+  noindex?: boolean;
 }
 
 function buildFullHtml(meta: PageMeta): string {
   const ogType = meta.ogType || 'website';
   const ogImage = meta.ogImage || `${SITE_URL}/logo-canticos-ccb.png`;
+  const robotsContent = meta.noindex ? 'noindex, follow' : 'index, follow';
   const schemasHtml = (meta.schemas || [])
     .map(s => `<script type="application/ld+json">${JSON.stringify(s)}</script>`)
     .join('\n    ');
@@ -75,7 +142,8 @@ function buildFullHtml(meta: PageMeta): string {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>${esc(meta.title)}</title>
     <meta name="description" content="${esc(meta.description)}">
-    <meta name="robots" content="index, follow">
+    <meta name="robots" content="${robotsContent}">
+    <meta name="googlebot" content="${robotsContent}">
     <link rel="canonical" href="${esc(meta.canonical)}">
     <meta name="author" content="Cânticos CCB">
     <meta name="keywords" content="hinos CCB, hinário 5, congregação cristã no brasil, cifras CCB, hinos cantados, hinos tocados, compositores CCB">
@@ -113,10 +181,16 @@ async function handleHino(idParam: string): Promise<PageMeta | null> {
   if (!rows.length) return null;
   const h = rows[0];
   const num = h.numero || '';
-  const titulo = h.titulo || 'Hino CCB';
-  const title = `Hino ${num} — ${titulo}${h.compositor_nome ? ` por ${h.compositor_nome}` : ''} | Ouça e Leia a Letra | Cânticos CCB`;
-  const desc = `Ouça o Hino ${num} "${titulo}" da CCB${h.compositor_nome ? ` por ${h.compositor_nome}` : ''}. Letra completa, áudio e cifra do Hinário 5 da Congregação Cristã no Brasil.`;
-  const canonical = `${SITE_URL}/hino/${idParam}`;
+  const titulo = normalizeHymnTitle(h.titulo || 'Hino CCB', h.numero);
+  const canonicalPath = buildHinoUrl(String(h.id), titulo, h.numero);
+  const canonical = `${SITE_URL}${canonicalPath}`;
+  const title = num
+    ? `Hino ${num} CCB - ${titulo} | Ouça, Letra e Cifra | Cânticos CCB`
+    : `${titulo} | Ouça, Letra e Cifra | Cânticos CCB`;
+  const desc = truncate(
+    `Ouça o Hino ${num} CCB ${titulo}${h.compositor_nome ? `, composto por ${h.compositor_nome}` : ''}. Veja letra, cifra e navegue pelo repertório da Congregação Cristã no Brasil.`,
+    158
+  );
 
   const schema: any = {
     '@context': 'https://schema.org', '@type': 'MusicRecording',
@@ -143,12 +217,13 @@ async function handleHino(idParam: string): Promise<PageMeta | null> {
     title, description: desc, canonical, ogType: 'music.song', ogImage: h.cover_url || undefined,
     schemas: [schema, breadcrumb],
     bodyHtml: `
-      <nav><a href="${SITE_URL}">Início</a> &rsaquo; <a href="${SITE_URL}/search">Hinos</a> &rsaquo; Hino ${num}</nav>
-      <h1>Hino ${num} — ${esc(titulo)}</h1>
+      <nav><a href="${SITE_URL}">Início</a> &rsaquo; <a href="${SITE_URL}/hinario">Hinário</a> &rsaquo; Hino ${num}</nav>
+      <h1>Hino ${num} CCB - ${esc(titulo)}</h1>
       ${h.compositor_nome ? `<p><strong>Compositor:</strong> ${esc(h.compositor_nome)}</p>` : ''}
       ${h.categoria ? `<p><strong>Categoria:</strong> ${esc(h.categoria)}</p>` : ''}
       ${h.duracao ? `<p><strong>Duração:</strong> ${esc(h.duracao)}</p>` : ''}
       ${letraHtml}
+      <p><a href="${SITE_URL}/hinario/${num}">Ler a letra no Hinário ${num}</a></p>
       <footer><p><a href="${SITE_URL}">Cânticos CCB</a> — Plataforma de hinos da Congregação Cristã no Brasil</p></footer>`,
   };
 }
@@ -163,25 +238,31 @@ async function handleCompositor(idParam: string): Promise<PageMeta | null> {
   if (!rows.length) return null;
   const c = rows[0];
   const nome = c.artistic_name || c.name || 'Compositor CCB';
-  const bio = c.biography || c.bio || '';
-  const title = `${nome} — Hinos e Biografia | Compositor CCB | Cânticos CCB`;
+  const bio = compactWhitespace(stripHtml(c.biography || c.bio || ''));
+  const canonicalPath = buildCompositorUrl(String(c.id), nome);
+  const canonical = `${SITE_URL}${canonicalPath}`;
+  const title = `${nome} | Hinos, Biografia e Repertório CCB | Cânticos CCB`;
   const desc = bio
-    ? bio.substring(0, 155).replace(/\n/g, ' ') + '...'
-    : `Conheça ${nome}, compositor de hinos da Congregação Cristã no Brasil. Ouça seus hinos, veja sua biografia e discografia completa.`;
-  const canonical = `${SITE_URL}/compositor/${idParam}`;
+    ? truncate(bio, 158)
+    : truncate(`Conheça ${nome}, compositor de hinos da Congregação Cristã no Brasil. Veja biografia, repertório, letras e hinos associados.`, 158);
   const image = c.photo_url || c.avatar_url || undefined;
 
   const hinos = await supaFetch('hinos', {
-    compositor_nome: `ilike.%${c.name}%`,
-    ativo: 'eq.true',
+    and: `(or(compositor_nome.ilike.%${nome}%,compositor_nome.ilike.%${c.name || nome}%),or(ativo.eq.true,ativo.eq.1))`,
     select: 'id,numero,titulo',
     order: 'numero.asc',
-    limit: '50',
+    limit: '100',
   });
 
   const schema = {
-    '@context': 'https://schema.org', '@type': 'Person',
+    '@context': 'https://schema.org', '@type': 'ProfilePage',
     name: nome, url: canonical, description: desc.substring(0, 200),
+    mainEntity: {
+      '@type': 'Person',
+      name: nome,
+      ...(image ? { image } : {}),
+      ...(bio ? { description: bio } : {}),
+    },
     ...(image ? { image } : {}),
   };
   const breadcrumb = {
@@ -194,7 +275,14 @@ async function handleCompositor(idParam: string): Promise<PageMeta | null> {
   };
 
   const hinosHtml = hinos.length > 0
-    ? `<section><h2>Hinos de ${esc(nome)}</h2><ul>${hinos.map((h: any) => `<li><a href="${SITE_URL}/hino/${h.id}">Hino ${h.numero} — ${esc(h.titulo || '')}</a></li>`).join('')}</ul></section>`
+    ? `<section><h2>Hinos de ${esc(nome)}</h2><ul>${hinos
+      .filter((h: any) => h.numero != null || h.titulo)
+      .map((h: any) => {
+        const numeroLabel = h.numero != null ? `Hino ${h.numero}` : 'Hino';
+        const cleanTitle = normalizeHymnTitle(h.titulo || '', h.numero);
+        const href = `${SITE_URL}${buildHinoUrl(String(h.id), cleanTitle, h.numero)}`;
+        return `<li><a href="${href}">${esc(numeroLabel)}${cleanTitle ? ` - ${esc(cleanTitle)}` : ''}</a></li>`;
+      }).join('')}</ul></section>`
     : '';
 
   return {
@@ -219,14 +307,20 @@ async function handleAlbum(idParam: string): Promise<PageMeta | null> {
   });
   if (!rows.length) return null;
   const a = rows[0];
-  const title = `${a.title || 'Álbum'} — ${a.artist || 'CCB'} | Cânticos CCB`;
-  const desc = a.description || `Ouça o álbum "${a.title}" de ${a.artist || 'CCB'}. Hinos da Congregação Cristã no Brasil.`;
-  const canonical = `${SITE_URL}/album/${idParam}`;
+  const albumTitle = compactWhitespace(a.title || 'Álbum CCB');
+  const albumArtist = compactWhitespace(a.artist || 'CCB');
+  const canonicalPath = buildAlbumUrl(String(a.id), albumTitle, albumArtist);
+  const canonical = `${SITE_URL}${canonicalPath}`;
+  const title = `${albumTitle}${albumArtist ? ` - ${albumArtist}` : ''} | Álbum de Hinos CCB | Cânticos CCB`;
+  const desc = truncate(
+    stripHtml(a.description || '') || `Ouça o álbum ${albumTitle}${albumArtist ? ` de ${albumArtist}` : ''}. Repertório de hinos da Congregação Cristã no Brasil.`,
+    158
+  );
 
   const schema = {
     '@context': 'https://schema.org', '@type': 'MusicAlbum',
-    name: a.title, url: canonical,
-    ...(a.artist ? { byArtist: { '@type': 'Person', name: a.artist } } : {}),
+    name: albumTitle, url: canonical,
+    ...(albumArtist ? { byArtist: { '@type': 'Person', name: albumArtist } } : {}),
     ...(a.cover_url ? { image: a.cover_url } : {}),
   };
   const breadcrumb = {
@@ -234,7 +328,7 @@ async function handleAlbum(idParam: string): Promise<PageMeta | null> {
     itemListElement: [
       { '@type': 'ListItem', position: 1, name: 'Início', item: SITE_URL },
       { '@type': 'ListItem', position: 2, name: 'Álbuns', item: `${SITE_URL}/albuns` },
-      { '@type': 'ListItem', position: 3, name: a.title, item: canonical },
+      { '@type': 'ListItem', position: 3, name: albumTitle, item: canonical },
     ],
   };
 
@@ -242,10 +336,10 @@ async function handleAlbum(idParam: string): Promise<PageMeta | null> {
     title, description: desc, canonical, ogType: 'music.album', ogImage: a.cover_url || undefined,
     schemas: [schema, breadcrumb],
     bodyHtml: `
-      <nav><a href="${SITE_URL}">Início</a> &rsaquo; <a href="${SITE_URL}/albuns">Álbuns</a> &rsaquo; ${esc(a.title || '')}</nav>
-      <h1>${esc(a.title || 'Álbum')}</h1>
-      ${a.artist ? `<p><strong>Artista:</strong> ${esc(a.artist)}</p>` : ''}
-      ${a.description ? `<p>${esc(a.description)}</p>` : ''}
+      <nav><a href="${SITE_URL}">Início</a> &rsaquo; <a href="${SITE_URL}/albuns">Álbuns</a> &rsaquo; ${esc(albumTitle)}</nav>
+      <h1>${esc(albumTitle)}</h1>
+      ${albumArtist ? `<p><strong>Artista:</strong> ${esc(albumArtist)}</p>` : ''}
+      ${a.description ? `<p>${esc(stripHtml(a.description))}</p>` : ''}
       <footer><p><a href="${SITE_URL}">Cânticos CCB</a> — Plataforma de hinos da Congregação Cristã no Brasil</p></footer>`,
   };
 }
@@ -386,8 +480,203 @@ async function handleHinarioList(): Promise<PageMeta> {
   };
 }
 
+async function handleCategoria(slug: string): Promise<PageMeta | null> {
+  const categoryRows = await supaFetch('categorias', {
+    slug: `eq.${slug}`,
+    select: 'id,nome,slug,descricao,imagem_url,updated_at',
+    limit: '1',
+  });
+  if (!categoryRows.length) return null;
+
+  const category = categoryRows[0];
+  const categoryId = String(category.id);
+  const categoryName = compactWhitespace(category.nome || slug);
+  const description = truncate(
+    stripHtml(category.descricao || '') || `Explore hinos da categoria ${categoryName} na Congregação Cristã no Brasil, com letras, áudio e navegação por repertório.`,
+    158
+  );
+  const canonical = `${SITE_URL}/categoria/${slug}`;
+
+  let relatedSongIds: string[] = [];
+  const categoryRelations = await supaFetch('hino_categorias', {
+    categoria_id: `eq.${categoryId}`,
+    select: 'hino_id',
+    limit: '1000',
+  });
+  if (categoryRelations.length > 0) {
+    relatedSongIds = categoryRelations
+      .map((row: any) => String(row.hino_id || ''))
+      .filter(Boolean);
+  }
+
+  let songs: any[] = [];
+  if (relatedSongIds.length > 0) {
+    songs = await supaFetch('hinos', {
+      id: `in.(${relatedSongIds.join(',')})`,
+      'or': '(ativo.eq.true,ativo.eq.1)',
+      select: 'id,numero,titulo,compositor_nome',
+      order: 'numero.asc',
+      limit: '200',
+    });
+  }
+
+  const fallbackSongs = await supaFetch('hinos', {
+    categoria: `ilike.%${categoryName}%`,
+    'or': '(ativo.eq.true,ativo.eq.1)',
+    select: 'id,numero,titulo,compositor_nome',
+    order: 'numero.asc',
+    limit: '200',
+  });
+
+  const mergedSongs = [...songs];
+  const seen = new Set(mergedSongs.map((song: any) => String(song.id)));
+  for (const song of fallbackSongs) {
+    const key = String(song.id);
+    if (!seen.has(key)) {
+      mergedSongs.push(song);
+      seen.add(key);
+    }
+  }
+
+  const listItems = mergedSongs.slice(0, 120);
+  const songListHtml = listItems.length > 0
+    ? `<ul>${listItems.map((song: any) => {
+      const cleanTitle = normalizeHymnTitle(song.titulo || '', song.numero);
+      return `<li><a href="${SITE_URL}${buildHinoUrl(String(song.id), cleanTitle, song.numero)}">Hino ${song.numero || ''}${cleanTitle ? ` - ${esc(cleanTitle)}` : ''}</a>${song.compositor_nome ? ` <span>— ${esc(song.compositor_nome)}</span>` : ''}</li>`;
+    }).join('')}</ul>`
+    : '<p>Nenhum hino desta categoria foi publicado ainda.</p>';
+
+  return {
+    title: `${categoryName} | Hinos CCB por Categoria | Cânticos CCB`,
+    description,
+    canonical,
+    ogImage: category.imagem_url || undefined,
+    schemas: [
+      {
+        '@context': 'https://schema.org',
+        '@type': 'CollectionPage',
+        name: categoryName,
+        url: canonical,
+        description,
+      },
+      {
+        '@context': 'https://schema.org',
+        '@type': 'BreadcrumbList',
+        itemListElement: [
+          { '@type': 'ListItem', position: 1, name: 'Início', item: SITE_URL },
+          { '@type': 'ListItem', position: 2, name: 'Categorias', item: `${SITE_URL}/categorias` },
+          { '@type': 'ListItem', position: 3, name: categoryName, item: canonical },
+        ],
+      },
+    ],
+    bodyHtml: `
+      <nav><a href="${SITE_URL}">Início</a> &rsaquo; <a href="${SITE_URL}/categorias">Categorias</a> &rsaquo; ${esc(categoryName)}</nav>
+      <h1>${esc(categoryName)}</h1>
+      <p>${esc(description)}</p>
+      <section><h2>Hinos desta categoria</h2>${songListHtml}</section>
+      <footer><p><a href="${SITE_URL}">Cânticos CCB</a> — Plataforma de hinos da Congregação Cristã no Brasil</p></footer>`,
+  };
+}
+
+async function handlePlaylistsList(): Promise<PageMeta> {
+  const playlists = await supaFetch('playlists', {
+    'or': '(is_public.eq.true,is_public.eq.1)',
+    select: 'id,name,description,updated_at',
+    order: 'updated_at.desc',
+    limit: '200',
+  });
+  const canonical = `${SITE_URL}/playlists`;
+  const description = 'Explore playlists públicas de hinos da Congregação Cristã no Brasil, com seleções temáticas para ouvir e compartilhar.';
+  const listHtml = playlists.length > 0
+    ? `<ul>${playlists.map((playlist: any) => `<li><a href="${SITE_URL}/playlist/${playlist.id}">${esc(playlist.name || 'Playlist')}</a>${playlist.description ? ` — ${esc(truncate(playlist.description, 100))}` : ''}</li>`).join('')}</ul>`
+    : '<p>Nenhuma playlist pública foi publicada ainda.</p>';
+
+  return {
+    title: 'Playlists de Hinos CCB | Playlists Públicas e Temáticas | Cânticos CCB',
+    description,
+    canonical,
+    schemas: [
+      {
+        '@context': 'https://schema.org',
+        '@type': 'CollectionPage',
+        name: 'Playlists de Hinos CCB',
+        url: canonical,
+        description,
+      },
+    ],
+    bodyHtml: `
+      <nav><a href="${SITE_URL}">Início</a> &rsaquo; Playlists</nav>
+      <h1>Playlists de Hinos CCB</h1>
+      <p>${esc(description)}</p>
+      <section><h2>Playlists públicas</h2>${listHtml}</section>
+      <footer><p><a href="${SITE_URL}">Cânticos CCB</a> — Plataforma de hinos da Congregação Cristã no Brasil</p></footer>`,
+  };
+}
+
+async function handlePlaylistDetail(idParam: string): Promise<PageMeta | null> {
+  const playlistRows = await supaFetch('playlists', {
+    id: `eq.${idParam}`,
+    'or': '(is_public.eq.true,is_public.eq.1)',
+    select: 'id,name,description,cover_url,created_at,updated_at',
+    limit: '1',
+  });
+  if (!playlistRows.length) return null;
+
+  const playlist = playlistRows[0];
+  const tracks = await supaFetch('playlist_tracks', {
+    playlist_id: `eq.${idParam}`,
+    select: 'track_id,title,artist,duration,position',
+    order: 'position.asc',
+    limit: '500',
+  });
+
+  const playlistTitle = compactWhitespace(playlist.name || 'Playlist CCB');
+  const description = truncate(
+    stripHtml(playlist.description || '') || `Ouça a playlist ${playlistTitle} com hinos da Congregação Cristã no Brasil.`,
+    158
+  );
+  const canonical = `${SITE_URL}/playlist/${playlist.id}`;
+
+  const trackListHtml = tracks.length > 0
+    ? `<ol>${tracks.map((track: any) => `<li>${esc(track.title || 'Hino')}${track.artist ? ` — ${esc(track.artist)}` : ''}${track.duration ? ` (${esc(track.duration)})` : ''}</li>`).join('')}</ol>`
+    : '<p>Esta playlist ainda não possui hinos publicados.</p>';
+
+  return {
+    title: `${playlistTitle} | Playlist de Hinos CCB | Cânticos CCB`,
+    description,
+    canonical,
+    ogType: 'music.playlist',
+    ogImage: playlist.cover_url || undefined,
+    schemas: [
+      {
+        '@context': 'https://schema.org',
+        '@type': 'MusicPlaylist',
+        name: playlistTitle,
+        url: canonical,
+        description,
+        numTracks: tracks.length,
+      },
+      {
+        '@context': 'https://schema.org',
+        '@type': 'BreadcrumbList',
+        itemListElement: [
+          { '@type': 'ListItem', position: 1, name: 'Início', item: SITE_URL },
+          { '@type': 'ListItem', position: 2, name: 'Playlists', item: `${SITE_URL}/playlists` },
+          { '@type': 'ListItem', position: 3, name: playlistTitle, item: canonical },
+        ],
+      },
+    ],
+    bodyHtml: `
+      <nav><a href="${SITE_URL}">Início</a> &rsaquo; <a href="${SITE_URL}/playlists">Playlists</a> &rsaquo; ${esc(playlistTitle)}</nav>
+      <h1>${esc(playlistTitle)}</h1>
+      <p>${esc(description)}</p>
+      <section><h2>Faixas da playlist</h2>${trackListHtml}</section>
+      <footer><p><a href="${SITE_URL}">Cânticos CCB</a> — Plataforma de hinos da Congregação Cristã no Brasil</p></footer>`,
+  };
+}
+
 function handleStaticPage(path: string): PageMeta | null {
-  const pages: Record<string, { title: string; desc: string; h1: string; body: string }> = {
+  const pages: Record<string, { title: string; desc: string; h1: string; body: string; noindex?: boolean }> = {
     '/trends': {
       title: 'Tendências — Hinos Mais Ouvidos da CCB | Cânticos CCB',
       desc: 'Veja os hinos mais ouvidos e as tendências da Congregação Cristã no Brasil.',
@@ -448,12 +737,94 @@ function handleStaticPage(path: string): PageMeta | null {
       h1: 'Cânticos CCB Premium',
       body: '<p>Conheça os benefícios do plano premium do Cânticos CCB.</p>',
     },
+    '/categorias': {
+      title: 'Categorias de Hinos CCB | Explore Hinos por Tema | Cânticos CCB',
+      desc: 'Explore hinos da Congregação Cristã no Brasil por categorias, temas e repertórios relacionados.',
+      h1: 'Categorias de Hinos CCB',
+      body: '<p>Navegue pelas categorias de hinos da Congregação Cristã no Brasil e encontre repertórios por tema, estilo e uso.</p>',
+    },
+    '/privacy': {
+      title: 'Política de Privacidade | Cânticos CCB',
+      desc: 'Leia a política de privacidade da plataforma Cânticos CCB.',
+      h1: 'Política de Privacidade',
+      body: '<p>Leia a política de privacidade da plataforma Cânticos CCB.</p>',
+    },
+    '/privacidade': {
+      title: 'Política de Privacidade | Cânticos CCB',
+      desc: 'Leia a política de privacidade da plataforma Cânticos CCB.',
+      h1: 'Política de Privacidade',
+      body: '<p>Leia a política de privacidade da plataforma Cânticos CCB.</p>',
+    },
+    '/cookies': {
+      title: 'Política de Cookies | Cânticos CCB',
+      desc: 'Entenda como a plataforma Cânticos CCB utiliza cookies e tecnologias relacionadas.',
+      h1: 'Política de Cookies',
+      body: '<p>Entenda como a plataforma Cânticos CCB utiliza cookies e tecnologias relacionadas.</p>',
+    },
+    '/disclaimer': {
+      title: 'Aviso Legal | Cânticos CCB',
+      desc: 'Leia o aviso legal e os esclarecimentos da plataforma Cânticos CCB.',
+      h1: 'Aviso Legal',
+      body: '<p>Leia o aviso legal e os esclarecimentos da plataforma Cânticos CCB.</p>',
+    },
+    '/lgpd': {
+      title: 'LGPD e Proteção de Dados | Cânticos CCB',
+      desc: 'Informações sobre tratamento de dados pessoais e LGPD na plataforma Cânticos CCB.',
+      h1: 'LGPD e Proteção de Dados',
+      body: '<p>Informações sobre tratamento de dados pessoais e LGPD na plataforma Cânticos CCB.</p>',
+    },
+    '/reivindicacao-de-conteudo': {
+      title: 'Reivindicação de Conteúdo | Cânticos CCB',
+      desc: 'Solicite análise de conteúdo e direitos autorais na plataforma Cânticos CCB.',
+      h1: 'Reivindicação de Conteúdo',
+      body: '<p>Solicite análise de conteúdo e direitos autorais na plataforma Cânticos CCB.</p>',
+    },
+    '/avisos': {
+      title: 'Avisos e Atualizações | Cânticos CCB',
+      desc: 'Acompanhe avisos, atualizações e novidades da plataforma Cânticos CCB.',
+      h1: 'Avisos e Atualizações',
+      body: '<p>Acompanhe avisos, atualizações e novidades da plataforma Cânticos CCB.</p>',
+    },
+    '/ajuda': {
+      title: 'Ajuda e Suporte | Cânticos CCB',
+      desc: 'Encontre respostas, suporte e orientações para usar o Cânticos CCB.',
+      h1: 'Ajuda e Suporte',
+      body: '<p>Encontre respostas e orientações para usar melhor o Cânticos CCB.</p>',
+    },
+    '/contato': {
+      title: 'Contato | Cânticos CCB',
+      desc: 'Entre em contato com a equipe do Cânticos CCB.',
+      h1: 'Contato',
+      body: '<p>Entre em contato com a equipe do Cânticos CCB.</p>',
+    },
+    '/instrumentais': {
+      title: 'Hinos Instrumentais CCB | Cânticos CCB',
+      desc: 'Página em preparação para repertório de hinos instrumentais da Congregação Cristã no Brasil.',
+      h1: 'Hinos Instrumentais CCB',
+      body: '<p>Esta área de hinos instrumentais ainda está em preparação.</p>',
+      noindex: true,
+    },
+    '/biblia-narrada': {
+      title: 'Bíblia Narrada CCB | Cânticos CCB',
+      desc: 'Página em preparação para a área de Bíblia narrada da plataforma Cânticos CCB.',
+      h1: 'Bíblia Narrada CCB',
+      body: '<p>Esta área ainda está em preparação e será publicada quando houver conteúdo navegável.</p>',
+      noindex: true,
+    },
+    '/radio': {
+      title: 'Rádio Cânticos CCB',
+      desc: 'Página em preparação para a rádio da plataforma Cânticos CCB.',
+      h1: 'Rádio Cânticos CCB',
+      body: '<p>Esta área ainda está em preparação e será publicada quando houver conteúdo navegável.</p>',
+      noindex: true,
+    },
   };
   const page = pages[path];
   if (!page) return null;
   return {
     title: page.title, description: page.desc, canonical: `${SITE_URL}${path}`,
     schemas: [],
+    noindex: page.noindex,
     bodyHtml: `
       <nav><a href="${SITE_URL}">Início</a> &rsaquo; ${esc(page.h1)}</nav>
       <h1>${esc(page.h1)}</h1>
@@ -483,6 +854,8 @@ export default async function handler(req: Request): Promise<Response> {
     const albumMatch = pathname.match(/^\/album\/(.+)$/);
     const hinarioNumMatch = pathname.match(/^\/hinario\/(\d+)$/);
     const cifraMatch = pathname.match(/^\/cifra\/(.+)$/);
+    const categoriaMatch = pathname.match(/^\/categoria\/([^/]+)$/);
+    const playlistMatch = pathname.match(/^\/playlist\/([^/]+)$/);
 
     if (hinoMatch) {
       pageMeta = await handleHino(hinoMatch[1]);
@@ -494,10 +867,16 @@ export default async function handler(req: Request): Promise<Response> {
       pageMeta = await handleHinarioView(hinarioNumMatch[1]);
     } else if (cifraMatch) {
       pageMeta = await handleCifra(cifraMatch[1]);
+    } else if (categoriaMatch) {
+      pageMeta = await handleCategoria(categoriaMatch[1]);
+    } else if (playlistMatch) {
+      pageMeta = await handlePlaylistDetail(playlistMatch[1]);
     } else if (pathname === '/cifras') {
       pageMeta = await handleCifrasList();
     } else if (pathname === '/hinario') {
       pageMeta = await handleHinarioList();
+    } else if (pathname === '/playlists') {
+      pageMeta = await handlePlaylistsList();
     } else {
       pageMeta = handleStaticPage(pathname);
     }
@@ -534,7 +913,7 @@ export default async function handler(req: Request): Promise<Response> {
     headers: {
       'Content-Type': 'text/html; charset=utf-8',
       'Cache-Control': 'public, s-maxage=3600, stale-while-revalidate=86400',
-      'X-Robots-Tag': 'index, follow',
+      'X-Robots-Tag': pageMeta.noindex ? 'noindex, follow' : 'index, follow',
     },
   });
 }

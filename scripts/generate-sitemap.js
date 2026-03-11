@@ -84,6 +84,10 @@ function buildCompositorUrl(id, nome) {
   return `/compositor/${slugify(nome)}-${id}`;
 }
 
+function buildPlaylistUrl(id) {
+  return `/playlist/${id}`;
+}
+
 async function supabaseFetch(table, select = '*', filters = {}) {
   try {
     const url = new URL(`${SUPABASE_URL}/rest/v1/${table}`);
@@ -149,11 +153,12 @@ async function main() {
   urls.push(urlEntry('/compositores', today, 'weekly', '0.8'));
   urls.push(urlEntry('/albuns', today, 'weekly', '0.8'));
   urls.push(urlEntry('/playlists', today, 'weekly', '0.7'));
-  urls.push(urlEntry('/instrumentais', today, 'weekly', '0.7'));
-  urls.push(urlEntry('/biblia-narrada', today, 'weekly', '0.7'));
   urls.push(urlEntry('/privacidade', today, 'yearly', '0.3'));
   urls.push(urlEntry('/premium', today, 'weekly', '0.6'));
   urls.push(urlEntry('/avisos', today, 'daily', '0.6'));
+  urls.push(urlEntry('/ajuda', today, 'monthly', '0.4'));
+  urls.push(urlEntry('/contato', today, 'monthly', '0.4'));
+  urls.push(urlEntry('/reivindicacao-de-conteudo', today, 'monthly', '0.4'));
   const staticUrlCount = urls.length;
 
   // Hinos
@@ -172,7 +177,7 @@ async function main() {
   // Álbuns
   console.log('  💿 Fetching albums...');
   const albums = await supabaseFetch('albums', 'id,title,artist,updated_at,created_at', {
-    'is_published': 'eq.true',
+    'or': '(is_published.eq.true,is_published.eq.1)',
     'order': 'created_at.desc',
     'limit': '2000',
   });
@@ -184,7 +189,7 @@ async function main() {
 
   // Compositores
   console.log('  🎵 Fetching compositores...');
-  const compositores = await supabaseFetch('composers', 'id,name,updated_at,created_at', {
+  const compositores = await supabaseFetch('composers', 'id,name,artistic_name,updated_at,created_at', {
     'or': '(verified.eq.true,status.eq.approved)',
     'order': 'name.asc',
     'limit': '2000',
@@ -192,7 +197,7 @@ async function main() {
   console.log(`     Found ${compositores.length} compositores`);
   for (const c of compositores) {
     const mod = (c.updated_at || c.created_at || today).split('T')[0];
-    urls.push(urlEntry(buildCompositorUrl(c.id, c.name), mod, 'monthly', '0.7'));
+    urls.push(urlEntry(buildCompositorUrl(c.id, c.artistic_name || c.name), mod, 'monthly', '0.7'));
   }
 
   // Cifras
@@ -234,6 +239,19 @@ async function main() {
     const mod = (cat.updated_at || today).split('T')[0];
     const catSlug = cat.slug || cat.id;
     urls.push(urlEntry(`/categoria/${catSlug}`, mod, 'weekly', '0.6'));
+  }
+
+  // Playlists públicas
+  console.log('  🎧 Fetching playlists...');
+  const playlists = await supabaseFetch('playlists', 'id,updated_at,created_at', {
+    'or': '(is_public.eq.true,is_public.eq.1)',
+    'order': 'updated_at.desc',
+    'limit': '5000',
+  });
+  console.log(`     Found ${playlists.length} playlists`);
+  for (const playlist of playlists) {
+    const mod = (playlist.updated_at || playlist.created_at || today).split('T')[0];
+    urls.push(urlEntry(buildPlaylistUrl(playlist.id), mod, 'weekly', '0.6'));
   }
 
   // Build XML

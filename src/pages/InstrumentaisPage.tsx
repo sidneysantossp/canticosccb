@@ -9,6 +9,7 @@ const InstrumentaisPage: React.FC = () => {
       <SEOHead
         title="Instrumentais - Cânticos CCB"
         description="Ouça hinos instrumentais da Congregação Cristã no Brasil."
+        noindex
       />
 
       <div className="flex items-center gap-3 mb-8">

@@ -9,6 +9,7 @@ const RadioPage: React.FC = () => {
       <SEOHead
         title="Rádio CCB - Cânticos CCB"
         description="Ouça a Rádio CCB com hinos da Congregação Cristã no Brasil 24 horas."
+        noindex
       />
 
       <div className="flex items-center gap-3 mb-8">

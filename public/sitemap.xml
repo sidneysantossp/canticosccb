@@ -2,99 +2,105 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
     <loc>https://canticosccb.com.br/</loc>
-    <lastmod>2026-03-08</lastmod>
+    <lastmod>2026-03-11</lastmod>
     <changefreq>daily</changefreq>
     <priority>1.0</priority>
   </url>
   <url>
     <loc>https://canticosccb.com.br/search</loc>
-    <lastmod>2026-03-08</lastmod>
+    <lastmod>2026-03-11</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.9</priority>
   </url>
   <url>
     <loc>https://canticosccb.com.br/cifras</loc>
-    <lastmod>2026-03-08</lastmod>
+    <lastmod>2026-03-11</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.9</priority>
   </url>
   <url>
     <loc>https://canticosccb.com.br/hinario</loc>
-    <lastmod>2026-03-08</lastmod>
+    <lastmod>2026-03-11</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.9</priority>
   </url>
   <url>
     <loc>https://canticosccb.com.br/trends</loc>
-    <lastmod>2026-03-08</lastmod>
+    <lastmod>2026-03-11</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://canticosccb.com.br/about</loc>
-    <lastmod>2026-03-08</lastmod>
+    <lastmod>2026-03-11</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
     <loc>https://canticosccb.com.br/termos</loc>
-    <lastmod>2026-03-08</lastmod>
+    <lastmod>2026-03-11</lastmod>
     <changefreq>yearly</changefreq>
     <priority>0.3</priority>
   </url>
   <url>
     <loc>https://canticosccb.com.br/categorias</loc>
-    <lastmod>2026-03-08</lastmod>
+    <lastmod>2026-03-11</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://canticosccb.com.br/compositores</loc>
-    <lastmod>2026-03-08</lastmod>
+    <lastmod>2026-03-11</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://canticosccb.com.br/albuns</loc>
-    <lastmod>2026-03-08</lastmod>
+    <lastmod>2026-03-11</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://canticosccb.com.br/playlists</loc>
-    <lastmod>2026-03-08</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://canticosccb.com.br/instrumentais</loc>
-    <lastmod>2026-03-08</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://canticosccb.com.br/biblia-narrada</loc>
-    <lastmod>2026-03-08</lastmod>
+    <lastmod>2026-03-11</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://canticosccb.com.br/privacidade</loc>
-    <lastmod>2026-03-08</lastmod>
+    <lastmod>2026-03-11</lastmod>
     <changefreq>yearly</changefreq>
     <priority>0.3</priority>
   </url>
   <url>
     <loc>https://canticosccb.com.br/premium</loc>
-    <lastmod>2026-03-08</lastmod>
+    <lastmod>2026-03-11</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
     <loc>https://canticosccb.com.br/avisos</loc>
-    <lastmod>2026-03-08</lastmod>
+    <lastmod>2026-03-11</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://canticosccb.com.br/ajuda</loc>
+    <lastmod>2026-03-11</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.4</priority>
+  </url>
+  <url>
+    <loc>https://canticosccb.com.br/contato</loc>
+    <lastmod>2026-03-11</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.4</priority>
+  </url>
+  <url>
+    <loc>https://canticosccb.com.br/reivindicacao-de-conteudo</loc>
+    <lastmod>2026-03-11</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.4</priority>
   </url>
   <url>
     <loc>https://canticosccb.com.br/hino/hino-1-ccb-cristo-meu-mestre-elias-brandao-d0c5dff2-679d-4288-b5be-6c9e98c3e2e5</loc>
@@ -3169,7 +3175,7 @@
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://canticosccb.com.br/compositor/ana-marques-l-souza-92ee2493-4ab1-4617-b005-e785c7cb4f7e</loc>
+    <loc>https://canticosccb.com.br/compositor/ana-marques-ccb-92ee2493-4ab1-4617-b005-e785c7cb4f7e</loc>
     <lastmod>2026-02-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
@@ -5253,6 +5259,84 @@
   <url>
     <loc>https://canticosccb.com.br/categoria/violinos</loc>
     <lastmod>2026-01-26</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://canticosccb.com.br/playlist/57688519-4048-4a09-9268-19dd70145342</loc>
+    <lastmod>2026-01-22</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://canticosccb.com.br/playlist/9bffe0bb-bf09-4e7d-a89c-208f929ff322</loc>
+    <lastmod>2026-01-22</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://canticosccb.com.br/playlist/02d42cd7-7ea2-40bf-ac76-dff03b7fe2c1</loc>
+    <lastmod>2026-01-22</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://canticosccb.com.br/playlist/fb9e7a98-35ff-4b3f-b167-cbe955a75de5</loc>
+    <lastmod>2026-01-18</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://canticosccb.com.br/playlist/d16b6d32-c336-4833-96c9-d1d71f67b750</loc>
+    <lastmod>2025-12-18</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://canticosccb.com.br/playlist/0b166d53-a366-4823-8151-f4aeecfb2363</loc>
+    <lastmod>2025-12-18</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://canticosccb.com.br/playlist/65e71031-4e54-407a-9dde-bb83ab7f0e10</loc>
+    <lastmod>2025-12-02</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://canticosccb.com.br/playlist/ae657fcd-e7c8-4a76-947a-1e1b47b2e9ba</loc>
+    <lastmod>2025-12-02</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://canticosccb.com.br/playlist/17920387-627e-4f34-9e3a-9df4ce170ab5</loc>
+    <lastmod>2025-12-02</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://canticosccb.com.br/playlist/7b183e0b-c864-4dd6-89b3-153aa10e272b</loc>
+    <lastmod>2025-12-01</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://canticosccb.com.br/playlist/fcbbcf8f-3382-45dc-a230-04e81c809a65</loc>
+    <lastmod>2025-11-30</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://canticosccb.com.br/playlist/e9cda579-ac63-4b66-8bda-d685dd977706</loc>
+    <lastmod>2025-11-30</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://canticosccb.com.br/playlist/09f4d2b1-56b9-41be-9e94-2b9d7ee720f5</loc>
+    <lastmod>2025-11-30</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.6</priority>
   </url>

@@ -16,6 +16,16 @@
       "destination": "/api/ssr?path=/album/:path*"
     },
     {
+      "source": "/categoria/:path*",
+      "has": [{ "type": "header", "key": "user-agent", "value": "(?i).*(googlebot|bingbot|yandexbot|duckduckbot|slurp|baiduspider|facebookexternalhit|twitterbot|linkedinbot|whatsapp|telegrambot|discordbot|applebot|pinterest|redditbot|gptbot|claudebot|google-extended|applebot-extended|perplexitybot|bytespider|ccbot|amazonbot|meta-externalagent|petalbot|semrushbot|ahrefsbot|mj12bot|embedly|quora|showyoubot|outbrain|rogerbot|screaming.frog).*" }],
+      "destination": "/api/ssr?path=/categoria/:path*"
+    },
+    {
+      "source": "/playlist/:path*",
+      "has": [{ "type": "header", "key": "user-agent", "value": "(?i).*(googlebot|bingbot|yandexbot|duckduckbot|slurp|baiduspider|facebookexternalhit|twitterbot|linkedinbot|whatsapp|telegrambot|discordbot|applebot|pinterest|redditbot|gptbot|claudebot|google-extended|applebot-extended|perplexitybot|bytespider|ccbot|amazonbot|meta-externalagent|petalbot|semrushbot|ahrefsbot|mj12bot|embedly|quora|showyoubot|outbrain|rogerbot|screaming.frog).*" }],
+      "destination": "/api/ssr?path=/playlist/:path*"
+    },
+    {
       "source": "/hinario/:numero",
       "has": [{ "type": "header", "key": "user-agent", "value": "(?i).*(googlebot|bingbot|yandexbot|duckduckbot|slurp|baiduspider|facebookexternalhit|twitterbot|linkedinbot|whatsapp|telegrambot|discordbot|applebot|pinterest|redditbot|gptbot|claudebot|google-extended|applebot-extended|perplexitybot|bytespider|ccbot|amazonbot|meta-externalagent|petalbot|semrushbot|ahrefsbot|mj12bot|embedly|quora|showyoubot|outbrain|rogerbot|screaming.frog).*" }],
       "destination": "/api/ssr?path=/hinario/:numero"
@@ -36,7 +46,7 @@
       "destination": "/api/ssr?path=/cifras"
     },
     {
-      "source": "/:path(trends|tendencias|about|sobre|search|buscar|compositores|albuns|termos|premium)",
+      "source": "/:path(trends|tendencias|about|sobre|search|buscar|compositores|albuns|categorias|playlists|termos|premium|privacidade|privacy|cookies|disclaimer|lgpd|avisos|ajuda|contato|instrumentais|biblia-narrada|radio)",
       "has": [{ "type": "header", "key": "user-agent", "value": "(?i).*(googlebot|bingbot|yandexbot|duckduckbot|slurp|baiduspider|facebookexternalhit|twitterbot|linkedinbot|whatsapp|telegrambot|discordbot|applebot|pinterest|redditbot|gptbot|claudebot|google-extended|applebot-extended|perplexitybot|bytespider|ccbot|amazonbot|meta-externalagent|petalbot|semrushbot|ahrefsbot|mj12bot|embedly|quora|showyoubot|outbrain|rogerbot|screaming.frog).*" }],
       "destination": "/api/ssr?path=/:path"
     },

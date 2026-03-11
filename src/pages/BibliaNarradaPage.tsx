@@ -9,6 +9,7 @@ const BibliaNarradaPage: React.FC = () => {
       <SEOHead
         title="Bíblia Narrada - Cânticos CCB"
         description="Ouça a Bíblia Sagrada narrada na plataforma Cânticos CCB."
+        noindex
       />
 
       <div className="flex items-center gap-3 mb-8">
