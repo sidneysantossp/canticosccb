@@ -51,18 +51,18 @@ const Footer: React.FC = () => {
             <h4 className="text-white font-semibold mb-4">Hinos</h4>
             <ul className="space-y-3">
               <li>
-                <Link to="/categoria/cantados" className="text-text-muted hover:text-white transition-colors text-sm">
+                <Link to="/hinos-cantados-ccb" className="text-text-muted hover:text-white transition-colors text-sm">
                   Hinos Cantados
                 </Link>
               </li>
               <li>
-                <Link to="/categoria/tocados" className="text-text-muted hover:text-white transition-colors text-sm">
+                <Link to="/hinos-tocados-ccb" className="text-text-muted hover:text-white transition-colors text-sm">
                   Hinos Tocados
                 </Link>
               </li>
               <li>
-                <Link to="/instrumentais" className="text-text-muted hover:text-white transition-colors text-sm">
-                  Instrumentais
+                <Link to="/hinos-avulsos-ccb" className="text-text-muted hover:text-white transition-colors text-sm">
+                  Hinos Avulsos
                 </Link>
               </li>
               <li>
@@ -88,13 +88,13 @@ const Footer: React.FC = () => {
                 </Link>
               </li>
               <li>
-                <Link to="/radio" className="text-text-muted hover:text-white transition-colors text-sm">
-                  Rádio CCB
+                <Link to="/baixar-hinos-ccb" className="text-text-muted hover:text-white transition-colors text-sm">
+                  Baixar Hinos
                 </Link>
               </li>
               <li>
-                <Link to="/biblioteca" className="text-text-muted hover:text-white transition-colors text-sm">
-                  Biblioteca
+                <Link to="/baixar-albuns-ccb" className="text-text-muted hover:text-white transition-colors text-sm">
+                  Baixar Álbuns
                 </Link>
               </li>
             </ul>

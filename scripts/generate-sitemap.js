@@ -146,6 +146,9 @@ async function main() {
   urls.push(urlEntry('/search', today, 'daily', '0.9'));
   urls.push(urlEntry('/cifras', today, 'daily', '0.9'));
   urls.push(urlEntry('/hinario', today, 'daily', '0.9'));
+  urls.push(urlEntry('/hinos-cantados-ccb', today, 'weekly', '0.8'));
+  urls.push(urlEntry('/hinos-tocados-ccb', today, 'weekly', '0.8'));
+  urls.push(urlEntry('/hinos-avulsos-ccb', today, 'weekly', '0.8'));
   urls.push(urlEntry('/trends', today, 'daily', '0.8'));
   urls.push(urlEntry('/about', today, 'monthly', '0.5'));
   urls.push(urlEntry('/termos', today, 'yearly', '0.3'));
@@ -153,6 +156,11 @@ async function main() {
   urls.push(urlEntry('/compositores', today, 'weekly', '0.8'));
   urls.push(urlEntry('/albuns', today, 'weekly', '0.8'));
   urls.push(urlEntry('/playlists', today, 'weekly', '0.7'));
+  urls.push(urlEntry('/cifras-violao-ccb', today, 'weekly', '0.7'));
+  urls.push(urlEntry('/cifras-ukulele-ccb', today, 'weekly', '0.7'));
+  urls.push(urlEntry('/cifras-teclado-ccb', today, 'weekly', '0.7'));
+  urls.push(urlEntry('/baixar-hinos-ccb', today, 'monthly', '0.6'));
+  urls.push(urlEntry('/baixar-albuns-ccb', today, 'monthly', '0.6'));
   urls.push(urlEntry('/privacidade', today, 'yearly', '0.3'));
   urls.push(urlEntry('/premium', today, 'weekly', '0.6'));
   urls.push(urlEntry('/avisos', today, 'daily', '0.6'));

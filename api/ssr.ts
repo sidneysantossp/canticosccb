@@ -578,6 +578,197 @@ async function handleCategoria(slug: string): Promise<PageMeta | null> {
   };
 }
 
+const HYMN_HUBS: Record<string, { keyword: string; heading: string; title: string; description: string }> = {
+  '/hinos-cantados-ccb': {
+    keyword: 'cantados',
+    heading: 'Hinos Cantados CCB',
+    title: 'Hinos Cantados CCB | Ouça Hinos Cantados da CCB | Cânticos CCB',
+    description: 'Explore hinos cantados da CCB com links para ouvir, acessar a letra no hinário e navegar pelo repertório.',
+  },
+  '/hinos-tocados-ccb': {
+    keyword: 'tocados',
+    heading: 'Hinos Tocados CCB',
+    title: 'Hinos Tocados CCB | Repertório Tocado da CCB | Cânticos CCB',
+    description: 'Navegue por hinos tocados da CCB com links para páginas individuais, letras e repertório relacionado.',
+  },
+  '/hinos-avulsos-ccb': {
+    keyword: 'avulsos',
+    heading: 'Hinos Avulsos CCB',
+    title: 'Hinos Avulsos CCB | Repertório Avulso da CCB | Cânticos CCB',
+    description: 'Veja hinos avulsos da CCB com links para ouvir, navegar pelo repertório e acessar letras quando disponíveis.',
+  },
+};
+
+async function fetchHymnsByKeyword(keyword: string): Promise<any[]> {
+  const categories = await supaFetch('categorias', {
+    select: 'id,nome,slug',
+    or: `(slug.ilike.%${keyword}%,nome.ilike.%${keyword}%)`,
+    limit: '100',
+  });
+
+  const categoryIds = categories.map((category: any) => String(category.id)).filter(Boolean);
+  let songs: any[] = [];
+
+  if (categoryIds.length > 0) {
+    const relations = await supaFetch('hino_categorias', {
+      categoria_id: `in.(${categoryIds.join(',')})`,
+      select: 'hino_id',
+      limit: '5000',
+    });
+    const hymnIds = relations.map((relation: any) => String(relation.hino_id || '')).filter(Boolean);
+    if (hymnIds.length > 0) {
+      songs = await supaFetch('hinos', {
+        id: `in.(${hymnIds.join(',')})`,
+        or: '(ativo.eq.true,ativo.eq.1)',
+        select: 'id,numero,titulo,compositor_nome',
+        order: 'numero.asc',
+        limit: '500',
+      });
+    }
+  }
+
+  const fallbackSongs = await supaFetch('hinos', {
+    categoria: `ilike.%${keyword}%`,
+    or: '(ativo.eq.true,ativo.eq.1)',
+    select: 'id,numero,titulo,compositor_nome',
+    order: 'numero.asc',
+    limit: '500',
+  });
+
+  const mergedSongs = [...songs];
+  const seen = new Set(mergedSongs.map((song: any) => String(song.id)));
+  for (const song of fallbackSongs) {
+    const key = String(song.id);
+    if (!seen.has(key)) {
+      mergedSongs.push(song);
+      seen.add(key);
+    }
+  }
+
+  return mergedSongs.sort((a: any, b: any) => {
+    const numA = Number(a.numero || 0);
+    const numB = Number(b.numero || 0);
+    if (numA > 0 && numB > 0) return numA - numB;
+    if (numA > 0) return -1;
+    if (numB > 0) return 1;
+    return String(a.titulo || '').localeCompare(String(b.titulo || ''), 'pt-BR');
+  });
+}
+
+async function handleHymnHub(pathname: string): Promise<PageMeta | null> {
+  const config = HYMN_HUBS[pathname];
+  if (!config) return null;
+
+  const songs = await fetchHymnsByKeyword(config.keyword);
+  const songListHtml = songs.length > 0
+    ? `<ul>${songs.slice(0, 120).map((song: any) => {
+      const cleanTitle = normalizeHymnTitle(song.titulo || '', song.numero);
+      const href = `${SITE_URL}${buildHinoUrl(String(song.id), cleanTitle, song.numero)}`;
+      const lyricLink = song.numero ? ` <a href="${SITE_URL}/hinario/${song.numero}">Ver letra</a>` : '';
+      return `<li><a href="${href}">Hino ${song.numero || ''}${cleanTitle ? ` - ${esc(cleanTitle)}` : ''}</a>${song.compositor_nome ? ` — ${esc(song.compositor_nome)}` : ''}${lyricLink}</li>`;
+    }).join('')}</ul>`
+    : '<p>Nenhum hino foi publicado neste repertório ainda.</p>';
+
+  return {
+    title: config.title,
+    description: config.description,
+    canonical: `${SITE_URL}${pathname}`,
+    noindex: songs.length === 0,
+    schemas: [
+      {
+        '@context': 'https://schema.org',
+        '@type': 'CollectionPage',
+        name: config.heading,
+        url: `${SITE_URL}${pathname}`,
+        description: config.description,
+      },
+      {
+        '@context': 'https://schema.org',
+        '@type': 'BreadcrumbList',
+        itemListElement: [
+          { '@type': 'ListItem', position: 1, name: 'Início', item: SITE_URL },
+          { '@type': 'ListItem', position: 2, name: config.heading, item: `${SITE_URL}${pathname}` },
+        ],
+      },
+    ],
+    bodyHtml: `
+      <nav><a href="${SITE_URL}">Início</a> &rsaquo; ${esc(config.heading)}</nav>
+      <h1>${esc(config.heading)}</h1>
+      <p>${esc(config.description)}</p>
+      <section><h2>Hinos publicados</h2>${songListHtml}</section>
+      <footer><p><a href="${SITE_URL}">Cânticos CCB</a> — Plataforma de hinos da Congregação Cristã no Brasil</p></footer>`,
+  };
+}
+
+const CIFRA_HUBS: Record<string, { instrument: string; heading: string; title: string; description: string }> = {
+  '/cifras-violao-ccb': {
+    instrument: 'violao',
+    heading: 'Cifras de Violao CCB',
+    title: 'Cifras de Violao CCB | Hinos com Acordes para Violao | Cânticos CCB',
+    description: 'Veja cifras de hinos da CCB para violao, com links para tom, acordes e repertório relacionado.',
+  },
+  '/cifras-ukulele-ccb': {
+    instrument: 'ukulele',
+    heading: 'Cifras de Ukulele CCB',
+    title: 'Cifras de Ukulele CCB | Hinos com Acordes para Ukulele | Cânticos CCB',
+    description: 'Acesse cifras de hinos da CCB para ukulele com links diretos para cada página individual.',
+  },
+  '/cifras-teclado-ccb': {
+    instrument: 'teclado',
+    heading: 'Cifras de Teclado CCB',
+    title: 'Cifras de Teclado CCB | Hinos com Acordes para Teclado | Cânticos CCB',
+    description: 'Explore cifras de hinos da CCB para teclado com tom original, acordes e repertório relacionado.',
+  },
+};
+
+async function handleCifraInstrumentHub(pathname: string): Promise<PageMeta | null> {
+  const config = CIFRA_HUBS[pathname];
+  if (!config) return null;
+
+  const cifras = await supaFetch('cifras', {
+    instrument: `eq.${config.instrument}`,
+    is_active: 'eq.true',
+    select: 'title,slug,artist,original_key',
+    order: 'created_at.desc',
+    limit: '500',
+  });
+
+  const listHtml = cifras.length > 0
+    ? `<ul>${cifras.slice(0, 120).map((cifra: any) => `<li><a href="${SITE_URL}/cifra/${cifra.slug}">${esc(cifra.title || 'Cifra')}</a>${cifra.artist ? ` — ${esc(cifra.artist)}` : ''}${cifra.original_key ? ` (${esc(cifra.original_key)})` : ''}</li>`).join('')}</ul>`
+    : '<p>Nenhuma cifra foi publicada para este instrumento ainda.</p>';
+
+  return {
+    title: config.title,
+    description: config.description,
+    canonical: `${SITE_URL}${pathname}`,
+    noindex: cifras.length === 0,
+    schemas: [
+      {
+        '@context': 'https://schema.org',
+        '@type': 'CollectionPage',
+        name: config.heading,
+        url: `${SITE_URL}${pathname}`,
+        description: config.description,
+      },
+      {
+        '@context': 'https://schema.org',
+        '@type': 'BreadcrumbList',
+        itemListElement: [
+          { '@type': 'ListItem', position: 1, name: 'Início', item: SITE_URL },
+          { '@type': 'ListItem', position: 2, name: 'Cifras', item: `${SITE_URL}/cifras` },
+          { '@type': 'ListItem', position: 3, name: config.heading, item: `${SITE_URL}${pathname}` },
+        ],
+      },
+    ],
+    bodyHtml: `
+      <nav><a href="${SITE_URL}">Início</a> &rsaquo; <a href="${SITE_URL}/cifras">Cifras</a> &rsaquo; ${esc(config.heading)}</nav>
+      <h1>${esc(config.heading)}</h1>
+      <p>${esc(config.description)}</p>
+      <section><h2>Cifras publicadas</h2>${listHtml}</section>
+      <footer><p><a href="${SITE_URL}">Cânticos CCB</a> — Plataforma de hinos da Congregação Cristã no Brasil</p></footer>`,
+  };
+}
+
 async function handlePlaylistsList(): Promise<PageMeta> {
   const playlists = await supaFetch('playlists', {
     'or': '(is_public.eq.true,is_public.eq.1)',
@@ -797,6 +988,18 @@ function handleStaticPage(path: string): PageMeta | null {
       h1: 'Contato',
       body: '<p>Entre em contato com a equipe do Cânticos CCB.</p>',
     },
+    '/baixar-hinos-ccb': {
+      title: 'Baixar Hinos CCB | Como Ouvir Hinos da CCB Online | Cânticos CCB',
+      desc: 'Guia para quem procura baixar hinos CCB. Veja como ouvir hinos online, acessar letras, cifras e repertório relacionado.',
+      h1: 'Baixar Hinos CCB',
+      body: '<p>Esta página atende a busca por baixar hinos CCB com orientação honesta. O foco da plataforma é ouvir online, acessar letras do hinário, explorar cifras e navegar pelo repertório publicado.</p><p><a href="https://canticosccb.com.br/hinario">Ver Hinário</a> · <a href="https://canticosccb.com.br/hinos-cantados-ccb">Hinos Cantados</a> · <a href="https://canticosccb.com.br/cifras">Cifras</a></p>',
+    },
+    '/baixar-albuns-ccb': {
+      title: 'Baixar Albuns CCB | Como Ouvir Albuns e Coletâneas | Cânticos CCB',
+      desc: 'Guia para quem procura baixar álbuns CCB. Veja como ouvir álbuns, explorar playlists e navegar pelo repertório relacionado.',
+      h1: 'Baixar Albuns CCB',
+      body: '<p>Esta página atende a busca por baixar álbuns CCB com foco em navegação honesta: ouvir online, explorar playlists, visitar álbuns publicados e encontrar repertório relacionado.</p><p><a href="https://canticosccb.com.br/albuns">Ver Álbuns</a> · <a href="https://canticosccb.com.br/playlists">Playlists</a> · <a href="https://canticosccb.com.br/hinos-tocados-ccb">Hinos Tocados</a></p>',
+    },
     '/instrumentais': {
       title: 'Hinos Instrumentais CCB | Cânticos CCB',
       desc: 'Página em preparação para repertório de hinos instrumentais da Congregação Cristã no Brasil.',
@@ -856,6 +1059,8 @@ export default async function handler(req: Request): Promise<Response> {
     const cifraMatch = pathname.match(/^\/cifra\/(.+)$/);
     const categoriaMatch = pathname.match(/^\/categoria\/([^/]+)$/);
     const playlistMatch = pathname.match(/^\/playlist\/([^/]+)$/);
+    const hymnHubMatch = pathname.match(/^\/hinos-(cantados|tocados|avulsos)-ccb$/);
+    const cifraHubMatch = pathname.match(/^\/cifras-(violao|ukulele|teclado)-ccb$/);
 
     if (hinoMatch) {
       pageMeta = await handleHino(hinoMatch[1]);
@@ -871,6 +1076,10 @@ export default async function handler(req: Request): Promise<Response> {
       pageMeta = await handleCategoria(categoriaMatch[1]);
     } else if (playlistMatch) {
       pageMeta = await handlePlaylistDetail(playlistMatch[1]);
+    } else if (hymnHubMatch) {
+      pageMeta = await handleHymnHub(pathname);
+    } else if (cifraHubMatch) {
+      pageMeta = await handleCifraInstrumentHub(pathname);
     } else if (pathname === '/cifras') {
       pageMeta = await handleCifrasList();
     } else if (pathname === '/hinario') {

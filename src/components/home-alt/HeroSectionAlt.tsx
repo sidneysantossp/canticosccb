@@ -48,7 +48,7 @@ const HeroSectionAlt: React.FC<HeroSectionAltProps> = ({ banners, isDarkMode }) 
               Louve ao Senhor com hinos e adoração
             </p>
             <Link
-              to="/categoria/cantados"
+              to="/hinos-cantados-ccb"
               className={`inline-flex items-center gap-2 px-6 py-3 rounded-full font-semibold transition-all ${
                 isDarkMode 
                   ? 'bg-white text-black hover:bg-gray-200' 

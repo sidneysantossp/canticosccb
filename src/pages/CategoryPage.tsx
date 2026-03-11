@@ -12,6 +12,7 @@ import AddToPlaylistModal from '@/components/modals/AddToPlaylistModal';
 import LoginRequiredModal from '@/components/modals/LoginRequiredModal';
 import SEOHead from '@/components/SEO/SEOHead';
 import { generateBreadcrumbSchema, generateItemListSchema } from '@/utils/schemaGenerator';
+import { buildHinoUrl } from '@/utils/slugUrl';
 
 interface Category {
   id: string;
@@ -115,19 +116,19 @@ const CategoryPage: React.FC = () => {
         // Buscar hinos pelos IDs encontrados via hino_categorias
         list = await supabaseFetch<any>('hinos', {
           id: `in.(${hinoIds.join(',')})`,
-          ativo: 'eq.true',
+          or: '(ativo.eq.true,ativo.eq.1)',
           select: 'id,numero,titulo,compositor_nome,categoria,cover_url,audio_url,duracao,plays_count,youtube_source',
           order: 'created_at.desc',
-          limit: '50',
+          limit: '200',
         });
       }
 
       // Fallback: buscar pela coluna categoria única (para hinos sem hino_categorias)
       const fallbackList = await supabaseFetch<any>('hinos', {
         categoria: `ilike.%${resolvedName}%`,
-        ativo: 'eq.true',
+        or: '(ativo.eq.true,ativo.eq.1)',
         select: 'id,numero,titulo,compositor_nome,categoria,cover_url,audio_url,duracao,plays_count,youtube_source',
-        limit: '50',
+        limit: '200',
       });
 
       // Mesclar sem duplicatas
@@ -365,6 +366,18 @@ const CategoryPage: React.FC = () => {
             { name: 'Categorias', url: '/categories' },
             { name: category.name, url: `/categoria/${slug}` },
           ]),
+          ...(songs.length > 0
+            ? [generateItemListSchema({
+                name: `${category.name} - Hinos CCB`,
+                description: category.meta_description || category.description || `Lista de hinos da categoria ${category.name}`,
+                url: `/categoria/${slug}`,
+                items: songs.slice(0, 80).map((song, index) => ({
+                  name: song.number ? `Hino ${song.number} - ${song.title}` : song.title,
+                  url: buildHinoUrl(song.id, song.title, song.number),
+                  position: index + 1,
+                })),
+              })]
+            : []),
         ]}
       />
 

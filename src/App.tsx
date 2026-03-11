@@ -43,6 +43,9 @@ import InstrumentaisPage from '@/pages/InstrumentaisPage';
 import BibliaNarradaPage from '@/pages/BibliaNarradaPage';
 import PlaylistsPage from '@/pages/PlaylistsPage';
 import RadioPage from '@/pages/RadioPage';
+import HymnHubPage from '@/pages/HymnHubPage';
+import CifraInstrumentHubPage from '@/pages/CifraInstrumentHubPage';
+import DownloadIntentPage from '@/pages/DownloadIntentPage';
 import CompositorCadastroPage from '@/pages/CompositorCadastroPage';
 import CompositorPublicarPage from '@/pages/CompositorPublicarPage';
 import AjudaPage from '@/pages/AjudaPage';
@@ -218,9 +221,15 @@ const AppContent: React.FC = () => {
           <Route path="hino/:id" element={<HymnDetailPage />} />
           <Route path="hymn/:id" element={<HymnDetailPage />} />
           <Route path="cifras" element={<CifrasListPage />} />
+          <Route path="cifras-violao-ccb" element={<CifraInstrumentHubPage instrument="violao" />} />
+          <Route path="cifras-ukulele-ccb" element={<CifraInstrumentHubPage instrument="ukulele" />} />
+          <Route path="cifras-teclado-ccb" element={<CifraInstrumentHubPage instrument="teclado" />} />
           <Route path="cifra/:slug" element={<CifraPage />} />
           <Route path="hinario" element={<HinarioListPage />} />
           <Route path="hinario/:numero" element={<HinarioViewPage />} />
+          <Route path="hinos-cantados-ccb" element={<HymnHubPage hub="cantados" />} />
+          <Route path="hinos-tocados-ccb" element={<HymnHubPage hub="tocados" />} />
+          <Route path="hinos-avulsos-ccb" element={<HymnHubPage hub="avulsos" />} />
           <Route path="albuns" element={<AlbumsPage />} />
           <Route path="album/:id" element={<AlbumDetailPage />} />
           <Route path="compositores" element={<CompositoresPage />} />
@@ -253,6 +262,8 @@ const AppContent: React.FC = () => {
           <Route path="premium" element={<PremiumPage />} />
           <Route path="instrumentais" element={<InstrumentaisPage />} />
           <Route path="biblia-narrada" element={<BibliaNarradaPage />} />
+          <Route path="baixar-hinos-ccb" element={<DownloadIntentPage topic="hinos" />} />
+          <Route path="baixar-albuns-ccb" element={<DownloadIntentPage topic="albuns" />} />
           <Route path="playlists" element={<PlaylistsPage />} />
           <Route path="radio" element={<RadioPage />} />
           <Route path="compositor/cadastro" element={<CompositorCadastroPage />} />

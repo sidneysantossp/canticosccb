@@ -68,6 +68,17 @@ const CifrasListPage: React.FC = () => {
           Cifras<br />Musicais
         </h1>
         <p className="text-gray-400 mt-2">Encontre cifras com acordes para violão, guitarra, ukulele e teclado</p>
+        <div className="flex flex-wrap gap-3 mt-4">
+          <Link to="/cifras-violao-ccb" className="px-4 py-2 rounded-full border border-primary-500/30 text-primary-300 hover:border-primary-400 hover:text-white transition-colors text-sm">
+            Cifras de Violão
+          </Link>
+          <Link to="/cifras-ukulele-ccb" className="px-4 py-2 rounded-full border border-primary-500/30 text-primary-300 hover:border-primary-400 hover:text-white transition-colors text-sm">
+            Cifras de Ukulele
+          </Link>
+          <Link to="/cifras-teclado-ccb" className="px-4 py-2 rounded-full border border-primary-500/30 text-primary-300 hover:border-primary-400 hover:text-white transition-colors text-sm">
+            Cifras de Teclado
+          </Link>
+        </div>
       </div>
 
       {/* Search & Filters */}

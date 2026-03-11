@@ -437,7 +437,7 @@ const HomeAlternativePage: React.FC = () => {
 
           <HymnsSectionAlt
             title="Hinos Cantados"
-            viewAllHref="/categoria/cantados"
+            viewAllHref="/hinos-cantados-ccb"
             items={isLoading ? undefined : hinosCantadosFinal}
             onPlay={handleTogglePlay}
             onScrollLeft={scrollLeft}
@@ -447,7 +447,7 @@ const HomeAlternativePage: React.FC = () => {
 
           <HymnsSectionAlt
             title="Hinos Tocados"
-            viewAllHref="/categoria/tocados"
+            viewAllHref="/hinos-tocados-ccb"
             items={isLoading ? undefined : hinosTocadosFinal}
             onPlay={handleTogglePlay}
             onScrollLeft={scrollLeft}
@@ -457,7 +457,7 @@ const HomeAlternativePage: React.FC = () => {
 
           <HymnsSectionAlt
             title="Hinos Avulsos"
-            viewAllHref="/categoria/avulsos"
+            viewAllHref="/hinos-avulsos-ccb"
             items={isLoading ? undefined : hinosAvulsosFinal}
             onPlay={handleTogglePlay}
             onScrollLeft={scrollLeft}

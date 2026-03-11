@@ -1,0 +1,337 @@
+import React, { useEffect, useMemo, useState } from 'react';
+import { Link } from 'react-router-dom';
+import { ArrowLeft, Headphones, Music2, Music4, Mic2 } from 'lucide-react';
+import SEOHead from '@/components/SEO/SEOHead';
+import { getAll as getAllCategories } from '@/lib/categoriesApi';
+import { supabaseFetch } from '@/lib/supabaseRest';
+import { generateBreadcrumbSchema, generateFAQSchema, generateItemListSchema } from '@/utils/schemaGenerator';
+import { buildHinoUrl } from '@/utils/slugUrl';
+
+type HymnHubType = 'cantados' | 'tocados' | 'avulsos';
+
+type HubConfig = {
+  path: string;
+  heading: string;
+  title: string;
+  description: string;
+  intro: string;
+  keywords: string;
+  icon: React.ComponentType<{ className?: string }>;
+  accentClass: string;
+  faq: Array<{ question: string; answer: string }>;
+};
+
+type HubHymn = {
+  id: string;
+  numero: number;
+  titulo: string;
+  compositor_nome: string;
+  categoria?: string;
+};
+
+const HUBS: Record<HymnHubType, HubConfig> = {
+  cantados: {
+    path: '/hinos-cantados-ccb',
+    heading: 'Hinos Cantados CCB',
+    title: 'Hinos Cantados CCB | Ouça Hinos Cantados da CCB',
+    description: 'Explore hinos cantados da CCB com links para letra, áudio e navegação pelo repertório da Congregação Cristã no Brasil.',
+    intro: 'Página dedicada aos hinos cantados da CCB, com repertório navegável, links para letra e acesso rápido às páginas individuais de cada hino.',
+    keywords: 'hinos cantados ccb, ouvir hinos cantados ccb, hinos ccb cantados, hinos congregação cristã no brasil',
+    icon: Mic2,
+    accentClass: 'from-emerald-600/30 to-transparent',
+    faq: [
+      {
+        question: 'Onde ouvir hinos cantados da CCB?',
+        answer: 'Nesta página você encontra uma seleção de hinos cantados da CCB com links para ouvir, ver a letra e navegar pelo repertório relacionado.',
+      },
+      {
+        question: 'Os hinos cantados têm letra disponível?',
+        answer: 'Sim. Sempre que o hino possui número no hinário, a página também oferece link para a letra correspondente no Hinário da CCB.',
+      },
+    ],
+  },
+  tocados: {
+    path: '/hinos-tocados-ccb',
+    heading: 'Hinos Tocados CCB',
+    title: 'Hinos Tocados CCB | Repertório Instrumental e Tocado',
+    description: 'Navegue por hinos tocados da CCB com acesso rápido às páginas de áudio, letra e repertório relacionado.',
+    intro: 'Hub temático para hinos tocados da CCB, ideal para quem procura repertório instrumental, execução musical e navegação por número e título.',
+    keywords: 'hinos tocados ccb, hinos instrumental ccb, ouvir hinos tocados ccb, repertório tocado ccb',
+    icon: Music2,
+    accentClass: 'from-sky-600/30 to-transparent',
+    faq: [
+      {
+        question: 'O que encontro nos hinos tocados da CCB?',
+        answer: 'Você encontra páginas de hinos com foco no repertório tocado, incluindo navegação por número, compositor e acesso à letra quando disponível.',
+      },
+      {
+        question: 'Os hinos tocados servem para estudo musical?',
+        answer: 'Sim. Esta área ajuda a localizar rapidamente repertório tocado e a conectar cada hino com letra, cifra e contexto do hinário quando houver.',
+      },
+    ],
+  },
+  avulsos: {
+    path: '/hinos-avulsos-ccb',
+    heading: 'Hinos Avulsos CCB',
+    title: 'Hinos Avulsos CCB | Repertório Avulso da Congregação Cristã',
+    description: 'Veja hinos avulsos da CCB com links para ouvir, acessar letra, cifra e navegar por compositor e repertório relacionado.',
+    intro: 'Hub dedicado aos hinos avulsos da CCB, com acesso organizado às páginas individuais, letras, compositores e repertório relacionado.',
+    keywords: 'hinos avulsos ccb, ouvir hinos avulsos ccb, repertório avulso ccb, hinos congregação cristã',
+    icon: Music4,
+    accentClass: 'from-amber-500/30 to-transparent',
+    faq: [
+      {
+        question: 'O que são hinos avulsos da CCB?',
+        answer: 'São hinos disponibilizados fora da navegação tradicional do hinário, organizados aqui com links para ouvir, ler letra e explorar repertórios relacionados.',
+      },
+      {
+        question: 'Posso encontrar letra e cifra dos hinos avulsos?',
+        answer: 'Quando disponíveis na base, as páginas ligam o hino avulso à sua letra, cifra e outras informações úteis de navegação.',
+      },
+    ],
+  },
+};
+
+const normalizeText = (value: string) =>
+  String(value || '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .trim();
+
+async function fetchHubHymns(hub: HymnHubType): Promise<HubHymn[]> {
+  const categories = await getAllCategories({ limit: 1000 });
+  const matchingCategories = categories.filter((category) => {
+    const slug = normalizeText(category.slug);
+    const name = normalizeText(category.name);
+    return slug.includes(hub) || name.includes(hub);
+  });
+
+  const categoryIds = matchingCategories.map((category) => String(category.id));
+
+  let songs: any[] = [];
+  if (categoryIds.length > 0) {
+    const relations = await supabaseFetch<any>('hino_categorias', {
+      categoria_id: `in.(${categoryIds.join(',')})`,
+      select: 'hino_id',
+      limit: '5000',
+    });
+    const hymnIds = relations
+      .map((relation) => String(relation.hino_id || ''))
+      .filter(Boolean);
+
+    if (hymnIds.length > 0) {
+      songs = await supabaseFetch<any>('hinos', {
+        id: `in.(${hymnIds.join(',')})`,
+        or: '(ativo.eq.true,ativo.eq.1)',
+        select: 'id,numero,titulo,compositor_nome,categoria',
+        order: 'numero.asc',
+        limit: '500',
+      });
+    }
+  }
+
+  const fallbackSongs = await supabaseFetch<any>('hinos', {
+    categoria: `ilike.%${hub}%`,
+    or: '(ativo.eq.true,ativo.eq.1)',
+    select: 'id,numero,titulo,compositor_nome,categoria',
+    order: 'numero.asc',
+    limit: '500',
+  });
+
+  const merged = [...songs];
+  const seen = new Set(merged.map((song) => String(song.id)));
+  for (const song of fallbackSongs) {
+    const key = String(song.id);
+    if (!seen.has(key)) {
+      merged.push(song);
+      seen.add(key);
+    }
+  }
+
+  return merged
+    .map((song) => ({
+      id: String(song.id),
+      numero: Number(song.numero || 0),
+      titulo: String(song.titulo || 'Hino'),
+      compositor_nome: String(song.compositor_nome || 'Compositor CCB'),
+      categoria: song.categoria || undefined,
+    }))
+    .sort((a, b) => {
+      if (a.numero > 0 && b.numero > 0) return a.numero - b.numero;
+      if (a.numero > 0) return -1;
+      if (b.numero > 0) return 1;
+      return a.titulo.localeCompare(b.titulo, 'pt-BR');
+    });
+}
+
+interface HymnHubPageProps {
+  hub: HymnHubType;
+}
+
+const HymnHubPage: React.FC<HymnHubPageProps> = ({ hub }) => {
+  const config = HUBS[hub];
+  const Icon = config.icon;
+  const [items, setItems] = useState<HubHymn[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const load = async () => {
+      try {
+        setIsLoading(true);
+        const data = await fetchHubHymns(hub);
+        if (!cancelled) setItems(data);
+      } catch (error) {
+        console.error(`Erro ao carregar hub ${hub}:`, error);
+        if (!cancelled) setItems([]);
+      } finally {
+        if (!cancelled) setIsLoading(false);
+      }
+    };
+
+    void load();
+    return () => {
+      cancelled = true;
+    };
+  }, [hub]);
+
+  const schemaData = useMemo(() => ([
+    generateBreadcrumbSchema([
+      { name: 'Inicio', url: '/' },
+      { name: config.heading, url: config.path },
+    ]),
+    generateItemListSchema({
+      name: config.heading,
+      description: config.description,
+      url: config.path,
+      items: items.slice(0, 80).map((item, index) => ({
+        name: item.numero > 0 ? `Hino ${item.numero} - ${item.titulo}` : item.titulo,
+        url: buildHinoUrl(item.id, item.titulo, item.numero),
+        position: index + 1,
+      })),
+    }),
+    generateFAQSchema(config.faq),
+  ]), [config, items]);
+
+  return (
+    <div className="min-h-screen bg-background-primary">
+      <SEOHead
+        title={config.title}
+        description={config.description}
+        keywords={config.keywords}
+        canonical={config.path}
+        schemaData={schemaData}
+        noindex={!isLoading && items.length === 0}
+      />
+
+      <div className={`bg-gradient-to-b ${config.accentClass} pt-20 pb-8 px-6`}>
+        <div className="max-w-6xl mx-auto">
+          <Link to="/" className="inline-flex items-center gap-2 text-white/80 hover:text-white transition-colors mb-6">
+            <ArrowLeft className="w-4 h-4" />
+            Voltar
+          </Link>
+          <div className="flex items-start gap-4">
+            <div className="w-14 h-14 rounded-2xl bg-white/10 border border-white/15 flex items-center justify-center">
+              <Icon className="w-7 h-7 text-primary-300" />
+            </div>
+            <div className="max-w-3xl">
+              <h1 className="text-3xl md:text-5xl font-bold text-white leading-tight">{config.heading}</h1>
+              <p className="text-white/85 text-base md:text-lg mt-3">{config.intro}</p>
+              <div className="flex flex-wrap gap-4 mt-5 text-sm text-white/75">
+                <span>{items.length} hinos encontrados</span>
+                <span>Links para ouvir e navegar por repertorio</span>
+                <span>Foco em intencao especifica de busca</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="max-w-6xl mx-auto px-6 py-8">
+        <div className="grid gap-6 lg:grid-cols-[1.5fr,0.9fr]">
+          <section className="rounded-3xl border border-white/10 bg-background-secondary p-6">
+            <div className="flex items-center justify-between gap-4 mb-5">
+              <div>
+                <h2 className="text-2xl font-semibold text-white">Repertorio indexavel</h2>
+                <p className="text-text-muted mt-1">Selecao navegavel com links para paginas individuais e letras do hinario quando houver numero.</p>
+              </div>
+              <Headphones className="w-6 h-6 text-primary-400" />
+            </div>
+
+            {isLoading ? (
+              <div className="space-y-3">
+                {Array.from({ length: 8 }).map((_, index) => (
+                  <div key={index} className="h-16 rounded-2xl bg-white/5 animate-pulse" />
+                ))}
+              </div>
+            ) : items.length === 0 ? (
+              <div className="rounded-2xl border border-white/10 bg-white/5 p-6 text-text-muted">
+                Nenhum hino publicado foi encontrado para este hub ainda.
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {items.map((item) => (
+                  <article key={item.id} className="rounded-2xl border border-white/10 bg-white/5 p-4 hover:border-primary-500/30 transition-colors">
+                    <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+                      <div>
+                        <h3 className="text-white font-semibold">
+                          <Link to={buildHinoUrl(item.id, item.titulo, item.numero)} className="hover:text-primary-400 transition-colors">
+                            {item.numero > 0 ? `Hino ${item.numero} - ${item.titulo}` : item.titulo}
+                          </Link>
+                        </h3>
+                        <p className="text-text-muted text-sm mt-1">{item.compositor_nome}</p>
+                      </div>
+                      <div className="flex flex-wrap gap-2">
+                        <Link
+                          to={buildHinoUrl(item.id, item.titulo, item.numero)}
+                          className="px-3 py-2 rounded-full bg-primary-500 text-black text-sm font-semibold hover:bg-primary-400 transition-colors"
+                        >
+                          Ouvir hino
+                        </Link>
+                        {item.numero > 0 && (
+                          <Link
+                            to={`/hinario/${item.numero}`}
+                            className="px-3 py-2 rounded-full border border-white/15 text-white text-sm hover:border-primary-500/40 hover:text-primary-300 transition-colors"
+                          >
+                            Ver letra
+                          </Link>
+                        )}
+                      </div>
+                    </div>
+                  </article>
+                ))}
+              </div>
+            )}
+          </section>
+
+          <aside className="space-y-6">
+            <section className="rounded-3xl border border-white/10 bg-background-secondary p-6">
+              <h2 className="text-xl font-semibold text-white mb-3">Como esta pagina ajuda no Google</h2>
+              <ul className="space-y-3 text-sm text-text-muted">
+                <li>Atende uma intencao especifica de busca com URL propria.</li>
+                <li>Distribui links internos para hinos individuais e paginas de letra.</li>
+                <li>Entrega contexto textual antes da listagem do repertorio.</li>
+              </ul>
+            </section>
+
+            <section className="rounded-3xl border border-white/10 bg-background-secondary p-6">
+              <h2 className="text-xl font-semibold text-white mb-3">Perguntas frequentes</h2>
+              <div className="space-y-4">
+                {config.faq.map((faq) => (
+                  <div key={faq.question}>
+                    <h3 className="text-white font-medium">{faq.question}</h3>
+                    <p className="text-text-muted text-sm mt-1">{faq.answer}</p>
+                  </div>
+                ))}
+              </div>
+            </section>
+          </aside>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default HymnHubPage;
