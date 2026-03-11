@@ -429,6 +429,39 @@ const HymnDetailPage: React.FC = () => {
                     {hymn.categoria}
                   </span>
                 )}
+                <p className="mt-4 max-w-3xl text-sm md:text-base text-text-muted leading-relaxed">
+                  {hymnPrimaryTitle} com áudio, letra e navegação rápida para o Hinário, cifras e páginas relacionadas da Congregação Cristã no Brasil.
+                </p>
+                <div className="mt-4 flex flex-wrap gap-2">
+                  {hymn.numero ? (
+                    <Link
+                      to={`/hinario/${hymn.numero}`}
+                      className="inline-flex items-center rounded-full border border-primary-500/40 bg-primary-500/10 px-3 py-1.5 text-sm text-primary-300 transition-colors hover:bg-primary-500/20"
+                    >
+                      Ver letra no Hinário
+                    </Link>
+                  ) : null}
+                  <Link
+                    to="/cifras"
+                    className="inline-flex items-center rounded-full border border-gray-700 bg-background-tertiary px-3 py-1.5 text-sm text-gray-200 transition-colors hover:border-primary-500/40 hover:text-white"
+                  >
+                    Explorar cifras CCB
+                  </Link>
+                  {categorySlug ? (
+                    <Link
+                      to={`/categoria/${categorySlug}`}
+                      className="inline-flex items-center rounded-full border border-gray-700 bg-background-tertiary px-3 py-1.5 text-sm text-gray-200 transition-colors hover:border-primary-500/40 hover:text-white"
+                    >
+                      Mais em {hymn.categoria}
+                    </Link>
+                  ) : null}
+                  <Link
+                    to="/hinos-cantados-ccb"
+                    className="inline-flex items-center rounded-full border border-gray-700 bg-background-tertiary px-3 py-1.5 text-sm text-gray-200 transition-colors hover:border-primary-500/40 hover:text-white"
+                  >
+                    Hinos cantados
+                  </Link>
+                </div>
               </div>
             </div>
 

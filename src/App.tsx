@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { Suspense } from 'react';
 import { Routes, Route } from 'react-router-dom';
 import { HelmetProvider } from 'react-helmet-async';
 import { AuthProvider } from '@/contexts/AuthContext';
@@ -11,174 +11,167 @@ import ScrollToTop from '@/components/ScrollToTop';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import { ProtectedComposerRoute } from '@/components/ProtectedComposerRoute';
 import '@/styles/globals.css';
-
-// Public Pages
-import HomePage from '@/pages/HomePage';
-import HomeAlternativePage from '@/pages/HomeAlternativePage';
-import LoginPage from '@/pages/LoginPage';
-import RegisterPage from '@/pages/RegisterPage';
-import OnboardingPage from '@/pages/OnboardingPage';
-import VerifyEmailPage from '@/pages/VerifyEmailPage';
-import ForgotPasswordPage from '@/pages/ForgotPasswordPage';
-import AuthCallbackPage from '@/pages/AuthCallbackPage';
-import AlbumsPage from '@/pages/AlbumsPage';
-import AlbumDetailPage from '@/pages/AlbumDetailPage';
-import CompositoresPage from '@/pages/CompositoresPage';
-import ComposerPublicProfilePage from '@/pages/ComposerPublicProfilePage';
-import SearchPage from '@/pages/SearchPage';
-import CategoriesPage from '@/pages/CategoriesPage';
-import CategoryPage from '@/pages/CategoryPage';
-import PlaylistDetailPage from '@/pages/PlaylistDetailPage';
-import TrendsPage from '@/pages/TrendsPage';
-import TermsOfUsePage from '@/pages/TermsOfUsePage';
-import PrivacyPolicyPage from '@/pages/PrivacyPolicyPage';
-import DisclaimerPage from '@/pages/DisclaimerPage';
-import HymnDetailPage from '@/pages/HymnDetailPage';
-import AboutPage from '@/pages/AboutPage';
-import CookiesPolicyPage from '@/pages/CookiesPolicyPage';
-import ContentClaimPage from '@/pages/ContentClaimPage';
-import LGPDPage from '@/pages/LGPDPage';
-import PremiumPage from '@/pages/PremiumPage';
-import InstrumentaisPage from '@/pages/InstrumentaisPage';
-import BibliaNarradaPage from '@/pages/BibliaNarradaPage';
-import PlaylistsPage from '@/pages/PlaylistsPage';
-import RadioPage from '@/pages/RadioPage';
-import HymnHubPage from '@/pages/HymnHubPage';
-import CifraInstrumentHubPage from '@/pages/CifraInstrumentHubPage';
-import DownloadIntentPage from '@/pages/DownloadIntentPage';
-import CompositorCadastroPage from '@/pages/CompositorCadastroPage';
-import CompositorPublicarPage from '@/pages/CompositorPublicarPage';
-import AjudaPage from '@/pages/AjudaPage';
-import ContatoPage from '@/pages/ContatoPage';
-import NotFoundPage from '@/pages/NotFoundPage';
-import AvisosPage from '@/pages/AvisosPage';
-import AvisoDetailPage from '@/pages/AvisoDetailPage';
-
-// User Pages
-import ProfilePage from '@/pages/ProfilePage';
-import EditProfilePage from '@/pages/EditProfilePage';
-import LibraryPage from '@/pages/LibraryPage';
-import LikedSongsPage from '@/pages/LikedSongsPage';
-import HistoryPage from '@/pages/HistoryPage';
-import NotificationsPage from '@/pages/NotificationsPage';
-import ManageComposersPage from '@/pages/ManageComposersPage';
-import ManagerInvitesPage from '@/pages/ManagerInvitesPage';
-import DownloadsPage from '@/pages/DownloadsPage';
-import SettingsPageNew from '@/pages/SettingsPageNew';
-import SubscriptionPage from '@/pages/SubscriptionPage';
-import CreatePlaylistPage from '@/pages/CreatePlaylistPage';
-
-// Composer Pages
-import ComposerDashboard from '@/pages/composer/ComposerDashboard';
-import ComposerProfile from '@/pages/composer/ComposerProfile';
-import ComposerSongs from '@/pages/composer/ComposerSongs';
-import ComposerCreateSong from '@/pages/composer/ComposerCreateSong';
-import ComposerManagers from '@/pages/composer/ComposerManagers';
-import ComposerUploadSong from '@/pages/composer/ComposerUploadSong';
-// import ComposerSongForm from '@/pages/composer/ComposerSongForm';
-import ComposerAlbums from '@/pages/composer/ComposerAlbums';
-import ComposerCreateAlbum from '@/pages/composer/ComposerCreateAlbum';
-import ComposerEditAlbum from '@/pages/composer/ComposerEditAlbum';
-import ComposerAnalytics from '@/pages/composer/ComposerAnalytics';
-import ComposerFollowers from '@/pages/composer/ComposerFollowers';
-import ComposerNotifications from '@/pages/composer/ComposerNotifications';
-import ComposerCopyrightClaims from '@/pages/composer/ComposerCopyrightClaims';
-import ComposerOnboarding from '@/pages/composer/ComposerOnboarding';
-import ComposerTrending from '@/pages/composer/ComposerTrending';
-import ComposerLiked from '@/pages/composer/ComposerLiked';
-import ComposerHistory from '@/pages/composer/ComposerHistory';
-
-// Admin Pages
-// import AdminDashboard from '@/pages/admin/AdminDashboard';
-import AdminDashboard from '@/pages/admin/AdminDashboard';
-// import AdminDashboardSimple from '@/pages/admin/AdminDashboardSimple';
-import AdminApprovals from '@/pages/admin/approvals/AdminApprovals';
-import AdminUsers from '@/pages/admin/AdminUsers';
-import AdminUserEdit from '@/pages/admin/AdminUserEdit';
-import AdminUserForm from '@/pages/admin/AdminUserForm';
-import AdminUsersPremium from '@/pages/admin/AdminUsersPremium';
-import AdminComposers from '@/pages/admin/AdminComposers';
-import AdminComposersPending from '@/pages/admin/AdminComposersPending';
-import AdminComposersVerified from '@/pages/admin/AdminComposersVerified';
-import AdminComposerForm from '@/pages/admin/AdminComposerForm';
-import AdminAlbumForm from '@/pages/admin/AdminAlbumForm';
-import AdminHymns from '@/pages/admin/AdminHymns';
-import AdminHymnForm from '@/pages/admin/AdminHymnForm';
-import AdminYoutubeImport from '@/pages/admin/AdminYoutubeImport';
-import AdminSongs from '@/pages/admin/AdminSongs';
-import AdminSongsPending from '@/pages/admin/songs/AdminSongsPending';
-import AdminSongDetails from '@/pages/admin/songs/AdminSongDetails';
-import AdminSongForm from '@/pages/admin/AdminSongForm';
-import AdminAlbums from '@/pages/admin/AdminAlbums';
-import AdminCategories from '@/pages/admin/AdminCategories';
-import AdminCategoryForm from '@/pages/admin/AdminCategoryForm';
-import AdminGenres from '@/pages/admin/AdminGenres';
-import AdminGenreForm from '@/pages/admin/AdminGenreForm';
-import AdminTags from '@/pages/admin/AdminTags';
-import AdminTagForm from '@/pages/admin/AdminTagForm';
-import AdminPlaylistsEditorial from '@/pages/admin/AdminPlaylistsEditorial';
-import AdminPlaylistForm from '@/pages/admin/AdminPlaylistForm';
-import AdminBanners from '@/pages/admin/AdminBanners';
-import AdminBannerForm from '@/pages/admin/AdminBannerForm';
-import AdminFeatured from '@/pages/admin/AdminFeatured';
-import AdminFeaturedForm from '@/pages/admin/AdminFeaturedForm';
-import AdminCollections from '@/pages/admin/AdminCollections';
-import AdminCollectionForm from '@/pages/admin/AdminCollectionForm';
-import AdminCampaigns from '@/pages/admin/AdminCampaigns';
-import AdminCampaignForm from '@/pages/admin/AdminCampaignForm';
-import AdminPromotions from '@/pages/admin/AdminPromotions';
-import AdminPromotionForm from '@/pages/admin/AdminPromotionForm';
-import AdminCoupons from '@/pages/admin/AdminCoupons';
-import AdminCouponForm from '@/pages/admin/AdminCouponForm';
-import AdminAnalytics from '@/pages/admin/AdminAnalytics';
-import AdminReports from '@/pages/admin/reports/AdminReports';
-import AdminReportDetail from '@/pages/admin/reports/AdminReportDetail';
-import AdminReportAnalytics from '@/pages/admin/reports/AdminReportAnalytics';
-import AdminReportLogs from '@/pages/admin/reports/AdminReportLogs';
-import AdminCustomReports from '@/pages/admin/AdminCustomReports';
-import AdminLogs from '@/pages/admin/AdminLogs';
-import AdminLogos from '@/pages/admin/AdminLogos';
-import AdminComments from '@/pages/admin/AdminComments';
-import AdminCopyrightClaims from '@/pages/admin/AdminCopyrightClaims';
-import AdminRoyalties from '@/pages/admin/AdminRoyalties';
-// Temporariamente desabilitado para acelerar o build
-// import AdminSettings from '@/pages/admin/AdminSettings';
-import AdminSettingsGeneral from '@/pages/admin/AdminSettingsGeneral';
-import AdminSettingsUsers from '@/pages/admin/AdminSettingsUsers';
-import AdminSettingsComposers from '@/pages/admin/AdminSettingsComposers';
-import AdminSettingsPremium from '@/pages/admin/AdminSettingsPremium';
-import AdminSettingsEmail from '@/pages/admin/AdminSettingsEmail';
-import AdminSettingsSecurity from '@/pages/admin/AdminSettingsSecurity';
-import AdminSettingsIntegrations from '@/pages/admin/AdminSettingsIntegrations';
-import AdminSEO from '@/pages/admin/AdminSEO';
-import AdminMenus from '@/pages/admin/AdminMenus';
-import AdminTheme from '@/pages/admin/AdminTheme';
-// import AdminLogos from '@/pages/admin/AdminLogos'; // Already imported above
-import AdminBackup from '@/pages/admin/AdminBackup';
-import AdminBackupForm from '@/pages/admin/AdminBackupForm';
-import AdminImport from '@/pages/admin/AdminImport';
-import AdminImportForm from '@/pages/admin/AdminImportForm';
-import AdminExport from '@/pages/admin/AdminExport';
-import AdminExportForm from '@/pages/admin/AdminExportForm';
-import AdminAPI from '@/pages/admin/api/AdminAPI';
-import AdminAPIForm from '@/pages/admin/AdminAPIForm';
-import AdminNotices from '@/pages/admin/AdminNotices';
-import AdminNoticeForm from '@/pages/admin/AdminNoticeForm';
-import AdminBibleNarrated from '@/pages/admin/AdminBibleNarrated';
-import AdminBibleNarratedForm from '@/pages/admin/AdminBibleNarratedForm';
-import AdminCifras from '@/pages/admin/AdminCifras';
-import AdminCifraForm from '@/pages/admin/AdminCifraForm';
-import AdminHinario from '@/pages/admin/AdminHinario';
-import AdminHinarioForm from '@/pages/admin/AdminHinarioForm';
-import AdminArchiveImport from '@/pages/admin/AdminArchiveImport';
-import CifraPage from '@/pages/CifraPage';
-import CifrasListPage from '@/pages/CifrasListPage';
-import HinarioListPage from '@/pages/HinarioListPage';
-import HinarioViewPage from '@/pages/HinarioViewPage';
+import {
+  AboutPage,
+  AjudaPage,
+  AlbumDetailPage,
+  AlbumsPage,
+  AuthCallbackPage,
+  AvisoDetailPage,
+  AvisosPage,
+  BibliaNarradaPage,
+  CategoriesPage,
+  CategoryPage,
+  CifraInstrumentHubPage,
+  CifraPage,
+  CifrasListPage,
+  CompositorCadastroPage,
+  CompositorPublicarPage,
+  ComposerPublicProfilePage,
+  CompositoresPage,
+  ContentClaimPage,
+  ContatoPage,
+  CookiesPolicyPage,
+  DisclaimerPage,
+  DownloadIntentPage,
+  DownloadsPage,
+  EditProfilePage,
+  ForgotPasswordPage,
+  HistoryPage,
+  HomeAlternativePage,
+  HomePage,
+  HymnDetailPage,
+  HymnHubPage,
+  HinarioListPage,
+  HinarioViewPage,
+  InstrumentaisPage,
+  LibraryPage,
+  LGPDPage,
+  LikedSongsPage,
+  LoginPage,
+  ManageComposersPage,
+  ManagerInvitesPage,
+  NotificationsPage,
+  NotFoundPage,
+  OnboardingPage,
+  PlaylistDetailPage,
+  PlaylistsPage,
+  PremiumPage,
+  PrivacyPolicyPage,
+  ProfilePage,
+  RadioPage,
+  RegisterPage,
+  SearchPage,
+  SettingsPageNew,
+  SubscriptionPage,
+  TermsOfUsePage,
+  TrendsPage,
+  VerifyEmailPage,
+  CreatePlaylistPage,
+} from '@/pages/lazyPages';
+import {
+  ComposerAlbums,
+  ComposerAnalytics,
+  ComposerCopyrightClaims,
+  ComposerCreateAlbum,
+  ComposerCreateSong,
+  ComposerDashboard,
+  ComposerEditAlbum,
+  ComposerFollowers,
+  ComposerHistory,
+  ComposerLiked,
+  ComposerManagers,
+  ComposerNotifications,
+  ComposerOnboarding,
+  ComposerProfile,
+  ComposerSongs,
+  ComposerTrending,
+  ComposerUploadSong,
+} from '@/pages/composer/lazyPages';
+import {
+  AdminAlbumForm,
+  AdminAlbums,
+  AdminAnalytics,
+  AdminAPI,
+  AdminAPIForm,
+  AdminApprovals,
+  AdminArchiveImport,
+  AdminBackup,
+  AdminBackupForm,
+  AdminBannerForm,
+  AdminBanners,
+  AdminBibleNarrated,
+  AdminBibleNarratedForm,
+  AdminCampaignForm,
+  AdminCampaigns,
+  AdminCategories,
+  AdminCategoryForm,
+  AdminCifraForm,
+  AdminCifras,
+  AdminCollectionForm,
+  AdminCollections,
+  AdminComments,
+  AdminComposerForm,
+  AdminComposers,
+  AdminComposersPending,
+  AdminComposersVerified,
+  AdminCopyrightClaims,
+  AdminCouponForm,
+  AdminCoupons,
+  AdminCustomReports,
+  AdminDashboard,
+  AdminExport,
+  AdminExportForm,
+  AdminFeatured,
+  AdminFeaturedForm,
+  AdminGenreForm,
+  AdminGenres,
+  AdminHinario,
+  AdminHinarioForm,
+  AdminHymnForm,
+  AdminHymns,
+  AdminImport,
+  AdminImportForm,
+  AdminLogs,
+  AdminLogos,
+  AdminMenus,
+  AdminNoticeForm,
+  AdminNotices,
+  AdminPlaylistForm,
+  AdminPlaylistsEditorial,
+  AdminPromotionForm,
+  AdminPromotions,
+  AdminReportAnalytics,
+  AdminReportDetail,
+  AdminReportLogs,
+  AdminReports,
+  AdminRoyalties,
+  AdminSEO,
+  AdminSettingsComposers,
+  AdminSettingsEmail,
+  AdminSettingsGeneral,
+  AdminSettingsIntegrations,
+  AdminSettingsPremium,
+  AdminSettingsSecurity,
+  AdminSettingsUsers,
+  AdminSongDetails,
+  AdminSongForm,
+  AdminSongs,
+  AdminSongsPending,
+  AdminTagForm,
+  AdminTags,
+  AdminTheme,
+  AdminUserEdit,
+  AdminUserForm,
+  AdminUsers,
+  AdminUsersPremium,
+  AdminYoutubeImport,
+} from '@/pages/admin/lazyPages';
 import GlobalAudioPlayer from '@/components/GlobalAudioPlayer';
 import FreePlayGateModal from '@/components/modals/FreePlayGateModal';
 import AnalyticsScripts from '@/components/AnalyticsScripts';
 import SiteConfigRuntime from '@/components/SiteConfigRuntime';
+import PageLoader from '@/components/ui/PageLoader';
 import { usePresence } from '@/hooks/usePresence';
 import { Navigate, useParams as useRouteParams } from 'react-router-dom';
 
@@ -196,7 +189,7 @@ const RedirectToCifra: React.FC = () => {
 
 const AppContent: React.FC = () => {
   return (
-    <>
+    <Suspense fallback={<PageLoader />}>
       <ScrollToTop />
       <Routes>
         {/* Public Routes - No Layout */}
@@ -533,7 +526,7 @@ const AppContent: React.FC = () => {
           <Route path="*" element={<NotFoundPage />} />
         </Route>
       </Routes>
-    </>
+    </Suspense>
   );
 };
 

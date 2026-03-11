@@ -3,6 +3,8 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import { ArrowLeft, ChevronLeft, ChevronRight, ZoomIn, ZoomOut, BookOpen, Share2, Search, X } from 'lucide-react';
 import SEOHead from '@/components/SEO/SEOHead';
 import { generateBreadcrumbSchema } from '@/utils/schemaGenerator';
+import { supabaseFetch } from '@/lib/supabaseRest';
+import { buildHinoUrl } from '@/utils/slugUrl';
 import {
   fetchHinarioByNumero,
   fetchHinarioCount,
@@ -31,6 +33,7 @@ const HinarioViewPage: React.FC = () => {
   const [searchResults, setSearchResults] = useState<HinarioHymn[]>([]);
   const [allHymns, setAllHymns] = useState<HinarioHymn[]>([]);
   const [showSearch, setShowSearch] = useState(false);
+  const [audioVersion, setAudioVersion] = useState<{ id: string; titulo: string; numero?: number } | null>(null);
   const searchRef = useRef<HTMLDivElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
 
@@ -65,6 +68,31 @@ const HinarioViewPage: React.FC = () => {
     fetchHinarioCount().then(setTotalHymns);
     fetchHinarioList({ is_active: true }).then(setAllHymns);
   }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const loadAudioVersion = async () => {
+      try {
+        const rows = await supabaseFetch<any>('hinos', {
+          numero: `eq.${currentNumero}`,
+          select: 'id,titulo,numero',
+          limit: '1',
+        });
+        if (!cancelled) {
+          const match = rows[0];
+          setAudioVersion(match ? { id: String(match.id), titulo: match.titulo, numero: match.numero } : null);
+        }
+      } catch {
+        if (!cancelled) setAudioVersion(null);
+      }
+    };
+
+    loadAudioVersion();
+    return () => {
+      cancelled = true;
+    };
+  }, [currentNumero]);
 
   // Search filter
   useEffect(() => {
@@ -260,6 +288,38 @@ const HinarioViewPage: React.FC = () => {
           {hymn.subtitulo && (
             <p className="text-gray-400 text-sm mt-1">{hymn.subtitulo}</p>
           )}
+          <p className="text-gray-400 text-sm md:text-base mt-4 leading-relaxed">
+            Letra do Hino {hymn.numero} CCB com navegação rápida pelo Hinário 5, acesso à versão em áudio quando disponível
+            e links para categorias e cifras relacionadas.
+          </p>
+          <div className="flex flex-wrap gap-2 mt-4">
+            {audioVersion && (
+              <Link
+                to={buildHinoUrl(audioVersion.id, audioVersion.titulo, audioVersion.numero)}
+                className="inline-flex items-center rounded-full border border-primary-500/40 bg-primary-500/10 px-3 py-1.5 text-sm text-primary-300 transition-colors hover:bg-primary-500/20"
+              >
+                Ouvir este hino
+              </Link>
+            )}
+            <Link
+              to="/hinos-cantados-ccb"
+              className="inline-flex items-center rounded-full border border-gray-700 bg-gray-800 px-3 py-1.5 text-sm text-gray-200 transition-colors hover:border-primary-500/40 hover:text-white"
+            >
+              Hinos cantados
+            </Link>
+            <Link
+              to="/hinos-tocados-ccb"
+              className="inline-flex items-center rounded-full border border-gray-700 bg-gray-800 px-3 py-1.5 text-sm text-gray-200 transition-colors hover:border-primary-500/40 hover:text-white"
+            >
+              Hinos tocados
+            </Link>
+            <Link
+              to="/cifras"
+              className="inline-flex items-center rounded-full border border-gray-700 bg-gray-800 px-3 py-1.5 text-sm text-gray-200 transition-colors hover:border-primary-500/40 hover:text-white"
+            >
+              Ver cifras CCB
+            </Link>
+          </div>
         </div>
 
         {/* Verses */}

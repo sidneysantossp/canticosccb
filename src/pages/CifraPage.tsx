@@ -167,6 +167,14 @@ const CifraPage: React.FC = () => {
     );
   }
 
+  const instrumentLabel = INSTRUMENTS.find(i => i.value === cifra.instrument)?.label || cifra.instrument;
+  const instrumentHubMap: Record<string, string> = {
+    violao: '/cifras-violao-ccb',
+    ukulele: '/cifras-ukulele-ccb',
+    teclado: '/cifras-teclado-ccb',
+  };
+  const instrumentHubUrl = instrumentHubMap[cifra.instrument] || '/cifras';
+
   return (
     <>
     <SEOHead
@@ -211,6 +219,29 @@ const CifraPage: React.FC = () => {
               <p className="text-primary-400 font-medium mt-1">{cifra.artist}</p>
             )}
             <p className="text-gray-500 text-sm mt-1">{cifra.views_count.toLocaleString()} exibições</p>
+            <p className="text-gray-400 text-sm mt-3 leading-relaxed">
+              Cifra CCB para {instrumentLabel}, com acordes, troca de tom e navegação para outras cifras e páginas relacionadas.
+            </p>
+            <div className="flex flex-wrap gap-2 mt-4">
+              <Link
+                to={instrumentHubUrl}
+                className="inline-flex items-center rounded-full border border-primary-500/40 bg-primary-500/10 px-3 py-1.5 text-sm text-primary-300 transition-colors hover:bg-primary-500/20"
+              >
+                Mais cifras de {instrumentLabel}
+              </Link>
+              <Link
+                to="/cifras"
+                className="inline-flex items-center rounded-full border border-gray-700 bg-gray-800 px-3 py-1.5 text-sm text-gray-200 transition-colors hover:border-primary-500/40 hover:text-white"
+              >
+                Todas as cifras
+              </Link>
+              <Link
+                to="/hinario"
+                className="inline-flex items-center rounded-full border border-gray-700 bg-gray-800 px-3 py-1.5 text-sm text-gray-200 transition-colors hover:border-primary-500/40 hover:text-white"
+              >
+                Letras do Hinário
+              </Link>
+            </div>
           </div>
         </div>
       </div>
