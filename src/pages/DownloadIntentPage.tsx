@@ -4,7 +4,7 @@ import { ArrowLeft, DownloadCloud, Disc3, Music4 } from 'lucide-react';
 import SEOHead from '@/components/SEO/SEOHead';
 import { generateBreadcrumbSchema, generateFAQSchema } from '@/utils/schemaGenerator';
 
-type DownloadTopic = 'hinos' | 'albuns';
+type DownloadTopic = 'hinos' | 'albuns' | 'cds';
 
 const PAGE_CONFIG: Record<DownloadTopic, {
   path: string;
@@ -49,6 +49,7 @@ const PAGE_CONFIG: Record<DownloadTopic, {
     keywords: 'baixar albuns ccb, baixar cds ccb, ouvir albuns ccb, playlists ccb, coletaneas ccb',
     relatedLinks: [
       { label: 'Ver álbuns CCB', href: '/albuns' },
+      { label: 'Baixar CDs CCB', href: '/baixar-cds-ccb' },
       { label: 'Explorar playlists', href: '/playlists' },
       { label: 'Ouvir hinos tocados', href: '/hinos-tocados-ccb' },
       { label: 'Buscar repertório', href: '/search' },
@@ -61,6 +62,30 @@ const PAGE_CONFIG: Record<DownloadTopic, {
       {
         question: 'Onde encontro coleções e playlists da CCB?',
         answer: 'Você pode navegar pela página de álbuns e pela área de playlists para encontrar coletâneas, repertórios temáticos e seleções editoriais.',
+      },
+    ],
+  },
+  cds: {
+    path: '/baixar-cds-ccb',
+    title: 'Baixar CDs CCB | Como Ouvir CDs e Coletâneas CCB',
+    heading: 'Baixar CDs CCB',
+    description: 'Guia para quem procura baixar CDs CCB. Veja como ouvir coletâneas, álbuns, playlists e repertório relacionado da Congregação Cristã no Brasil.',
+    intro: 'Esta página atende a busca por baixar CDs CCB com foco honesto em descoberta de repertório: você encontra caminhos para coletâneas, álbuns, playlists e páginas canônicas do acervo.',
+    keywords: 'baixar cds ccb, download cds ccb, cds ccb, coletaneas ccb, albuns ccb',
+    relatedLinks: [
+      { label: 'Ver álbuns e coletâneas', href: '/albuns' },
+      { label: 'Baixar álbuns CCB', href: '/baixar-albuns-ccb' },
+      { label: 'Explorar playlists', href: '/playlists' },
+      { label: 'Ouvir hinos cantados', href: '/hinos-cantados-ccb' },
+    ],
+    faq: [
+      {
+        question: 'Posso baixar CDs da CCB nesta plataforma?',
+        answer: 'Hoje o foco é ouvir online e navegar pelas páginas canônicas de álbuns, playlists e repertório relacionado. A página existe para orientar corretamente quem chega com essa intenção de busca.',
+      },
+      {
+        question: 'Onde encontrar coletâneas e repertório tipo CD?',
+        answer: 'Use as páginas de álbuns e playlists para acessar coletâneas, repertórios temáticos e sequências de hinos já organizadas na plataforma.',
       },
     ],
   },

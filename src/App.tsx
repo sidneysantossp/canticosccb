@@ -328,6 +328,7 @@ const AppContent: React.FC = () => {
           <Route path="biblia-narrada" element={<BibliaNarradaPage />} />
           <Route path="baixar-hinos-ccb" element={<DownloadIntentPage topic="hinos" />} />
           <Route path="baixar-albuns-ccb" element={<DownloadIntentPage topic="albuns" />} />
+          <Route path="baixar-cds-ccb" element={<DownloadIntentPage topic="cds" />} />
           <Route path="playlists" element={<PlaylistsPage />} />
           <Route path="radio" element={<RadioPage />} />
           <Route path="compositor/cadastro" element={<CompositorCadastroPage />} />

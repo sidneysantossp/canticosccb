@@ -107,6 +107,11 @@ const Footer: React.FC = () => {
                   Baixar Álbuns
                 </Link>
               </li>
+              <li>
+                <Link to="/baixar-cds-ccb" className="text-text-muted hover:text-white transition-colors text-sm">
+                  Baixar CDs
+                </Link>
+              </li>
             </ul>
           </div>
 

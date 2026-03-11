@@ -2,8 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { ArrowLeft, Music, Users, Play, Pause, Heart, TrendingUp, Clock, Share2, ListPlus } from 'lucide-react';
 import SEOHead from '@/components/SEO/SEOHead';
-import { generatePersonSchema, generateBreadcrumbSchema } from '@/utils/schemaGenerator';
-import { extractUUID, buildCompositorUrl, buildAlbumUrl } from '@/utils/slugUrl';
+import { generatePersonSchema, generateProfilePageSchema, generateBreadcrumbSchema, generateItemListSchema } from '@/utils/schemaGenerator';
+import { extractUUID, buildCompositorUrl, buildAlbumUrl, buildHinoUrl as buildHinoPageUrl } from '@/utils/slugUrl';
 import { usePlayerStore } from '@/stores/playerStore';
 import useFavoritesStore from '@/stores/favoritesStore';
 import usePlaylistsStore from '@/stores/playlistsStore';
@@ -11,7 +11,7 @@ import useNotificationsStore, { createFavoriteNotification } from '@/stores/noti
 import { useAuth } from '@/contexts/AuthContext';
 import { useNotifications } from '@/contexts/NotificationsContext';
 import { usePlayerContext } from '@/contexts/PlayerContext';
-import { buildHinoUrl, buildAlbumCoverUrl } from '@/lib/media-helper';
+import { buildHinoUrl as buildHinoAudioUrl, buildAlbumCoverUrl } from '@/lib/media-helper';
 import { DEFAULT_COVER_URL } from '@/lib/config';
 import { supabaseFetch, supabaseInsert, supabaseDelete, isSupabaseConfigured } from '@/lib/supabaseRest';
 
@@ -351,7 +351,7 @@ export default function ComposerPublicProfilePage() {
         category: h.categoria || 'Cantados',
         artist: composer?.name || h.compositor || 'Compositor',
         duration: toMMSS(h.duracao),
-        audioUrl: buildHinoUrl({ id: String(h.id), audio_url: h.audio_url }),
+        audioUrl: buildHinoAudioUrl({ id: String(h.id), audio_url: h.audio_url }),
         coverUrl: h.cover_url || album.cover_url || albumCover || DEFAULT_COVER_URL,
         album: album.title,
         lyrics: h.letra || h.lyrics || '',
@@ -473,11 +473,11 @@ export default function ComposerPublicProfilePage() {
     // Se não tem audio_url válido, usar o primeiro MP3 disponível como fallback
     let audioUrl = '';
     if (song.audio_url && song.audio_url.trim() !== '') {
-      audioUrl = buildHinoUrl({ id: song.id, audio_url: song.audio_url });
+      audioUrl = buildHinoAudioUrl({ id: song.id, audio_url: song.audio_url });
     } else {
       // Fallback: usar um MP3 real do servidor
       console.warn('⚠️ Hino sem audio_url, usando fallback');
-      audioUrl = buildHinoUrl({
+      audioUrl = buildHinoAudioUrl({
         id: song.id,
         audio_url: 'a-capelacantados-o-deus-bendito-www-canticosccb-com-br-1761280811.mp3'
       });
@@ -517,12 +517,29 @@ export default function ComposerPublicProfilePage() {
         ogType="profile"
         ogImage={composer.avatar_url || composer.photo_url}
         schemaData={[
+          generateProfilePageSchema({
+            name: composer.name,
+            url: buildCompositorUrl(composer.id, composer.name),
+            image: composer.avatar_url || composer.photo_url,
+            description: composer.bio || `Perfil público de ${composer.name}, compositor da Congregação Cristã no Brasil.`,
+            jobTitle: 'Compositor',
+          }),
           generatePersonSchema({
             name: composer.name,
             url: buildCompositorUrl(composer.id, composer.name),
             image: composer.avatar_url || composer.photo_url,
             description: composer.bio || `Compositor da Congregação Cristã no Brasil`,
             jobTitle: 'Compositor',
+          }),
+          generateItemListSchema({
+            name: `Hinos de ${composer.name}`,
+            description: `Lista de hinos publicados por ${composer.name} no Cânticos CCB.`,
+            url: buildCompositorUrl(composer.id, composer.name),
+            items: songs.slice(0, 60).map((song, index) => ({
+              name: song.number ? `Hino ${song.number} - ${song.title}` : song.title,
+              url: buildHinoPageUrl(song.id, song.title, song.number),
+              position: index + 1,
+            })),
           }),
           generateBreadcrumbSchema([
             { name: 'Início', url: '/' },

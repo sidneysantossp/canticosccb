@@ -163,6 +163,7 @@ async function main() {
   urls.push(urlEntry('/cifras-teclado-ccb', today, 'weekly', '0.7'));
   urls.push(urlEntry('/baixar-hinos-ccb', today, 'monthly', '0.6'));
   urls.push(urlEntry('/baixar-albuns-ccb', today, 'monthly', '0.6'));
+  urls.push(urlEntry('/baixar-cds-ccb', today, 'monthly', '0.6'));
   urls.push(urlEntry('/privacidade', today, 'yearly', '0.3'));
   urls.push(urlEntry('/premium', today, 'weekly', '0.6'));
   urls.push(urlEntry('/avisos', today, 'daily', '0.6'));

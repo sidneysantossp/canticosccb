@@ -1012,6 +1012,12 @@ function handleStaticPage(path: string): PageMeta | null {
       h1: 'Baixar Albuns CCB',
       body: '<p>Esta página atende a busca por baixar álbuns CCB com foco em navegação honesta: ouvir online, explorar playlists, visitar álbuns publicados e encontrar repertório relacionado.</p><p><a href="https://canticosccb.com.br/albuns">Ver Álbuns</a> · <a href="https://canticosccb.com.br/playlists">Playlists</a> · <a href="https://canticosccb.com.br/hinos-tocados-ccb">Hinos Tocados</a></p>',
     },
+    '/baixar-cds-ccb': {
+      title: 'Baixar CDs CCB | Como Ouvir CDs e Coletâneas | Cânticos CCB',
+      desc: 'Guia para quem procura baixar CDs CCB. Veja como ouvir coletâneas, playlists e álbuns da Congregação Cristã no Brasil.',
+      h1: 'Baixar CDs CCB',
+      body: '<p>Esta página atende a busca por baixar CDs CCB com orientação honesta. O foco da plataforma é navegar por álbuns, coletâneas, playlists e páginas canônicas do repertório publicado.</p><p><a href="https://canticosccb.com.br/albuns">Ver Álbuns</a> · <a href="https://canticosccb.com.br/baixar-albuns-ccb">Baixar Álbuns</a> · <a href="https://canticosccb.com.br/playlists">Playlists</a></p>',
+    },
     '/instrumentais': {
       title: 'Hinos Instrumentais CCB | Cânticos CCB',
       desc: 'Página em preparação para repertório de hinos instrumentais da Congregação Cristã no Brasil.',

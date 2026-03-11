@@ -220,6 +220,40 @@ export const generatePersonSchema = (person: {
 };
 
 /**
+ * Schema para páginas públicas de perfil.
+ */
+export const generateProfilePageSchema = (profile: {
+  name: string;
+  url: string;
+  image?: string;
+  description?: string;
+  jobTitle?: string;
+}) => {
+  const BASE_URL = getBaseUrl();
+  const profileUrl = profile.url.startsWith('http') ? profile.url : `${BASE_URL}${profile.url}`;
+  const mainEntity: any = {
+    '@type': 'Person',
+    name: profile.name,
+    url: profileUrl,
+  };
+
+  if (profile.image) mainEntity.image = profile.image;
+  if (profile.description) mainEntity.description = profile.description;
+  if (profile.jobTitle) mainEntity.jobTitle = profile.jobTitle;
+
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'ProfilePage',
+    name: profile.name,
+    url: profileUrl,
+    mainEntity,
+    mainEntityOfPage: profileUrl,
+    inLanguage: 'pt-BR',
+    description: profile.description,
+  };
+};
+
+/**
  * Schema para Grupo Musical/Banda
  */
 export const generateMusicGroupSchema = (group: {
