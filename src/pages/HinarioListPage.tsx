@@ -71,6 +71,26 @@ const HinarioListPage: React.FC = () => {
             Hinário
           </h1>
           <p className="text-gray-400 mt-2">Letras dos hinos da Congregação Cristã no Brasil</p>
+          <div className="flex flex-wrap gap-2 mt-4">
+            <Link
+              to="/hinario-5-ccb"
+              className="inline-flex items-center rounded-full border border-primary-500/40 bg-primary-500/10 px-3 py-1.5 text-sm text-primary-300 transition-colors hover:bg-primary-500/20"
+            >
+              Hinário 5 CCB
+            </Link>
+            <Link
+              to="/letras-hinos-ccb"
+              className="inline-flex items-center rounded-full border border-gray-700 bg-gray-800 px-3 py-1.5 text-sm text-gray-200 transition-colors hover:border-primary-500/40 hover:text-white"
+            >
+              Letras dos Hinos
+            </Link>
+            <Link
+              to="/hinos-cantados-ccb"
+              className="inline-flex items-center rounded-full border border-gray-700 bg-gray-800 px-3 py-1.5 text-sm text-gray-200 transition-colors hover:border-primary-500/40 hover:text-white"
+            >
+              Hinos cantados
+            </Link>
+          </div>
         </div>
 
         {/* Search & Filters */}

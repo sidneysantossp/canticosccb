@@ -1,6 +1,6 @@
 import React, { Suspense } from 'react';
 import { Routes, Route } from 'react-router-dom';
-import { HelmetProvider } from 'react-helmet-async';
+import { Helmet, HelmetProvider } from 'react-helmet-async';
 import { AuthProvider } from '@/contexts/AuthContext';
 import { NotificationsProvider } from '@/contexts/NotificationsContext';
 import { PlayerProvider } from '@/contexts/PlayerContext';
@@ -43,6 +43,7 @@ import {
   HymnDetailPage,
   HymnHubPage,
   HinarioListPage,
+  HinarioTopicPage,
   HinarioViewPage,
   InstrumentaisPage,
   LibraryPage,
@@ -173,7 +174,7 @@ import AnalyticsScripts from '@/components/AnalyticsScripts';
 import SiteConfigRuntime from '@/components/SiteConfigRuntime';
 import PageLoader from '@/components/ui/PageLoader';
 import { usePresence } from '@/hooks/usePresence';
-import { Navigate, useParams as useRouteParams } from 'react-router-dom';
+import { Navigate, useLocation, useParams as useRouteParams } from 'react-router-dom';
 
 const PresenceTracker: React.FC = () => { usePresence(); return null; };
 
@@ -187,10 +188,78 @@ const RedirectToCifra: React.FC = () => {
   return <Navigate to={`/cifra/${slug}`} replace />;
 };
 
+const NOINDEX_EXACT_PATHS = new Set([
+  '/login',
+  '/register',
+  '/cadastro',
+  '/verify-email',
+  '/forgot-password',
+  '/auth/callback',
+  '/onboarding',
+  '/compositor/cadastro',
+  '/compositor/publicar',
+  '/compositor/onboarding',
+]);
+
+const NOINDEX_PREFIXES = [
+  '/perfil',
+  '/profile',
+  '/edit-profile',
+  '/biblioteca',
+  '/library',
+  '/favoritos',
+  '/liked-songs',
+  '/liked',
+  '/historico',
+  '/history',
+  '/downloads',
+  '/notifications',
+  '/notificacoes',
+  '/configuracoes',
+  '/settings',
+  '/assinatura',
+  '/subscription',
+  '/playlist/criar',
+  '/manage-composers',
+  '/manager-invites',
+  '/composer',
+  '/admin',
+  '/compositor/dashboard',
+  '/compositor/perfil',
+  '/compositor/gerentes',
+  '/compositor/musicas',
+  '/compositor/musica',
+  '/compositor/albuns',
+  '/compositor/album',
+  '/compositor/hino',
+  '/compositor/analytics',
+  '/compositor/seguidores',
+  '/compositor/notificacoes',
+  '/compositor/direitos-autorais',
+];
+
+const RouteRobots: React.FC = () => {
+  const location = useLocation();
+  const pathname = location.pathname.toLowerCase();
+  const shouldNoindex =
+    NOINDEX_EXACT_PATHS.has(pathname) ||
+    NOINDEX_PREFIXES.some((prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`));
+
+  if (!shouldNoindex) return null;
+
+  return (
+    <Helmet>
+      <meta name="robots" content="noindex, nofollow" />
+      <meta name="googlebot" content="noindex, nofollow" />
+    </Helmet>
+  );
+};
+
 const AppContent: React.FC = () => {
   return (
     <Suspense fallback={<PageLoader />}>
       <ScrollToTop />
+      <RouteRobots />
       <Routes>
         {/* Public Routes - No Layout */}
         <Route path="/login" element={<LoginPage />} />
@@ -219,7 +288,9 @@ const AppContent: React.FC = () => {
           <Route path="cifras-teclado-ccb" element={<CifraInstrumentHubPage instrument="teclado" />} />
           <Route path="cifra/:slug" element={<CifraPage />} />
           <Route path="hinario" element={<HinarioListPage />} />
+          <Route path="hinario-5-ccb" element={<HinarioTopicPage topic="hinario5" />} />
           <Route path="hinario/:numero" element={<HinarioViewPage />} />
+          <Route path="letras-hinos-ccb" element={<HinarioTopicPage topic="letras" />} />
           <Route path="hinos-cantados-ccb" element={<HymnHubPage hub="cantados" />} />
           <Route path="hinos-tocados-ccb" element={<HymnHubPage hub="tocados" />} />
           <Route path="hinos-avulsos-ccb" element={<HymnHubPage hub="avulsos" />} />

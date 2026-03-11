@@ -146,6 +146,8 @@ async function main() {
   urls.push(urlEntry('/search', today, 'daily', '0.9'));
   urls.push(urlEntry('/cifras', today, 'daily', '0.9'));
   urls.push(urlEntry('/hinario', today, 'daily', '0.9'));
+  urls.push(urlEntry('/hinario-5-ccb', today, 'weekly', '0.9'));
+  urls.push(urlEntry('/letras-hinos-ccb', today, 'weekly', '0.9'));
   urls.push(urlEntry('/hinos-cantados-ccb', today, 'weekly', '0.8'));
   urls.push(urlEntry('/hinos-tocados-ccb', today, 'weekly', '0.8'));
   urls.push(urlEntry('/hinos-avulsos-ccb', today, 'weekly', '0.8'));

@@ -55,4 +55,5 @@ export const CreatePlaylistPage = lazy(() => import('./CreatePlaylistPage'));
 export const CifraPage = lazy(() => import('./CifraPage'));
 export const CifrasListPage = lazy(() => import('./CifrasListPage'));
 export const HinarioListPage = lazy(() => import('./HinarioListPage'));
+export const HinarioTopicPage = lazy(() => import('./HinarioTopicPage'));
 export const HinarioViewPage = lazy(() => import('./HinarioViewPage'));

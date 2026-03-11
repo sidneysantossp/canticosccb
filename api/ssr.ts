@@ -904,6 +904,18 @@ function handleStaticPage(path: string): PageMeta | null {
       h1: 'Buscar Hinos da CCB',
       body: '<p>Pesquise hinos por título, número ou compositor.</p>',
     },
+    '/hinario-5-ccb': {
+      title: 'Hinário 5 CCB | Letras dos Hinos da Congregação Cristã | Cânticos CCB',
+      desc: 'Acesse o Hinário 5 CCB com letras dos hinos, navegação por número e links para ouvir hinos da Congregação Cristã no Brasil.',
+      h1: 'Hinário 5 CCB',
+      body: '<p>Página-hub do Hinário 5 CCB com links para as letras dos hinos, navegação por número e atalhos para ouvir hinos e explorar cifras relacionadas.</p><p><a href="https://canticosccb.com.br/hinario">Abrir Hinário</a> · <a href="https://canticosccb.com.br/letras-hinos-ccb">Letras dos Hinos</a> · <a href="https://canticosccb.com.br/hinos-cantados-ccb">Hinos Cantados</a></p>',
+    },
+    '/letras-hinos-ccb': {
+      title: 'Letras dos Hinos CCB | Hino 1 ao 480 com Letra | Cânticos CCB',
+      desc: 'Veja letras dos hinos CCB com navegação por número, título e acesso ao Hinário da Congregação Cristã no Brasil.',
+      h1: 'Letras dos Hinos CCB',
+      body: '<p>Landing dedicada às letras dos hinos CCB, com foco em buscas por número, título e navegação rápida no repertório do Hinário.</p><p><a href="https://canticosccb.com.br/hinario">Ver números do Hinário</a> · <a href="https://canticosccb.com.br/hinario-5-ccb">Hinário 5 CCB</a> · <a href="https://canticosccb.com.br/cifras">Cifras</a></p>',
+    },
     '/compositores': {
       title: 'Compositores de Hinos da CCB — Biografias e Discografias | Cânticos CCB',
       desc: 'Conheça os compositores de hinos da Congregação Cristã no Brasil. Biografias, discografias e hinos.',
