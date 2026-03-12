@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import * as playlistsApi from '@/lib/playlistsApi';
 
 export interface PlaylistTrack {
   id: number;
@@ -63,14 +64,6 @@ const usePlaylistsStore = create<PlaylistsState>()(
           error: null
         }));
 
-        // Async sync with backend
-        import('@/lib/playlistsApi').then(api => {
-          // Check if we have a user (we need user_id)
-          // Since store doesn't have user, we might need a better way, 
-          // but for now we look for user in localStorage or AuthContext state (if we could)
-          // Ideally, the caller should handle the sync or we pass userId
-        });
-
         return newPlaylist;
       },
 
@@ -91,16 +84,14 @@ const usePlaylistsStore = create<PlaylistsState>()(
         // Async sync with backend if playlistId is a real database ID (numeric)
         const isNumeric = /^\d+$/.test(String(playlistId));
         if (isNumeric) {
-          import('@/lib/playlistsApi').then(api => {
-            api.addTrack({
-              playlistId: Number(playlistId),
-              trackId: track.backendTrackId || String(track.id),
-              title: track.title,
-              artist: track.artist,
-              duration: track.duration,
-              coverUrl: track.coverUrl
-            }).catch(err => console.error('❌ Sync error:', err));
-          });
+          playlistsApi.addTrack({
+            playlistId: Number(playlistId),
+            trackId: track.backendTrackId || String(track.id),
+            title: track.title,
+            artist: track.artist,
+            duration: track.duration,
+            coverUrl: track.coverUrl
+          }).catch(err => console.error('❌ Sync error:', err));
         }
       },
 

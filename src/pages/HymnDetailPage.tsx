@@ -49,6 +49,7 @@ const HymnDetailPage: React.FC = () => {
   const [shareMessage, setShareMessage] = useState<string | null>(null);
   const [isFollowing, setIsFollowing] = useState(false);
   const [followLoading, setFollowLoading] = useState(false);
+  const [relatedCifra, setRelatedCifra] = useState<{ slug: string; title: string; original_key?: string } | null>(null);
   const carouselRef = useRef<HTMLDivElement>(null);
 
   const sanitizeHtml = useMemo(() => (html: string) => {
@@ -135,6 +136,46 @@ const HymnDetailPage: React.FC = () => {
       setRelatedSongs([]);
     }
   }, [hymn?.compositor_nome, hymn?.id]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const loadRelatedCifra = async () => {
+      if (!hymn?.id) {
+        setRelatedCifra(null);
+        return;
+      }
+
+      try {
+        const rows = await supabaseFetch<any>('cifras', {
+          hino_id: `eq.${hymn.id}`,
+          is_active: 'eq.true',
+          select: 'slug,title,original_key',
+          limit: '1',
+        });
+
+        if (!cancelled) {
+          const cifra = rows[0];
+          setRelatedCifra(cifra ? {
+            slug: String(cifra.slug),
+            title: String(cifra.title || 'Cifra'),
+            original_key: cifra.original_key || undefined,
+          } : null);
+        }
+      } catch (error) {
+        console.error('Erro ao carregar cifra relacionada:', error);
+        if (!cancelled) {
+          setRelatedCifra(null);
+        }
+      }
+    };
+
+    void loadRelatedCifra();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [hymn?.id]);
 
   // Check if user follows the composer
   useEffect(() => {
@@ -332,6 +373,8 @@ const HymnDetailPage: React.FC = () => {
   const hymnKeywords = [
     hymnPrimaryTitle,
     hymn.numero ? `hino ${hymn.numero} ccb` : null,
+    hymn.numero ? `letra hino ${hymn.numero} ccb` : null,
+    hymn.numero ? `cifra hino ${hymn.numero} ccb` : null,
     hymn.titulo,
     hymn.compositor_nome,
     hymn.categoria,
@@ -439,6 +482,14 @@ const HymnDetailPage: React.FC = () => {
                       className="inline-flex items-center rounded-full border border-primary-500/40 bg-primary-500/10 px-3 py-1.5 text-sm text-primary-300 transition-colors hover:bg-primary-500/20"
                     >
                       Ver letra no Hinário
+                    </Link>
+                  ) : null}
+                  {relatedCifra ? (
+                    <Link
+                      to={`/cifra/${relatedCifra.slug}`}
+                      className="inline-flex items-center rounded-full border border-primary-500/40 bg-primary-500/10 px-3 py-1.5 text-sm text-primary-300 transition-colors hover:bg-primary-500/20"
+                    >
+                      Ver cifra{relatedCifra.original_key ? ` • Tom ${relatedCifra.original_key}` : ''}
                     </Link>
                   ) : null}
                   <Link

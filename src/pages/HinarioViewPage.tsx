@@ -34,6 +34,7 @@ const HinarioViewPage: React.FC = () => {
   const [allHymns, setAllHymns] = useState<HinarioHymn[]>([]);
   const [showSearch, setShowSearch] = useState(false);
   const [audioVersion, setAudioVersion] = useState<{ id: string; titulo: string; numero?: number } | null>(null);
+  const [cifraVersion, setCifraVersion] = useState<{ slug: string; title: string; original_key?: string } | null>(null);
   const searchRef = useRef<HTMLDivElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
 
@@ -82,9 +83,28 @@ const HinarioViewPage: React.FC = () => {
         if (!cancelled) {
           const match = rows[0];
           setAudioVersion(match ? { id: String(match.id), titulo: match.titulo, numero: match.numero } : null);
+          if (match) {
+            const cifraRows = await supabaseFetch<any>('cifras', {
+              hino_id: `eq.${match.id}`,
+              is_active: 'eq.true',
+              select: 'slug,title,original_key',
+              limit: '1',
+            });
+            const cifra = cifraRows[0];
+            setCifraVersion(cifra ? {
+              slug: String(cifra.slug),
+              title: String(cifra.title || 'Cifra'),
+              original_key: cifra.original_key || undefined,
+            } : null);
+          } else {
+            setCifraVersion(null);
+          }
         }
       } catch {
-        if (!cancelled) setAudioVersion(null);
+        if (!cancelled) {
+          setAudioVersion(null);
+          setCifraVersion(null);
+        }
       }
     };
 
@@ -191,7 +211,7 @@ const HinarioViewPage: React.FC = () => {
       <SEOHead
         title={`Hino ${hymn.numero} CCB - ${hymn.titulo} | Letra do Hinário`}
         description={`Leia a letra do Hino ${hymn.numero} CCB - ${hymn.titulo}. Página do Hinário da Congregação Cristã no Brasil com navegação por número e título.`}
-        keywords={`hino ${hymn.numero} ccb, ${hymn.titulo}, letra hino ${hymn.numero}, hinário ccb, hinário 5`}
+        keywords={`hino ${hymn.numero} ccb, ${hymn.titulo}, letra hino ${hymn.numero}, hino ${hymn.numero} ccb letra completa, cifra hino ${hymn.numero} ccb, hinário ccb, hinário 5`}
         canonical={`/hinario/${hymn.numero}`}
         schemaData={[
           generateBreadcrumbSchema([
@@ -299,6 +319,14 @@ const HinarioViewPage: React.FC = () => {
                 className="inline-flex items-center rounded-full border border-primary-500/40 bg-primary-500/10 px-3 py-1.5 text-sm text-primary-300 transition-colors hover:bg-primary-500/20"
               >
                 Ouvir este hino
+              </Link>
+            )}
+            {cifraVersion && (
+              <Link
+                to={`/cifra/${cifraVersion.slug}`}
+                className="inline-flex items-center rounded-full border border-primary-500/40 bg-primary-500/10 px-3 py-1.5 text-sm text-primary-300 transition-colors hover:bg-primary-500/20"
+              >
+                Ver cifra{cifraVersion.original_key ? ` • Tom ${cifraVersion.original_key}` : ''}
               </Link>
             )}
             <Link
