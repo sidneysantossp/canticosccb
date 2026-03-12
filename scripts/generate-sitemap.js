@@ -57,7 +57,8 @@ function normalizeHymnTitleForSlug(titulo, numero) {
   let normalized = String(titulo || '').trim();
   if (numero != null) {
     const escapedNumber = String(numero).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-    const leadingPattern = new RegExp(`^hino\\s*${escapedNumber}(?:\\s*ccb)?\\s*[-:–]?\\s*`, 'i');
+    const separatorPattern = '(?:-|:|\\u2013)?';
+    const leadingPattern = new RegExp(`^hino\\s*${escapedNumber}(?:\\s*ccb)?\\s*${separatorPattern}\\s*`, 'i');
     normalized = normalized.replace(leadingPattern, '').trim();
   }
   return normalized || String(titulo || '');
@@ -151,6 +152,9 @@ async function main() {
   urls.push(urlEntry('/hinos-cantados-ccb', today, 'weekly', '0.8'));
   urls.push(urlEntry('/hinos-tocados-ccb', today, 'weekly', '0.8'));
   urls.push(urlEntry('/hinos-avulsos-ccb', today, 'weekly', '0.8'));
+  urls.push(urlEntry('/instrumentais', today, 'weekly', '0.8'));
+  urls.push(urlEntry('/biblia-ccb', today, 'weekly', '0.8'));
+  urls.push(urlEntry('/biblia-narrada', today, 'weekly', '0.8'));
   urls.push(urlEntry('/trends', today, 'daily', '0.8'));
   urls.push(urlEntry('/about', today, 'monthly', '0.5'));
   urls.push(urlEntry('/termos', today, 'yearly', '0.3'));

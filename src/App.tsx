@@ -19,6 +19,7 @@ import {
   AuthCallbackPage,
   AvisoDetailPage,
   AvisosPage,
+  BibleHubPage,
   BibliaNarradaPage,
   CategoriesPage,
   CategoryPage,
@@ -325,6 +326,7 @@ const AppContent: React.FC = () => {
           <Route path="lgpd" element={<LGPDPage />} />
           <Route path="premium" element={<PremiumPage />} />
           <Route path="instrumentais" element={<InstrumentaisPage />} />
+          <Route path="biblia-ccb" element={<BibleHubPage />} />
           <Route path="biblia-narrada" element={<BibliaNarradaPage />} />
           <Route path="baixar-hinos-ccb" element={<DownloadIntentPage topic="hinos" />} />
           <Route path="baixar-albuns-ccb" element={<DownloadIntentPage topic="albuns" />} />

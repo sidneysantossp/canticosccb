@@ -88,8 +88,23 @@ const Footer: React.FC = () => {
             <h4 className="text-white font-semibold mb-4">Conteúdo</h4>
             <ul className="space-y-3">
               <li>
+                <Link to="/biblia-ccb" className="text-text-muted hover:text-white transition-colors text-sm">
+                  Bíblia CCB
+                </Link>
+              </li>
+              <li>
                 <Link to="/biblia-narrada" className="text-text-muted hover:text-white transition-colors text-sm">
                   Bíblia Narrada
+                </Link>
+              </li>
+              <li>
+                <Link to="/instrumentais" className="text-text-muted hover:text-white transition-colors text-sm">
+                  Instrumentais
+                </Link>
+              </li>
+              <li>
+                <Link to="/cifras" className="text-text-muted hover:text-white transition-colors text-sm">
+                  Cifras
                 </Link>
               </li>
               <li>

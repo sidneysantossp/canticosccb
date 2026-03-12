@@ -141,6 +141,10 @@ const HomePage: React.FC = () => {
       answer: 'Cifras são representações simplificadas das notas musicais e acordes de um hino, permitindo que músicos toquem os hinos em instrumentos como violão, teclado e outros. O Cânticos CCB oferece cifras gratuitas com transposição de tom.'
     },
     {
+      question: 'Onde ouvir Bíblia narrada CCB?',
+      answer: 'O Cânticos CCB possui uma área pública de Bíblia narrada com navegação por livros, capítulos publicados e links para outros conteúdos relacionados da plataforma.'
+    },
+    {
       question: 'Posso criar playlists de hinos da CCB?',
       answer: 'Sim! No Cânticos CCB você pode criar uma conta gratuita, salvar seus hinos favoritos e criar playlists personalizadas para ouvir a qualquer momento.'
     },
@@ -672,7 +676,6 @@ const HomePage: React.FC = () => {
 };
 
 export default HomePage;
-
 
 
 

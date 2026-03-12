@@ -28,7 +28,9 @@ function normalizeHymnTitleForSlug(titulo: string, numero?: number): string {
   let normalized = titulo.trim();
   if (numero != null) {
     const escapedNumber = String(numero).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-    const leadingPattern = new RegExp(`^hino\\s*${escapedNumber}(?:\\s*ccb)?\\s*[-:–]?\\s*`, 'i');
+    // Avoid a literal character class here so Tailwind's scanner doesn't mistake the regex for an arbitrary CSS utility.
+    const separatorPattern = '(?:-|:|\\u2013)?';
+    const leadingPattern = new RegExp(`^hino\\s*${escapedNumber}(?:\\s*ccb)?\\s*${separatorPattern}\\s*`, 'i');
     normalized = normalized.replace(leadingPattern, '').trim();
   }
   return normalized || titulo;

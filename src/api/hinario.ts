@@ -174,7 +174,7 @@ export function parseVerses(conteudo: string): HinarioVerse[] {
     const firstLine = lines[0]?.trim() || '';
 
     // Check if first line starts with a number (verse number)
-    const match = firstLine.match(/^(\d+)\s*[.\-–)]\s*(.*)/);
+    const match = firstLine.match(/^(\d+)\s*(?:\.|-|\u2013|\))\s*(.*)/);
     if (match) {
       const num = parseInt(match[1], 10);
       const rest = match[2];

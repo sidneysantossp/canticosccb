@@ -27,6 +27,7 @@ export const ContentClaimPage = lazy(() => import('./ContentClaimPage'));
 export const LGPDPage = lazy(() => import('./LGPDPage'));
 export const PremiumPage = lazy(() => import('./PremiumPage'));
 export const InstrumentaisPage = lazy(() => import('./InstrumentaisPage'));
+export const BibleHubPage = lazy(() => import('./BibleHubPage'));
 export const BibliaNarradaPage = lazy(() => import('./BibliaNarradaPage'));
 export const PlaylistsPage = lazy(() => import('./PlaylistsPage'));
 export const RadioPage = lazy(() => import('./RadioPage'));
