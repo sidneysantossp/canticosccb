@@ -16,6 +16,7 @@ import AlertModal from '@/components/ui/AlertModal';
 import { albunsApi, hinosApi } from '@/lib/api-client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useActiveComposer } from '@/hooks/useActiveComposer';
+import { supabase } from '@/lib/supabase-auth';
 
 interface AlbumFormData {
   title: string;
@@ -224,7 +225,6 @@ const ComposerCreateAlbum: React.FC = () => {
         setUploadProgress(30);
         console.log('📀 [CreateAlbum] Uploading cover via Supabase client...');
         try {
-          const { supabase } = await import('@/lib/supabase-auth');
           const file = formData.coverImage;
           const ext = file.name.split('.').pop() || 'jpg';
           const path = `covers/${Date.now()}_${Math.random().toString(36).substring(7)}.${ext}`;

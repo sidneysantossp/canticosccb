@@ -1,3 +1,4 @@
+import { supabase } from './supabase-auth';
 import { getSupabaseStorageUrl } from './supabaseRest';
 
 const normalizePath = (path: string): string => path.replace(/\\/g, '/').replace(/^\/+/, '');
@@ -29,7 +30,6 @@ export async function getDocumentSignedUrl(imagePath: string): Promise<string> {
   if (/^https?:\/\//i.test(imagePath)) return imagePath;
 
   try {
-    const { supabase } = await import('./supabase-auth');
     const sanitized = normalizePath(imagePath);
     const segments = sanitized.split('/');
     const fileName = segments.pop() || sanitized;

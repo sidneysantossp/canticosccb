@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { ArrowLeft, Save, Upload, Disc, Trash2, X, Star } from 'lucide-react';
 import { albunsApi, uploadApi, compositoresApi, categoriasApi, Album, Hino } from '@/lib/api-client';
+import { supabaseDelete, supabaseFetch } from '@/lib/supabaseRest';
 import HinoSelector from '@/components/admin/HinoSelector';
 
 const AdminAlbumForm: React.FC = () => {
@@ -98,7 +99,6 @@ const AdminAlbumForm: React.FC = () => {
 
         // Carregar hinos do álbum
         try {
-          const { supabaseFetch } = await import('@/lib/supabaseRest');
           const albumHinos = await supabaseFetch<any>('album_hinos', {
             album_id: `eq.${albumId}`,
             select: 'hino_id,position',
@@ -212,7 +212,6 @@ const AdminAlbumForm: React.FC = () => {
           }
         } else if (isEditing) {
           try {
-            const { supabaseDelete } = await import('@/lib/supabaseRest');
             await supabaseDelete('album_hinos', { album_id: `eq.${albumId}` });
           } catch (e) {
             console.warn('⚠️ Erro ao limpar hinos do álbum:', e);

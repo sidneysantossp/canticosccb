@@ -1,4 +1,5 @@
 // Mock implementation - Replace with real Supabase queries when backend is ready
+import { supabaseFetch, supabaseInsert, supabaseUpdate } from '@/lib/supabaseRest';
 
 export interface PremiumPlan {
   id: string;
@@ -72,7 +73,6 @@ export const getPremiumVisibility = async (): Promise<boolean> => {
 
 async function fetchPremiumVisibilityFromDB(): Promise<boolean> {
   try {
-    const { supabaseFetch } = await import('@/lib/supabaseRest');
     const rows = await supabaseFetch<any>('site_config', {
       config_key: 'eq.premium_enabled',
       select: 'config_value',
@@ -99,7 +99,6 @@ export const setPremiumVisibility = async (enabled: boolean): Promise<void> => {
     setCookie(PREMIUM_ENABLED_COOKIE, enabled ? '1' : '0');
 
     // Persist to site_config in Supabase
-    const { supabaseFetch, supabaseUpdate, supabaseInsert } = await import('@/lib/supabaseRest');
     const existing = await supabaseFetch<any>('site_config', {
       config_key: 'eq.premium_enabled',
       select: 'id',

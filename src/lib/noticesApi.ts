@@ -1,6 +1,7 @@
 /**
  * API para Avisos da Plataforma (platform_notices)
  */
+import { supabaseDelete, supabaseFetch, supabaseInsert, supabaseUpdate } from './supabaseRest';
 
 export interface PlatformNotice {
   id: string;
@@ -23,7 +24,6 @@ export const noticesApi = {
    * Listar avisos públicos (ativos) com paginação
    */
   listPublic: async (page = 1, limit = 15): Promise<NoticesListResult> => {
-    const { supabaseFetch } = await import('./supabaseRest');
     try {
       const offset = (page - 1) * limit;
       const rows = await supabaseFetch<PlatformNotice>('platform_notices', {
@@ -55,7 +55,6 @@ export const noticesApi = {
    * Buscar aviso por ID (público)
    */
   getById: async (id: string): Promise<PlatformNotice | null> => {
-    const { supabaseFetch } = await import('./supabaseRest');
     try {
       const rows = await supabaseFetch<PlatformNotice>('platform_notices', {
         id: `eq.${id}`,
@@ -74,7 +73,6 @@ export const noticesApi = {
    * Admin: Listar todos os avisos (ativos e inativos)
    */
   listAll: async (page = 1, limit = 20): Promise<NoticesListResult> => {
-    const { supabaseFetch } = await import('./supabaseRest');
     try {
       const offset = (page - 1) * limit;
       const rows = await supabaseFetch<PlatformNotice>('platform_notices', {
@@ -103,7 +101,6 @@ export const noticesApi = {
    * Admin: Buscar aviso por ID (qualquer status)
    */
   getByIdAdmin: async (id: string): Promise<PlatformNotice | null> => {
-    const { supabaseFetch } = await import('./supabaseRest');
     try {
       const rows = await supabaseFetch<PlatformNotice>('platform_notices', {
         id: `eq.${id}`,
@@ -121,7 +118,6 @@ export const noticesApi = {
    * Admin: Criar aviso
    */
   create: async (data: { title: string; content: string; published_at?: string; is_active?: boolean }): Promise<PlatformNotice | null> => {
-    const { supabaseInsert } = await import('./supabaseRest');
     try {
       const result = await supabaseInsert('platform_notices', {
         title: data.title,
@@ -140,7 +136,6 @@ export const noticesApi = {
    * Admin: Atualizar aviso
    */
   update: async (id: string, data: { title?: string; content?: string; published_at?: string; is_active?: boolean }): Promise<boolean> => {
-    const { supabaseUpdate } = await import('./supabaseRest');
     try {
       await supabaseUpdate('platform_notices', { id: `eq.${id}` }, {
         ...data,
@@ -157,7 +152,6 @@ export const noticesApi = {
    * Admin: Excluir aviso
    */
   delete: async (id: string): Promise<boolean> => {
-    const { supabaseDelete } = await import('./supabaseRest');
     try {
       await supabaseDelete('platform_notices', { id: `eq.${id}` });
       return true;

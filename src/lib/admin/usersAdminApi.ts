@@ -1,4 +1,5 @@
 // Mock implementation - Replace with real Supabase queries when backend is ready
+import { supabaseDelete, supabaseFetch, supabaseInsert, supabaseUpdate } from '@/lib/supabaseRest';
 
 export interface User {
   id: string;
@@ -28,7 +29,6 @@ export interface UsersFilters {
 export const getAllUsers = async (page: number = 1, limit: number = 20, filters: UsersFilters = {}): Promise<{ data: User[]; count: number; totalPages: number }> => {
   try {
     console.log('🔍 [getAllUsers] Fetching users with filters:', filters);
-    const { supabaseFetch } = await import('@/lib/supabaseRest');
     
     const queryFilters: Record<string, string> = {
       select: '*',
@@ -111,7 +111,6 @@ export const getAllUsers = async (page: number = 1, limit: number = 20, filters:
 export const getUserById = async (id: string): Promise<User | null> => {
   try {
     console.log('🔍 [getUserById] Fetching user ID:', id);
-    const { supabaseFetch } = await import('@/lib/supabaseRest');
     
     const rows = await supabaseFetch<any>('users', {
       id: `eq.${id}`,
@@ -156,8 +155,6 @@ export const createUser = async (data: Partial<User> & { password?: string }): P
     console.log('🔍 [createUser] Creating user with data:', data);
     
     // Criar registro diretamente na tabela users
-    const { supabaseInsert } = await import('@/lib/supabaseRest');
-    
     const userData = {
       name: data.name || '',
       email: data.email!,
@@ -202,7 +199,6 @@ export const createUser = async (data: Partial<User> & { password?: string }): P
 export const updateUser = async (id: string, data: Partial<User>): Promise<{ success: boolean }> => {
   try {
     console.log('🔍 [updateUser] Updating user ID:', id, 'with data:', data);
-    const { supabaseUpdate } = await import('@/lib/supabaseRest');
     
     // Mapear dados da interface User para campos do Supabase
     const updateData: any = {};
@@ -232,8 +228,6 @@ export const updateUser = async (id: string, data: Partial<User>): Promise<{ suc
 export const deleteUser = async (id: string): Promise<{ success: boolean }> => {
   try {
     console.log('🔍 [deleteUser] Deleting user ID:', id);
-    const { supabaseDelete } = await import('@/lib/supabaseRest');
-    
     await supabaseDelete('users', { id: `eq.${id}` });
     console.log('✅ [deleteUser] User deleted successfully');
     
@@ -278,7 +272,6 @@ export const toggleUserAdmin = async (id: string): Promise<{ success: boolean }>
 
 export const getUserStats = async (): Promise<{ total: number; active: number; blocked: number; admins: number; premium: number; emailVerified: number; newUsers: number }> => {
   try {
-    const { supabaseFetch } = await import('@/lib/supabaseRest');
     const allUsers = await supabaseFetch<any>('users', { select: '*' });
     
     const thirtyDaysAgo = Date.now() - 30 * 24 * 60 * 60 * 1000;
@@ -310,8 +303,6 @@ export const getUsers = async (filters: { search?: string; role?: string; status
 
 export const deleteUsers = async (ids: string[]): Promise<{ success: boolean }> => {
   try {
-    const { supabaseDelete } = await import('@/lib/supabaseRest');
-    
     for (const id of ids) {
       await supabaseDelete('users', { id: `eq.${id}` });
     }
@@ -325,8 +316,6 @@ export const deleteUsers = async (ids: string[]): Promise<{ success: boolean }> 
 
 export const updateUsersStatus = async (ids: string[], status: 'active' | 'inactive' | 'banned'): Promise<{ success: boolean }> => {
   try {
-    const { supabaseUpdate } = await import('@/lib/supabaseRest');
-    
     for (const id of ids) {
       await supabaseUpdate('users', { id: `eq.${id}` }, {
         is_blocked: status === 'banned',

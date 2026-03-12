@@ -1,4 +1,5 @@
 // Logos Management — Supabase REST + Storage
+import { supabase } from '@/lib/supabase-auth';
 import { supabaseFetch, supabaseUpdate, supabaseInsert } from '@/lib/supabaseRest';
 
 export type LogoType = 'favicon' | 'primary' | 'secondary' | 'social';
@@ -91,7 +92,6 @@ export const uploadLogoImage = async (file: File, logoType: LogoType): Promise<s
   // Get auth token
   let accessToken = SUPABASE_ANON_KEY;
   try {
-    const { supabase } = await import('@/lib/supabase-auth');
     const { data } = await supabase.auth.getSession();
     if (data?.session?.access_token) accessToken = data.session.access_token;
   } catch { /* use anon */ }

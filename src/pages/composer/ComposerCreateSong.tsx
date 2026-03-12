@@ -3,6 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { ArrowLeft, Upload, Music, Image as ImageIcon, Save, X, FileAudio, Clock } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { uploadApi, hinosApi, type Hino } from '@/lib/api-client';
+import { supabase } from '@/lib/supabase-auth';
 import { getSignedSupabaseUrl } from '@/lib/supabaseMedia';
 import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
@@ -117,7 +118,6 @@ const ComposerCreateSong: React.FC = () => {
       setMyComposerId(resolvedComposerId);
 
       // 2) Buscar álbuns via Supabase client (gerencia JWT automaticamente)
-      const { supabase } = await import('@/lib/supabase-auth');
       if (resolvedComposerId == null) {
         setAlbums([]);
       } else {
@@ -349,8 +349,6 @@ const ComposerCreateSong: React.FC = () => {
 
         // Atualizar relações via Supabase client
         try {
-          const { supabase } = await import('@/lib/supabase-auth');
-
           // album_hinos
           await supabase.from('album_hinos').delete().eq('hino_id', id);
           if (formData.album_id) {
@@ -391,7 +389,6 @@ const ComposerCreateSong: React.FC = () => {
         const newHinoId = (createResult.data as any)?.id;
         if (newHinoId) {
           try {
-            const { supabase } = await import('@/lib/supabase-auth');
             if (formData.album_id) {
               await supabase.from('album_hinos').insert({
                 album_id: formData.album_id,

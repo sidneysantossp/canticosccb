@@ -1,4 +1,4 @@
-import React, { Suspense } from 'react';
+import React, { Suspense, lazy } from 'react';
 import { Routes, Route } from 'react-router-dom';
 import { Helmet, HelmetProvider } from 'react-helmet-async';
 import { AuthProvider } from '@/contexts/AuthContext';
@@ -169,15 +169,11 @@ import {
   AdminUsersPremium,
   AdminYoutubeImport,
 } from '@/pages/admin/lazyPages';
-import GlobalAudioPlayer from '@/components/GlobalAudioPlayer';
-import FreePlayGateModal from '@/components/modals/FreePlayGateModal';
-import AnalyticsScripts from '@/components/AnalyticsScripts';
 import SiteConfigRuntime from '@/components/SiteConfigRuntime';
 import PageLoader from '@/components/ui/PageLoader';
-import { usePresence } from '@/hooks/usePresence';
 import { Navigate, useLocation, useParams as useRouteParams } from 'react-router-dom';
 
-const PresenceTracker: React.FC = () => { usePresence(); return null; };
+const AppRuntime = lazy(() => import('@/components/app/AppRuntime'));
 
 const RedirectToCategoria: React.FC = () => {
   const { slug } = useRouteParams();
@@ -612,11 +608,10 @@ function App() {
           <NotificationsProvider>
             <PlayerProvider>
               <MobileMenuProvider>
-                <GlobalAudioPlayer />
-                <FreePlayGateModal />
-                <PresenceTracker />
-                <AnalyticsScripts />
                 <SiteConfigRuntime />
+                <Suspense fallback={null}>
+                  <AppRuntime />
+                </Suspense>
                 <AppContent />
               </MobileMenuProvider>
             </PlayerProvider>

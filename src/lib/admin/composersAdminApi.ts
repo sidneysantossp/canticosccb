@@ -1,3 +1,4 @@
+import { supabase } from '@/lib/supabase-auth';
 import { supabaseFetch, supabaseInsert, supabaseUpdate, supabaseDelete, isSupabaseConfigured } from '../supabaseRest';
 
 export interface Composer {
@@ -163,7 +164,6 @@ export const deleteComposer = async (id: string): Promise<{ success: boolean }> 
     // 3. Desativar o usuário associado
     if (composerEmail) {
       try {
-        const { supabase } = await import('@/lib/supabase-auth');
         // Tentar RPC primeiro
         const { data: rpcResult, error: rpcError } = await supabase.rpc('admin_deactivate_user_by_email', {
           p_email: composerEmail,

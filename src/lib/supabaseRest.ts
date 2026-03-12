@@ -1,3 +1,5 @@
+import { supabase } from './supabase-auth';
+
 console.log('🔧 [supabaseRest] Module loading...');
 
 const SUPABASE_URL = (import.meta.env.VITE_SUPABASE_URL ?? '').replace(/\/+$/, '');
@@ -71,7 +73,6 @@ async function buildAuthHeaders() {
   if (accessToken !== SUPABASE_ANON_KEY && isTokenExpired(accessToken)) {
     console.log('[supabaseRest] JWT expired, attempting refresh...');
     try {
-      const { supabase } = await import('./supabase-auth');
       const refreshPromise = supabase.auth.refreshSession();
       const timeoutPromise = new Promise<{ data: null; error: { message: string } }>((resolve) =>
         setTimeout(() => resolve({ data: null, error: { message: 'Refresh timeout (5s)' } }), 5000)

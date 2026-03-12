@@ -1,3 +1,5 @@
+import { supabaseFetch } from '@/lib/supabaseRest';
+
 // API endpoint para YouTube Import (Vite/React)
 export async function youtubeImport(youtubeUrl: string) {
   try {
@@ -52,7 +54,6 @@ function extractVideoId(url: string): string | null {
 
 async function getVideoMetadata(videoId: string) {
   // Buscar YouTube API Key do Supabase (site_config)
-  const { supabaseFetch } = await import('@/lib/supabaseRest')
   const rows = await supabaseFetch<any>('site_config', {
     config_key: 'eq.youtube_api_key',
     select: 'config_value',

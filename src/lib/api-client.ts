@@ -2,6 +2,17 @@
  * API Client - Compatibilidade
  * Re-exporta funções do Supabase para manter compatibilidade
  */
+import { getCurrentUser, supabase } from './supabase-auth';
+import {
+  supabaseAuthDelete,
+  supabaseAuthInsert,
+  supabaseAuthUpdate,
+  supabaseDelete,
+  supabaseFetch,
+  supabaseInsert,
+  supabaseUpdate,
+} from './supabaseRest';
+
 export * from './supabase-api';
 export { default } from './supabase-api';
 
@@ -13,7 +24,7 @@ export { uploadFile, uploadAudio, uploadCover, uploadAvatar } from './supabase-u
 
 export const hinosApi = {
   list: async (params?: { compositor?: string; search?: string; ativo?: number; limit?: number }) => {
-    const { supabaseFetch } = await import('./supabaseRest');
+
     try {
       const filters: Record<string, string> = {
         select: 'id,numero,titulo,compositor_nome,compositor_id,categoria,cover_url,audio_url,duracao,status,ativo,created_at',
@@ -43,7 +54,7 @@ export const hinosApi = {
     }
   },
   listPending: async () => {
-    const { supabaseFetch } = await import('./supabaseRest');
+
     try {
       const filters: Record<string, string> = {
         select: 'id,numero,titulo,compositor_nome,compositor_id,categoria,cover_url,audio_url,duracao,status,ativo,created_at',
@@ -58,7 +69,7 @@ export const hinosApi = {
     }
   },
   getAll: async () => {
-    const { supabaseFetch } = await import('./supabaseRest');
+
     try {
       const rows = await supabaseFetch<any>('hinos', {
         select: '*',
@@ -71,7 +82,7 @@ export const hinosApi = {
     }
   },
   get: async (id: string | number) => {
-    const { supabaseFetch } = await import('./supabaseRest');
+
     try {
       const rows = await supabaseFetch<any>('hinos', {
         id: `eq.${id}`,
@@ -114,7 +125,7 @@ export const hinosApi = {
     }
   },
   create: async (data: any) => {
-    const { supabaseInsert, supabaseFetch } = await import('./supabaseRest');
+
     try {
       const resolvedStatus = data.status || (data.ativo === 1 ? 'published' : 'pending');
       // Inserir hino sem categorias primeiro
@@ -171,7 +182,7 @@ export const hinosApi = {
   },
   update: async (id: string | number, data: any) => {
     try {
-      const { supabase } = await import('./supabase-auth');
+
       // Atualizar hino
       const updateData: Record<string, any> = {
         titulo: data.titulo,
@@ -234,7 +245,7 @@ export const hinosApi = {
     }
   },
   delete: async (id: string | number) => {
-    const { supabaseDelete } = await import('./supabaseRest');
+
     try {
       await supabaseDelete('hinos', { id: `eq.${id}` });
       return { success: true, error: null };
@@ -247,7 +258,7 @@ export const hinosApi = {
 
 export const compositoresApi = {
   list: async (params?: { search?: string; status?: string; page?: number; limit?: number }) => {
-    const { supabaseFetch } = await import('./supabaseRest');
+
     try {
       console.log('🔍 [compositoresApi.list] Fetching composers with params:', params);
 
@@ -316,7 +327,7 @@ export const compositoresApi = {
     return result.data || [];
   },
   get: async (id: string | number) => {
-    const { supabaseFetch } = await import('./supabaseRest');
+
     try {
       const rows = await supabaseFetch<any>('composers', {
         id: `eq.${id}`,
@@ -348,7 +359,7 @@ export const compositoresApi = {
     return result.data;
   },
   getByUsuarioId: async (userId: string, userEmail?: string) => {
-    const { supabaseFetch } = await import('./supabaseRest');
+
     try {
       // 1. Buscar por user_id (caminho principal)
       const rows = await supabaseFetch<any>('composers', {
@@ -384,7 +395,7 @@ export const compositoresApi = {
           const r = byEmail[0];
           // Auto-vincular user_id para não precisar de fallback novamente
           try {
-            const { supabaseUpdate } = await import('./supabaseRest');
+
             await supabaseUpdate('composers', { id: `eq.${r.id}` }, { user_id: userId });
             console.log('✅ [getByUsuarioId] Auto-vinculado user_id ao compositor:', r.id);
           } catch (linkErr) {
@@ -412,7 +423,7 @@ export const compositoresApi = {
     }
   },
   getBySlug: async (slug: string) => {
-    const { supabaseFetch } = await import('./supabaseRest');
+
     try {
       const rows = await supabaseFetch<any>('composers', {
         slug: `eq.${slug}`,
@@ -437,7 +448,7 @@ export const compositoresApi = {
     }
   },
   create: async (data: any) => {
-    const { supabaseInsert } = await import('./supabaseRest');
+
     try {
       const composerData = {
         name: data.nome?.trim() || data.name,
@@ -459,7 +470,7 @@ export const compositoresApi = {
     }
   },
   update: async (id: string | number, data: any) => {
-    const { supabaseUpdate } = await import('./supabaseRest');
+
     try {
       const updateData: any = {};
 
@@ -512,8 +523,7 @@ export const compositoresApi = {
     }
   },
   delete: async (id: string | number) => {
-    const { supabaseFetch, supabaseUpdate } = await import('./supabaseRest');
-    const { supabase } = await import('./supabase-auth');
+
     try {
       console.log('🔍 [compositoresApi.delete] Soft-deleting composer ID:', id);
 
@@ -596,7 +606,7 @@ export const compositoresApi = {
   },
 
   toggleActive: async (id: string | number, active: boolean) => {
-    const { supabaseUpdate } = await import('./supabaseRest');
+
     try {
       const newStatus = active ? 'approved' : 'inactive';
       console.log(`🔄 [compositoresApi.toggleActive] Setting composer ${id} to ${newStatus}`);
@@ -640,7 +650,7 @@ export const compositoresApi = {
 export const albunsApi = {
   list: async (params?: { page?: number; limit?: number; search?: string; compositor_id?: string }) => {
     try {
-      const { supabase } = await import('./supabase-auth');
+
       const pageSize = params?.limit || 12;
       const page = params?.page || 1;
 
@@ -703,7 +713,7 @@ export const albunsApi = {
     }
   },
   get: async (id: number | string) => {
-    const { supabaseFetch } = await import('./supabaseRest');
+
     try {
       const rows = await supabaseFetch<any>('albums', {
         id: `eq.${id}`,
@@ -721,7 +731,7 @@ export const albunsApi = {
     }
   },
   listHinos: async (albumId: number | string) => {
-    const { supabaseFetch } = await import('./supabaseRest');
+
     try {
       // 1. Buscar relações album_hinos
       const albumHinos = await supabaseFetch<any>('album_hinos', {
@@ -772,7 +782,7 @@ export const albunsApi = {
   },
   create: async (data: any) => {
     try {
-      const { supabaseAuthInsert } = await import('./supabaseRest');
+
       const insertData: Record<string, any> = {
         title: data.titulo || data.title || '',
         description: data.descricao || data.description || '',
@@ -806,7 +816,7 @@ export const albunsApi = {
   },
   update: async (id: number | string, data: any) => {
     try {
-      const { supabaseAuthUpdate } = await import('./supabaseRest');
+
       const updateData: any = {};
       if (data.titulo !== undefined) updateData.title = data.titulo;
       if (data.title !== undefined) updateData.title = data.title;
@@ -836,7 +846,7 @@ export const albunsApi = {
     }
   },
   delete: async (id: number | string) => {
-    const { supabaseAuthDelete } = await import('./supabaseRest');
+
     try {
       await supabaseAuthDelete('albums', { id: `eq.${id}` });
     } catch (error: any) {
@@ -845,7 +855,7 @@ export const albunsApi = {
   },
   addHinos: async (albumId: string | number, hinoIds: (string | number)[]) => {
     try {
-      const { supabaseAuthDelete, supabaseAuthInsert } = await import('./supabaseRest');
+
       // Limpar hinos existentes do álbum antes de re-inserir
       try {
         await supabaseAuthDelete('album_hinos', { album_id: `eq.${albumId}` });
@@ -870,7 +880,7 @@ export const albunsApi = {
   },
   updateOrdem: async (albumId: string | number, ordem: Array<{ hino_id: string | number; ordem: number }>) => {
     try {
-      const { supabase } = await import('./supabase-auth');
+
       for (const item of ordem) {
         await supabase
           .from('album_hinos')
@@ -886,7 +896,7 @@ export const albunsApi = {
   },
   removeHino: async (albumId: string | number, hinoId: string | number) => {
     try {
-      const { supabase } = await import('./supabase-auth');
+
       const { error } = await supabase
         .from('album_hinos')
         .delete()
@@ -906,7 +916,7 @@ export const albunsApi = {
 
 export const categoriasApi = {
   list: async (params?: { search?: string; page?: number; limit?: number; ativo?: number }) => {
-    const { supabaseFetch } = await import('./supabaseRest');
+
     try {
       const limit = params?.limit ?? 100;
       const page = params?.page ?? 1;
@@ -941,7 +951,7 @@ export const categoriasApi = {
     return result.data || [];
   },
   get: async (id: number | string) => {
-    const { supabaseFetch } = await import('./supabaseRest');
+
     try {
       const rows = await supabaseFetch<any>('categorias', {
         id: `eq.${id}`,
@@ -958,7 +968,7 @@ export const categoriasApi = {
     return result.data;
   },
   create: async (data: any) => {
-    const { supabaseInsert } = await import('./supabaseRest');
+
     try {
       const payload = {
         nome: data?.nome,
@@ -977,7 +987,7 @@ export const categoriasApi = {
     }
   },
   update: async (id: number | string, data: any) => {
-    const { supabaseUpdate } = await import('./supabaseRest');
+
     try {
       console.log('🔄 [categoriasApi.update] ID:', id);
       console.log('📥 [categoriasApi.update] Data recebida:', data);
@@ -1005,7 +1015,7 @@ export const categoriasApi = {
     }
   },
   delete: async (id: number | string) => {
-    const { supabaseDelete } = await import('./supabaseRest');
+
     try {
       const success = await supabaseDelete('categorias', { id: `eq.${id}` });
       return { success, error: null };
@@ -1017,7 +1027,7 @@ export const categoriasApi = {
 
 export const usuariosApi = {
   list: async (params?: { search?: string; page?: number; limit?: number }) => {
-    const { supabaseFetch } = await import('./supabaseRest');
+
     try {
       const limit = params?.limit || 20;
       const page = params?.page || 1;
@@ -1074,7 +1084,7 @@ export const usuariosApi = {
     return result.data || [];
   },
   get: async (id: string | number) => {
-    const { supabaseFetch } = await import('./supabaseRest');
+
     try {
       console.log('🔍 [usuariosApi.get] Fetching user ID:', id);
       const rows = await supabaseFetch<any>('users', {
@@ -1104,7 +1114,7 @@ export const usuariosApi = {
     return result.data;
   },
   update: async (id: string | number, data: any) => {
-    const { supabaseUpdate } = await import('./supabaseRest');
+
     try {
       // Mapear campos em português para inglês
       const updateData: any = {};
@@ -1134,8 +1144,8 @@ export const usuariosApi = {
     }
   },
   delete: async (id: string | number) => {
-    const { supabase, getCurrentUser } = await import('./supabase-auth');
-    const { supabaseAuthUpdate } = await import('./supabaseRest');
+
+
     try {
       console.log('🗑️ [usuariosApi.delete] Target user ID:', id);
 
@@ -1257,7 +1267,7 @@ export const usuariosApi = {
 
       // Estratégia 5: REST com anon key (última tentativa)
       try {
-        const { supabaseUpdate } = await import('./supabaseRest');
+
         const result = await supabaseUpdate<any>('users', { id: `eq.${id}` }, {
           is_blocked: true,
           status: 'inactive',
@@ -1295,7 +1305,7 @@ export const documentReviewsApi = {
   getById: async () => null,
   getByCompositor: async (compositorId: string | number) => {
     try {
-      const { supabaseFetch } = await import('./supabaseRest');
+
       const rows = await supabaseFetch<any>('composer_documents', {
         composer_id: `eq.${compositorId}`,
         select: '*',
@@ -1324,7 +1334,7 @@ export const documentReviewsApi = {
   },
   review: async (documentId: number | string, data: { status: string; admin_notes?: string; reviewed_by?: string }) => {
     try {
-      const { supabaseUpdate } = await import('./supabaseRest');
+
       const result = await supabaseUpdate('composer_documents', { id: `eq.${documentId}` }, {
         status: data.status,
         admin_notes: data.admin_notes || null,
@@ -1343,7 +1353,7 @@ export const documentReviewsApi = {
 
 export const compositorGerentesApi = {
   listarCompositores: async (userId: string | number) => {
-    const { supabaseFetch } = await import('./supabaseRest');
+
     try {
       const managerRows = await supabaseFetch<any>('composer_managers', {
         manager_user_id: `eq.${userId}`,
@@ -1411,7 +1421,7 @@ export const compositorGerentesApi = {
     }
   },
   buscarUsuario: async (email: string) => {
-    const { supabaseFetch } = await import('./supabaseRest');
+
     try {
       const rows = await supabaseFetch<any>('users', { email: `eq.${email}`, limit: '1' });
       return { data: rows.length > 0 ? rows[0] : null, error: null };
@@ -1420,7 +1430,7 @@ export const compositorGerentesApi = {
     }
   },
   convidar: async (data: { compositor_id: number; email_gerente: string; gerente_id?: string; compositor_nome?: string; compositor_nome_artistico?: string; notas?: string }) => {
-    const { supabaseInsert } = await import('./supabaseRest');
+
     try {
       await supabaseInsert('composer_managers', {
         composer_id: data.compositor_id,

@@ -1,4 +1,5 @@
-import { supabaseRPC, supabaseFetch, isSupabaseConfigured, supabaseUploadFile } from './supabaseRest';
+import { supabase } from './supabase-auth';
+import { supabaseRPC, supabaseFetch, isSupabaseConfigured, supabaseInsert, supabaseUploadFile } from './supabaseRest';
 
 export interface DocumentValidationResult {
   valid: boolean;
@@ -138,8 +139,6 @@ export async function createComposerProfile(data: Omit<ComposerRegistrationData,
   }
 
   try {
-    const { supabaseInsert } = await import('./supabaseRest');
-
     const slug = (data.nome_artistico || data.nome)
       .toLowerCase()
       .replace(/[^a-z0-9\s-]/g, '')
@@ -195,7 +194,6 @@ export async function createComposerProfile(data: Omit<ComposerRegistrationData,
         } catch (restErr) {
           console.warn(`[createComposerProfile] REST failed for ${label}, trying supabase client...`, restErr);
           try {
-            const { supabase } = await import('./supabase-auth');
             const { error: sbErr } = await supabase.from('composer_documents').insert(docData);
             if (sbErr) {
               console.error(`[createComposerProfile] Supabase client also failed for ${label}:`, sbErr.message);
