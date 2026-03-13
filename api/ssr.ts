@@ -480,6 +480,124 @@ async function handleHinarioList(): Promise<PageMeta> {
   };
 }
 
+async function handleBroadHinosHub(): Promise<PageMeta> {
+  const [hinario, hymns] = await Promise.all([
+    supaFetch('hinario', {
+      is_active: 'eq.true',
+      select: 'numero,titulo',
+      order: 'numero.asc',
+      limit: '500',
+    }),
+    supaFetch('hinos', {
+      'or': '(ativo.eq.true,ativo.eq.1)',
+      select: 'id,numero,titulo,compositor_nome',
+      order: 'numero.asc',
+      limit: '240',
+    }),
+  ]);
+
+  const title = 'Hinos CCB | Ouça Hinos, Letras do Hinário 5 e Cifras | Cânticos CCB';
+  const description = 'Explore hinos CCB com letras do Hinário 5, páginas para ouvir, cifras e hubs temáticos da Congregação Cristã no Brasil.';
+  const canonical = `${SITE_URL}/hinos-ccb`;
+
+  const hinarioHtml = hinario.length > 0
+    ? `<ul>${hinario.slice(0, 120).map((item: any) => `<li><a href="${SITE_URL}/hinario/${item.numero}">Hino ${item.numero}${item.titulo ? ` — ${esc(item.titulo)}` : ''}</a></li>`).join('')}</ul>`
+    : '<p>Nenhum hino do hinário foi publicado ainda.</p>';
+
+  const hymnsHtml = hymns.length > 0
+    ? `<ul>${hymns.slice(0, 60).map((item: any) => {
+      const cleanTitle = normalizeHymnTitle(item.titulo || '', item.numero);
+      return `<li><a href="${SITE_URL}${buildHinoUrl(String(item.id), cleanTitle, item.numero)}">${item.numero ? `Hino ${item.numero} — ` : ''}${esc(cleanTitle || item.titulo || 'Hino CCB')}</a>${item.compositor_nome ? ` — ${esc(item.compositor_nome)}` : ''}</li>`;
+    }).join('')}</ul>`
+    : '<p>Nenhuma página de hino foi publicada ainda.</p>';
+
+  return {
+    title,
+    description,
+    canonical,
+    noindex: hinario.length === 0 && hymns.length === 0,
+    schemas: [
+      {
+        '@context': 'https://schema.org',
+        '@type': 'CollectionPage',
+        name: 'Hinos CCB',
+        url: canonical,
+        description,
+      },
+      {
+        '@context': 'https://schema.org',
+        '@type': 'BreadcrumbList',
+        itemListElement: [
+          { '@type': 'ListItem', position: 1, name: 'Início', item: SITE_URL },
+          { '@type': 'ListItem', position: 2, name: 'Hinos CCB', item: canonical },
+        ],
+      },
+    ],
+    bodyHtml: `
+      <nav><a href="${SITE_URL}">Início</a> &rsaquo; Hinos CCB</nav>
+      <h1>Hinos CCB</h1>
+      <p>${esc(description)}</p>
+      <p><a href="${SITE_URL}/hinario-5-ccb">Hinário 5 CCB</a> · <a href="${SITE_URL}/letras-hinos-ccb">Letras dos Hinos</a> · <a href="${SITE_URL}/hinos-cantados-ccb">Hinos Cantados</a> · <a href="${SITE_URL}/cifras-hinos-ccb">Cifras de Hinos CCB</a></p>
+      <section><h2>Números do Hinário</h2>${hinarioHtml}</section>
+      <section><h2>Hinos publicados para ouvir</h2>${hymnsHtml}</section>
+      <footer><p><a href="${SITE_URL}">Cânticos CCB</a> — Plataforma de hinos da Congregação Cristã no Brasil</p></footer>`,
+  };
+}
+
+async function handleBroadCifrasHub(): Promise<PageMeta> {
+  const cifras = await supaFetch('cifras', {
+    is_active: 'eq.true',
+    select: 'title,slug,artist,original_key,instrument',
+    order: 'created_at.desc',
+    limit: '500',
+  });
+
+  const title = 'Cifras Hinos CCB | Cifras da Congregação Cristã no Brasil | Cânticos CCB';
+  const description = 'Explore cifras de hinos CCB com links para violão, ukulele, teclado e páginas individuais de cifra da Congregação Cristã no Brasil.';
+  const canonical = `${SITE_URL}/cifras-hinos-ccb`;
+
+  const counts = cifras.reduce<Record<string, number>>((acc, item: any) => {
+    const key = String(item.instrument || 'outros');
+    acc[key] = (acc[key] || 0) + 1;
+    return acc;
+  }, {});
+
+  const cifrasHtml = cifras.length > 0
+    ? `<ul>${cifras.slice(0, 120).map((item: any) => `<li><a href="${SITE_URL}/cifra/${item.slug}">${esc(item.title || 'Cifra')}</a>${item.artist ? ` — ${esc(item.artist)}` : ''}${item.original_key ? ` (${esc(item.original_key)})` : ''}</li>`).join('')}</ul>`
+    : '<p>Nenhuma cifra foi publicada ainda.</p>';
+
+  return {
+    title,
+    description,
+    canonical,
+    noindex: cifras.length === 0,
+    schemas: [
+      {
+        '@context': 'https://schema.org',
+        '@type': 'CollectionPage',
+        name: 'Cifras de Hinos CCB',
+        url: canonical,
+        description,
+      },
+      {
+        '@context': 'https://schema.org',
+        '@type': 'BreadcrumbList',
+        itemListElement: [
+          { '@type': 'ListItem', position: 1, name: 'Início', item: SITE_URL },
+          { '@type': 'ListItem', position: 2, name: 'Cifras de Hinos CCB', item: canonical },
+        ],
+      },
+    ],
+    bodyHtml: `
+      <nav><a href="${SITE_URL}">Início</a> &rsaquo; Cifras de Hinos CCB</nav>
+      <h1>Cifras de Hinos CCB</h1>
+      <p>${esc(description)}</p>
+      <p><a href="${SITE_URL}/cifras">Ver todas as cifras</a> · <a href="${SITE_URL}/cifras-violao-ccb">Violão (${counts.violao || 0})</a> · <a href="${SITE_URL}/cifras-ukulele-ccb">Ukulele (${counts.ukulele || 0})</a> · <a href="${SITE_URL}/cifras-teclado-ccb">Teclado (${counts.teclado || 0})</a></p>
+      <section><h2>Cifras publicadas</h2>${cifrasHtml}</section>
+      <footer><p><a href="${SITE_URL}">Cânticos CCB</a> — Plataforma de hinos da Congregação Cristã no Brasil</p></footer>`,
+  };
+}
+
 async function handleCategoria(slug: string): Promise<PageMeta | null> {
   const categoryRows = await supaFetch('categorias', {
     slug: `eq.${slug}`,
@@ -1081,6 +1199,8 @@ export default async function handler(req: Request): Promise<Response> {
     const cifraMatch = pathname.match(/^\/cifra\/(.+)$/);
     const categoriaMatch = pathname.match(/^\/categoria\/([^/]+)$/);
     const playlistMatch = pathname.match(/^\/playlist\/([^/]+)$/);
+    const broadHinosHubMatch = pathname === '/hinos-ccb';
+    const broadCifrasHubMatch = pathname === '/cifras-hinos-ccb';
     const hymnHubMatch = pathname.match(/^\/hinos-(cantados|tocados|avulsos)-ccb$/);
     const cifraHubMatch = pathname.match(/^\/cifras-(violao|ukulele|teclado)-ccb$/);
 
@@ -1098,6 +1218,10 @@ export default async function handler(req: Request): Promise<Response> {
       pageMeta = await handleCategoria(categoriaMatch[1]);
     } else if (playlistMatch) {
       pageMeta = await handlePlaylistDetail(playlistMatch[1]);
+    } else if (broadHinosHubMatch) {
+      pageMeta = await handleBroadHinosHub();
+    } else if (broadCifrasHubMatch) {
+      pageMeta = await handleBroadCifrasHub();
     } else if (hymnHubMatch) {
       pageMeta = await handleHymnHub(pathname);
     } else if (cifraHubMatch) {
@@ -1129,8 +1253,10 @@ export default async function handler(req: Request): Promise<Response> {
           <ul>
             <li><a href="${SITE_URL}/">Início</a></li>
             <li><a href="${SITE_URL}/search">Buscar Hinos</a></li>
+            <li><a href="${SITE_URL}/hinos-ccb">Hinos CCB</a></li>
             <li><a href="${SITE_URL}/hinario">Hinário</a></li>
             <li><a href="${SITE_URL}/cifras">Cifras</a></li>
+            <li><a href="${SITE_URL}/cifras-hinos-ccb">Cifras de Hinos CCB</a></li>
             <li><a href="${SITE_URL}/compositores">Compositores</a></li>
             <li><a href="${SITE_URL}/albuns">Álbuns</a></li>
           </ul>

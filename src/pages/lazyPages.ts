@@ -15,6 +15,7 @@ export const ComposerPublicProfilePage = lazy(() => import('./ComposerPublicProf
 export const SearchPage = lazy(() => import('./SearchPage'));
 export const CategoriesPage = lazy(() => import('./CategoriesPage'));
 export const CategoryPage = lazy(() => import('./CategoryPage'));
+export const CifrasHubPage = lazy(() => import('./CifrasHubPage'));
 export const PlaylistDetailPage = lazy(() => import('./PlaylistDetailPage'));
 export const TrendsPage = lazy(() => import('./TrendsPage'));
 export const TermsOfUsePage = lazy(() => import('./TermsOfUsePage'));
@@ -47,6 +48,7 @@ export const LibraryPage = lazy(() => import('./LibraryPage'));
 export const LikedSongsPage = lazy(() => import('./LikedSongsPage'));
 export const HistoryPage = lazy(() => import('./HistoryPage'));
 export const NotificationsPage = lazy(() => import('./NotificationsPage'));
+export const HinosHubPage = lazy(() => import('./HinosHubPage'));
 export const ManageComposersPage = lazy(() => import('./ManageComposersPage'));
 export const ManagerInvitesPage = lazy(() => import('./ManagerInvitesPage'));
 export const DownloadsPage = lazy(() => import('./DownloadsPage'));

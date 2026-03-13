@@ -225,6 +225,24 @@ const CifraInstrumentHubPage: React.FC<CifraInstrumentHubPageProps> = ({ instrum
 
           <aside className="space-y-6">
             <section className="rounded-3xl border border-white/10 bg-background-secondary p-6">
+              <h2 className="text-xl font-semibold text-white mb-3">Rotas relacionadas</h2>
+              <div className="space-y-3">
+                <Link to="/cifras-hinos-ccb" className="flex items-center justify-between rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-white hover:border-primary-500/30 transition-colors">
+                  <span>Cifras de Hinos CCB</span>
+                  <Icon className="w-4 h-4 text-primary-400" />
+                </Link>
+                <Link to="/cifras" className="flex items-center justify-between rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-white hover:border-primary-500/30 transition-colors">
+                  <span>Ver todas as cifras</span>
+                  <Disc className="w-4 h-4 text-primary-400" />
+                </Link>
+                <Link to="/hinos-ccb" className="flex items-center justify-between rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-white hover:border-primary-500/30 transition-colors">
+                  <span>Hinos CCB</span>
+                  <Music4 className="w-4 h-4 text-primary-400" />
+                </Link>
+              </div>
+            </section>
+
+            <section className="rounded-3xl border border-white/10 bg-background-secondary p-6">
               <h2 className="text-xl font-semibold text-white mb-3">Por que este hub importa</h2>
               <ul className="space-y-3 text-sm text-text-muted">
                 <li>Cria uma URL especifica para o instrumento buscado.</li>

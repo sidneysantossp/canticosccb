@@ -51,6 +51,11 @@ const Footer: React.FC = () => {
             <h4 className="text-white font-semibold mb-4">Hinos</h4>
             <ul className="space-y-3">
               <li>
+                <Link to="/hinos-ccb" className="text-text-muted hover:text-white transition-colors text-sm">
+                  Hinos CCB
+                </Link>
+              </li>
+              <li>
                 <Link to="/hinario-5-ccb" className="text-text-muted hover:text-white transition-colors text-sm">
                   Hinário 5 CCB
                 </Link>
@@ -105,6 +110,11 @@ const Footer: React.FC = () => {
               <li>
                 <Link to="/cifras" className="text-text-muted hover:text-white transition-colors text-sm">
                   Cifras
+                </Link>
+              </li>
+              <li>
+                <Link to="/cifras-hinos-ccb" className="text-text-muted hover:text-white transition-colors text-sm">
+                  Cifras de Hinos
                 </Link>
               </li>
               <li>

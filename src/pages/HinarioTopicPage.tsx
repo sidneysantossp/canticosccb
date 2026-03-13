@@ -142,6 +142,12 @@ const HinarioTopicPage: React.FC<HinarioTopicPageProps> = ({ topic }) => {
               </div>
               <div className="flex flex-wrap gap-2 mt-5">
                 <Link
+                  to="/hinos-ccb"
+                  className="inline-flex items-center rounded-full border border-gray-700 bg-background-secondary px-3 py-1.5 text-sm text-gray-200 transition-colors hover:border-primary-500/40 hover:text-white"
+                >
+                  Hinos CCB
+                </Link>
+                <Link
                   to="/hinario"
                   className="inline-flex items-center rounded-full border border-primary-500/40 bg-primary-500/10 px-3 py-1.5 text-sm text-primary-300 transition-colors hover:bg-primary-500/20"
                 >
@@ -158,6 +164,12 @@ const HinarioTopicPage: React.FC<HinarioTopicPageProps> = ({ topic }) => {
                   className="inline-flex items-center rounded-full border border-gray-700 bg-background-secondary px-3 py-1.5 text-sm text-gray-200 transition-colors hover:border-primary-500/40 hover:text-white"
                 >
                   Cifras CCB
+                </Link>
+                <Link
+                  to="/cifras-hinos-ccb"
+                  className="inline-flex items-center rounded-full border border-gray-700 bg-background-secondary px-3 py-1.5 text-sm text-gray-200 transition-colors hover:border-primary-500/40 hover:text-white"
+                >
+                  Cifras de Hinos
                 </Link>
               </div>
             </div>

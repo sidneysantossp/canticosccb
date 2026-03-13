@@ -21,6 +21,7 @@ import {
   CategoriesPage,
   CategoryPage,
   CifraInstrumentHubPage,
+  CifrasHubPage,
   CifraPage,
   CifrasListPage,
   CompositorCadastroPage,
@@ -38,6 +39,7 @@ import {
   HistoryPage,
   HomeAlternativePage,
   HomePage,
+  HinosHubPage,
   HymnDetailPage,
   HymnHubPage,
   HinarioListPage,
@@ -280,11 +282,13 @@ const AppContent: React.FC = () => {
           <Route path="hino/:id" element={<HymnDetailPage />} />
           <Route path="hymn/:id" element={<HymnDetailPage />} />
           <Route path="cifras" element={<CifrasListPage />} />
+          <Route path="cifras-hinos-ccb" element={<CifrasHubPage />} />
           <Route path="cifras-violao-ccb" element={<CifraInstrumentHubPage instrument="violao" />} />
           <Route path="cifras-ukulele-ccb" element={<CifraInstrumentHubPage instrument="ukulele" />} />
           <Route path="cifras-teclado-ccb" element={<CifraInstrumentHubPage instrument="teclado" />} />
           <Route path="cifra/:slug" element={<CifraPage />} />
           <Route path="hinario" element={<HinarioListPage />} />
+          <Route path="hinos-ccb" element={<HinosHubPage />} />
           <Route path="hinario-5-ccb" element={<HinarioTopicPage topic="hinario5" />} />
           <Route path="hinario/:numero" element={<HinarioViewPage />} />
           <Route path="letras-hinos-ccb" element={<HinarioTopicPage topic="letras" />} />
