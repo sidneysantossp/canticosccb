@@ -46,7 +46,7 @@
       "destination": "/api/ssr?path=/cifras"
     },
     {
-      "source": "/:path(trends|tendencias|about|sobre|search|buscar|compositores|albuns|categorias|playlists|termos|premium|privacidade|privacy|cookies|disclaimer|lgpd|avisos|ajuda|contato|instrumentais|biblia-ccb|biblia-narrada|radio|hinos-ccb|hinario-5-ccb|letras-hinos-ccb|hinos-cantados-ccb|hinos-tocados-ccb|hinos-avulsos-ccb|cifras-hinos-ccb|cifras-violao-ccb|cifras-ukulele-ccb|cifras-teclado-ccb|baixar-hinos-ccb|baixar-albuns-ccb|baixar-cds-ccb)",
+      "source": "/:path(trends|tendencias|about|sobre|search|buscar|compositores|albuns|categorias|playlists|termos|premium|privacidade|privacy|cookies|disclaimer|lgpd|avisos|ajuda|contato|instrumentais|biblia-ccb|biblia-narrada|radio|hinos-ccb|hinos-1-a-120-ccb|hinos-121-a-240-ccb|hinos-241-a-360-ccb|hinos-361-a-480-ccb|hinario-5-ccb|letras-hinos-ccb|hinos-cantados-ccb|hinos-tocados-ccb|hinos-avulsos-ccb|cifras-hinos-ccb|cifras-violao-ccb|cifras-ukulele-ccb|cifras-teclado-ccb|baixar-hinos-ccb|baixar-albuns-ccb|baixar-cds-ccb)",
       "has": [{ "type": "header", "key": "user-agent", "value": "(?i).*(googlebot|bingbot|yandexbot|duckduckbot|slurp|baiduspider|facebookexternalhit|twitterbot|linkedinbot|whatsapp|telegrambot|discordbot|applebot|pinterest|redditbot|gptbot|claudebot|google-extended|applebot-extended|perplexitybot|bytespider|ccbot|amazonbot|meta-externalagent|petalbot|semrushbot|ahrefsbot|mj12bot|embedly|quora|showyoubot|outbrain|rogerbot|screaming.frog).*" }],
       "destination": "/api/ssr?path=/:path"
     },

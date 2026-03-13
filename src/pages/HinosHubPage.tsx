@@ -4,6 +4,7 @@ import { ArrowLeft, BookOpen, Headphones, Music4 } from 'lucide-react';
 import SEOHead from '@/components/SEO/SEOHead';
 import { fetchHinarioList, type HinarioHymn } from '@/api/hinario';
 import { supabaseFetch } from '@/lib/supabaseRest';
+import { HINARIO_RANGES, filterItemsByHinarioRange } from '@/lib/hinarioRanges';
 import { generateBreadcrumbSchema, generateFAQSchema, generateItemListSchema } from '@/utils/schemaGenerator';
 import { buildHinoUrl } from '@/utils/slugUrl';
 
@@ -90,6 +91,13 @@ const HinosHubPage: React.FC = () => {
       cancelled = true;
     };
   }, []);
+
+  const rangeSummaries = useMemo(() => {
+    return HINARIO_RANGES.map((range) => ({
+      ...range,
+      count: filterItemsByHinarioRange(hinarioItems, range).length,
+    }));
+  }, [hinarioItems]);
 
   const schemaData = useMemo(() => ([
     generateBreadcrumbSchema([
@@ -182,6 +190,19 @@ const HinosHubPage: React.FC = () => {
               </div>
             ) : (
               <>
+                <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4 mb-6">
+                  {rangeSummaries.map((range) => (
+                    <Link
+                      key={range.key}
+                      to={range.path}
+                      className="rounded-2xl border border-white/10 bg-background-primary p-4 transition-colors hover:border-primary-500/40"
+                    >
+                      <p className="text-primary-400 text-sm font-semibold">{range.label}</p>
+                      <p className="text-white font-medium mt-2">Faixa {range.shortLabel}</p>
+                      <p className="text-text-muted text-sm mt-2">{range.count} hinos publicados nesta faixa</p>
+                    </Link>
+                  ))}
+                </div>
                 <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-10 gap-2">
                   {hinarioItems.slice(0, 120).map((item) => (
                     <Link

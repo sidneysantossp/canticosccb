@@ -5,6 +5,7 @@ import SEOHead from '@/components/SEO/SEOHead';
 import { generateCifraSchema, generateBreadcrumbSchema } from '@/utils/schemaGenerator';
 import { fetchCifraBySlug, incrementCifraViews, Cifra, INSTRUMENTS, ALL_KEYS } from '@/api/cifras';
 import { buildHinoUrl } from '@/utils/slugUrl';
+import { getHinarioRangeForNumero } from '@/lib/hinarioRanges';
 import { extractHymnNumber, findRelatedHinario, findRelatedHymn } from '@/lib/hymnConnectionsApi';
 import {
   isChordLine,
@@ -226,6 +227,7 @@ const CifraPage: React.FC = () => {
   };
   const instrumentHubUrl = instrumentHubMap[cifra.instrument] || '/cifras';
   const relatedNumber = relatedHymn?.numero || relatedLyric?.numero || extractHymnNumber(cifra.title);
+  const hinarioRange = getHinarioRangeForNumero(relatedNumber);
   const cifraTitle = relatedNumber
     ? `Hino ${relatedNumber} CCB - ${cifra.title} | Cifra`
     : `${cifra.title}${cifra.artist ? ` - ${cifra.artist}` : ''} | Cifra`;
@@ -335,6 +337,14 @@ const CifraPage: React.FC = () => {
               >
                 Cifras de Hinos
               </Link>
+              {hinarioRange ? (
+                <Link
+                  to={hinarioRange.path}
+                  className="inline-flex items-center rounded-full border border-gray-700 bg-gray-800 px-3 py-1.5 text-sm text-gray-200 transition-colors hover:border-primary-500/40 hover:text-white"
+                >
+                  {hinarioRange.label}
+                </Link>
+              ) : null}
             </div>
           </div>
         </div>
@@ -369,6 +379,14 @@ const CifraPage: React.FC = () => {
             >
               Hinos CCB
             </Link>
+            {hinarioRange ? (
+              <Link
+                to={hinarioRange.path}
+                className="inline-flex items-center rounded-full border border-gray-700 bg-gray-800 px-3 py-1.5 text-sm text-gray-200 transition-colors hover:border-primary-500/40 hover:text-white"
+              >
+                Faixa {hinarioRange.shortLabel}
+              </Link>
+            ) : null}
           </div>
         </div>
       )}

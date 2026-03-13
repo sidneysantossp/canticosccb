@@ -8,6 +8,7 @@ import { usePlayerContext } from '@/contexts/PlayerContext';
 import SEOHead from '@/components/SEO/SEOHead';
 import { generateMusicRecordingSchema, generateBreadcrumbSchema } from '@/utils/schemaGenerator';
 import { extractUUID, buildHinoUrl, buildCompositorUrl } from '@/utils/slugUrl';
+import { getHinarioRangeForNumero } from '@/lib/hinarioRanges';
 import { useAuth } from '@/contexts/AuthContext';
 import { findRelatedCifra, findRelatedHinario, type RelatedCifraSummary } from '@/lib/hymnConnectionsApi';
 
@@ -53,6 +54,7 @@ const HymnDetailPage: React.FC = () => {
   const [relatedCifra, setRelatedCifra] = useState<RelatedCifraSummary | null>(null);
   const [relatedLyric, setRelatedLyric] = useState<{ numero: number; titulo: string } | null>(null);
   const carouselRef = useRef<HTMLDivElement>(null);
+  const hinarioRange = getHinarioRangeForNumero(relatedLyric?.numero || hymn?.numero);
 
   const sanitizeHtml = useMemo(() => (html: string) => {
     if (!html) return '';
@@ -484,6 +486,14 @@ const HymnDetailPage: React.FC = () => {
                       Ver letra no Hinario
                     </Link>
                   ) : null}
+                  {hinarioRange ? (
+                    <Link
+                      to={hinarioRange.path}
+                      className="inline-flex items-center rounded-full border border-primary-500/40 bg-primary-500/10 px-3 py-1.5 text-sm text-primary-300 transition-colors hover:bg-primary-500/20"
+                    >
+                      {hinarioRange.label}
+                    </Link>
+                  ) : null}
                   {relatedCifra ? (
                     <Link
                       to={`/cifra/${relatedCifra.slug}`}
@@ -653,6 +663,14 @@ const HymnDetailPage: React.FC = () => {
                 >
                   Cifras de Hinos CCB
                 </Link>
+                {hinarioRange ? (
+                  <Link
+                    to={hinarioRange.path}
+                    className="inline-flex items-center rounded-full border border-white/10 bg-background-tertiary px-4 py-2 text-sm font-medium text-white/85 transition-colors hover:border-primary-500/30 hover:text-white"
+                  >
+                    Faixa {hinarioRange.shortLabel}
+                  </Link>
+                ) : null}
               </div>
             </div>
           </div>

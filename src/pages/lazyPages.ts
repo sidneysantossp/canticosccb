@@ -49,6 +49,7 @@ export const LikedSongsPage = lazy(() => import('./LikedSongsPage'));
 export const HistoryPage = lazy(() => import('./HistoryPage'));
 export const NotificationsPage = lazy(() => import('./NotificationsPage'));
 export const HinosHubPage = lazy(() => import('./HinosHubPage'));
+export const HinarioRangePage = lazy(() => import('./HinarioRangePage'));
 export const ManageComposersPage = lazy(() => import('./ManageComposersPage'));
 export const ManagerInvitesPage = lazy(() => import('./ManagerInvitesPage'));
 export const DownloadsPage = lazy(() => import('./DownloadsPage'));

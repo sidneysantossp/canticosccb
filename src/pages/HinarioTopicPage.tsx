@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { ArrowLeft, BookOpen, FileText } from 'lucide-react';
 import SEOHead from '@/components/SEO/SEOHead';
 import { fetchHinarioList, HinarioHymn } from '@/api/hinario';
+import { HINARIO_RANGES, filterItemsByHinarioRange } from '@/lib/hinarioRanges';
 import { generateBreadcrumbSchema, generateFAQSchema, generateItemListSchema } from '@/utils/schemaGenerator';
 
 type HinarioTopic = 'hinario5' | 'letras';
@@ -92,6 +93,13 @@ const HinarioTopicPage: React.FC<HinarioTopicPageProps> = ({ topic }) => {
       cancelled = true;
     };
   }, [topic]);
+
+  const rangeSummaries = useMemo(() => {
+    return HINARIO_RANGES.map((range) => ({
+      ...range,
+      count: filterItemsByHinarioRange(hymns, range).length,
+    }));
+  }, [hymns]);
 
   const schemaData = useMemo(() => ([
     generateBreadcrumbSchema([
@@ -191,17 +199,32 @@ const HinarioTopicPage: React.FC<HinarioTopicPageProps> = ({ topic }) => {
             ) : hymns.length === 0 ? (
               <p className="text-text-muted mt-6">Nenhum hino do hinário foi publicado ainda.</p>
             ) : (
-              <div className="mt-6 grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-10 gap-2">
-                {hymns.map((hymn) => (
-                  <Link
-                    key={hymn.id}
-                    to={`/hinario/${hymn.numero}`}
-                    className="rounded-xl border border-white/10 bg-background-primary px-3 py-3 text-center text-sm font-semibold text-white transition-colors hover:border-primary-500/40 hover:text-primary-300"
-                  >
-                    {hymn.numero}
-                  </Link>
-                ))}
-              </div>
+              <>
+                <div className="mt-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+                  {rangeSummaries.map((range) => (
+                    <Link
+                      key={range.key}
+                      to={range.path}
+                      className="rounded-2xl border border-white/10 bg-background-primary p-4 transition-colors hover:border-primary-500/40"
+                    >
+                      <p className="text-primary-400 text-sm font-semibold">{range.label}</p>
+                      <p className="text-white font-medium mt-2">Faixa {range.shortLabel}</p>
+                      <p className="text-text-muted text-sm mt-2">{range.count} hinos publicados</p>
+                    </Link>
+                  ))}
+                </div>
+                <div className="mt-6 grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-10 gap-2">
+                  {hymns.map((hymn) => (
+                    <Link
+                      key={hymn.id}
+                      to={`/hinario/${hymn.numero}`}
+                      className="rounded-xl border border-white/10 bg-background-primary px-3 py-3 text-center text-sm font-semibold text-white transition-colors hover:border-primary-500/40 hover:text-primary-300"
+                    >
+                      {hymn.numero}
+                    </Link>
+                  ))}
+                </div>
+              </>
             )}
           </section>
 

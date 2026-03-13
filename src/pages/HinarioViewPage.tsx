@@ -4,6 +4,7 @@ import { ArrowLeft, ChevronLeft, ChevronRight, ZoomIn, ZoomOut, BookOpen, Share2
 import SEOHead from '@/components/SEO/SEOHead';
 import { generateBreadcrumbSchema } from '@/utils/schemaGenerator';
 import { buildHinoUrl } from '@/utils/slugUrl';
+import { getHinarioRangeForNumero } from '@/lib/hinarioRanges';
 import { findRelatedCifra, findRelatedHymn } from '@/lib/hymnConnectionsApi';
 import {
   fetchHinarioByNumero,
@@ -39,6 +40,7 @@ const HinarioViewPage: React.FC = () => {
   const searchInputRef = useRef<HTMLInputElement>(null);
 
   const currentNumero = Number(numero) || 1;
+  const hinarioRange = getHinarioRangeForNumero(currentNumero);
 
   const loadHymn = useCallback(async (num: number) => {
     try {
@@ -394,6 +396,14 @@ const HinarioViewPage: React.FC = () => {
             >
               Cifras de Hinos
             </Link>
+            {hinarioRange ? (
+              <Link
+                to={hinarioRange.path}
+                className="inline-flex items-center rounded-full border border-gray-700 bg-gray-800 px-3 py-1.5 text-sm text-gray-200 transition-colors hover:border-primary-500/40 hover:text-white"
+              >
+                {hinarioRange.label}
+              </Link>
+            ) : null}
           </div>
         </section>
 

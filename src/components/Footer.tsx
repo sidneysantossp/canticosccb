@@ -66,6 +66,26 @@ const Footer: React.FC = () => {
                 </Link>
               </li>
               <li>
+                <Link to="/hinos-1-a-120-ccb" className="text-text-muted hover:text-white transition-colors text-sm">
+                  Hinos 1 a 120
+                </Link>
+              </li>
+              <li>
+                <Link to="/hinos-121-a-240-ccb" className="text-text-muted hover:text-white transition-colors text-sm">
+                  Hinos 121 a 240
+                </Link>
+              </li>
+              <li>
+                <Link to="/hinos-241-a-360-ccb" className="text-text-muted hover:text-white transition-colors text-sm">
+                  Hinos 241 a 360
+                </Link>
+              </li>
+              <li>
+                <Link to="/hinos-361-a-480-ccb" className="text-text-muted hover:text-white transition-colors text-sm">
+                  Hinos 361 a 480
+                </Link>
+              </li>
+              <li>
                 <Link to="/hinos-cantados-ccb" className="text-text-muted hover:text-white transition-colors text-sm">
                   Hinos Cantados
                 </Link>

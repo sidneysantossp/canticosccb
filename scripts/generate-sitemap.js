@@ -149,6 +149,10 @@ async function main() {
   urls.push(urlEntry('/cifras-hinos-ccb', today, 'weekly', '0.8'));
   urls.push(urlEntry('/hinario', today, 'daily', '0.9'));
   urls.push(urlEntry('/hinos-ccb', today, 'weekly', '0.9'));
+  urls.push(urlEntry('/hinos-1-a-120-ccb', today, 'weekly', '0.8'));
+  urls.push(urlEntry('/hinos-121-a-240-ccb', today, 'weekly', '0.8'));
+  urls.push(urlEntry('/hinos-241-a-360-ccb', today, 'weekly', '0.8'));
+  urls.push(urlEntry('/hinos-361-a-480-ccb', today, 'weekly', '0.8'));
   urls.push(urlEntry('/hinario-5-ccb', today, 'weekly', '0.9'));
   urls.push(urlEntry('/letras-hinos-ccb', today, 'weekly', '0.9'));
   urls.push(urlEntry('/hinos-cantados-ccb', today, 'weekly', '0.8'));

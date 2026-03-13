@@ -40,6 +40,7 @@ import {
   HomeAlternativePage,
   HomePage,
   HinosHubPage,
+  HinarioRangePage,
   HymnDetailPage,
   HymnHubPage,
   HinarioListPage,
@@ -289,6 +290,10 @@ const AppContent: React.FC = () => {
           <Route path="cifra/:slug" element={<CifraPage />} />
           <Route path="hinario" element={<HinarioListPage />} />
           <Route path="hinos-ccb" element={<HinosHubPage />} />
+          <Route path="hinos-1-a-120-ccb" element={<HinarioRangePage rangeKey="1-120" />} />
+          <Route path="hinos-121-a-240-ccb" element={<HinarioRangePage rangeKey="121-240" />} />
+          <Route path="hinos-241-a-360-ccb" element={<HinarioRangePage rangeKey="241-360" />} />
+          <Route path="hinos-361-a-480-ccb" element={<HinarioRangePage rangeKey="361-480" />} />
           <Route path="hinario-5-ccb" element={<HinarioTopicPage topic="hinario5" />} />
           <Route path="hinario/:numero" element={<HinarioViewPage />} />
           <Route path="letras-hinos-ccb" element={<HinarioTopicPage topic="letras" />} />

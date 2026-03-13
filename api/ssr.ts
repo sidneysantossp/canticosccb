@@ -900,6 +900,41 @@ const HYMN_HUBS: Record<string, { keyword: string; heading: string; title: strin
   },
 };
 
+const HINARIO_RANGE_PAGES: Record<string, { start: number; end: number; label: string; shortLabel: string; title: string; description: string }> = {
+  '/hinos-1-a-120-ccb': {
+    start: 1,
+    end: 120,
+    label: 'Hinos 1 a 120 CCB',
+    shortLabel: '1 a 120',
+    title: 'Hinos 1 a 120 CCB | Letras do Hinário CCB | Cânticos CCB',
+    description: 'Veja os hinos 1 a 120 CCB com letras publicadas, navegação por número e links para ouvir hinos e explorar cifras relacionadas.',
+  },
+  '/hinos-121-a-240-ccb': {
+    start: 121,
+    end: 240,
+    label: 'Hinos 121 a 240 CCB',
+    shortLabel: '121 a 240',
+    title: 'Hinos 121 a 240 CCB | Letras do Hinário CCB | Cânticos CCB',
+    description: 'Acesse os hinos 121 a 240 CCB com letras publicadas, navegação por número e conexões com áudio e cifras.',
+  },
+  '/hinos-241-a-360-ccb': {
+    start: 241,
+    end: 360,
+    label: 'Hinos 241 a 360 CCB',
+    shortLabel: '241 a 360',
+    title: 'Hinos 241 a 360 CCB | Letras do Hinário CCB | Cânticos CCB',
+    description: 'Explore os hinos 241 a 360 CCB com letras do hinário, navegação por número e links para o repertório relacionado.',
+  },
+  '/hinos-361-a-480-ccb': {
+    start: 361,
+    end: 480,
+    label: 'Hinos 361 a 480 CCB',
+    shortLabel: '361 a 480',
+    title: 'Hinos 361 a 480 CCB | Letras do Hinário CCB | Cânticos CCB',
+    description: 'Navegue pelos hinos 361 a 480 CCB com letras publicadas, links por número e conexões com o restante do acervo.',
+  },
+};
+
 async function fetchHymnsByKeyword(keyword: string): Promise<any[]> {
   const categories = await supaFetch('categorias', {
     select: 'id,nome,slug',
@@ -998,6 +1033,80 @@ async function handleHymnHub(pathname: string): Promise<PageMeta | null> {
       <p>${esc(config.description)}</p>
       <section><h2>Hinos publicados</h2>${songListHtml}</section>
       <footer><p><a href="${SITE_URL}">Cânticos CCB</a> — Plataforma de hinos da Congregação Cristã no Brasil</p></footer>`,
+  };
+}
+
+async function handleHinarioRangePage(pathname: string): Promise<PageMeta | null> {
+  const config = HINARIO_RANGE_PAGES[pathname];
+  if (!config) return null;
+
+  const rows = await supaFetch('hinario', {
+    select: 'id,numero,titulo,subtitulo',
+    is_active: 'eq.true',
+    order: 'numero.asc',
+    limit: '500',
+  });
+
+  const hymns = rows.filter((row: any) => {
+    const numero = Number(row.numero || 0);
+    return numero >= config.start && numero <= config.end;
+  });
+
+  const hymnListHtml = hymns.length > 0
+    ? `<ul>${hymns.slice(0, 180).map((hymn: any) => {
+      const numero = Number(hymn.numero || 0);
+      const title = esc(hymn.titulo || `Hino ${numero}`);
+      return `<li><a href="${SITE_URL}/hinario/${numero}">Hino ${numero} CCB - ${title}</a>${hymn.subtitulo ? ` <span>— ${esc(hymn.subtitulo)}</span>` : ''}</li>`;
+    }).join('')}</ul>`
+    : '<p>Nenhum hino publicado foi encontrado nesta faixa.</p>';
+
+  const otherRangesHtml = Object.entries(HINARIO_RANGE_PAGES)
+    .filter(([path]) => path !== pathname)
+    .map(([path, range]) => `<li><a href="${SITE_URL}${path}">${esc(range.label)}</a></li>`)
+    .join('');
+
+  return {
+    title: config.title,
+    description: config.description,
+    canonical: `${SITE_URL}${pathname}`,
+    noindex: hymns.length === 0,
+    schemas: [
+      {
+        '@context': 'https://schema.org',
+        '@type': 'CollectionPage',
+        name: config.label,
+        url: `${SITE_URL}${pathname}`,
+        description: config.description,
+      },
+      {
+        '@context': 'https://schema.org',
+        '@type': 'BreadcrumbList',
+        itemListElement: [
+          { '@type': 'ListItem', position: 1, name: 'Início', item: SITE_URL },
+          { '@type': 'ListItem', position: 2, name: 'Hinário', item: `${SITE_URL}/hinario` },
+          { '@type': 'ListItem', position: 3, name: config.label, item: `${SITE_URL}${pathname}` },
+        ],
+      },
+      {
+        '@context': 'https://schema.org',
+        '@type': 'ItemList',
+        name: config.label,
+        itemListElement: hymns.slice(0, 180).map((hymn: any, index: number) => ({
+          '@type': 'ListItem',
+          position: index + 1,
+          name: `Hino ${hymn.numero} CCB - ${hymn.titulo || `Hino ${hymn.numero}`}`,
+          url: `${SITE_URL}/hinario/${hymn.numero}`,
+        })),
+      },
+    ],
+    bodyHtml: `
+      <nav><a href="${SITE_URL}">Início</a> &rsaquo; <a href="${SITE_URL}/hinario">Hinário</a> &rsaquo; ${esc(config.label)}</nav>
+      <h1>${esc(config.label)}</h1>
+      <p>${esc(config.description)}</p>
+      <p>Faixa ${esc(config.shortLabel)} do Hinário CCB com letras publicadas, organizada para buscas por número e descoberta de repertório relacionado.</p>
+      <section><h2>Hinos publicados nesta faixa</h2>${hymnListHtml}</section>
+      <section><h2>Outras faixas do Hinário</h2><ul>${otherRangesHtml}</ul></section>
+      <footer><p><a href="${SITE_URL}/hinos-ccb">Hinos CCB</a> · <a href="${SITE_URL}/letras-hinos-ccb">Letras dos Hinos</a> · <a href="${SITE_URL}/hinario">Abrir Hinário</a></p></footer>`,
   };
 }
 
@@ -1382,6 +1491,7 @@ export default async function handler(req: Request): Promise<Response> {
     const cifraMatch = pathname.match(/^\/cifra\/(.+)$/);
     const categoriaMatch = pathname.match(/^\/categoria\/([^/]+)$/);
     const playlistMatch = pathname.match(/^\/playlist\/([^/]+)$/);
+    const hinarioRangeMatch = pathname.match(/^\/hinos-(1-a-120|121-a-240|241-a-360|361-a-480)-ccb$/);
     const broadHinosHubMatch = pathname === '/hinos-ccb';
     const broadCifrasHubMatch = pathname === '/cifras-hinos-ccb';
     const hymnHubMatch = pathname.match(/^\/hinos-(cantados|tocados|avulsos)-ccb$/);
@@ -1401,6 +1511,8 @@ export default async function handler(req: Request): Promise<Response> {
       pageMeta = await handleCategoria(categoriaMatch[1]);
     } else if (playlistMatch) {
       pageMeta = await handlePlaylistDetail(playlistMatch[1]);
+    } else if (hinarioRangeMatch) {
+      pageMeta = await handleHinarioRangePage(pathname);
     } else if (broadHinosHubMatch) {
       pageMeta = await handleBroadHinosHub();
     } else if (broadCifrasHubMatch) {
