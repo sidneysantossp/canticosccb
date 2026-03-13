@@ -4,6 +4,8 @@ import { ArrowLeft, Minus, Plus, Type, ScrollText, Settings2, Eye, Printer, Shar
 import SEOHead from '@/components/SEO/SEOHead';
 import { generateCifraSchema, generateBreadcrumbSchema } from '@/utils/schemaGenerator';
 import { fetchCifraBySlug, incrementCifraViews, Cifra, INSTRUMENTS, ALL_KEYS } from '@/api/cifras';
+import { buildHinoUrl } from '@/utils/slugUrl';
+import { extractHymnNumber, findRelatedHinario, findRelatedHymn } from '@/lib/hymnConnectionsApi';
 import {
   isChordLine,
   isSectionLine,
@@ -19,6 +21,8 @@ const CifraPage: React.FC = () => {
   const [cifra, setCifra] = useState<Cifra | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [relatedHymn, setRelatedHymn] = useState<{ id: string; numero: number; titulo: string } | null>(null);
+  const [relatedLyric, setRelatedLyric] = useState<{ numero: number; titulo: string } | null>(null);
 
   // User controls
   const [selectedKey, setSelectedKey] = useState('');
@@ -36,6 +40,53 @@ const CifraPage: React.FC = () => {
     if (slug) loadCifra(slug);
     return () => stopAutoScroll();
   }, [slug]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const loadConnections = async () => {
+      if (!cifra) {
+        setRelatedHymn(null);
+        setRelatedLyric(null);
+        return;
+      }
+
+      try {
+        const inferredNumber = extractHymnNumber(cifra.title);
+        const [hymnMatch, lyricMatch] = await Promise.all([
+          findRelatedHymn({
+            hymnId: cifra.hino_id,
+            numero: inferredNumber,
+            titulo: cifra.title,
+          }),
+          findRelatedHinario(inferredNumber),
+        ]);
+
+        if (!cancelled) {
+          setRelatedHymn(hymnMatch ? {
+            id: hymnMatch.id,
+            numero: hymnMatch.numero,
+            titulo: hymnMatch.titulo,
+          } : null);
+          setRelatedLyric(lyricMatch ? {
+            numero: lyricMatch.numero,
+            titulo: lyricMatch.titulo,
+          } : null);
+        }
+      } catch (connectionError) {
+        console.error('Erro ao carregar conexoes da cifra:', connectionError);
+        if (!cancelled) {
+          setRelatedHymn(null);
+          setRelatedLyric(null);
+        }
+      }
+    };
+
+    void loadConnections();
+    return () => {
+      cancelled = true;
+    };
+  }, [cifra]);
 
   const loadCifra = async (slug: string) => {
     try {
@@ -174,13 +225,34 @@ const CifraPage: React.FC = () => {
     teclado: '/cifras-teclado-ccb',
   };
   const instrumentHubUrl = instrumentHubMap[cifra.instrument] || '/cifras';
+  const relatedNumber = relatedHymn?.numero || relatedLyric?.numero || extractHymnNumber(cifra.title);
+  const cifraTitle = relatedNumber
+    ? `Hino ${relatedNumber} CCB - ${cifra.title} | Cifra`
+    : `${cifra.title}${cifra.artist ? ` - ${cifra.artist}` : ''} | Cifra`;
+  const cifraDescription = [
+    relatedNumber ? `Cifra do Hino ${relatedNumber} CCB.` : `Cifra de ${cifra.title}.`,
+    cifra.artist ? `Artista: ${cifra.artist}.` : '',
+    `Tom: ${cifra.original_key}.`,
+    `Acordes e navegacao para ${instrumentLabel}.`,
+    relatedLyric ? `Letra disponivel no Hinario ${relatedLyric.numero}.` : '',
+    relatedHymn ? 'Pagina de audio relacionada disponivel.' : '',
+  ].filter(Boolean).join(' ');
+  const cifraKeywords = [
+    cifra.title,
+    cifra.artist,
+    relatedNumber ? `hino ${relatedNumber} ccb cifra` : null,
+    relatedNumber ? `cifra hino ${relatedNumber} ccb` : null,
+    relatedNumber ? `letra hino ${relatedNumber} ccb` : null,
+    'cifras hinos ccb',
+    instrumentLabel,
+  ].filter(Boolean).join(', ');
 
   return (
     <>
     <SEOHead
-      title={`${cifra.title}${cifra.artist ? ` - ${cifra.artist}` : ''} | Cifra`}
-      description={`Cifra de ${cifra.title}${cifra.artist ? ` (${cifra.artist})` : ''} - Tom: ${cifra.original_key}. Acordes e tablatura para ${INSTRUMENTS.find(i => i.value === cifra.instrument)?.label || cifra.instrument}.`}
-      keywords={`cifra, ${cifra.title}, ${cifra.artist || 'CCB'}, acordes, tablatura, ${cifra.original_key}, ${cifra.instrument}`}
+      title={cifraTitle}
+      description={cifraDescription}
+      keywords={cifraKeywords}
       canonical={`/cifra/${slug}`}
       ogImage={cifra.cover_url}
       schemaData={[
@@ -223,6 +295,22 @@ const CifraPage: React.FC = () => {
               Cifra CCB para {instrumentLabel}, com acordes, troca de tom e navegação para outras cifras e páginas relacionadas.
             </p>
             <div className="flex flex-wrap gap-2 mt-4">
+              {relatedHymn ? (
+                <Link
+                  to={buildHinoUrl(relatedHymn.id, relatedHymn.titulo, relatedHymn.numero)}
+                  className="inline-flex items-center rounded-full border border-primary-500/40 bg-primary-500/10 px-3 py-1.5 text-sm text-primary-300 transition-colors hover:bg-primary-500/20"
+                >
+                  Ouvir este hino
+                </Link>
+              ) : null}
+              {relatedLyric ? (
+                <Link
+                  to={`/hinario/${relatedLyric.numero}`}
+                  className="inline-flex items-center rounded-full border border-primary-500/40 bg-primary-500/10 px-3 py-1.5 text-sm text-primary-300 transition-colors hover:bg-primary-500/20"
+                >
+                  Letra no Hinario
+                </Link>
+              ) : null}
               <Link
                 to={instrumentHubUrl}
                 className="inline-flex items-center rounded-full border border-primary-500/40 bg-primary-500/10 px-3 py-1.5 text-sm text-primary-300 transition-colors hover:bg-primary-500/20"
@@ -241,10 +329,49 @@ const CifraPage: React.FC = () => {
               >
                 Letras do Hinário
               </Link>
+              <Link
+                to="/cifras-hinos-ccb"
+                className="inline-flex items-center rounded-full border border-gray-700 bg-gray-800 px-3 py-1.5 text-sm text-gray-200 transition-colors hover:border-primary-500/40 hover:text-white"
+              >
+                Cifras de Hinos
+              </Link>
             </div>
           </div>
         </div>
       </div>
+
+      {(relatedHymn || relatedLyric) && (
+        <div className="mb-6 rounded-2xl border border-white/10 bg-background-secondary p-5">
+          <h2 className="text-lg font-semibold text-white">Letra e audio deste hino</h2>
+          <p className="text-text-muted text-sm mt-2">
+            Esta cifra agora se conecta diretamente com a pagina do hino e com a letra do Hinario quando a correspondencia foi encontrada.
+          </p>
+          <div className="flex flex-wrap gap-2 mt-4">
+            {relatedHymn ? (
+              <Link
+                to={buildHinoUrl(relatedHymn.id, relatedHymn.titulo, relatedHymn.numero)}
+                className="inline-flex items-center rounded-full border border-primary-500/40 bg-primary-500/10 px-3 py-1.5 text-sm text-primary-300 transition-colors hover:bg-primary-500/20"
+              >
+                Pagina do Hino {relatedHymn.numero || relatedNumber || ''}
+              </Link>
+            ) : null}
+            {relatedLyric ? (
+              <Link
+                to={`/hinario/${relatedLyric.numero}`}
+                className="inline-flex items-center rounded-full border border-primary-500/40 bg-primary-500/10 px-3 py-1.5 text-sm text-primary-300 transition-colors hover:bg-primary-500/20"
+              >
+                Letra do Hino {relatedLyric.numero}
+              </Link>
+            ) : null}
+            <Link
+              to="/hinos-ccb"
+              className="inline-flex items-center rounded-full border border-gray-700 bg-gray-800 px-3 py-1.5 text-sm text-gray-200 transition-colors hover:border-primary-500/40 hover:text-white"
+            >
+              Hinos CCB
+            </Link>
+          </div>
+        </div>
+      )}
 
       {/* Toolbar */}
       <div className="sticky top-0 z-20 bg-background-primary/95 backdrop-blur-sm border-b border-gray-800 -mx-4 px-4 py-3 mb-6 print:hidden">

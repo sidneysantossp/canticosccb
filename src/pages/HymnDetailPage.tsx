@@ -9,6 +9,7 @@ import SEOHead from '@/components/SEO/SEOHead';
 import { generateMusicRecordingSchema, generateBreadcrumbSchema } from '@/utils/schemaGenerator';
 import { extractUUID, buildHinoUrl, buildCompositorUrl } from '@/utils/slugUrl';
 import { useAuth } from '@/contexts/AuthContext';
+import { findRelatedCifra, findRelatedHinario, type RelatedCifraSummary } from '@/lib/hymnConnectionsApi';
 
 interface Hymn {
   id: string;
@@ -49,7 +50,8 @@ const HymnDetailPage: React.FC = () => {
   const [shareMessage, setShareMessage] = useState<string | null>(null);
   const [isFollowing, setIsFollowing] = useState(false);
   const [followLoading, setFollowLoading] = useState(false);
-  const [relatedCifra, setRelatedCifra] = useState<{ slug: string; title: string; original_key?: string } | null>(null);
+  const [relatedCifra, setRelatedCifra] = useState<RelatedCifraSummary | null>(null);
+  const [relatedLyric, setRelatedLyric] = useState<{ numero: number; titulo: string } | null>(null);
   const carouselRef = useRef<HTMLDivElement>(null);
 
   const sanitizeHtml = useMemo(() => (html: string) => {
@@ -140,42 +142,38 @@ const HymnDetailPage: React.FC = () => {
   useEffect(() => {
     let cancelled = false;
 
-    const loadRelatedCifra = async () => {
-      if (!hymn?.id) {
+    const loadRelatedConnections = async () => {
+      if (!hymn?.id && !hymn?.numero) {
         setRelatedCifra(null);
+        setRelatedLyric(null);
         return;
       }
 
       try {
-        const rows = await supabaseFetch<any>('cifras', {
-          hino_id: `eq.${hymn.id}`,
-          is_active: 'eq.true',
-          select: 'slug,title,original_key',
-          limit: '1',
-        });
+        const [cifra, lyric] = await Promise.all([
+          findRelatedCifra({ hymnId: hymn?.id, numero: hymn?.numero, titulo: hymn?.titulo }),
+          findRelatedHinario(hymn?.numero),
+        ]);
 
         if (!cancelled) {
-          const cifra = rows[0];
-          setRelatedCifra(cifra ? {
-            slug: String(cifra.slug),
-            title: String(cifra.title || 'Cifra'),
-            original_key: cifra.original_key || undefined,
-          } : null);
+          setRelatedCifra(cifra);
+          setRelatedLyric(lyric ? { numero: lyric.numero, titulo: lyric.titulo } : null);
         }
       } catch (error) {
         console.error('Erro ao carregar cifra relacionada:', error);
         if (!cancelled) {
           setRelatedCifra(null);
+          setRelatedLyric(null);
         }
       }
     };
 
-    void loadRelatedCifra();
+    void loadRelatedConnections();
 
     return () => {
       cancelled = true;
     };
-  }, [hymn?.id]);
+  }, [hymn?.id, hymn?.numero, hymn?.titulo]);
 
   // Check if user follows the composer
   useEffect(() => {
@@ -364,6 +362,8 @@ const HymnDetailPage: React.FC = () => {
     [
       `Ouça ${hymnPrimaryTitle}${hymn.compositor_nome ? `, composto por ${hymn.compositor_nome}` : ''}.`,
       hymn.categoria ? `Categoria: ${hymn.categoria}.` : '',
+      relatedLyric ? `Letra disponivel no Hinario ${relatedLyric.numero}.` : '',
+      relatedCifra ? `Cifra relacionada disponivel${relatedCifra.original_key ? ` em ${relatedCifra.original_key}` : ''}.` : '',
       lyricsExcerpt ? `Letra: ${lyricsExcerpt}` : 'Áudio, letra e informações completas no Cânticos CCB.',
     ]
       .filter(Boolean)
@@ -476,12 +476,12 @@ const HymnDetailPage: React.FC = () => {
                   {hymnPrimaryTitle} com áudio, letra e navegação rápida para o Hinário, cifras e páginas relacionadas da Congregação Cristã no Brasil.
                 </p>
                 <div className="mt-4 flex flex-wrap gap-2">
-                  {hymn.numero ? (
+                  {relatedLyric ? (
                     <Link
-                      to={`/hinario/${hymn.numero}`}
+                      to={`/hinario/${relatedLyric.numero}`}
                       className="inline-flex items-center rounded-full border border-primary-500/40 bg-primary-500/10 px-3 py-1.5 text-sm text-primary-300 transition-colors hover:bg-primary-500/20"
                     >
-                      Ver letra no Hinário
+                      Ver letra no Hinario
                     </Link>
                   ) : null}
                   {relatedCifra ? (
@@ -492,6 +492,12 @@ const HymnDetailPage: React.FC = () => {
                       Ver cifra{relatedCifra.original_key ? ` • Tom ${relatedCifra.original_key}` : ''}
                     </Link>
                   ) : null}
+                  <Link
+                    to="/hinos-ccb"
+                    className="inline-flex items-center rounded-full border border-gray-700 bg-background-tertiary px-3 py-1.5 text-sm text-gray-200 transition-colors hover:border-primary-500/40 hover:text-white"
+                  >
+                    Hinos CCB
+                  </Link>
                   <Link
                     to="/cifras"
                     className="inline-flex items-center rounded-full border border-gray-700 bg-background-tertiary px-3 py-1.5 text-sm text-gray-200 transition-colors hover:border-primary-500/40 hover:text-white"
@@ -612,6 +618,41 @@ const HymnDetailPage: React.FC = () => {
                     </pre>
                   );
                 })()}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {(relatedLyric || relatedCifra) && (
+          <div className="max-w-7xl mx-auto px-4 pt-8">
+            <div className="rounded-2xl border border-white/10 bg-background-secondary p-6">
+              <h2 className="text-2xl font-bold text-white">Letra, cifra e navegacao deste hino</h2>
+              <p className="text-text-muted mt-2">
+                Bloco de relacao entre audio, letra do Hinario e cifra correspondente para reforcar buscas long-tail do mesmo hino.
+              </p>
+              <div className="flex flex-wrap gap-3 mt-4">
+                {relatedLyric ? (
+                  <Link
+                    to={`/hinario/${relatedLyric.numero}`}
+                    className="inline-flex items-center rounded-full border border-primary-500/40 bg-primary-500/10 px-4 py-2 text-sm font-medium text-primary-300 transition-colors hover:bg-primary-500/20"
+                  >
+                    Letra do Hino {relatedLyric.numero}
+                  </Link>
+                ) : null}
+                {relatedCifra ? (
+                  <Link
+                    to={`/cifra/${relatedCifra.slug}`}
+                    className="inline-flex items-center rounded-full border border-primary-500/40 bg-primary-500/10 px-4 py-2 text-sm font-medium text-primary-300 transition-colors hover:bg-primary-500/20"
+                  >
+                    Cifra deste hino{relatedCifra.original_key ? ` • ${relatedCifra.original_key}` : ''}
+                  </Link>
+                ) : null}
+                <Link
+                  to="/cifras-hinos-ccb"
+                  className="inline-flex items-center rounded-full border border-white/10 bg-background-tertiary px-4 py-2 text-sm font-medium text-white/85 transition-colors hover:border-primary-500/30 hover:text-white"
+                >
+                  Cifras de Hinos CCB
+                </Link>
               </div>
             </div>
           </div>

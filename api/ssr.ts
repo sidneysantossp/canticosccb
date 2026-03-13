@@ -107,6 +107,140 @@ function buildCompositorUrl(id: string, nome?: string): string {
   return `/compositor/${slugifyText(nome)}-${id}`;
 }
 
+function normalizeConnectionText(value: string): string {
+  return String(value || '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9\s-]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function extractHymnNumberFromText(value: string): number | null {
+  const normalized = String(value || '').trim();
+  const match = normalized.match(/(?:^|\b)hino\s*(\d{1,3})\b|^(\d{1,3})\s*(?:-|:|\u2013|\))/i);
+  const number = Number(match?.[1] || match?.[2] || 0);
+  return Number.isFinite(number) && number > 0 ? number : null;
+}
+
+function tokenizeConnectionText(value: string): string[] {
+  return normalizeConnectionText(value)
+    .split(' ')
+    .map((token) => token.trim())
+    .filter((token) => token.length >= 3 && token !== 'ccb' && token !== 'hino');
+}
+
+function scoreConnectionCandidate(candidateTitle: string, targetTitle: string, candidateNumber?: number | null, targetNumber?: number | null): number {
+  const normalizedCandidate = normalizeConnectionText(normalizeHymnTitle(candidateTitle, candidateNumber ?? undefined));
+  const normalizedTarget = normalizeConnectionText(normalizeHymnTitle(targetTitle, targetNumber ?? undefined));
+  if (!normalizedCandidate || !normalizedTarget) return 0;
+
+  let score = 0;
+  if (normalizedCandidate === normalizedTarget) score += 10;
+  if (normalizedCandidate.includes(normalizedTarget) || normalizedTarget.includes(normalizedCandidate)) score += 6;
+  for (const token of tokenizeConnectionText(normalizedTarget)) {
+    if (normalizedCandidate.includes(token)) score += 2;
+  }
+  return score;
+}
+
+async function findRelatedHymnForSsr(params: { hymnId?: string; numero?: number | null; title?: string }): Promise<any | null> {
+  if (params.hymnId) {
+    const exactRows = await supaFetch('hinos', {
+      id: `eq.${params.hymnId}`,
+      'or': '(ativo.eq.true,ativo.eq.1)',
+      select: 'id,numero,titulo,compositor_nome,categoria',
+      limit: '1',
+    });
+    if (exactRows[0]) return exactRows[0];
+  }
+
+  const numero = Number(params.numero || 0);
+  const candidates: any[] = [];
+  const seen = new Set<string>();
+
+  if (numero > 0) {
+    const numberRows = await supaFetch('hinos', {
+      numero: `eq.${numero}`,
+      'or': '(ativo.eq.true,ativo.eq.1)',
+      select: 'id,numero,titulo,compositor_nome,categoria',
+      limit: '20',
+    });
+    for (const row of numberRows) {
+      const key = String(row.id);
+      if (!seen.has(key)) {
+        candidates.push(row);
+        seen.add(key);
+      }
+    }
+  }
+
+  const title = normalizeHymnTitle(String(params.title || ''), numero || undefined);
+  const searchToken = tokenizeConnectionText(title).slice(0, 4).join(' ');
+  if (searchToken.length >= 3) {
+    const titleRows = await supaFetch('hinos', {
+      titulo: `ilike.%${searchToken}%`,
+      'or': '(ativo.eq.true,ativo.eq.1)',
+      select: 'id,numero,titulo,compositor_nome,categoria',
+      limit: '50',
+    });
+    for (const row of titleRows) {
+      const key = String(row.id);
+      if (!seen.has(key)) {
+        candidates.push(row);
+        seen.add(key);
+      }
+    }
+  }
+
+  const best = candidates
+    .map((row: any) => {
+      const candidateNumber = Number(row.numero || 0);
+      let score = 0;
+      if (numero > 0 && candidateNumber === numero) score += 14;
+      score += scoreConnectionCandidate(String(row.titulo || ''), title, candidateNumber, numero);
+      return { row, score };
+    })
+    .sort((a, b) => b.score - a.score)[0];
+
+  return best && best.score > 0 ? best.row : null;
+}
+
+async function findRelatedCifraForSsr(params: { hymnId?: string; numero?: number | null; title?: string }): Promise<any | null> {
+  if (params.hymnId) {
+    const exactRows = await supaFetch('cifras', {
+      hino_id: `eq.${params.hymnId}`,
+      is_active: 'eq.true',
+      select: 'slug,title,original_key,instrument,hino_id',
+      limit: '1',
+    });
+    if (exactRows[0]) return exactRows[0];
+  }
+
+  const rows = await supaFetch('cifras', {
+    is_active: 'eq.true',
+    select: 'slug,title,original_key,instrument,hino_id',
+    limit: '500',
+  });
+
+  const numero = Number(params.numero || 0);
+  const title = normalizeHymnTitle(String(params.title || ''), numero || undefined);
+
+  const best = rows
+    .map((row: any) => {
+      const candidateNumber = extractHymnNumberFromText(row.title || '');
+      let score = 0;
+      if (params.hymnId && row.hino_id === params.hymnId) score += 20;
+      if (numero > 0 && candidateNumber === numero) score += 12;
+      score += scoreConnectionCandidate(String(row.title || ''), title, candidateNumber, numero);
+      return { row, score };
+    })
+    .sort((a, b) => b.score - a.score)[0];
+
+  return best && best.score > 0 ? best.row : null;
+}
+
 // ─── HTML Builder ────────────────────────────────────────────────────────────
 function esc(s: string): string {
   return String(s ?? '')
@@ -182,13 +316,25 @@ async function handleHino(idParam: string): Promise<PageMeta | null> {
   const h = rows[0];
   const num = h.numero || '';
   const titulo = normalizeHymnTitle(h.titulo || 'Hino CCB', h.numero);
+  const [relatedLyricRows, relatedCifra] = await Promise.all([
+    num
+      ? supaFetch('hinario', {
+          numero: `eq.${num}`,
+          is_active: 'eq.true',
+          select: 'numero,titulo',
+          limit: '1',
+        })
+      : Promise.resolve([] as any[]),
+    findRelatedCifraForSsr({ hymnId: String(h.id), numero: Number(h.numero || 0), title: titulo }),
+  ]);
+  const relatedLyric = relatedLyricRows[0];
   const canonicalPath = buildHinoUrl(String(h.id), titulo, h.numero);
   const canonical = `${SITE_URL}${canonicalPath}`;
   const title = num
     ? `Hino ${num} CCB - ${titulo} | Ouça, Letra e Cifra | Cânticos CCB`
     : `${titulo} | Ouça, Letra e Cifra | Cânticos CCB`;
   const desc = truncate(
-    `Ouça o Hino ${num} CCB ${titulo}${h.compositor_nome ? `, composto por ${h.compositor_nome}` : ''}. Veja letra, cifra e navegue pelo repertório da Congregação Cristã no Brasil.`,
+    `Ouça o Hino ${num} CCB ${titulo}${h.compositor_nome ? `, composto por ${h.compositor_nome}` : ''}.${relatedLyric ? ` Leia a letra no Hinário ${num}.` : ''}${relatedCifra ? ` Veja também a cifra${relatedCifra.original_key ? ` em ${relatedCifra.original_key}` : ''}.` : ''} Navegue pelo repertório da Congregação Cristã no Brasil.`,
     158
   );
 
@@ -212,6 +358,12 @@ async function handleHino(idParam: string): Promise<PageMeta | null> {
   const letraHtml = h.letra
     ? `<section><h2>Letra do Hino ${num}</h2><div style="white-space:pre-line;">${esc(h.letra)}</div></section>`
     : '';
+  const relatedLinks = [
+    relatedLyric ? `<a href="${SITE_URL}/hinario/${num}">Ler a letra no Hinário</a>` : '',
+    relatedCifra ? `<a href="${SITE_URL}/cifra/${relatedCifra.slug}">Ver cifra${relatedCifra.original_key ? ` (${esc(relatedCifra.original_key)})` : ''}</a>` : '',
+    `<a href="${SITE_URL}/hinos-ccb">Hinos CCB</a>`,
+    `<a href="${SITE_URL}/cifras-hinos-ccb">Cifras de Hinos CCB</a>`,
+  ].filter(Boolean).join(' · ');
 
   return {
     title, description: desc, canonical, ogType: 'music.song', ogImage: h.cover_url || undefined,
@@ -222,8 +374,8 @@ async function handleHino(idParam: string): Promise<PageMeta | null> {
       ${h.compositor_nome ? `<p><strong>Compositor:</strong> ${esc(h.compositor_nome)}</p>` : ''}
       ${h.categoria ? `<p><strong>Categoria:</strong> ${esc(h.categoria)}</p>` : ''}
       ${h.duracao ? `<p><strong>Duração:</strong> ${esc(h.duracao)}</p>` : ''}
+      <p>${relatedLinks}</p>
       ${letraHtml}
-      <p><a href="${SITE_URL}/hinario/${num}">Ler a letra no Hinário ${num}</a></p>
       <footer><p><a href="${SITE_URL}">Cânticos CCB</a> — Plataforma de hinos da Congregação Cristã no Brasil</p></footer>`,
   };
 }
@@ -356,8 +508,12 @@ async function handleHinarioView(numero: string): Promise<PageMeta | null> {
   if (!rows.length) return null;
   const h = rows[0];
   const titulo = h.titulo || '';
+  const [relatedHymn, relatedCifra] = await Promise.all([
+    findRelatedHymnForSsr({ numero: num, title: titulo }),
+    findRelatedCifraForSsr({ numero: num, title: titulo }),
+  ]);
   const title = `Hino ${h.numero} — ${titulo} | Letra Completa do Hinário 5 | Cânticos CCB`;
-  const desc = `Leia a letra completa do Hino ${h.numero} "${titulo}" do Hinário 5 da Congregação Cristã no Brasil.${h.subtitulo ? ` ${h.subtitulo}.` : ''}`;
+  const desc = `Leia a letra completa do Hino ${h.numero} "${titulo}" do Hinário 5 da Congregação Cristã no Brasil.${relatedHymn ? ' Página de áudio relacionada disponível.' : ''}${relatedCifra ? ` Cifra relacionada${relatedCifra.original_key ? ` em ${relatedCifra.original_key}` : ''} disponível.` : ''}${h.subtitulo ? ` ${h.subtitulo}.` : ''}`;
   const canonical = `${SITE_URL}/hinario/${h.numero}`;
 
   const schema = {
@@ -378,6 +534,12 @@ async function handleHinarioView(numero: string): Promise<PageMeta | null> {
   const conteudoHtml = h.conteudo
     ? `<section><h2>Letra do Hino ${h.numero}</h2><div style="white-space:pre-line;">${esc(h.conteudo)}</div></section>`
     : '';
+  const relatedLinks = [
+    relatedHymn ? `<a href="${SITE_URL}${buildHinoUrl(String(relatedHymn.id), relatedHymn.titulo, relatedHymn.numero)}">Ouvir este hino</a>` : '',
+    relatedCifra ? `<a href="${SITE_URL}/cifra/${relatedCifra.slug}">Ver cifra${relatedCifra.original_key ? ` (${esc(relatedCifra.original_key)})` : ''}</a>` : '',
+    `<a href="${SITE_URL}/hinos-ccb">Hinos CCB</a>`,
+    `<a href="${SITE_URL}/cifras-hinos-ccb">Cifras de Hinos CCB</a>`,
+  ].filter(Boolean).join(' · ');
 
   return {
     title, description: desc, canonical,
@@ -386,6 +548,7 @@ async function handleHinarioView(numero: string): Promise<PageMeta | null> {
       <nav><a href="${SITE_URL}">Início</a> &rsaquo; <a href="${SITE_URL}/hinario">Hinário</a> &rsaquo; Hino ${h.numero}</nav>
       <h1>Hino ${h.numero} — ${esc(titulo)}</h1>
       ${h.subtitulo ? `<p>${esc(h.subtitulo)}</p>` : ''}
+      <p>${relatedLinks}</p>
       ${conteudoHtml}
       <nav style="margin-top:20px;">
         ${num > 1 ? `<a href="${SITE_URL}/hinario/${num - 1}">&larr; Hino ${num - 1}</a> ` : ''}
@@ -403,8 +566,21 @@ async function handleCifra(slug: string): Promise<PageMeta | null> {
   });
   if (!rows.length) return null;
   const c = rows[0];
-  const title = `Cifra: ${c.title || 'Cifra CCB'}${c.artist ? ` — ${c.artist}` : ''} | Tom ${c.original_key || ''} | Cânticos CCB`;
-  const desc = `Cifra de "${c.title || ''}"${c.artist ? ` por ${c.artist}` : ''} em tom ${c.original_key || 'original'}. Cifras de hinos da CCB com transposição de tom.`;
+  const inferredNumber = extractHymnNumberFromText(c.title || '');
+  const [relatedHymn, relatedLyricRows] = await Promise.all([
+    findRelatedHymnForSsr({ hymnId: c.hino_id || undefined, numero: inferredNumber, title: c.title || '' }),
+    inferredNumber
+      ? supaFetch('hinario', {
+          numero: `eq.${inferredNumber}`,
+          is_active: 'eq.true',
+          select: 'numero,titulo',
+          limit: '1',
+        })
+      : Promise.resolve([] as any[]),
+  ]);
+  const relatedLyric = relatedLyricRows[0];
+  const title = `${relatedHymn?.numero ? `Hino ${relatedHymn.numero} CCB - ` : ''}${c.title || 'Cifra CCB'}${c.artist ? ` — ${c.artist}` : ''} | Tom ${c.original_key || ''} | Cânticos CCB`;
+  const desc = `Cifra de "${c.title || ''}"${c.artist ? ` por ${c.artist}` : ''} em tom ${c.original_key || 'original'}.${relatedHymn ? ` Página do hino ${relatedHymn.numero || ''} disponível.` : ''}${relatedLyric ? ` Letra no Hinário ${relatedLyric.numero}.` : ''} Cifras de hinos da CCB com transposição de tom.`;
   const canonical = `${SITE_URL}/cifra/${slug}`;
 
   const schema = {
@@ -425,6 +601,12 @@ async function handleCifra(slug: string): Promise<PageMeta | null> {
   const contentHtml = c.content
     ? `<section><h2>Cifra</h2><pre style="white-space:pre-wrap;">${esc(c.content)}</pre></section>`
     : '';
+  const relatedLinks = [
+    relatedHymn ? `<a href="${SITE_URL}${buildHinoUrl(String(relatedHymn.id), relatedHymn.titulo, relatedHymn.numero)}">Página do hino</a>` : '',
+    relatedLyric ? `<a href="${SITE_URL}/hinario/${relatedLyric.numero}">Letra no Hinário</a>` : '',
+    `<a href="${SITE_URL}/cifras-hinos-ccb">Cifras de Hinos CCB</a>`,
+    `<a href="${SITE_URL}/hinos-ccb">Hinos CCB</a>`,
+  ].filter(Boolean).join(' · ');
 
   return {
     title, description: desc, canonical, ogImage: c.cover_url || undefined,
@@ -434,6 +616,7 @@ async function handleCifra(slug: string): Promise<PageMeta | null> {
       <h1>${esc(c.title || 'Cifra')}</h1>
       ${c.artist ? `<p><strong>Artista:</strong> ${esc(c.artist)}</p>` : ''}
       ${c.original_key ? `<p><strong>Tom:</strong> ${esc(c.original_key)}</p>` : ''}
+      <p>${relatedLinks}</p>
       ${contentHtml}
       <footer><p><a href="${SITE_URL}">Cânticos CCB</a> — Plataforma de hinos da Congregação Cristã no Brasil</p></footer>`,
   };

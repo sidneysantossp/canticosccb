@@ -3,8 +3,8 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import { ArrowLeft, ChevronLeft, ChevronRight, ZoomIn, ZoomOut, BookOpen, Share2, Search, X } from 'lucide-react';
 import SEOHead from '@/components/SEO/SEOHead';
 import { generateBreadcrumbSchema } from '@/utils/schemaGenerator';
-import { supabaseFetch } from '@/lib/supabaseRest';
 import { buildHinoUrl } from '@/utils/slugUrl';
+import { findRelatedCifra, findRelatedHymn } from '@/lib/hymnConnectionsApi';
 import {
   fetchHinarioByNumero,
   fetchHinarioCount,
@@ -73,32 +73,24 @@ const HinarioViewPage: React.FC = () => {
   useEffect(() => {
     let cancelled = false;
 
-    const loadAudioVersion = async () => {
+    const loadConnections = async () => {
       try {
-        const rows = await supabaseFetch<any>('hinos', {
-          numero: `eq.${currentNumero}`,
-          select: 'id,titulo,numero',
-          limit: '1',
-        });
+        const [relatedHymn, relatedCifra] = await Promise.all([
+          findRelatedHymn({ numero: currentNumero, titulo: hymn?.titulo || '' }),
+          findRelatedCifra({ numero: currentNumero, titulo: hymn?.titulo || '' }),
+        ]);
+
         if (!cancelled) {
-          const match = rows[0];
-          setAudioVersion(match ? { id: String(match.id), titulo: match.titulo, numero: match.numero } : null);
-          if (match) {
-            const cifraRows = await supabaseFetch<any>('cifras', {
-              hino_id: `eq.${match.id}`,
-              is_active: 'eq.true',
-              select: 'slug,title,original_key',
-              limit: '1',
-            });
-            const cifra = cifraRows[0];
-            setCifraVersion(cifra ? {
-              slug: String(cifra.slug),
-              title: String(cifra.title || 'Cifra'),
-              original_key: cifra.original_key || undefined,
-            } : null);
-          } else {
-            setCifraVersion(null);
-          }
+          setAudioVersion(relatedHymn ? {
+            id: relatedHymn.id,
+            titulo: relatedHymn.titulo,
+            numero: relatedHymn.numero || undefined,
+          } : null);
+          setCifraVersion(relatedCifra ? {
+            slug: relatedCifra.slug,
+            title: relatedCifra.title,
+            original_key: relatedCifra.original_key,
+          } : null);
         }
       } catch {
         if (!cancelled) {
@@ -108,11 +100,11 @@ const HinarioViewPage: React.FC = () => {
       }
     };
 
-    loadAudioVersion();
+    void loadConnections();
     return () => {
       cancelled = true;
     };
-  }, [currentNumero]);
+  }, [currentNumero, hymn?.titulo]);
 
   // Search filter
   useEffect(() => {
@@ -367,6 +359,43 @@ const HinarioViewPage: React.FC = () => {
             </div>
           ))}
         </div>
+
+        <section className="mt-10 rounded-2xl border border-gray-700/60 bg-gray-800/60 p-5">
+          <h2 className="text-lg font-semibold text-white">Escutar ou estudar este hino</h2>
+          <p className="text-gray-400 text-sm mt-2">
+            Use estes atalhos para abrir a versao em audio, a cifra relacionada e outros hubs estrategicos do repertorio CCB.
+          </p>
+          <div className="flex flex-wrap gap-2 mt-4">
+            {audioVersion ? (
+              <Link
+                to={buildHinoUrl(audioVersion.id, audioVersion.titulo, audioVersion.numero)}
+                className="inline-flex items-center rounded-full border border-primary-500/40 bg-primary-500/10 px-3 py-1.5 text-sm text-primary-300 transition-colors hover:bg-primary-500/20"
+              >
+                Ouvir Hino {hymn.numero} CCB
+              </Link>
+            ) : null}
+            {cifraVersion ? (
+              <Link
+                to={`/cifra/${cifraVersion.slug}`}
+                className="inline-flex items-center rounded-full border border-primary-500/40 bg-primary-500/10 px-3 py-1.5 text-sm text-primary-300 transition-colors hover:bg-primary-500/20"
+              >
+                Cifra do Hino {hymn.numero}{cifraVersion.original_key ? ` • Tom ${cifraVersion.original_key}` : ''}
+              </Link>
+            ) : null}
+            <Link
+              to="/hinos-ccb"
+              className="inline-flex items-center rounded-full border border-gray-700 bg-gray-800 px-3 py-1.5 text-sm text-gray-200 transition-colors hover:border-primary-500/40 hover:text-white"
+            >
+              Hinos CCB
+            </Link>
+            <Link
+              to="/cifras-hinos-ccb"
+              className="inline-flex items-center rounded-full border border-gray-700 bg-gray-800 px-3 py-1.5 text-sm text-gray-200 transition-colors hover:border-primary-500/40 hover:text-white"
+            >
+              Cifras de Hinos
+            </Link>
+          </div>
+        </section>
 
         {/* Navigation bar - below content */}
         <div className="mt-10 mb-8 border-t border-gray-700/60 pt-6">
