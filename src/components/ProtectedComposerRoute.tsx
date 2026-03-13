@@ -150,3 +150,5 @@ export const ProtectedComposerRoute: React.FC<ProtectedComposerRouteProps> = ({ 
 
   return <>{children}</>;
 };
+
+export default ProtectedComposerRoute;
