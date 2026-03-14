@@ -99,6 +99,21 @@ const normalizeText = (value: string) =>
     .toLowerCase()
     .trim();
 
+const isTraditionalHinarioSong = (song: { numero?: number | null; categoria?: string }) => {
+  const numero = Number(song.numero || 0);
+  if (numero >= 1 && numero <= 480) return true;
+
+  const normalizedCategory = normalizeText(String(song.categoria || ''));
+  return normalizedCategory === 'hinario5' || normalizedCategory === 'hinario 5' || normalizedCategory.includes('hinario');
+};
+
+const shouldIncludeHubSong = (song: { numero?: number | null; categoria?: string }, hub: HymnHubType) => {
+  if (hub === 'avulsos') {
+    return !isTraditionalHinarioSong(song);
+  }
+  return true;
+};
+
 async function fetchHubHymns(hub: HymnHubType): Promise<HubHymn[]> {
   const categories = await getAllCategories({ limit: 1000 });
   const matchingCategories = categories.filter((category) => {
@@ -150,6 +165,7 @@ async function fetchHubHymns(hub: HymnHubType): Promise<HubHymn[]> {
   }
 
   return merged
+    .filter((song) => shouldIncludeHubSong(song, hub))
     .map((song) => ({
       id: String(song.id),
       numero: Number(song.numero || 0),

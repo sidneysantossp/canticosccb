@@ -117,6 +117,14 @@ function normalizeConnectionText(value: string): string {
     .trim();
 }
 
+function isTraditionalHinarioSong(song: { numero?: number | null; categoria?: string }): boolean {
+  const numero = Number(song.numero || 0);
+  if (numero >= 1 && numero <= 480) return true;
+
+  const normalizedCategory = normalizeConnectionText(String(song.categoria || ''));
+  return normalizedCategory === 'hinario5' || normalizedCategory === 'hinario 5' || normalizedCategory.includes('hinario');
+}
+
 function extractHymnNumberFromText(value: string): number | null {
   const normalized = String(value || '').trim();
   const match = normalized.match(/(?:^|\b)hino\s*(\d{1,3})\b|^(\d{1,3})\s*(?:-|:|\u2013|\))/i);
@@ -956,7 +964,7 @@ async function fetchHymnsByKeyword(keyword: string): Promise<any[]> {
       songs = await supaFetch('hinos', {
         id: `in.(${hymnIds.join(',')})`,
         or: '(ativo.eq.true,ativo.eq.1)',
-        select: 'id,numero,titulo,compositor_nome',
+        select: 'id,numero,titulo,compositor_nome,categoria',
         order: 'numero.asc',
         limit: '500',
       });
@@ -966,7 +974,7 @@ async function fetchHymnsByKeyword(keyword: string): Promise<any[]> {
   const fallbackSongs = await supaFetch('hinos', {
     categoria: `ilike.%${keyword}%`,
     or: '(ativo.eq.true,ativo.eq.1)',
-    select: 'id,numero,titulo,compositor_nome',
+    select: 'id,numero,titulo,compositor_nome,categoria',
     order: 'numero.asc',
     limit: '500',
   });
@@ -981,7 +989,11 @@ async function fetchHymnsByKeyword(keyword: string): Promise<any[]> {
     }
   }
 
-  return mergedSongs.sort((a: any, b: any) => {
+  const filteredSongs = keyword === 'avulsos'
+    ? mergedSongs.filter((song: any) => !isTraditionalHinarioSong(song))
+    : mergedSongs;
+
+  return filteredSongs.sort((a: any, b: any) => {
     const numA = Number(a.numero || 0);
     const numB = Number(b.numero || 0);
     if (numA > 0 && numB > 0) return numA - numB;
