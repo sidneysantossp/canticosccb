@@ -348,6 +348,7 @@ export const generateCifraSchema = (cifra: {
   musicalKey?: string;
   instrument?: string;
 }) => {
+  const BASE_URL = getBaseUrl();
   const schema: any = {
     '@context': 'https://schema.org',
     '@type': 'CreativeWork',
