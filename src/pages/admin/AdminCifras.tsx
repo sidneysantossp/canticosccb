@@ -1,8 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Plus, Edit, Trash2, Eye, EyeOff, Search, Music, FileText, Sparkles, PenSquare } from 'lucide-react';
+import { Plus, Edit, Trash2, Eye, EyeOff, Search, Music, FileText, Sparkles, PenSquare, Wand2 } from 'lucide-react';
 import { fetchCifras, deleteCifra, toggleCifraActive, Cifra, INSTRUMENTS, CATEGORIES } from '@/api/cifras';
-import { fetchLegacyCifraMigrationStatuses, type LegacyCifraMigrationStatus } from '@/lib/admin/cifrasV2AdminApi';
+import ConfirmModal from '@/components/ConfirmModal';
+import AlertModal from '@/components/ui/AlertModal';
+import {
+  fetchLegacyCifraMigrationStatuses,
+  migrateLegacyCifraById,
+  type LegacyCifraMigrationStatus,
+} from '@/lib/admin/cifrasV2AdminApi';
 
 const AdminCifras: React.FC = () => {
   const [cifras, setCifras] = useState<Cifra[]>([]);
@@ -12,6 +18,15 @@ const AdminCifras: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterInstrument, setFilterInstrument] = useState('');
   const [filterCategory, setFilterCategory] = useState('');
+  const [showBatchConfirm, setShowBatchConfirm] = useState(false);
+  const [isBatchMigrating, setIsBatchMigrating] = useState(false);
+  const [batchProgress, setBatchProgress] = useState({ completed: 0, total: 0 });
+  const [alert, setAlert] = useState<{ isOpen: boolean; title: string; message: string; type: 'success' | 'error' | 'info' }>({
+    isOpen: false,
+    title: '',
+    message: '',
+    type: 'info',
+  });
 
   useEffect(() => {
     loadCifras();
@@ -68,6 +83,75 @@ const AdminCifras: React.FC = () => {
   const getCategoryLabel = (value: string) =>
     CATEGORIES.find(c => c.value === value)?.label || value;
 
+  const hasActiveFilters = Boolean(searchTerm || filterInstrument || filterCategory);
+  const pendingCifras = filtered.filter((cifra) => !migrationStatuses[cifra.id]);
+  const totalMigrated = cifras.filter((cifra) => migrationStatuses[cifra.id]).length;
+  const totalPending = cifras.length - totalMigrated;
+
+  const handleBatchMigrate = async () => {
+    const targetIds = pendingCifras.map((item) => item.id);
+    if (targetIds.length === 0) {
+      setShowBatchConfirm(false);
+      return;
+    }
+
+    const failures: Array<{ id: number; message: string }> = [];
+
+    try {
+      setShowBatchConfirm(false);
+      setIsBatchMigrating(true);
+      setBatchProgress({ completed: 0, total: targetIds.length });
+
+      let completed = 0;
+      for (const legacyId of targetIds) {
+        try {
+          await migrateLegacyCifraById(legacyId, {
+            publishActive: true,
+            markAsPrimary: true,
+          });
+        } catch (migrationError: any) {
+          failures.push({
+            id: legacyId,
+            message: migrationError?.message || 'Erro desconhecido durante a migração.',
+          });
+        } finally {
+          completed += 1;
+          setBatchProgress({ completed, total: targetIds.length });
+        }
+      }
+
+      await loadCifras();
+
+      if (failures.length > 0) {
+        const failedIds = failures.slice(0, 6).map((item) => `#${item.id}`).join(', ');
+        setAlert({
+          isOpen: true,
+          title: 'Migração concluída com pendências',
+          message: `${targetIds.length - failures.length} cifras foram migradas. ${failures.length} falharam (${failedIds}${failures.length > 6 ? ', ...' : ''}).`,
+          type: 'error',
+        });
+      } else {
+        setAlert({
+          isOpen: true,
+          title: 'Backfill concluído',
+          message: `${targetIds.length} cifras legadas foram migradas para o módulo V2.`,
+          type: 'success',
+        });
+      }
+    } catch (batchError: any) {
+      console.error('Erro ao executar backfill das cifras:', batchError);
+      setAlert({
+        isOpen: true,
+        title: 'Erro no backfill',
+        message: batchError?.message || 'Não foi possível migrar as cifras pendentes.',
+        type: 'error',
+      });
+    } finally {
+      setIsBatchMigrating(false);
+      setBatchProgress({ completed: 0, total: 0 });
+    }
+  };
+
   return (
     <div className="max-w-7xl mx-auto py-8">
       {/* Header */}
@@ -79,14 +163,55 @@ const AdminCifras: React.FC = () => {
           </h1>
           <p className="text-gray-400 mt-1">Gerencie as cifras musicais da plataforma</p>
         </div>
-        <Link
-          to="/admin/cifras-v2/new"
-          className="inline-flex items-center gap-2 px-5 py-3 bg-primary-500 hover:bg-primary-600 text-black font-semibold rounded-xl transition-colors"
-        >
-          <Plus className="w-5 h-5" />
-          Nova Cifra V2
-        </Link>
+        <div className="flex flex-wrap gap-3">
+          <button
+            type="button"
+            onClick={() => setShowBatchConfirm(true)}
+            disabled={isBatchMigrating || pendingCifras.length === 0}
+            className="inline-flex items-center gap-2 px-5 py-3 bg-cyan-500 hover:bg-cyan-400 disabled:opacity-60 disabled:cursor-not-allowed text-black font-semibold rounded-xl transition-colors"
+          >
+            <Wand2 className="w-5 h-5" />
+            {isBatchMigrating
+              ? `Migrando ${batchProgress.completed}/${batchProgress.total}`
+              : pendingCifras.length > 0
+                ? `Migrar ${pendingCifras.length} ${hasActiveFilters ? 'filtradas' : 'pendentes'}`
+                : hasActiveFilters && totalPending > 0
+                  ? 'Nenhuma pendente no filtro'
+                  : 'V2 em dia'}
+          </button>
+          <Link
+            to="/admin/cifras-v2/new"
+            className="inline-flex items-center gap-2 px-5 py-3 bg-primary-500 hover:bg-primary-600 text-black font-semibold rounded-xl transition-colors"
+          >
+            <Plus className="w-5 h-5" />
+            Nova Cifra V2
+          </Link>
+        </div>
       </div>
+
+      {isBatchMigrating && (
+        <div className="mb-6 bg-cyan-500/10 border border-cyan-500/30 rounded-xl p-4">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <p className="text-cyan-300 font-medium">Executando backfill do legado para o módulo V2</p>
+              <p className="text-sm text-cyan-100/80 mt-1">
+                {batchProgress.completed} de {batchProgress.total} cifras processadas.
+              </p>
+            </div>
+            <p className="text-sm text-cyan-200">
+              O processo segue em lote e atualiza o catálogo V2 ao final.
+            </p>
+          </div>
+          <div className="mt-4 h-2 rounded-full bg-black/30 overflow-hidden">
+            <div
+              className="h-full bg-cyan-400 transition-all"
+              style={{
+                width: `${batchProgress.total > 0 ? (batchProgress.completed / batchProgress.total) * 100 : 0}%`,
+              }}
+            />
+          </div>
+        </div>
+      )}
 
       {/* Filters */}
       <div className="flex flex-col sm:flex-row gap-3 mb-6">
@@ -123,7 +248,7 @@ const AdminCifras: React.FC = () => {
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-2 sm:grid-cols-5 gap-4 mb-6">
+      <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-6 gap-4 mb-6">
         <div className="bg-gray-800/50 border border-gray-700 rounded-xl p-4">
           <p className="text-gray-400 text-sm">Total</p>
           <p className="text-2xl font-bold text-white">{cifras.length}</p>
@@ -142,7 +267,11 @@ const AdminCifras: React.FC = () => {
         </div>
         <div className="bg-gray-800/50 border border-gray-700 rounded-xl p-4">
           <p className="text-gray-400 text-sm">Migradas V2</p>
-          <p className="text-2xl font-bold text-cyan-400">{Object.keys(migrationStatuses).length}</p>
+          <p className="text-2xl font-bold text-cyan-400">{totalMigrated}</p>
+        </div>
+        <div className="bg-gray-800/50 border border-gray-700 rounded-xl p-4">
+          <p className="text-gray-400 text-sm">Pendentes V2</p>
+          <p className="text-2xl font-bold text-amber-400">{totalPending}</p>
         </div>
       </div>
 
@@ -245,9 +374,9 @@ const AdminCifras: React.FC = () => {
                           </span>
                         ) : (
                           <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-amber-500/20 text-amber-300">
-                            <Sparkles className="w-3.5 h-3.5" />
-                            V2 pendente
-                          </span>
+                          <Sparkles className="w-3.5 h-3.5" />
+                          V2 pendente
+                        </span>
                         )}
                       </div>
                     </td>
@@ -302,6 +431,32 @@ const AdminCifras: React.FC = () => {
           </div>
         </div>
       )}
+
+      <ConfirmModal
+        isOpen={showBatchConfirm}
+        onClose={() => setShowBatchConfirm(false)}
+        onConfirm={handleBatchMigrate}
+        title="Migrar cifras pendentes para o V2?"
+        message={
+          pendingCifras.length > 0
+            ? `${pendingCifras.length} cifras legadas${hasActiveFilters ? ' do filtro atual' : ''} serão convertidas para o módulo novo de cifras, preservando slugs e publicando as ativas.`
+            : hasActiveFilters && totalPending > 0
+              ? 'Não há cifras pendentes dentro do filtro atual. Limpe os filtros para migrar o restante do legado.'
+              : 'Não há cifras pendentes para migrar neste momento.'
+        }
+        confirmText={pendingCifras.length > 0 ? 'Executar backfill' : 'Fechar'}
+        cancelText="Cancelar"
+        type="info"
+      />
+
+      <AlertModal
+        isOpen={alert.isOpen}
+        onClose={() => setAlert((current) => ({ ...current, isOpen: false }))}
+        title={alert.title}
+        message={alert.message}
+        type={alert.type}
+        buttonColor={alert.type === 'error' ? 'red' : alert.type === 'success' ? 'green' : 'blue'}
+      />
     </div>
   );
 };
