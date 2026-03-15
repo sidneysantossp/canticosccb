@@ -1,10 +1,19 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Music, Eye, ArrowRight, FileText } from 'lucide-react';
-import { fetchCifras, Cifra, INSTRUMENTS } from '@/api/cifras';
+import { Cifra, INSTRUMENTS } from '@/api/cifras';
+import { fetchMergedPublicCifrasList, type PublicCifraPageData } from '@/lib/cifras-v2';
+import { CIFRA_V2_INSTRUMENTS } from '@/types/cifras-v2';
+
+type DisplayCifra = Cifra | PublicCifraPageData;
+
+const PUBLIC_INSTRUMENTS = [
+  ...INSTRUMENTS,
+  ...CIFRA_V2_INSTRUMENTS.filter((entry) => !INSTRUMENTS.some((legacy) => legacy.value === entry.value)),
+];
 
 const CifrasHomeSection: React.FC = () => {
-  const [cifras, setCifras] = useState<Cifra[]>([]);
+  const [cifras, setCifras] = useState<DisplayCifra[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isXl, setIsXl] = useState(false);
 
@@ -24,7 +33,7 @@ const CifrasHomeSection: React.FC = () => {
   const loadCifras = async () => {
     try {
       setIsLoading(true);
-      const data = await fetchCifras({ is_active: true, limit: 8 });
+      const data = await fetchMergedPublicCifrasList();
       setCifras(data);
     } catch (err) {
       console.error('[CifrasHomeSection] Erro ao carregar cifras:', err);
@@ -53,7 +62,7 @@ const CifrasHomeSection: React.FC = () => {
   if (cifras.length === 0) return null;
 
   const getInstrumentLabel = (value: string) =>
-    INSTRUMENTS.find(i => i.value === value)?.label || value;
+    PUBLIC_INSTRUMENTS.find(i => i.value === value)?.label || value;
 
   return (
     <section className="mb-12">

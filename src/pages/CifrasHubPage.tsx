@@ -2,8 +2,11 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowLeft, Disc, Music2, Music4 } from 'lucide-react';
 import SEOHead from '@/components/SEO/SEOHead';
-import { fetchCifras, type Cifra } from '@/api/cifras';
+import { type Cifra } from '@/api/cifras';
+import { fetchMergedPublicCifrasList, type PublicCifraPageData } from '@/lib/cifras-v2';
 import { generateBreadcrumbSchema, generateFAQSchema, generateItemListSchema } from '@/utils/schemaGenerator';
+
+type DisplayCifra = Cifra | PublicCifraPageData;
 
 const faq = [
   {
@@ -47,7 +50,7 @@ const hubHrefByInstrument: Record<string, string> = {
 };
 
 const CifrasHubPage: React.FC = () => {
-  const [items, setItems] = useState<Cifra[]>([]);
+  const [items, setItems] = useState<DisplayCifra[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -56,7 +59,7 @@ const CifrasHubPage: React.FC = () => {
     const load = async () => {
       try {
         setIsLoading(true);
-        const data = await fetchCifras({ is_active: true, limit: 500 });
+        const data = await fetchMergedPublicCifrasList();
         if (!cancelled) {
           setItems(data);
         }
@@ -115,15 +118,15 @@ const CifrasHubPage: React.FC = () => {
         noindex={!isLoading && items.length === 0}
       />
 
-      <div className="bg-gradient-to-b from-primary-700/25 to-transparent pt-20 pb-8 px-6">
+      <div className="bg-gradient-to-b from-primary-700/25 to-transparent px-4 pt-16 pb-8 sm:px-6 sm:pt-20">
         <div className="max-w-6xl mx-auto">
           <Link to="/" className="inline-flex items-center gap-2 text-white/80 hover:text-white transition-colors mb-6">
             <ArrowLeft className="w-4 h-4" />
             Voltar
           </Link>
 
-          <div className="flex items-start gap-4">
-            <div className="w-14 h-14 rounded-2xl bg-white/10 border border-white/15 flex items-center justify-center">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-start">
+            <div className="w-12 h-12 rounded-2xl bg-white/10 border border-white/15 flex items-center justify-center sm:w-14 sm:h-14">
               <Music4 className="w-7 h-7 text-primary-300" />
             </div>
             <div className="max-w-3xl">
@@ -131,7 +134,7 @@ const CifrasHubPage: React.FC = () => {
               <p className="text-white/85 text-base md:text-lg mt-3">
                 Hub amplo para buscas por cifras de hinos CCB, com atalhos para instrumentos, paginas individuais de cifra e conexao com o repertorio principal da plataforma.
               </p>
-              <div className="flex flex-wrap gap-4 mt-5 text-sm text-white/75">
+              <div className="flex flex-wrap gap-3 sm:gap-4 mt-5 text-sm text-white/75">
                 <span>{items.length} cifras ativas publicadas</span>
                 <span>Cluster principal para busca generica por cifras CCB</span>
                 <span>Links por instrumento e repertorio</span>
@@ -152,7 +155,7 @@ const CifrasHubPage: React.FC = () => {
         </div>
       </div>
 
-      <div className="max-w-6xl mx-auto px-6 py-8">
+      <div className="max-w-6xl mx-auto px-4 py-8 sm:px-6">
         <div className="grid gap-6 lg:grid-cols-[1.35fr,0.95fr]">
           <section className="rounded-3xl border border-white/10 bg-background-secondary p-6">
             <div className="flex items-center justify-between gap-4 mb-5">
@@ -196,13 +199,13 @@ const CifrasHubPage: React.FC = () => {
                       <div className="flex flex-wrap gap-2">
                         <Link
                           to={`/cifra/${item.slug}`}
-                          className="px-3 py-2 rounded-full bg-primary-500 text-black text-sm font-semibold transition-colors hover:bg-primary-400"
+                          className="inline-flex w-full justify-center px-3 py-2 rounded-full bg-primary-500 text-black text-sm font-semibold transition-colors hover:bg-primary-400 sm:w-auto"
                         >
                           Ver cifra
                         </Link>
                         <Link
                           to={hubHrefByInstrument[item.instrument] || '/cifras'}
-                          className="px-3 py-2 rounded-full border border-white/10 bg-white/5 text-sm font-medium text-white/85 transition-colors hover:border-primary-500/30 hover:text-white"
+                          className="inline-flex w-full justify-center px-3 py-2 rounded-full border border-white/10 bg-white/5 text-sm font-medium text-white/85 transition-colors hover:border-primary-500/30 hover:text-white sm:w-auto"
                         >
                           Mais do instrumento
                         </Link>

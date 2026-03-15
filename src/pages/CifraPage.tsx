@@ -1,12 +1,26 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { useParams, Link } from 'react-router-dom';
-import { ArrowLeft, Minus, Plus, Type, ScrollText, Settings2, Eye, Printer, Share2, ChevronDown, Music, X } from 'lucide-react';
+import { useParams, Link, useNavigate } from 'react-router-dom';
+import { ArrowLeft, Minus, Plus, ScrollText, Settings2, Eye, Printer, Share2, Music, X, Heart, Flag } from 'lucide-react';
 import SEOHead from '@/components/SEO/SEOHead';
 import { generateCifraSchema, generateBreadcrumbSchema } from '@/utils/schemaGenerator';
-import { fetchCifraBySlug, incrementCifraViews, Cifra, INSTRUMENTS, ALL_KEYS } from '@/api/cifras';
+import { fetchCifraBySlug, incrementCifraViews, type Cifra, INSTRUMENTS, ALL_KEYS } from '@/api/cifras';
 import { buildHinoUrl } from '@/utils/slugUrl';
+import {
+  addCifraFavorite,
+  fetchCifraEngagementSnapshot,
+  fetchPublicCifraPageBySlug,
+  removeCifraFavorite,
+  serializeSectionLines,
+  submitCifraReport,
+  trackCifraUsageEvent,
+  type CifraEngagementSnapshot,
+  type PublicCifraPageData,
+} from '@/lib/cifras-v2';
 import { getHinarioRangeForNumero } from '@/lib/hinarioRanges';
 import { extractHymnNumber, findRelatedHinario, findRelatedHymn } from '@/lib/hymnConnectionsApi';
+import { useAuth } from '@/contexts/AuthContext';
+import { useToast } from '@/contexts/ToastContext';
+import { CIFRA_V2_INSTRUMENTS, type CifraReportType } from '@/types/cifras-v2';
 import {
   isChordLine,
   isSectionLine,
@@ -17,13 +31,68 @@ import {
   ChordDiagram,
 } from '@/utils/chordUtils';
 
+type DisplayCifra = Cifra | PublicCifraPageData;
+
+const PUBLIC_INSTRUMENTS = [
+  ...INSTRUMENTS,
+  ...CIFRA_V2_INSTRUMENTS.filter((entry) => !INSTRUMENTS.some((legacy) => legacy.value === entry.value)),
+];
+
+function isCifraV2(cifra: DisplayCifra | null): cifra is PublicCifraPageData {
+  return Boolean(cifra && 'source' in cifra && cifra.source === 'v2');
+}
+
+function getSectionAnchor(sectionLabel: string, index: number): string {
+  const normalized = String(sectionLabel || '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+
+  return normalized ? `sec-${normalized}-${index + 1}` : `sec-${index + 1}`;
+}
+
+const REPORT_TYPE_OPTIONS: Array<{ value: CifraReportType; label: string }> = [
+  { value: 'wrong_chord', label: 'Acorde incorreto' },
+  { value: 'wrong_key', label: 'Tom incorreto' },
+  { value: 'formatting', label: 'Problema de formatação' },
+  { value: 'duplicate', label: 'Cifra duplicada' },
+  { value: 'copyright', label: 'Questão de direitos autorais' },
+  { value: 'other', label: 'Outro problema' },
+];
+
+function buildInitialEngagement(cifra: PublicCifraPageData): CifraEngagementSnapshot {
+  return {
+    versionId: cifra.id,
+    viewsCount: cifra.views_count || 0,
+    sharesCount: cifra.shares_count || 0,
+    printsCount: cifra.prints_count || 0,
+    favoritesCount: cifra.favorites_count || 0,
+    reportsCount: cifra.reports_count || 0,
+    openReportsCount: cifra.open_reports_count || 0,
+    lastInteractionAt: cifra.last_interaction_at || null,
+    isFavorited: false,
+  };
+}
+
 const CifraPage: React.FC = () => {
   const { slug } = useParams<{ slug: string }>();
-  const [cifra, setCifra] = useState<Cifra | null>(null);
+  const navigate = useNavigate();
+  const { user } = useAuth();
+  const { showToast } = useToast();
+  const [cifra, setCifra] = useState<DisplayCifra | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [relatedHymn, setRelatedHymn] = useState<{ id: string; numero: number; titulo: string } | null>(null);
   const [relatedLyric, setRelatedLyric] = useState<{ numero: number; titulo: string } | null>(null);
+  const [engagement, setEngagement] = useState<CifraEngagementSnapshot | null>(null);
+  const [isFavoriteLoading, setIsFavoriteLoading] = useState(false);
+  const [isSubmittingReport, setIsSubmittingReport] = useState(false);
+  const [showReportModal, setShowReportModal] = useState(false);
+  const [reportType, setReportType] = useState<CifraReportType>('wrong_chord');
+  const [reportMessage, setReportMessage] = useState('');
+  const [reporterEmail, setReporterEmail] = useState('');
 
   // User controls
   const [selectedKey, setSelectedKey] = useState('');
@@ -41,6 +110,12 @@ const CifraPage: React.FC = () => {
     if (slug) loadCifra(slug);
     return () => stopAutoScroll();
   }, [slug]);
+
+  useEffect(() => {
+    if (user?.email) {
+      setReporterEmail((current) => current || user.email);
+    }
+  }, [user?.email]);
 
   useEffect(() => {
     let cancelled = false;
@@ -89,23 +164,103 @@ const CifraPage: React.FC = () => {
     };
   }, [cifra]);
 
+  useEffect(() => {
+    let cancelled = false;
+
+    const syncEngagement = async () => {
+      if (!cifra || !isCifraV2(cifra)) {
+        setEngagement(null);
+        return;
+      }
+
+      setEngagement((current) => current ?? buildInitialEngagement(cifra));
+
+      try {
+        await trackCifraUsageEvent(cifra.id, 'view', {
+          userId: user?.id || null,
+          metadata: {
+            slug: cifra.slug,
+            instrument: cifra.instrument,
+          },
+        });
+      } catch (trackingError) {
+        console.error('Erro ao registrar visualização da cifra:', trackingError);
+      }
+
+      try {
+        const snapshot = await fetchCifraEngagementSnapshot(cifra.id, user?.id || null);
+        if (!cancelled) {
+          setEngagement(snapshot);
+        }
+      } catch (engagementError) {
+        console.error('Erro ao carregar métricas da cifra:', engagementError);
+      }
+    };
+
+    void syncEngagement();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [cifra, user?.id]);
+
   const loadCifra = async (slug: string) => {
     try {
       setIsLoading(true);
       setError(null);
+      const publicData = await fetchPublicCifraPageBySlug(slug);
+      if (publicData) {
+        setCifra(publicData);
+        setEngagement(buildInitialEngagement(publicData));
+        setSelectedKey(publicData.preferred_key || publicData.original_key);
+        setSelectedInstrument(publicData.instrument);
+        return;
+      }
+
       const data = await fetchCifraBySlug(slug);
       if (data) {
         setCifra(data);
+        setEngagement(null);
         setSelectedKey(data.original_key);
         setSelectedInstrument(data.instrument);
         incrementCifraViews(data.id);
       } else {
+        setEngagement(null);
         setError('Cifra não encontrada');
       }
     } catch (err: any) {
+      setEngagement(null);
       setError(err?.message || 'Erro ao carregar cifra');
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const refreshEngagement = async (versionId: string) => {
+    try {
+      const snapshot = await fetchCifraEngagementSnapshot(versionId, user?.id || null);
+      setEngagement(snapshot);
+    } catch (refreshError) {
+      console.error('Erro ao atualizar métricas da cifra:', refreshError);
+    }
+  };
+
+  const handleInstrumentChange = (instrument: string) => {
+    if (!cifra || !isCifraV2(cifra)) {
+      setSelectedInstrument(instrument);
+      return;
+    }
+
+    const matchingVersion = cifra.available_versions.find((version) => version.instrument === instrument);
+
+    if (matchingVersion && matchingVersion.slug !== cifra.slug) {
+      navigate(`/cifra/${matchingVersion.slug}`);
+      return;
+    }
+
+    setSelectedInstrument(instrument);
+    if (matchingVersion) {
+      setSelectedKey(matchingVersion.preferred_key || matchingVersion.original_key);
     }
   };
 
@@ -138,6 +293,7 @@ const CifraPage: React.FC = () => {
   const semitones = cifra ? getSemitonesBetweenKeys(cifra.original_key, selectedKey) : 0;
   const transposedContent = cifra ? transposeCifraContent(cifra.content, semitones, selectedKey) : '';
   const chords = extractChords(transposedContent);
+  const structuredSections = isCifraV2(cifra) ? cifra.sections : [];
 
   const transposeUp = () => {
     const majorKeys = ALL_KEYS.filter(k => !k.includes('m'));
@@ -157,24 +313,121 @@ const CifraPage: React.FC = () => {
     setSelectedKey(keys[newIdx]);
   };
 
-  const handlePrint = () => window.print();
+  const handlePrint = async () => {
+    if (cifra && isCifraV2(cifra)) {
+      try {
+        await trackCifraUsageEvent(cifra.id, 'print', {
+          userId: user?.id || null,
+          metadata: { slug: cifra.slug },
+        });
+        setEngagement((current) => current ? {
+          ...current,
+          printsCount: current.printsCount + 1,
+        } : current);
+      } catch (printError) {
+        console.error('Erro ao registrar impressão da cifra:', printError);
+      }
+    }
+
+    window.print();
+  };
 
   const handleShare = async () => {
+    let shared = false;
+
     if (navigator.share) {
       try {
         await navigator.share({
           title: cifra?.title,
           url: window.location.href,
         });
+        shared = true;
       } catch {}
     } else {
       navigator.clipboard.writeText(window.location.href);
-      alert('Link copiado!');
+      shared = true;
+      showToast('success', 'Link copiado', 'O link da cifra foi copiado para a área de transferência.');
+    }
+
+    if (shared && cifra && isCifraV2(cifra)) {
+      try {
+        await trackCifraUsageEvent(cifra.id, 'share', {
+          userId: user?.id || null,
+          metadata: { slug: cifra.slug },
+        });
+        setEngagement((current) => current ? {
+          ...current,
+          sharesCount: current.sharesCount + 1,
+        } : current);
+      } catch (shareError) {
+        console.error('Erro ao registrar compartilhamento da cifra:', shareError);
+      }
+    }
+  };
+
+  const handleToggleFavorite = async () => {
+    if (!cifra || !isCifraV2(cifra)) {
+      showToast('info', 'Favorito indisponível', 'Os favoritos avançados ficam disponíveis nas cifras publicadas do módulo novo.');
+      return;
+    }
+
+    if (!user?.id) {
+      showToast('info', 'Faça login para favoritar', 'Entre na sua conta para salvar esta cifra nos seus favoritos.');
+      return;
+    }
+
+    try {
+      setIsFavoriteLoading(true);
+      if (engagement?.isFavorited) {
+        await removeCifraFavorite(cifra.id, user.id);
+        showToast('success', 'Favorito removido', 'A cifra foi removida da sua coleção.');
+      } else {
+        await addCifraFavorite(cifra.id, user.id);
+        showToast('success', 'Cifra favoritada', 'A cifra foi adicionada aos seus favoritos.');
+      }
+      await refreshEngagement(cifra.id);
+    } catch (favoriteError) {
+      console.error('Erro ao alternar favorito da cifra:', favoriteError);
+      showToast('error', 'Erro ao favoritar', 'Não foi possível atualizar seus favoritos agora.');
+    } finally {
+      setIsFavoriteLoading(false);
+    }
+  };
+
+  const handleSubmitReport = async () => {
+    if (!cifra || !isCifraV2(cifra)) {
+      return;
+    }
+
+    if (!reportMessage.trim() || reportMessage.trim().length < 10) {
+      showToast('warning', 'Descreva o problema', 'Explique com mais detalhes o que precisa ser corrigido nesta cifra.');
+      return;
+    }
+
+    try {
+      setIsSubmittingReport(true);
+      await submitCifraReport({
+        versionId: cifra.id,
+        reportType,
+        message: reportMessage.trim(),
+        reporterEmail: reporterEmail.trim() || user?.email || null,
+        reporterUserId: user?.id || null,
+      });
+
+      showToast('success', 'Denúncia enviada', 'Recebemos seu relato e ele entrou na fila de revisão editorial.');
+      setShowReportModal(false);
+      setReportMessage('');
+      await refreshEngagement(cifra.id);
+    } catch (reportError) {
+      console.error('Erro ao enviar denúncia da cifra:', reportError);
+      showToast('error', 'Erro ao enviar denúncia', 'Não foi possível registrar o problema agora. Tente novamente.');
+    } finally {
+      setIsSubmittingReport(false);
     }
   };
 
   // Render chord line with colored chords
-  const renderLine = (line: string, idx: number) => {
+  const renderLine = (line: string, idx: React.Key) => {
     if (isSectionLine(line)) {
       return (
         <div key={idx} className="text-white font-bold mt-8 mb-3 text-base">
@@ -219,19 +472,37 @@ const CifraPage: React.FC = () => {
     );
   }
 
-  const instrumentLabel = INSTRUMENTS.find(i => i.value === cifra.instrument)?.label || cifra.instrument;
+  const instrumentOptions = isCifraV2(cifra)
+    ? Array.from(new Map(cifra.available_versions.map((version) => [version.instrument, version])).values())
+        .map((version) => ({
+          value: version.instrument,
+          label: PUBLIC_INSTRUMENTS.find((entry) => entry.value === version.instrument)?.label || version.instrument,
+          slug: version.slug,
+        }))
+    : PUBLIC_INSTRUMENTS;
+  const instrumentLabel = PUBLIC_INSTRUMENTS.find(i => i.value === cifra.instrument)?.label || cifra.instrument;
+  const studyFacts = isCifraV2(cifra)
+    ? [
+        { label: 'Instrumento', value: instrumentLabel },
+        { label: 'Tom principal', value: selectedKey },
+        ...(cifra.tempo_bpm ? [{ label: 'Andamento', value: `${cifra.tempo_bpm} BPM` }] : []),
+        ...(cifra.time_signature ? [{ label: 'Compasso', value: cifra.time_signature }] : []),
+        ...(cifra.difficulty_level ? [{ label: 'Dificuldade', value: cifra.difficulty_level }] : []),
+        ...(cifra.capo > 0 ? [{ label: 'Capotraste', value: `${cifra.capo}ª casa` }] : []),
+      ]
+    : [];
   const instrumentHubMap: Record<string, string> = {
     violao: '/cifras-violao-ccb',
     ukulele: '/cifras-ukulele-ccb',
     teclado: '/cifras-teclado-ccb',
   };
   const instrumentHubUrl = instrumentHubMap[cifra.instrument] || '/cifras';
-  const relatedNumber = relatedHymn?.numero || relatedLyric?.numero || extractHymnNumber(cifra.title);
+  const relatedNumber = relatedHymn?.numero || relatedLyric?.numero || (isCifraV2(cifra) ? cifra.hinario_numero : null) || extractHymnNumber(cifra.title);
   const hinarioRange = getHinarioRangeForNumero(relatedNumber);
-  const cifraTitle = relatedNumber
+  const cifraTitle = (isCifraV2(cifra) ? cifra.seo_title : null) || (relatedNumber
     ? `Hino ${relatedNumber} CCB - ${cifra.title} | Cifra`
-    : `${cifra.title}${cifra.artist ? ` - ${cifra.artist}` : ''} | Cifra`;
-  const cifraDescription = [
+    : `${cifra.title}${cifra.artist ? ` - ${cifra.artist}` : ''} | Cifra`);
+  const cifraDescription = (isCifraV2(cifra) ? cifra.seo_description : null) || [
     relatedNumber ? `Cifra do Hino ${relatedNumber} CCB.` : `Cifra de ${cifra.title}.`,
     cifra.artist ? `Artista: ${cifra.artist}.` : '',
     `Tom: ${cifra.original_key}.`,
@@ -239,7 +510,7 @@ const CifraPage: React.FC = () => {
     relatedLyric ? `Letra disponivel no Hinario ${relatedLyric.numero}.` : '',
     relatedHymn ? 'Pagina de audio relacionada disponivel.' : '',
   ].filter(Boolean).join(' ');
-  const cifraKeywords = [
+  const cifraKeywords = (isCifraV2(cifra) ? cifra.seo_keywords : null) || [
     cifra.title,
     cifra.artist,
     relatedNumber ? `hino ${relatedNumber} ccb cifra` : null,
@@ -276,14 +547,14 @@ const CifraPage: React.FC = () => {
         ]),
       ]}
     />
-    <div className="max-w-4xl mx-auto py-6 px-4 print:px-0 print:py-0">
+    <div className="max-w-4xl mx-auto px-4 py-6 pb-28 sm:pb-6 print:px-0 print:py-0">
       {/* Header */}
       <div className="mb-6">
         <Link to="/cifras" className="inline-flex items-center gap-2 text-gray-400 hover:text-white mb-4 transition-colors print:hidden">
           <ArrowLeft className="w-4 h-4" />
           Voltar
         </Link>
-        <div className="flex items-start gap-4">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-start">
           {cifra.cover_url && (
             <img src={cifra.cover_url} alt={cifra.title} className="w-16 h-16 sm:w-20 sm:h-20 rounded-lg object-cover shadow-lg flex-shrink-0" />
           )}
@@ -292,15 +563,49 @@ const CifraPage: React.FC = () => {
             {cifra.artist && (
               <p className="text-primary-400 font-medium mt-1">{cifra.artist}</p>
             )}
-            <p className="text-gray-500 text-sm mt-1">{cifra.views_count.toLocaleString()} exibições</p>
+            <div className="flex flex-wrap gap-x-4 gap-y-1 text-gray-500 text-sm mt-1">
+              <span>
+                {isCifraV2(cifra)
+                  ? `Versão ${cifra.publication_label === 'official' ? 'oficial' : cifra.publication_label === 'reviewed' ? 'revisada' : 'publicada'}`
+                  : `${cifra.views_count.toLocaleString()} exibições`}
+              </span>
+              {engagement ? <span>{engagement.viewsCount.toLocaleString()} visualizações</span> : null}
+              {engagement ? <span>{engagement.favoritesCount.toLocaleString()} favoritos</span> : null}
+              {engagement ? <span>{engagement.openReportsCount.toLocaleString()} denúncias abertas</span> : null}
+            </div>
             <p className="text-gray-400 text-sm mt-3 leading-relaxed">
               Cifra CCB para {instrumentLabel}, com acordes, troca de tom e navegação para outras cifras e páginas relacionadas.
             </p>
             <div className="flex flex-wrap gap-2 mt-4">
+              {isCifraV2(cifra) ? (
+                <>
+                  <button
+                    type="button"
+                    onClick={() => void handleToggleFavorite()}
+                    disabled={isFavoriteLoading}
+                    className={`inline-flex w-full items-center justify-center gap-2 rounded-full border px-3 py-1.5 text-sm transition-colors sm:w-auto ${
+                      engagement?.isFavorited
+                        ? 'border-red-500/50 bg-red-500/15 text-red-300'
+                        : 'border-gray-700 bg-gray-800 text-gray-200 hover:border-red-500/40 hover:text-white'
+                    }`}
+                  >
+                    <Heart className={`w-4 h-4 ${engagement?.isFavorited ? 'fill-current' : ''}`} />
+                    {engagement?.isFavorited ? 'Favoritada' : 'Favoritar'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setShowReportModal(true)}
+                    className="inline-flex w-full items-center justify-center gap-2 rounded-full border border-gray-700 bg-gray-800 px-3 py-1.5 text-sm text-gray-200 transition-colors hover:border-amber-500/40 hover:text-white sm:w-auto"
+                  >
+                    <Flag className="w-4 h-4" />
+                    Reportar problema
+                  </button>
+                </>
+              ) : null}
               {relatedHymn ? (
                 <Link
                   to={buildHinoUrl(relatedHymn.id, relatedHymn.titulo, relatedHymn.numero)}
-                  className="inline-flex items-center rounded-full border border-primary-500/40 bg-primary-500/10 px-3 py-1.5 text-sm text-primary-300 transition-colors hover:bg-primary-500/20"
+                  className="inline-flex w-full items-center justify-center rounded-full border border-primary-500/40 bg-primary-500/10 px-3 py-1.5 text-sm text-primary-300 transition-colors hover:bg-primary-500/20 sm:w-auto"
                 >
                   Ouvir este hino
                 </Link>
@@ -308,39 +613,39 @@ const CifraPage: React.FC = () => {
               {relatedLyric ? (
                 <Link
                   to={`/hinario/${relatedLyric.numero}`}
-                  className="inline-flex items-center rounded-full border border-primary-500/40 bg-primary-500/10 px-3 py-1.5 text-sm text-primary-300 transition-colors hover:bg-primary-500/20"
+                  className="inline-flex w-full items-center justify-center rounded-full border border-primary-500/40 bg-primary-500/10 px-3 py-1.5 text-sm text-primary-300 transition-colors hover:bg-primary-500/20 sm:w-auto"
                 >
                   Letra no Hinario
                 </Link>
               ) : null}
               <Link
                 to={instrumentHubUrl}
-                className="inline-flex items-center rounded-full border border-primary-500/40 bg-primary-500/10 px-3 py-1.5 text-sm text-primary-300 transition-colors hover:bg-primary-500/20"
+                className="inline-flex w-full items-center justify-center rounded-full border border-primary-500/40 bg-primary-500/10 px-3 py-1.5 text-sm text-primary-300 transition-colors hover:bg-primary-500/20 sm:w-auto"
               >
                 Mais cifras de {instrumentLabel}
               </Link>
               <Link
                 to="/cifras"
-                className="inline-flex items-center rounded-full border border-gray-700 bg-gray-800 px-3 py-1.5 text-sm text-gray-200 transition-colors hover:border-primary-500/40 hover:text-white"
+                className="inline-flex w-full items-center justify-center rounded-full border border-gray-700 bg-gray-800 px-3 py-1.5 text-sm text-gray-200 transition-colors hover:border-primary-500/40 hover:text-white sm:w-auto"
               >
                 Todas as cifras
               </Link>
               <Link
                 to="/hinario"
-                className="inline-flex items-center rounded-full border border-gray-700 bg-gray-800 px-3 py-1.5 text-sm text-gray-200 transition-colors hover:border-primary-500/40 hover:text-white"
+                className="inline-flex w-full items-center justify-center rounded-full border border-gray-700 bg-gray-800 px-3 py-1.5 text-sm text-gray-200 transition-colors hover:border-primary-500/40 hover:text-white sm:w-auto"
               >
                 Letras do Hinário
               </Link>
               <Link
                 to="/cifras-hinos-ccb"
-                className="inline-flex items-center rounded-full border border-gray-700 bg-gray-800 px-3 py-1.5 text-sm text-gray-200 transition-colors hover:border-primary-500/40 hover:text-white"
+                className="inline-flex w-full items-center justify-center rounded-full border border-gray-700 bg-gray-800 px-3 py-1.5 text-sm text-gray-200 transition-colors hover:border-primary-500/40 hover:text-white sm:w-auto"
               >
                 Cifras de Hinos
               </Link>
               {hinarioRange ? (
                 <Link
                   to={hinarioRange.path}
-                  className="inline-flex items-center rounded-full border border-gray-700 bg-gray-800 px-3 py-1.5 text-sm text-gray-200 transition-colors hover:border-primary-500/40 hover:text-white"
+                  className="inline-flex w-full items-center justify-center rounded-full border border-gray-700 bg-gray-800 px-3 py-1.5 text-sm text-gray-200 transition-colors hover:border-primary-500/40 hover:text-white sm:w-auto"
                 >
                   {hinarioRange.label}
                 </Link>
@@ -360,7 +665,7 @@ const CifraPage: React.FC = () => {
             {relatedHymn ? (
               <Link
                 to={buildHinoUrl(relatedHymn.id, relatedHymn.titulo, relatedHymn.numero)}
-                className="inline-flex items-center rounded-full border border-primary-500/40 bg-primary-500/10 px-3 py-1.5 text-sm text-primary-300 transition-colors hover:bg-primary-500/20"
+                className="inline-flex w-full items-center justify-center rounded-full border border-primary-500/40 bg-primary-500/10 px-3 py-1.5 text-sm text-primary-300 transition-colors hover:bg-primary-500/20 sm:w-auto"
               >
                 Pagina do Hino {relatedHymn.numero || relatedNumber || ''}
               </Link>
@@ -368,21 +673,21 @@ const CifraPage: React.FC = () => {
             {relatedLyric ? (
               <Link
                 to={`/hinario/${relatedLyric.numero}`}
-                className="inline-flex items-center rounded-full border border-primary-500/40 bg-primary-500/10 px-3 py-1.5 text-sm text-primary-300 transition-colors hover:bg-primary-500/20"
+                className="inline-flex w-full items-center justify-center rounded-full border border-primary-500/40 bg-primary-500/10 px-3 py-1.5 text-sm text-primary-300 transition-colors hover:bg-primary-500/20 sm:w-auto"
               >
                 Letra do Hino {relatedLyric.numero}
               </Link>
             ) : null}
             <Link
               to="/hinos-ccb"
-              className="inline-flex items-center rounded-full border border-gray-700 bg-gray-800 px-3 py-1.5 text-sm text-gray-200 transition-colors hover:border-primary-500/40 hover:text-white"
+              className="inline-flex w-full items-center justify-center rounded-full border border-gray-700 bg-gray-800 px-3 py-1.5 text-sm text-gray-200 transition-colors hover:border-primary-500/40 hover:text-white sm:w-auto"
             >
               Hinos CCB
             </Link>
             {hinarioRange ? (
               <Link
                 to={hinarioRange.path}
-                className="inline-flex items-center rounded-full border border-gray-700 bg-gray-800 px-3 py-1.5 text-sm text-gray-200 transition-colors hover:border-primary-500/40 hover:text-white"
+                className="inline-flex w-full items-center justify-center rounded-full border border-gray-700 bg-gray-800 px-3 py-1.5 text-sm text-gray-200 transition-colors hover:border-primary-500/40 hover:text-white sm:w-auto"
               >
                 Faixa {hinarioRange.shortLabel}
               </Link>
@@ -391,22 +696,73 @@ const CifraPage: React.FC = () => {
         </div>
       )}
 
+      {isCifraV2(cifra) && studyFacts.length > 0 ? (
+        <div className="mb-6 rounded-2xl border border-white/10 bg-background-secondary p-5">
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <h2 className="text-lg font-semibold text-white">Visao de estudo</h2>
+              <p className="text-text-muted text-sm mt-2">
+                Resumo rapido da versao publicada para ensaio, estudo por instrumento e leitura em tela pequena.
+              </p>
+            </div>
+            <Music className="hidden sm:block w-5 h-5 text-primary-400" />
+          </div>
+          <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {studyFacts.map((fact) => (
+              <div key={fact.label} className="rounded-2xl border border-white/10 bg-background-primary px-4 py-3">
+                <p className="text-xs uppercase tracking-[0.18em] text-text-muted">{fact.label}</p>
+                <p className="mt-2 text-sm font-semibold text-white">{fact.value}</p>
+              </div>
+            ))}
+          </div>
+          {cifra.intro_notes ? (
+            <div className="mt-4 rounded-2xl border border-primary-500/20 bg-primary-500/10 px-4 py-3 text-sm text-white/90">
+              <span className="font-semibold text-primary-300">Observacao editorial:</span> {cifra.intro_notes}
+            </div>
+          ) : null}
+        </div>
+      ) : null}
+
+      {isCifraV2(cifra) && structuredSections.length > 1 ? (
+        <div className="mb-6 rounded-2xl border border-white/10 bg-background-secondary p-5">
+          <h2 className="text-lg font-semibold text-white">Navegacao por secoes</h2>
+          <p className="text-text-muted text-sm mt-2">
+            Pule direto para introducao, estrofes, coro e demais partes publicadas desta cifra.
+          </p>
+          <div className="mt-4 flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
+            {structuredSections.map((section, index) => (
+              <button
+                key={section.id}
+                type="button"
+                onClick={() => {
+                  const element = document.getElementById(getSectionAnchor(section.section_label, index));
+                  element?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }}
+                className="shrink-0 rounded-full border border-gray-700 bg-gray-800 px-3 py-2 text-sm text-gray-200 transition-colors hover:border-primary-500/40 hover:text-white"
+              >
+                {section.section_label || `Secao ${index + 1}`}
+              </button>
+            ))}
+          </div>
+        </div>
+      ) : null}
+
       {/* Toolbar */}
       <div className="sticky top-0 z-20 bg-background-primary/95 backdrop-blur-sm border-b border-gray-800 -mx-4 px-4 py-3 mb-6 print:hidden">
-        <div className="flex items-center gap-2 flex-wrap">
+        <div className="flex items-center gap-2 overflow-x-auto pb-1 -mb-1 scrollbar-hide sm:flex-wrap sm:overflow-visible">
           {/* Instrument selector */}
           <select
             value={selectedInstrument}
-            onChange={e => setSelectedInstrument(e.target.value)}
-            className="px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+            onChange={e => handleInstrumentChange(e.target.value)}
+            className="shrink-0 px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
           >
-            {INSTRUMENTS.map(i => (
+            {instrumentOptions.map(i => (
               <option key={i.value} value={i.value}>{i.label}</option>
             ))}
           </select>
 
           {/* Transpose controls */}
-          <div className="flex items-center gap-1 bg-gray-800 border border-gray-700 rounded-lg">
+          <div className="flex shrink-0 items-center gap-1 bg-gray-800 border border-gray-700 rounded-lg">
             <button onClick={transposeDown} className="px-3 py-2 hover:bg-gray-700 rounded-l-lg transition-colors text-white">
               <Minus className="w-4 h-4" />
             </button>
@@ -423,7 +779,7 @@ const CifraPage: React.FC = () => {
           </div>
 
           {/* Font size */}
-          <div className="flex items-center gap-1 bg-gray-800 border border-gray-700 rounded-lg">
+          <div className="flex shrink-0 items-center gap-1 bg-gray-800 border border-gray-700 rounded-lg">
             <button
               onClick={() => setFontSize(prev => Math.max(10, prev - 1))}
               className="px-2 py-2 hover:bg-gray-700 rounded-l-lg transition-colors text-white text-xs"
@@ -441,7 +797,7 @@ const CifraPage: React.FC = () => {
           {/* Auto scroll */}
           <button
             onClick={() => setAutoScrollSpeed(prev => prev === 0 ? 1 : prev === 1 ? 2 : prev === 2 ? 3 : 0)}
-            className={`px-3 py-2 rounded-lg border text-sm transition-colors ${
+            className={`shrink-0 px-3 py-2 rounded-lg border text-sm transition-colors ${
               autoScrollSpeed > 0
                 ? 'bg-primary-500/20 border-primary-500/50 text-primary-400'
                 : 'bg-gray-800 border-gray-700 text-gray-400 hover:text-white'
@@ -454,7 +810,7 @@ const CifraPage: React.FC = () => {
           {/* Toggle chords */}
           <button
             onClick={() => setShowChords(!showChords)}
-            className={`px-3 py-2 rounded-lg border text-sm transition-colors ${
+            className={`shrink-0 px-3 py-2 rounded-lg border text-sm transition-colors ${
               showChords
                 ? 'bg-primary-500/20 border-primary-500/50 text-primary-400'
                 : 'bg-gray-800 border-gray-700 text-gray-400'
@@ -466,7 +822,7 @@ const CifraPage: React.FC = () => {
           {/* Options */}
           <button
             onClick={() => setShowOptions(!showOptions)}
-            className="px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-gray-400 hover:text-white transition-colors ml-auto"
+            className="shrink-0 px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-gray-400 hover:text-white transition-colors sm:ml-auto"
           >
             <Settings2 className="w-4 h-4" />
           </button>
@@ -517,7 +873,7 @@ const CifraPage: React.FC = () => {
 
         {/* Options panel */}
         {showOptions && (
-          <div className="absolute top-full right-4 bg-gray-900 border border-gray-700 rounded-xl p-4 shadow-2xl z-30 w-64">
+          <div className="absolute top-full left-4 right-4 z-30 rounded-xl border border-gray-700 bg-gray-900 p-4 shadow-2xl sm:left-auto sm:right-4 sm:w-64">
             <div className="flex items-center justify-between mb-3">
               <h3 className="text-white font-semibold">Opções da cifra</h3>
               <button onClick={() => setShowOptions(false)} className="text-gray-400 hover:text-white">
@@ -589,11 +945,52 @@ const CifraPage: React.FC = () => {
         </div>
 
         {/* Lines */}
-        {transposedContent.split('\n').map((line, idx) => renderLine(line, idx))}
+        {isCifraV2(cifra) && structuredSections.length > 0 ? (
+          <div className="space-y-8">
+            {structuredSections.map((section, sectionIndex) => {
+              const sectionContent = transposeCifraContent(
+                serializeSectionLines(section.content_ast),
+                semitones,
+                selectedKey,
+              );
+
+              return (
+                <section
+                  key={section.id}
+                  id={getSectionAnchor(section.section_label, sectionIndex)}
+                  className="scroll-mt-28 sm:scroll-mt-32"
+                >
+                  {section.section_label ? (
+                    <div className="mb-3 text-base font-bold text-white">
+                      {section.section_label}
+                    </div>
+                  ) : null}
+                  <div className="space-y-1">
+                    {sectionContent.split('\n').map((line, lineIndex) =>
+                      renderLine(line, `${section.id}-${lineIndex}`),
+                    )}
+                  </div>
+                </section>
+              );
+            })}
+          </div>
+        ) : (
+          transposedContent.split('\n').map((line, idx) => renderLine(line, idx))
+        )}
       </div>
 
       {/* Bottom toolbar (mobile) */}
-      <div className="fixed bottom-0 left-0 right-0 bg-gray-900/95 backdrop-blur-sm border-t border-gray-800 px-4 py-3 flex items-center justify-around sm:hidden print:hidden z-30">
+      <div className={`fixed bottom-0 left-0 right-0 bg-gray-900/95 backdrop-blur-sm border-t border-gray-800 px-4 py-3 grid items-center sm:hidden print:hidden z-30 ${isCifraV2(cifra) ? 'grid-cols-4' : 'grid-cols-2'}`}>
+        {isCifraV2(cifra) ? (
+          <button
+            onClick={() => void handleToggleFavorite()}
+            disabled={isFavoriteLoading}
+            className={`flex flex-col items-center gap-1 text-xs ${engagement?.isFavorited ? 'text-red-400' : 'text-gray-400'}`}
+          >
+            <Heart className={`w-5 h-5 ${engagement?.isFavorited ? 'fill-current' : ''}`} />
+            Favoritar
+          </button>
+        ) : null}
         <button
           onClick={() => setAutoScrollSpeed(prev => prev === 0 ? 1 : prev === 1 ? 2 : prev === 2 ? 3 : 0)}
           className={`flex flex-col items-center gap-1 text-xs ${autoScrollSpeed > 0 ? 'text-primary-400' : 'text-gray-400'}`}
@@ -608,7 +1005,95 @@ const CifraPage: React.FC = () => {
           <Settings2 className="w-5 h-5" />
           Opções
         </button>
+        {isCifraV2(cifra) ? (
+          <button
+            onClick={() => setShowReportModal(true)}
+            className="flex flex-col items-center gap-1 text-xs text-gray-400"
+          >
+            <Flag className="w-5 h-5" />
+            Reportar
+          </button>
+        ) : null}
       </div>
+
+      {showReportModal && isCifraV2(cifra) ? (
+        <div className="fixed inset-0 z-40 flex items-end justify-center bg-black/70 px-4 py-4 sm:items-center">
+          <div className="w-full max-w-lg max-h-[85vh] overflow-y-auto rounded-2xl border border-gray-700 bg-gray-900 p-5 shadow-2xl sm:p-6">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <h2 className="text-xl font-semibold text-white">Reportar problema na cifra</h2>
+                <p className="mt-1 text-sm text-gray-400">
+                  Seu relato entra na fila de revisão editorial do módulo novo de cifras.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowReportModal(false)}
+                className="text-gray-400 transition-colors hover:text-white"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <div className="mt-5 space-y-4">
+              <div>
+                <label className="mb-2 block text-sm font-medium text-gray-300">Tipo de problema</label>
+                <select
+                  value={reportType}
+                  onChange={(event) => setReportType(event.target.value as CifraReportType)}
+                  className="w-full rounded-xl border border-gray-700 bg-gray-800 px-4 py-3 text-white"
+                >
+                  {REPORT_TYPE_OPTIONS.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="mb-2 block text-sm font-medium text-gray-300">Descreva o problema</label>
+                <textarea
+                  value={reportMessage}
+                  onChange={(event) => setReportMessage(event.target.value)}
+                  rows={5}
+                  placeholder="Exemplo: o acorde do refrão está em tom diferente da gravação."
+                  className="w-full rounded-xl border border-gray-700 bg-gray-800 px-4 py-3 text-white"
+                />
+              </div>
+
+              <div>
+                <label className="mb-2 block text-sm font-medium text-gray-300">Email para contato (opcional)</label>
+                <input
+                  type="email"
+                  value={reporterEmail}
+                  onChange={(event) => setReporterEmail(event.target.value)}
+                  placeholder="voce@email.com"
+                  className="w-full rounded-xl border border-gray-700 bg-gray-800 px-4 py-3 text-white"
+                />
+              </div>
+            </div>
+
+            <div className="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+              <button
+                type="button"
+                onClick={() => setShowReportModal(false)}
+                className="rounded-xl border border-gray-700 px-4 py-3 text-sm font-medium text-gray-200 transition-colors hover:bg-gray-800"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                disabled={isSubmittingReport}
+                onClick={() => void handleSubmitReport()}
+                className="rounded-xl bg-primary-500 px-4 py-3 text-sm font-semibold text-black transition-colors hover:bg-primary-600 disabled:opacity-60"
+              >
+                {isSubmittingReport ? 'Enviando...' : 'Enviar denúncia'}
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </div>
     </>
   );

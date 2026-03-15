@@ -3,10 +3,23 @@ import { Link } from 'react-router-dom';
 import { Search, Music, FileText, Eye } from 'lucide-react';
 import SEOHead from '@/components/SEO/SEOHead';
 import { generateItemListSchema, generateBreadcrumbSchema } from '@/utils/schemaGenerator';
-import { fetchCifras, Cifra, INSTRUMENTS, CATEGORIES } from '@/api/cifras';
+import { Cifra, INSTRUMENTS, CATEGORIES } from '@/api/cifras';
+import { fetchMergedPublicCifrasList, type PublicCifraPageData } from '@/lib/cifras-v2';
+import { CIFRA_V2_INSTRUMENTS } from '@/types/cifras-v2';
+
+type DisplayCifra = Cifra | PublicCifraPageData;
+
+const PUBLIC_INSTRUMENTS = [
+  ...INSTRUMENTS,
+  ...CIFRA_V2_INSTRUMENTS.filter((entry) => !INSTRUMENTS.some((legacy) => legacy.value === entry.value)),
+];
+
+function isCifraV2(cifra: DisplayCifra): cifra is PublicCifraPageData {
+  return 'source' in cifra && cifra.source === 'v2';
+}
 
 const CifrasListPage: React.FC = () => {
-  const [cifras, setCifras] = useState<Cifra[]>([]);
+  const [cifras, setCifras] = useState<DisplayCifra[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterInstrument, setFilterInstrument] = useState('');
@@ -19,7 +32,7 @@ const CifrasListPage: React.FC = () => {
   const loadCifras = async () => {
     try {
       setIsLoading(true);
-      const data = await fetchCifras({ is_active: true });
+      const data = await fetchMergedPublicCifrasList();
       setCifras(data);
     } catch (err) {
       console.error('Erro ao carregar cifras:', err);
@@ -61,7 +74,7 @@ const CifrasListPage: React.FC = () => {
         ]),
       ]}
     />
-    <div className="max-w-5xl mx-auto py-8 px-4">
+    <div className="max-w-5xl mx-auto px-4 py-8 pb-24 sm:pb-8">
       {/* Header */}
       <div className="mb-8">
         <h1 className="text-3xl md:text-4xl font-bold text-white leading-tight">
@@ -96,17 +109,17 @@ const CifrasListPage: React.FC = () => {
         <select
           value={filterInstrument}
           onChange={e => setFilterInstrument(e.target.value)}
-          className="px-4 py-3 bg-gray-800/60 border border-gray-700 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-primary-500"
+          className="w-full px-4 py-3 bg-gray-800/60 border border-gray-700 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-primary-500 sm:w-auto"
         >
           <option value="">Instrumento</option>
-          {INSTRUMENTS.map(i => (
+          {PUBLIC_INSTRUMENTS.map(i => (
             <option key={i.value} value={i.value}>{i.label}</option>
           ))}
         </select>
         <select
           value={filterCategory}
           onChange={e => setFilterCategory(e.target.value)}
-          className="px-4 py-3 bg-gray-800/60 border border-gray-700 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-primary-500"
+          className="w-full px-4 py-3 bg-gray-800/60 border border-gray-700 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-primary-500 sm:w-auto"
         >
           <option value="">Categoria</option>
           {CATEGORIES.map(c => (
@@ -156,11 +169,11 @@ const CifrasListPage: React.FC = () => {
                       {cifra.original_key}
                     </span>
                     <span className="text-gray-500 text-xs">
-                      {INSTRUMENTS.find(i => i.value === cifra.instrument)?.label || cifra.instrument}
+                      {PUBLIC_INSTRUMENTS.find(i => i.value === cifra.instrument)?.label || cifra.instrument}
                     </span>
                     <span className="text-gray-600 text-xs ml-auto flex items-center gap-1">
                       <Eye className="w-3 h-3" />
-                      {cifra.views_count}
+                      {isCifraV2(cifra) ? 'V2' : cifra.views_count}
                     </span>
                   </div>
                 </div>

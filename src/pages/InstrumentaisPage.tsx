@@ -2,10 +2,13 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowLeft, Disc3, Music, Music2, Music4 } from 'lucide-react';
 import SEOHead from '@/components/SEO/SEOHead';
-import { fetchCifras, type Cifra } from '@/api/cifras';
+import { type Cifra } from '@/api/cifras';
+import { fetchMergedPublicCifrasList, type PublicCifraPageData } from '@/lib/cifras-v2';
 import { supabaseFetch } from '@/lib/supabaseRest';
 import { generateBreadcrumbSchema, generateFAQSchema, generateItemListSchema } from '@/utils/schemaGenerator';
 import { buildHinoUrl } from '@/utils/slugUrl';
+
+type DisplayCifra = Cifra | PublicCifraPageData;
 
 type HymnItem = {
   id: string;
@@ -60,7 +63,7 @@ const instrumentLinks = [
 
 const InstrumentaisPage: React.FC = () => {
   const [hymns, setHymns] = useState<HymnItem[]>([]);
-  const [cifras, setCifras] = useState<Cifra[]>([]);
+  const [cifras, setCifras] = useState<DisplayCifra[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -76,7 +79,7 @@ const InstrumentaisPage: React.FC = () => {
             order: 'numero.asc',
             limit: '800',
           }),
-          fetchCifras({ is_active: true, limit: 500 }),
+          fetchMergedPublicCifrasList(),
         ]);
 
         const filteredHymns = hinoRows
@@ -156,14 +159,14 @@ const InstrumentaisPage: React.FC = () => {
         schemaData={schemaData}
       />
 
-      <div className="bg-gradient-to-b from-primary-700/25 to-transparent pt-20 pb-8 px-6">
+      <div className="bg-gradient-to-b from-primary-700/25 to-transparent px-4 pt-16 pb-8 sm:px-6 sm:pt-20">
         <div className="max-w-6xl mx-auto">
           <Link to="/" className="inline-flex items-center gap-2 text-white/80 hover:text-white transition-colors mb-6">
             <ArrowLeft className="w-4 h-4" />
             Voltar
           </Link>
-          <div className="flex items-start gap-4">
-            <div className="w-14 h-14 rounded-2xl bg-white/10 border border-white/15 flex items-center justify-center">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-start">
+            <div className="w-12 h-12 rounded-2xl bg-white/10 border border-white/15 flex items-center justify-center sm:w-14 sm:h-14">
               <Music className="w-7 h-7 text-primary-300" />
             </div>
             <div className="max-w-3xl">
@@ -171,7 +174,7 @@ const InstrumentaisPage: React.FC = () => {
               <p className="text-white/85 text-base md:text-lg mt-3">
                 Hub publico para buscas por hinos instrumentais, hinos tocados e cifras da Congregacao Crista no Brasil.
               </p>
-              <div className="flex flex-wrap gap-4 mt-5 text-sm text-white/75">
+              <div className="flex flex-wrap gap-3 sm:gap-4 mt-5 text-sm text-white/75">
                 <span>{hymns.length} hinos instrumentais mapeados</span>
                 <span>{cifras.length} cifras publicadas</span>
                 <span>Links por instrumento e por repertorio</span>
@@ -181,7 +184,7 @@ const InstrumentaisPage: React.FC = () => {
         </div>
       </div>
 
-      <div className="max-w-6xl mx-auto px-6 py-8">
+      <div className="max-w-6xl mx-auto px-4 py-8 sm:px-6">
         <div className="grid gap-6 lg:grid-cols-[1.45fr,0.95fr]">
           <section className="rounded-3xl border border-white/10 bg-background-secondary p-6">
             <div className="flex items-center justify-between gap-4 mb-5">
@@ -223,7 +226,7 @@ const InstrumentaisPage: React.FC = () => {
                       <div className="flex flex-wrap gap-2">
                         <Link
                           to={buildHinoUrl(item.id, item.titulo, item.numero)}
-                          className="px-3 py-2 rounded-full bg-primary-500 text-black text-sm font-semibold hover:bg-primary-400 transition-colors"
+                          className="inline-flex w-full justify-center px-3 py-2 rounded-full bg-primary-500 text-black text-sm font-semibold hover:bg-primary-400 transition-colors sm:w-auto"
                         >
                           Ver hino
                         </Link>

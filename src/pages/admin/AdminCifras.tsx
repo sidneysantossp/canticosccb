@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Plus, Edit, Trash2, Eye, EyeOff, Search, Music, FileText } from 'lucide-react';
+import { Plus, Edit, Trash2, Eye, EyeOff, Search, Music, FileText, Sparkles, PenSquare } from 'lucide-react';
 import { fetchCifras, deleteCifra, toggleCifraActive, Cifra, INSTRUMENTS, CATEGORIES } from '@/api/cifras';
+import { fetchLegacyCifraMigrationStatuses, type LegacyCifraMigrationStatus } from '@/lib/admin/cifrasV2AdminApi';
 
 const AdminCifras: React.FC = () => {
   const [cifras, setCifras] = useState<Cifra[]>([]);
+  const [migrationStatuses, setMigrationStatuses] = useState<Record<number, LegacyCifraMigrationStatus>>({});
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
@@ -21,6 +23,8 @@ const AdminCifras: React.FC = () => {
       setError(null);
       const data = await fetchCifras();
       setCifras(data);
+      const statuses = await fetchLegacyCifraMigrationStatuses(data.map((item) => item.id));
+      setMigrationStatuses(statuses);
     } catch (err: any) {
       console.error('Erro ao carregar cifras:', err);
       setError(err?.message || 'Erro ao carregar cifras');
@@ -76,11 +80,11 @@ const AdminCifras: React.FC = () => {
           <p className="text-gray-400 mt-1">Gerencie as cifras musicais da plataforma</p>
         </div>
         <Link
-          to="/admin/cifras/new"
+          to="/admin/cifras-v2/new"
           className="inline-flex items-center gap-2 px-5 py-3 bg-primary-500 hover:bg-primary-600 text-black font-semibold rounded-xl transition-colors"
         >
           <Plus className="w-5 h-5" />
-          Nova Cifra
+          Nova Cifra V2
         </Link>
       </div>
 
@@ -119,7 +123,7 @@ const AdminCifras: React.FC = () => {
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
+      <div className="grid grid-cols-2 sm:grid-cols-5 gap-4 mb-6">
         <div className="bg-gray-800/50 border border-gray-700 rounded-xl p-4">
           <p className="text-gray-400 text-sm">Total</p>
           <p className="text-2xl font-bold text-white">{cifras.length}</p>
@@ -135,6 +139,10 @@ const AdminCifras: React.FC = () => {
         <div className="bg-gray-800/50 border border-gray-700 rounded-xl p-4">
           <p className="text-gray-400 text-sm">Visualizações</p>
           <p className="text-2xl font-bold text-primary-400">{cifras.reduce((sum, c) => sum + c.views_count, 0).toLocaleString()}</p>
+        </div>
+        <div className="bg-gray-800/50 border border-gray-700 rounded-xl p-4">
+          <p className="text-gray-400 text-sm">Migradas V2</p>
+          <p className="text-2xl font-bold text-cyan-400">{Object.keys(migrationStatuses).length}</p>
         </div>
       </div>
 
@@ -161,11 +169,11 @@ const AdminCifras: React.FC = () => {
           </p>
           {!searchTerm && !filterInstrument && !filterCategory && (
             <Link
-              to="/admin/cifras/new"
+              to="/admin/cifras-v2/new"
               className="inline-flex items-center gap-2 px-5 py-3 bg-primary-500 hover:bg-primary-600 text-black font-semibold rounded-xl transition-colors"
             >
               <Plus className="w-5 h-5" />
-              Nova Cifra
+              Nova Cifra V2
             </Link>
           )}
         </div>
@@ -218,17 +226,30 @@ const AdminCifras: React.FC = () => {
                       <span className="text-gray-300 text-sm">{cifra.views_count.toLocaleString()}</span>
                     </td>
                     <td className="px-6 py-4">
-                      <button
-                        onClick={() => handleToggleActive(cifra.id)}
-                        className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium transition-colors ${
-                          cifra.is_active
-                            ? 'bg-green-500/20 text-green-400 hover:bg-green-500/30'
-                            : 'bg-red-500/20 text-red-400 hover:bg-red-500/30'
-                        }`}
-                      >
-                        {cifra.is_active ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
-                        {cifra.is_active ? 'Ativa' : 'Inativa'}
-                      </button>
+                      <div className="flex flex-col items-start gap-2">
+                        <button
+                          onClick={() => handleToggleActive(cifra.id)}
+                          className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium transition-colors ${
+                            cifra.is_active
+                              ? 'bg-green-500/20 text-green-400 hover:bg-green-500/30'
+                              : 'bg-red-500/20 text-red-400 hover:bg-red-500/30'
+                          }`}
+                        >
+                          {cifra.is_active ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
+                          {cifra.is_active ? 'Ativa' : 'Inativa'}
+                        </button>
+                        {migrationStatuses[cifra.id] ? (
+                          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-cyan-500/20 text-cyan-300">
+                            <Sparkles className="w-3.5 h-3.5" />
+                            V2 {migrationStatuses[cifra.id].versionStatus || 'ok'}
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-amber-500/20 text-amber-300">
+                            <Sparkles className="w-3.5 h-3.5" />
+                            V2 pendente
+                          </span>
+                        )}
+                      </div>
                     </td>
                     <td className="px-6 py-4">
                       <div className="flex items-center justify-end gap-2">
@@ -241,12 +262,30 @@ const AdminCifras: React.FC = () => {
                           <Eye className="w-4 h-4" />
                         </Link>
                         <Link
-                          to={`/admin/cifras/${cifra.id}/edit`}
+                          to={migrationStatuses[cifra.id]?.versionId
+                            ? `/admin/cifras-v2/versions/${migrationStatuses[cifra.id].versionId}/edit`
+                            : `/admin/cifras/${cifra.id}/migrate`}
                           className="p-2 hover:bg-gray-700 rounded-lg transition-colors text-gray-400 hover:text-white"
-                          title="Editar"
+                          title={migrationStatuses[cifra.id]?.versionId ? 'Editar no V2' : 'Migrar para editar no V2'}
                         >
                           <Edit className="w-4 h-4" />
                         </Link>
+                        <Link
+                          to={`/admin/cifras/${cifra.id}/migrate`}
+                          className="p-2 hover:bg-cyan-500/20 rounded-lg transition-colors text-cyan-400 hover:text-cyan-300"
+                          title="Preview / migrar V2"
+                        >
+                          <Sparkles className="w-4 h-4" />
+                        </Link>
+                        {migrationStatuses[cifra.id]?.versionId && (
+                          <Link
+                            to={`/admin/cifras-v2/versions/${migrationStatuses[cifra.id].versionId}/edit`}
+                            className="p-2 hover:bg-primary-500/20 rounded-lg transition-colors text-primary-400 hover:text-primary-300"
+                            title="Abrir editor V2"
+                          >
+                            <PenSquare className="w-4 h-4" />
+                          </Link>
+                        )}
                         <button
                           onClick={() => handleDelete(cifra.id, cifra.title)}
                           className="p-2 hover:bg-red-500/20 rounded-lg transition-colors text-gray-400 hover:text-red-400"

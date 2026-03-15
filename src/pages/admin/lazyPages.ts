@@ -81,6 +81,8 @@ export const AdminBibleNarrated = lazy(() => import('./AdminBibleNarrated'));
 export const AdminBibleNarratedForm = lazy(() => import('./AdminBibleNarratedForm'));
 export const AdminCifras = lazy(() => import('./AdminCifras'));
 export const AdminCifraForm = lazy(() => import('./AdminCifraForm'));
+export const AdminCifraMigrationPage = lazy(() => import('./AdminCifraMigrationPage'));
+export const AdminCifraV2Editor = lazy(() => import('./AdminCifraV2Editor'));
 export const AdminHinario = lazy(() => import('./AdminHinario'));
 export const AdminHinarioForm = lazy(() => import('./AdminHinarioForm'));
 export const AdminArchiveImport = lazy(() => import('./AdminArchiveImport'));

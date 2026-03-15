@@ -216,6 +216,58 @@ async function findRelatedHymnForSsr(params: { hymnId?: string; numero?: number 
 }
 
 async function findRelatedCifraForSsr(params: { hymnId?: string; numero?: number | null; title?: string }): Promise<any | null> {
+  const mapPublicRow = (row: any) => ({
+    slug: String(row.public_slug || ''),
+    title: String(row.song_title || row.version_title || ''),
+    original_key: String(row.original_key || ''),
+    instrument: String(row.instrument || ''),
+    hino_id: row.hino_id ? String(row.hino_id) : null,
+  });
+
+  if (params.hymnId) {
+    const exactPublicRows = await supaFetch('cifra_public_catalog', {
+      hino_id: `eq.${params.hymnId}`,
+      select: 'public_slug,song_title,version_title,original_key,instrument,hino_id,hinario_numero,is_primary,published_at',
+      order: 'is_primary.desc,published_at.desc.nullslast',
+      limit: '1',
+    });
+    if (exactPublicRows[0]) return mapPublicRow(exactPublicRows[0]);
+  }
+
+  if (params.numero) {
+    const byNumeroRows = await supaFetch('cifra_public_catalog', {
+      hinario_numero: `eq.${params.numero}`,
+      select: 'public_slug,song_title,version_title,original_key,instrument,hino_id,hinario_numero,is_primary,published_at',
+      order: 'is_primary.desc,published_at.desc.nullslast',
+      limit: '3',
+    });
+    if (byNumeroRows[0]) return mapPublicRow(byNumeroRows[0]);
+  }
+
+  const publicRows = await supaFetch('cifra_public_catalog', {
+    select: 'public_slug,song_title,version_title,original_key,instrument,hino_id,hinario_numero,is_primary,published_at',
+    order: 'is_primary.desc,published_at.desc.nullslast',
+    limit: '500',
+  });
+
+  const numero = Number(params.numero || 0);
+  const title = normalizeHymnTitle(String(params.title || ''), numero || undefined);
+  const bestPublic = publicRows
+    .map((row: any) => {
+      const baseTitle = String(row.song_title || row.version_title || '');
+      const candidateNumber = Number(row.hinario_numero || extractHymnNumberFromText(baseTitle) || 0);
+      let score = 0;
+      if (params.hymnId && row.hino_id === params.hymnId) score += 20;
+      if (numero > 0 && candidateNumber === numero) score += 12;
+      score += scoreConnectionCandidate(baseTitle, title, candidateNumber, numero);
+      return { row, score };
+    })
+    .sort((a, b) => b.score - a.score)[0];
+
+  if (bestPublic && bestPublic.score > 0) {
+    return mapPublicRow(bestPublic.row);
+  }
+
   if (params.hymnId) {
     const exactRows = await supaFetch('cifras', {
       hino_id: `eq.${params.hymnId}`,
@@ -256,6 +308,27 @@ function esc(s: string): string {
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;');
+}
+
+function buildV2CifraContentHtml(sections: any[]): string {
+  if (!sections.length) {
+    return '';
+  }
+
+  const content = sections
+    .map((section: any) => {
+      const label = String(section.section_label || '').trim();
+      const plainText = String(section.plain_text || '').trimEnd();
+      return `${label ? `[${label}]` : ''}${label && plainText ? '\n' : ''}${plainText}`;
+    })
+    .join('\n\n')
+    .trim();
+
+  if (!content) {
+    return '';
+  }
+
+  return `<section><h2>Cifra</h2><pre style="white-space:pre-wrap;">${esc(content)}</pre></section>`;
 }
 
 interface PageMeta {
@@ -567,9 +640,77 @@ async function handleHinarioView(numero: string): Promise<PageMeta | null> {
 }
 
 async function handleCifra(slug: string): Promise<PageMeta | null> {
+  const publicRows = await supaFetch('cifra_public_catalog', {
+    public_slug: `eq.${slug}`,
+    select: 'version_id,public_slug,version_title,instrument,arrangement_type,difficulty_level,original_key,preferred_key,capo,tempo_bpm,time_signature,publication_label,is_primary,published_at,song_id,song_slug,song_title,song_subtitle,composer_name,hino_id,hinario_numero,source_type,cover_url,seo_title,seo_description,seo_keywords,sections_count,lines_count,chords_index',
+    limit: '1',
+  });
+
+  if (publicRows.length) {
+    const c = publicRows[0];
+    const sectionRows = await supaFetch('cifra_version_sections', {
+      version_id: `eq.${c.version_id}`,
+      select: 'section_order,section_label,plain_text',
+      order: 'section_order.asc',
+      limit: '100',
+    });
+    const relatedNumber = Number(c.hinario_numero || extractHymnNumberFromText(c.song_title || c.version_title || '') || 0);
+    const [relatedHymn, relatedLyricRows] = await Promise.all([
+      findRelatedHymnForSsr({ hymnId: c.hino_id || undefined, numero: relatedNumber || undefined, title: c.song_title || c.version_title || '' }),
+      relatedNumber
+        ? supaFetch('hinario', {
+            numero: `eq.${relatedNumber}`,
+            is_active: 'eq.true',
+            select: 'numero,titulo',
+            limit: '1',
+          })
+        : Promise.resolve([] as any[]),
+    ]);
+    const relatedLyric = relatedLyricRows[0];
+    const displayTitle = String(c.song_title || c.version_title || 'Cifra CCB');
+    const title = c.seo_title || `${relatedNumber ? `Hino ${relatedNumber} CCB - ` : ''}${displayTitle}${c.composer_name ? ` — ${c.composer_name}` : ''} | Tom ${c.original_key || ''} | Cânticos CCB`;
+    const desc = c.seo_description || `Cifra de "${displayTitle}"${c.composer_name ? ` por ${c.composer_name}` : ''} em tom ${c.original_key || 'original'}.${relatedHymn ? ` Página do hino ${relatedHymn.numero || ''} disponível.` : ''}${relatedLyric ? ` Letra no Hinário ${relatedLyric.numero}.` : ''} Cifras de hinos da CCB com transposição de tom.`;
+    const canonical = `${SITE_URL}/cifra/${slug}`;
+
+    const schema = {
+      '@context': 'https://schema.org', '@type': 'CreativeWork',
+      name: displayTitle, url: canonical,
+      ...(c.composer_name ? { author: { '@type': 'Person', name: c.composer_name } } : {}),
+      genre: 'Cifra Musical', inLanguage: 'pt-BR',
+    };
+    const breadcrumb = {
+      '@context': 'https://schema.org', '@type': 'BreadcrumbList',
+      itemListElement: [
+        { '@type': 'ListItem', position: 1, name: 'Início', item: SITE_URL },
+        { '@type': 'ListItem', position: 2, name: 'Cifras', item: `${SITE_URL}/cifras` },
+        { '@type': 'ListItem', position: 3, name: displayTitle, item: canonical },
+      ],
+    };
+
+    const relatedLinks = [
+      relatedHymn ? `<a href="${SITE_URL}${buildHinoUrl(String(relatedHymn.id), relatedHymn.titulo, relatedHymn.numero)}">Página do hino</a>` : '',
+      relatedLyric ? `<a href="${SITE_URL}/hinario/${relatedLyric.numero}">Letra no Hinário</a>` : '',
+      `<a href="${SITE_URL}/cifras-hinos-ccb">Cifras de Hinos CCB</a>`,
+      `<a href="${SITE_URL}/hinos-ccb">Hinos CCB</a>`,
+    ].filter(Boolean).join(' · ');
+
+    return {
+      title, description: desc, canonical, ogImage: c.cover_url || undefined,
+      schemas: [schema, breadcrumb],
+      bodyHtml: `
+        <nav><a href="${SITE_URL}">Início</a> &rsaquo; <a href="${SITE_URL}/cifras">Cifras</a> &rsaquo; ${esc(displayTitle)}</nav>
+        <h1>${esc(displayTitle)}</h1>
+        ${c.composer_name ? `<p><strong>Artista:</strong> ${esc(c.composer_name)}</p>` : ''}
+        ${c.original_key ? `<p><strong>Tom:</strong> ${esc(c.original_key)}</p>` : ''}
+        <p>${relatedLinks}</p>
+        ${buildV2CifraContentHtml(sectionRows)}
+        <footer><p><a href="${SITE_URL}">Cânticos CCB</a> — Plataforma de hinos da Congregação Cristã no Brasil</p></footer>`,
+    };
+  }
+
   const rows = await supaFetch('cifras', {
     slug: `eq.${slug}`,
-    select: 'id,title,artist,original_key,content,cover_url,slug',
+    select: 'id,title,artist,original_key,content,cover_url,slug,hino_id',
     limit: '1',
   });
   if (!rows.length) return null;
@@ -631,15 +772,35 @@ async function handleCifra(slug: string): Promise<PageMeta | null> {
 }
 
 async function handleCifrasList(): Promise<PageMeta> {
-  const cifras = await supaFetch('cifras', {
-    is_active: 'eq.true', select: 'id,title,artist,slug,original_key',
-    order: 'created_at.desc', limit: '100',
-  });
+  const [publicCifras, legacyCifras] = await Promise.all([
+    supaFetch('cifra_public_catalog', {
+      select: 'public_slug,song_title,version_title,composer_name,original_key,published_at,is_primary',
+      order: 'is_primary.desc,published_at.desc.nullslast',
+      limit: '160',
+    }),
+    supaFetch('cifras', {
+      is_active: 'eq.true',
+      select: 'id,title,artist,slug,original_key',
+      order: 'created_at.desc',
+      limit: '100',
+    }),
+  ]);
   const title = 'Cifras de Hinos da CCB — Cifras com Transposição de Tom | Cânticos CCB';
   const desc = 'Encontre cifras de hinos da Congregação Cristã no Brasil. Cifras com transposição de tom em tempo real para violão, teclado e outros instrumentos.';
   const canonical = `${SITE_URL}/cifras`;
-  const listHtml = cifras.length > 0
-    ? `<ul>${cifras.map((c: any) => `<li><a href="${SITE_URL}/cifra/${c.slug}">${esc(c.title || '')}${c.artist ? ` — ${esc(c.artist)}` : ''} (${esc(c.original_key || '')})</a></li>`).join('')}</ul>`
+  const publicItems = publicCifras.map((c: any) => ({
+    slug: c.public_slug,
+    title: c.song_title || c.version_title,
+    artist: c.composer_name || '',
+    original_key: c.original_key || '',
+  }));
+  const usedSlugs = new Set(publicItems.map((item: any) => item.slug));
+  const mergedItems = [
+    ...publicItems,
+    ...legacyCifras.filter((item: any) => !usedSlugs.has(item.slug)),
+  ];
+  const listHtml = mergedItems.length > 0
+    ? `<ul>${mergedItems.map((c: any) => `<li><a href="${SITE_URL}/cifra/${c.slug}">${esc(c.title || '')}${c.artist ? ` — ${esc(c.artist)}` : ''} (${esc(c.original_key || '')})</a></li>`).join('')}</ul>`
     : '';
   return {
     title, description: desc, canonical,
@@ -735,13 +896,54 @@ async function handleBroadHinosHub(): Promise<PageMeta> {
   };
 }
 
+async function fetchMergedSsrCifras(params: { instrument?: string; limit?: number } = {}): Promise<Array<{
+  slug: string;
+  title: string;
+  artist: string;
+  original_key: string;
+  instrument: string;
+}>> {
+  const limit = String(params.limit || 500);
+  const [publicRows, legacyRows] = await Promise.all([
+    supaFetch('cifra_public_catalog', {
+      ...(params.instrument ? { instrument: `eq.${params.instrument}` } : {}),
+      select: 'public_slug,song_title,version_title,composer_name,original_key,instrument,published_at,is_primary',
+      order: 'is_primary.desc,published_at.desc.nullslast',
+      limit,
+    }),
+    supaFetch('cifras', {
+      ...(params.instrument ? { instrument: `eq.${params.instrument}` } : {}),
+      is_active: 'eq.true',
+      select: 'title,slug,artist,original_key,instrument',
+      order: 'created_at.desc',
+      limit,
+    }),
+  ]);
+
+  const publicItems = publicRows.map((item: any) => ({
+    slug: String(item.public_slug || ''),
+    title: String(item.song_title || item.version_title || 'Cifra'),
+    artist: String(item.composer_name || ''),
+    original_key: String(item.original_key || ''),
+    instrument: String(item.instrument || ''),
+  }));
+
+  const usedSlugs = new Set(publicItems.map((item: any) => item.slug));
+  const remainingLegacy = legacyRows
+    .filter((item: any) => !usedSlugs.has(String(item.slug || '')))
+    .map((item: any) => ({
+      slug: String(item.slug || ''),
+      title: String(item.title || 'Cifra'),
+      artist: String(item.artist || ''),
+      original_key: String(item.original_key || ''),
+      instrument: String(item.instrument || ''),
+    }));
+
+  return [...publicItems, ...remainingLegacy];
+}
+
 async function handleBroadCifrasHub(): Promise<PageMeta> {
-  const cifras = await supaFetch('cifras', {
-    is_active: 'eq.true',
-    select: 'title,slug,artist,original_key,instrument',
-    order: 'created_at.desc',
-    limit: '500',
-  });
+  const cifras = await fetchMergedSsrCifras({ limit: 500 });
 
   const title = 'Cifras Hinos CCB | Cifras da Congregação Cristã no Brasil | Cânticos CCB';
   const description = 'Explore cifras de hinos CCB com links para violão, ukulele, teclado e páginas individuais de cifra da Congregação Cristã no Brasil.';
@@ -1147,12 +1349,9 @@ async function handleCifraInstrumentHub(pathname: string): Promise<PageMeta | nu
   const config = CIFRA_HUBS[pathname];
   if (!config) return null;
 
-  const cifras = await supaFetch('cifras', {
-    instrument: `eq.${config.instrument}`,
-    is_active: 'eq.true',
-    select: 'title,slug,artist,original_key',
-    order: 'created_at.desc',
-    limit: '500',
+  const cifras = await fetchMergedSsrCifras({
+    instrument: config.instrument,
+    limit: 500,
   });
 
   const listHtml = cifras.length > 0

@@ -2,8 +2,11 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowLeft, Disc, Music2, Music4 } from 'lucide-react';
 import SEOHead from '@/components/SEO/SEOHead';
-import { fetchCifras, type Cifra } from '@/api/cifras';
+import { type Cifra } from '@/api/cifras';
+import { fetchMergedPublicCifrasList, type PublicCifraPageData } from '@/lib/cifras-v2';
 import { generateBreadcrumbSchema, generateCifraSchema, generateFAQSchema, generateItemListSchema } from '@/utils/schemaGenerator';
+
+type DisplayCifra = Cifra | PublicCifraPageData;
 
 type InstrumentHub = 'violao' | 'ukulele' | 'teclado';
 
@@ -85,7 +88,7 @@ interface CifraInstrumentHubPageProps {
 const CifraInstrumentHubPage: React.FC<CifraInstrumentHubPageProps> = ({ instrument }) => {
   const config = HUBS[instrument];
   const Icon = config.icon;
-  const [items, setItems] = useState<Cifra[]>([]);
+  const [items, setItems] = useState<DisplayCifra[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -94,8 +97,10 @@ const CifraInstrumentHubPage: React.FC<CifraInstrumentHubPageProps> = ({ instrum
     const load = async () => {
       try {
         setIsLoading(true);
-        const data = await fetchCifras({ instrument, is_active: true, limit: 500 });
-        if (!cancelled) setItems(data);
+        const data = await fetchMergedPublicCifrasList();
+        if (!cancelled) {
+          setItems(data.filter((item) => item.instrument === instrument));
+        }
       } catch (error) {
         console.error(`Erro ao carregar cifras de ${instrument}:`, error);
         if (!cancelled) setItems([]);
@@ -149,20 +154,20 @@ const CifraInstrumentHubPage: React.FC<CifraInstrumentHubPageProps> = ({ instrum
         noindex={!isLoading && items.length === 0}
       />
 
-      <div className="bg-gradient-to-b from-primary-700/25 to-transparent pt-20 pb-8 px-6">
+      <div className="bg-gradient-to-b from-primary-700/25 to-transparent px-4 pt-16 pb-8 sm:px-6 sm:pt-20">
         <div className="max-w-6xl mx-auto">
           <Link to="/cifras" className="inline-flex items-center gap-2 text-white/80 hover:text-white transition-colors mb-6">
             <ArrowLeft className="w-4 h-4" />
             Voltar para cifras
           </Link>
-          <div className="flex items-start gap-4">
-            <div className="w-14 h-14 rounded-2xl bg-white/10 border border-white/15 flex items-center justify-center">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-start">
+            <div className="w-12 h-12 rounded-2xl bg-white/10 border border-white/15 flex items-center justify-center sm:w-14 sm:h-14">
               <Icon className="w-7 h-7 text-primary-300" />
             </div>
             <div className="max-w-3xl">
               <h1 className="text-3xl md:text-5xl font-bold text-white leading-tight">{config.heading}</h1>
               <p className="text-white/85 text-base md:text-lg mt-3">{config.intro}</p>
-              <div className="flex flex-wrap gap-4 mt-5 text-sm text-white/75">
+              <div className="flex flex-wrap gap-3 sm:gap-4 mt-5 text-sm text-white/75">
                 <span>{items.length} cifras encontradas</span>
                 <span>Cluster especifico por instrumento</span>
                 <span>Links diretos para as paginas de cifra</span>
@@ -172,7 +177,7 @@ const CifraInstrumentHubPage: React.FC<CifraInstrumentHubPageProps> = ({ instrum
         </div>
       </div>
 
-      <div className="max-w-6xl mx-auto px-6 py-8">
+      <div className="max-w-6xl mx-auto px-4 py-8 sm:px-6">
         <div className="grid gap-6 lg:grid-cols-[1.5fr,0.9fr]">
           <section className="rounded-3xl border border-white/10 bg-background-secondary p-6">
             <div className="flex items-center justify-between gap-4 mb-5">
@@ -211,7 +216,7 @@ const CifraInstrumentHubPage: React.FC<CifraInstrumentHubPageProps> = ({ instrum
                       <div className="flex flex-wrap gap-2">
                         <Link
                           to={`/cifra/${item.slug}`}
-                          className="px-3 py-2 rounded-full bg-primary-500 text-black text-sm font-semibold hover:bg-primary-400 transition-colors"
+                          className="inline-flex w-full justify-center px-3 py-2 rounded-full bg-primary-500 text-black text-sm font-semibold hover:bg-primary-400 transition-colors sm:w-auto"
                         >
                           Ver cifra
                         </Link>
