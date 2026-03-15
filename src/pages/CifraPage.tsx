@@ -7,6 +7,7 @@ import { fetchCifraBySlug, incrementCifraViews, type Cifra, INSTRUMENTS, ALL_KEY
 import { buildHinoUrl } from '@/utils/slugUrl';
 import {
   addCifraFavorite,
+  fetchPreferredCifraChordShapes,
   fetchCifraEngagementSnapshot,
   fetchPublicCifraPageBySlug,
   removeCifraFavorite,
@@ -20,7 +21,7 @@ import { getHinarioRangeForNumero } from '@/lib/hinarioRanges';
 import { extractHymnNumber, findRelatedHinario, findRelatedHymn } from '@/lib/hymnConnectionsApi';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/contexts/ToastContext';
-import { CIFRA_V2_INSTRUMENTS, type CifraReportType } from '@/types/cifras-v2';
+import { CIFRA_V2_INSTRUMENTS, type CifraChordShape, type CifraInstrument, type CifraReportType } from '@/types/cifras-v2';
 import {
   isChordLine,
   isSectionLine,
@@ -87,6 +88,7 @@ const CifraPage: React.FC = () => {
   const [relatedHymn, setRelatedHymn] = useState<{ id: string; numero: number; titulo: string } | null>(null);
   const [relatedLyric, setRelatedLyric] = useState<{ numero: number; titulo: string } | null>(null);
   const [engagement, setEngagement] = useState<CifraEngagementSnapshot | null>(null);
+  const [chordShapes, setChordShapes] = useState<Record<string, CifraChordShape>>({});
   const [isFavoriteLoading, setIsFavoriteLoading] = useState(false);
   const [isSubmittingReport, setIsSubmittingReport] = useState(false);
   const [showReportModal, setShowReportModal] = useState(false);
@@ -204,6 +206,44 @@ const CifraPage: React.FC = () => {
     };
   }, [cifra, user?.id]);
 
+  useEffect(() => {
+    let cancelled = false;
+
+    const loadChordShapes = async () => {
+      if (!showChords || !cifra) {
+        setChordShapes({});
+        return;
+      }
+
+      const visibleChords = extractChords(
+        transposeCifraContent(cifra.content, getSemitonesBetweenKeys(cifra.original_key, selectedKey), selectedKey),
+      ).slice(0, 12);
+
+      if (visibleChords.length === 0) {
+        setChordShapes({});
+        return;
+      }
+
+      try {
+        const shapes = await fetchPreferredCifraChordShapes(selectedInstrument as CifraInstrument, visibleChords);
+        if (!cancelled) {
+          setChordShapes(shapes);
+        }
+      } catch (shapeError) {
+        console.error('Erro ao carregar shapes de acordes da cifra:', shapeError);
+        if (!cancelled) {
+          setChordShapes({});
+        }
+      }
+    };
+
+    void loadChordShapes();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [cifra, selectedInstrument, selectedKey, showChords]);
+
   const loadCifra = async (slug: string) => {
     try {
       setIsLoading(true);
@@ -294,6 +334,34 @@ const CifraPage: React.FC = () => {
   const transposedContent = cifra ? transposeCifraContent(cifra.content, semitones, selectedKey) : '';
   const chords = extractChords(transposedContent);
   const structuredSections = isCifraV2(cifra) ? cifra.sections : [];
+  const visibleChordCards = chords
+    .slice(0, 12)
+    .map((chord) => {
+      const databaseShape = chordShapes[chord];
+      if (databaseShape) {
+        return {
+          chord,
+          kind: 'database' as const,
+          shape: databaseShape,
+        };
+      }
+
+      if (selectedInstrument === 'violao' || selectedInstrument === 'guitarra') {
+        const fallbackDiagram = getChordDiagram(chord);
+        if (fallbackDiagram) {
+          return {
+            chord,
+            kind: 'fallback' as const,
+            diagram: fallbackDiagram,
+          };
+        }
+      }
+
+      return null;
+    })
+    .filter((item): item is
+      | { chord: string; kind: 'database'; shape: CifraChordShape }
+      | { chord: string; kind: 'fallback'; diagram: ChordDiagram } => Boolean(item));
 
   const transposeUp = () => {
     const majorKeys = ALL_KEYS.filter(k => !k.includes('m'));
@@ -913,18 +981,26 @@ const CifraPage: React.FC = () => {
       </div>
 
       {/* Chord Diagrams */}
-      {showChords && chords.length > 0 && selectedInstrument === 'violao' && (
+      {showChords && visibleChordCards.length > 0 && (
         <div className="mb-6 print:mb-4">
+          <div className="mb-3 flex items-center justify-between gap-3">
+            <div>
+              <h2 className="text-base font-semibold text-white">Dicionário de acordes</h2>
+              <p className="text-xs text-gray-400">
+                Visualização rápida dos acordes detectados para {PUBLIC_INSTRUMENTS.find((entry) => entry.value === selectedInstrument)?.label || selectedInstrument}.
+              </p>
+            </div>
+          </div>
           <div className="flex gap-4 overflow-x-auto pb-3 scrollbar-hide">
-            {chords.slice(0, 8).map(chord => {
-              const diagram = getChordDiagram(chord);
-              if (!diagram) return null;
-              return (
-                <div key={chord} className="flex-shrink-0 text-center">
-                  <ChordDiagramSVG diagram={diagram} />
+            {visibleChordCards.map((item) => (
+              item.kind === 'database' ? (
+                <DatabaseChordShapeCard key={`${item.chord}-${item.shape.id}`} shape={item.shape} />
+              ) : (
+                <div key={item.chord} className="flex-shrink-0 text-center">
+                  <ChordDiagramSVG diagram={item.diagram} />
                 </div>
-              );
-            })}
+              )
+            ))}
           </div>
         </div>
       )}
@@ -1232,6 +1308,268 @@ const ChordDiagramSVG: React.FC<ChordDiagramSVGProps> = ({ diagram }) => {
           return null;
         })}
       </svg>
+    </div>
+  );
+};
+
+interface FretboardShapeDiagram {
+  name: string;
+  frets: number[];
+  barres: number[];
+  baseFret: number;
+  fingers: number[];
+  stringCount: number;
+}
+
+function asNumberArray(value: unknown): number[] {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  return value
+    .map((item) => {
+      if (typeof item === 'number' && Number.isFinite(item)) {
+        return item;
+      }
+
+      if (typeof item === 'string' && item.trim() !== '' && !Number.isNaN(Number(item))) {
+        return Number(item);
+      }
+
+      return null;
+    })
+    .filter((item): item is number => item !== null);
+}
+
+function asStringArray(value: unknown): string[] {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  return value
+    .filter((item): item is string => typeof item === 'string' && item.trim().length > 0)
+    .map((item) => item.trim());
+}
+
+function getInstrumentStringCount(instrument: string): number {
+  switch (instrument) {
+    case 'ukulele':
+    case 'cavaco':
+      return 4;
+    case 'teclado':
+      return 0;
+    default:
+      return 6;
+  }
+}
+
+function normalizeDatabaseShape(shape: CifraChordShape): FretboardShapeDiagram | null {
+  const frets = asNumberArray(shape.fingering.frets ?? shape.fingering.positions ?? shape.fingering.strings);
+  if (frets.length === 0) {
+    return null;
+  }
+
+  const stringCount = Math.max(
+    1,
+    Number(shape.fingering.stringCount) || frets.length || getInstrumentStringCount(shape.instrument),
+  );
+
+  return {
+    name: shape.chord_name,
+    frets: frets.slice(0, stringCount),
+    barres: asNumberArray(shape.fingering.barres),
+    baseFret: Number(shape.fingering.baseFret) || shape.base_fret || 1,
+    fingers: asNumberArray(shape.fingering.fingers).slice(0, stringCount),
+    stringCount,
+  };
+}
+
+function buildShapeNotes(shape: CifraChordShape): string[] {
+  const notes = asStringArray(shape.fingering.notes);
+  const tuning = typeof shape.fingering.tuning === 'string' ? shape.fingering.tuning.trim() : '';
+  const summary: string[] = [];
+
+  if (shape.variation_name && shape.variation_name !== 'default') {
+    summary.push(`Variacao: ${shape.variation_name}`);
+  }
+
+  if (tuning) {
+    summary.push(`Afinacao: ${tuning}`);
+  }
+
+  if (notes.length > 0) {
+    summary.push(`Notas: ${notes.join(' · ')}`);
+  }
+
+  return summary;
+}
+
+interface FretboardShapeSVGProps {
+  diagram: FretboardShapeDiagram;
+}
+
+const FretboardShapeSVG: React.FC<FretboardShapeSVGProps> = ({ diagram }) => {
+  const { name, frets, baseFret, barres, stringCount } = diagram;
+  const numStrings = Math.max(1, stringCount);
+  const numFrets = 5;
+  const stringSpacing = numStrings <= 4 ? 18 : 16;
+  const fretSpacing = 18;
+  const startX = 14;
+  const startY = 30;
+  const width = startX * 2 + stringSpacing * (numStrings - 1);
+  const height = startY + fretSpacing * numFrets + 30;
+
+  return (
+    <div className="inline-flex flex-col items-center">
+      <span className="text-primary-400 font-bold text-sm mb-1">{name}</span>
+      <svg width={width} height={height} viewBox={`0 0 ${width} ${height}`} className="text-gray-300">
+        {baseFret === 1 ? (
+          <rect x={startX - 1} y={startY - 2} width={stringSpacing * (numStrings - 1) + 2} height={3} fill="currentColor" rx={1} />
+        ) : (
+          <text x={startX - 10} y={startY + fretSpacing / 2 + 4} fontSize="10" fill="#9CA3AF" textAnchor="end">
+            {baseFret}fr
+          </text>
+        )}
+
+        {Array.from({ length: numFrets + 1 }, (_, i) => (
+          <line
+            key={`fret-${i}`}
+            x1={startX}
+            y1={startY + i * fretSpacing}
+            x2={startX + stringSpacing * (numStrings - 1)}
+            y2={startY + i * fretSpacing}
+            stroke="#4B5563"
+            strokeWidth={1}
+          />
+        ))}
+
+        {Array.from({ length: numStrings }, (_, i) => (
+          <line
+            key={`string-${i}`}
+            x1={startX + i * stringSpacing}
+            y1={startY}
+            x2={startX + i * stringSpacing}
+            y2={startY + numFrets * fretSpacing}
+            stroke="#6B7280"
+            strokeWidth={1}
+          />
+        ))}
+
+        {barres.map((barre, idx) => {
+          const barreStrings = frets.reduce<number[]>((acc, fret, stringIdx) => {
+            if (fret === barre) {
+              acc.push(stringIdx);
+            }
+            return acc;
+          }, []);
+
+          if (barreStrings.length < 2) {
+            return null;
+          }
+
+          const first = Math.min(...barreStrings);
+          const last = Math.max(...barreStrings);
+          const y = startY + (barre - baseFret + 0.5) * fretSpacing;
+
+          return (
+            <rect
+              key={`barre-${idx}`}
+              x={startX + first * stringSpacing - 4}
+              y={y - 5}
+              width={(last - first) * stringSpacing + 8}
+              height={10}
+              rx={5}
+              fill="#10B981"
+              opacity={0.8}
+            />
+          );
+        })}
+
+        {frets.map((fret, stringIdx) => {
+          if (fret <= 0 || barres.includes(fret)) {
+            return null;
+          }
+
+          const x = startX + stringIdx * stringSpacing;
+          const y = startY + (fret - baseFret + 0.5) * fretSpacing;
+
+          return (
+            <circle
+              key={`dot-${stringIdx}`}
+              cx={x}
+              cy={y}
+              r={6}
+              fill="#10B981"
+            />
+          );
+        })}
+
+        {frets.map((fret, stringIdx) => {
+          const x = startX + stringIdx * stringSpacing;
+          if (fret === 0) {
+            return (
+              <circle
+                key={`open-${stringIdx}`}
+                cx={x}
+                cy={startY - 10}
+                r={4}
+                fill="none"
+                stroke="#9CA3AF"
+                strokeWidth={1.5}
+              />
+            );
+          }
+
+          if (fret === -1) {
+            return (
+              <text
+                key={`muted-${stringIdx}`}
+                x={x}
+                y={startY - 6}
+                fontSize="10"
+                fill="#9CA3AF"
+                textAnchor="middle"
+              >
+                ×
+              </text>
+            );
+          }
+
+          return null;
+        })}
+      </svg>
+    </div>
+  );
+};
+
+interface DatabaseChordShapeCardProps {
+  shape: CifraChordShape;
+}
+
+const DatabaseChordShapeCard: React.FC<DatabaseChordShapeCardProps> = ({ shape }) => {
+  const diagram = normalizeDatabaseShape(shape);
+  const notes = buildShapeNotes(shape);
+
+  return (
+    <div className="flex-shrink-0 rounded-2xl border border-white/10 bg-background-secondary px-4 py-3 text-center min-w-[132px]">
+      {diagram ? (
+        <FretboardShapeSVG diagram={diagram} />
+      ) : (
+        <div className="flex min-h-[132px] flex-col items-center justify-center">
+          <span className="text-primary-400 font-bold text-sm">{shape.chord_name}</span>
+          <span className="mt-3 rounded-full border border-primary-500/30 bg-primary-500/10 px-3 py-1 text-xs text-primary-200">
+            Shape salvo no banco
+          </span>
+        </div>
+      )}
+      <div className="mt-2 space-y-1">
+        <p className="text-[11px] uppercase tracking-[0.18em] text-gray-500">{shape.instrument}</p>
+        {notes.slice(0, 2).map((note) => (
+          <p key={note} className="text-[11px] text-gray-400 leading-relaxed">
+            {note}
+          </p>
+        ))}
+      </div>
     </div>
   );
 };
