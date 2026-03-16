@@ -284,9 +284,6 @@ async function findRelatedCifraForSsr(params: { hymnId?: string; numero?: number
     limit: '500',
   });
 
-  const numero = Number(params.numero || 0);
-  const title = normalizeHymnTitle(String(params.title || ''), numero || undefined);
-
   const best = rows
     .map((row: any) => {
       const candidateNumber = extractHymnNumberFromText(row.title || '');
