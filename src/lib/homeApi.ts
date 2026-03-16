@@ -247,6 +247,18 @@ const mapSupabaseBanner = (row: SupabaseBannerRow): HomeBanner => ({
 
 const normalizeHomeCategory = (value: string | undefined | null) => slugify(String(value ?? ''));
 
+const isTraditionalHinarioCategory = (value: string | undefined | null) => {
+  const normalized = normalizeHomeCategory(value);
+  return normalized === 'hinario5' || normalized === 'hinario-5' || normalized.includes('hinario');
+};
+
+const isTraditionalHinarioHomeHymn = (hymn: HomeHymn, relatedCategories: string[] = []) => {
+  const number = Number(hymn.number || 0);
+  if (number >= 1 && number <= 480) return true;
+
+  return [hymn.category, ...relatedCategories].some((category) => isTraditionalHinarioCategory(category));
+};
+
 /**
  * Diversifica hinos por compositor: máx 1 por compositor primeiro,
  * depois preenche com extras (round-robin) se não houver compositores suficientes.
@@ -376,6 +388,9 @@ async function getHomePageDataFromSupabase(): Promise<HomePageData> {
   // Usa hino_categorias (múltiplas) com fallback para a coluna categoria (única)
   const hymnMatchesCategory = (h: HomeHymn, keyword: string): boolean => {
     const allCats = hinoAllCategories[String(h.id)];
+    if (keyword === 'avulsos' && isTraditionalHinarioHomeHymn(h, allCats)) {
+      return false;
+    }
     if (allCats && allCats.length > 0) {
       return allCats.some(c => normalizeHomeCategory(c).includes(keyword));
     }
@@ -564,9 +579,11 @@ export async function getHomePageData(): Promise<HomePageData> {
       tocadosApi = allHymns.filter(h => 
         h.categoria && h.categoria.toLowerCase().includes('tocados')
       );
-      avulsosApi = allHymns.filter(h => 
-        h.categoria && h.categoria.toLowerCase().includes('avulsos')
-      );
+      avulsosApi = allHymns.filter((h) => {
+        const numero = Number(h.numero || 0);
+        const normalizedCategory = normalizeHomeCategory(h.categoria);
+        return normalizedCategory.includes('avulsos') && !(numero >= 1 && numero <= 480) && !isTraditionalHinarioCategory(h.categoria);
+      });
     } catch (e) {
       console.warn('Supabase error loading hinos by category:', e);
       cantadosApi = [];
