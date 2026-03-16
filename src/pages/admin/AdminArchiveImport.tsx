@@ -335,7 +335,7 @@ const AdminArchiveImport: React.FC = () => {
         release_year: 2014,
         release_date: '2014-01-01',
         cover_url: DEFAULT_COVER_URL,
-        description: `Álbum recuperado do acervo original canticosccb.com.br via Web Archive`,
+        description: `Álbum do acervo original do canticosccb.com.br.`,
       };
 
       const albumResult = await supabaseInsert<{ id: string }>('albums', albumData);
