@@ -4,6 +4,7 @@ import JSZip from 'jszip';
 import { supabaseInsert } from '@/lib/supabaseRest';
 import { supabase } from '@/lib/supabase-auth';
 import { DEFAULT_COVER_URL } from '@/lib/config';
+import { generateSlug } from '@/lib/utils/slugUtils';
 
 interface TrackInfo {
   fileName: string;
@@ -14,6 +15,7 @@ interface TrackInfo {
   audioUrl?: string;
   duration?: string;
   error?: string;
+  note?: string;
 }
 
 interface ImportState {
@@ -59,6 +61,59 @@ function formatFileSize(bytes: number): string {
   if (bytes < 1024) return `${bytes} B`;
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+interface ExistingHinoRow {
+  id: string;
+  slug?: string | null;
+  titulo?: string | null;
+  audio_url?: string | null;
+  duracao?: string | null;
+}
+
+async function findExistingHinoByTitle(title: string): Promise<ExistingHinoRow | null> {
+  const normalizedSlug = generateSlug(title);
+  if (!normalizedSlug) return null;
+
+  const { data: bySlug, error: slugError } = await supabase
+    .from('hinos')
+    .select('id,slug,titulo,audio_url,duracao')
+    .eq('slug', normalizedSlug)
+    .limit(1)
+    .maybeSingle();
+
+  if (slugError) throw slugError;
+  if (bySlug) return bySlug as ExistingHinoRow;
+
+  const { data: titleCandidates, error: titleError } = await supabase
+    .from('hinos')
+    .select('id,slug,titulo,audio_url,duracao')
+    .ilike('titulo', `%${title}%`)
+    .limit(10);
+
+  if (titleError) throw titleError;
+
+  const match = (titleCandidates || []).find((candidate: any) => generateSlug(candidate?.titulo || '') === normalizedSlug);
+  return (match as ExistingHinoRow) || null;
+}
+
+async function upsertAlbumHinoLink(albumId: string, hinoId: string, position: number) {
+  const { error } = await supabase
+    .from('album_hinos')
+    .upsert(
+      {
+        album_id: albumId,
+        hino_id: hinoId,
+        position,
+        track_number: position,
+      },
+      {
+        onConflict: 'album_id,hino_id',
+        ignoreDuplicates: false,
+      }
+    );
+
+  if (error) throw error;
 }
 
 const AdminArchiveImport: React.FC = () => {
@@ -305,6 +360,19 @@ const AdminArchiveImport: React.FC = () => {
         }));
 
         try {
+          const existingHino = await findExistingHinoByTitle(track.title);
+          if (existingHino?.id) {
+            await upsertAlbumHinoLink(albumId, existingHino.id, i + 1);
+            updatedTracks[i] = {
+              ...track,
+              status: 'done',
+              audioUrl: existingHino.audio_url || undefined,
+              duration: existingHino.duracao || undefined,
+              note: 'Hino existente reaproveitado e vinculado ao álbum',
+            };
+            continue;
+          }
+
           // Upload MP3 to Supabase Storage
           const ext = track.fileName.split('.').pop() || 'mp3';
           const storagePath = `hinos/${Date.now()}_${Math.random().toString(36).substring(7)}.${ext}`;
@@ -359,20 +427,31 @@ const AdminArchiveImport: React.FC = () => {
             ativo: true,
           };
 
-          const hinoResult = await supabaseInsert<{ id: string }>('hinos', hinoData);
-          const hinoId = hinoResult?.id;
+          let hinoId: string | undefined;
+          try {
+            const hinoResult = await supabaseInsert<{ id: string }>('hinos', hinoData);
+            hinoId = hinoResult?.id;
+          } catch (insertError: any) {
+            const duplicateSlug = String(insertError?.message || '').includes('idx_hinos_slug');
+            if (!duplicateSlug) throw insertError;
+
+            const recoveredHino = await findExistingHinoByTitle(track.title);
+            if (!recoveredHino?.id) throw insertError;
+            hinoId = recoveredHino.id;
+          }
 
           // Link hino to album
           if (hinoId) {
-            await supabaseInsert('album_hinos', {
-              album_id: albumId,
-              hino_id: hinoId,
-              position: i + 1,
-              track_number: i + 1,
-            });
+            await upsertAlbumHinoLink(albumId, hinoId, i + 1);
           }
 
-          updatedTracks[i] = { ...track, status: 'done', audioUrl, duration };
+          updatedTracks[i] = {
+            ...track,
+            status: 'done',
+            audioUrl,
+            duration,
+            note: hinoId ? undefined : 'Faixa importada sem vínculo de hino',
+          };
         } catch (error: any) {
           console.error(`[archive-import] Track ${i} error:`, error);
           updatedTracks[i] = { ...track, status: 'error', error: error.message };
@@ -580,6 +659,7 @@ const AdminArchiveImport: React.FC = () => {
                       <p className="text-white text-sm truncate">{track.title}</p>
                     )}
                     {track.error && <p className="text-red-400 text-xs mt-1">{track.error}</p>}
+                    {track.note && !track.error && <p className="text-blue-300 text-xs mt-1">{track.note}</p>}
                     {track.duration && track.duration !== '0:00' && (
                       <p className="text-gray-500 text-xs">{track.duration}</p>
                     )}
