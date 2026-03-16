@@ -37,6 +37,7 @@ export interface HomeHymn {
   title: string;
   composer_name: string;
   category?: string;
+  album_id?: string;
   cover_url: string;
   audio_url?: string;
   duration?: string;
@@ -97,6 +98,7 @@ type SupabaseHymnRow = {
   compositor?: string;
   compositor_nome?: string;
   categoria?: string;
+  album_id?: number | string | null;
   cover_url?: string;
   audio_url?: string;
   duracao?: string;
@@ -155,6 +157,7 @@ const mapSupabaseHymn = (row: SupabaseHymnRow): HomeHymn => ({
   title: String(row.titulo ?? 'Hino sem título'),
   composer_name: row.compositor_nome ?? row.compositor ?? 'Compositor Desconhecido',
   category: row.categoria ?? 'Outros',
+  album_id: row.album_id != null ? String(row.album_id) : undefined,
   cover_url: row.cover_url ?? '',
   audio_url: row.audio_url ?? '',
   duration: row.duracao ?? '00:00',
@@ -259,6 +262,11 @@ const isTraditionalHinarioHomeHymn = (hymn: HomeHymn, relatedCategories: string[
   return [hymn.category, ...relatedCategories].some((category) => isTraditionalHinarioCategory(category));
 };
 
+const isAlbumLinkedHomeHymn = (hymn: HomeHymn, linkedAlbumHinoIds: Set<string>) => {
+  if (hymn.album_id) return true;
+  return linkedAlbumHinoIds.has(String(hymn.id));
+};
+
 /**
  * Diversifica hinos por compositor: máx 1 por compositor primeiro,
  * depois preenche com extras (round-robin) se não houver compositores suficientes.
@@ -339,7 +347,7 @@ async function getHomePageDataFromSupabase(): Promise<HomePageData> {
     order: 'nome.asc',
   });
   const hymnRows = supabaseFetch<SupabaseHymnRow>('hinos', {
-    select: 'id,numero,titulo,compositor_nome,categoria,cover_url,audio_url,duracao,created_at,youtube_source',
+    select: 'id,numero,titulo,compositor_nome,categoria,album_id,cover_url,audio_url,duracao,created_at,youtube_source',
     ativo: 'eq.true',
     order: 'created_at.desc',
     limit: '60',
@@ -348,14 +356,19 @@ async function getHomePageDataFromSupabase(): Promise<HomePageData> {
   const hinoCatRows = supabaseFetch<{ hino_id: string; categoria_id: string }>('hino_categorias', {
     select: 'hino_id,categoria_id',
   }).catch(() => [] as { hino_id: string; categoria_id: string }[]);
+  const albumHinoRows = supabaseFetch<{ hino_id: string }>('album_hinos', {
+    select: 'hino_id',
+    limit: '5000',
+  }).catch(() => [] as { hino_id: string }[]);
 
-  const [bannersData, composersData, albumsData, categoriesData, hymnsData, hinoCategorias] = await Promise.all([
+  const [bannersData, composersData, albumsData, categoriesData, hymnsData, hinoCategorias, albumHinos] = await Promise.all([
     heroBanners,
     composerRows,
     albumRows,
     categoryRows,
     hymnRows,
     hinoCatRows,
+    albumHinoRows,
   ]);
 
   const composerNameById = composersData.reduce<Record<string, string>>((acc, row) => {
@@ -382,14 +395,17 @@ async function getHomePageDataFromSupabase(): Promise<HomePageData> {
     }
   }
 
+  const linkedAlbumHinoIds = new Set(albumHinos.map((row) => String(row.hino_id)));
+
   const hymns = hymnsData.map(mapSupabaseHymn);
 
   // Função auxiliar: verifica se um hino pertence a uma categoria
   // Usa hino_categorias (múltiplas) com fallback para a coluna categoria (única)
   const hymnMatchesCategory = (h: HomeHymn, keyword: string): boolean => {
     const allCats = hinoAllCategories[String(h.id)];
-    if (keyword === 'avulsos' && isTraditionalHinarioHomeHymn(h, allCats)) {
-      return false;
+    if (keyword === 'avulsos') {
+      if (isTraditionalHinarioHomeHymn(h, allCats)) return false;
+      if (isAlbumLinkedHomeHymn(h, linkedAlbumHinoIds)) return false;
     }
     if (allCats && allCats.length > 0) {
       return allCats.some(c => normalizeHomeCategory(c).includes(keyword));
@@ -568,9 +584,14 @@ export async function getHomePageData(): Promise<HomePageData> {
       // Single query to fetch all active hymns, then filter by category
       const allHymns = await supabaseFetch<any>('hinos', {
         ativo: 'eq.true',
-        select: 'id,numero,titulo,compositor_nome,categoria,audio_url,cover_url,youtube_source',
+        select: 'id,numero,titulo,compositor_nome,categoria,album_id,audio_url,cover_url,youtube_source',
         limit: '150'
       });
+      const albumHinos = await supabaseFetch<{ hino_id: string }>('album_hinos', {
+        select: 'hino_id',
+        limit: '5000',
+      }).catch(() => [] as { hino_id: string }[]);
+      const linkedAlbumHinoIds = new Set(albumHinos.map((row) => String(row.hino_id)));
       
       // Filter by category on client side
       cantadosApi = allHymns.filter(h => 
@@ -582,7 +603,11 @@ export async function getHomePageData(): Promise<HomePageData> {
       avulsosApi = allHymns.filter((h) => {
         const numero = Number(h.numero || 0);
         const normalizedCategory = normalizeHomeCategory(h.categoria);
-        return normalizedCategory.includes('avulsos') && !(numero >= 1 && numero <= 480) && !isTraditionalHinarioCategory(h.categoria);
+        const isAlbumLinked = Boolean(h.album_id) || linkedAlbumHinoIds.has(String(h.id));
+        return normalizedCategory.includes('avulsos')
+          && !(numero >= 1 && numero <= 480)
+          && !isTraditionalHinarioCategory(h.categoria)
+          && !isAlbumLinked;
       });
     } catch (e) {
       console.warn('Supabase error loading hinos by category:', e);
