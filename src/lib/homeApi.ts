@@ -347,7 +347,7 @@ async function getHomePageDataFromSupabase(): Promise<HomePageData> {
     order: 'nome.asc',
   });
   const hymnRows = supabaseFetch<SupabaseHymnRow>('hinos', {
-    select: 'id,numero,titulo,compositor_nome,categoria,album_id,cover_url,audio_url,duracao,created_at,youtube_source',
+    select: 'id,numero,titulo,compositor_nome,categoria,cover_url,audio_url,duracao,created_at,youtube_source',
     ativo: 'eq.true',
     order: 'created_at.desc',
     limit: '60',
@@ -584,7 +584,7 @@ export async function getHomePageData(): Promise<HomePageData> {
       // Single query to fetch all active hymns, then filter by category
       const allHymns = await supabaseFetch<any>('hinos', {
         ativo: 'eq.true',
-        select: 'id,numero,titulo,compositor_nome,categoria,album_id,audio_url,cover_url,youtube_source',
+        select: 'id,numero,titulo,compositor_nome,categoria,audio_url,cover_url,youtube_source',
         limit: '150'
       });
       const albumHinos = await supabaseFetch<{ hino_id: string }>('album_hinos', {
@@ -603,7 +603,7 @@ export async function getHomePageData(): Promise<HomePageData> {
       avulsosApi = allHymns.filter((h) => {
         const numero = Number(h.numero || 0);
         const normalizedCategory = normalizeHomeCategory(h.categoria);
-        const isAlbumLinked = Boolean(h.album_id) || linkedAlbumHinoIds.has(String(h.id));
+        const isAlbumLinked = linkedAlbumHinoIds.has(String(h.id));
         return normalizedCategory.includes('avulsos')
           && !(numero >= 1 && numero <= 480)
           && !isTraditionalHinarioCategory(h.categoria)
