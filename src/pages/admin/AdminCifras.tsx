@@ -164,6 +164,13 @@ const AdminCifras: React.FC = () => {
           <p className="text-gray-400 mt-1">Gerencie as cifras musicais da plataforma</p>
         </div>
         <div className="flex flex-wrap gap-3">
+          <Link
+            to="/admin/cifras-v2/shapes"
+            className="inline-flex items-center gap-2 px-5 py-3 bg-gray-800 hover:bg-gray-700 text-white font-semibold rounded-xl transition-colors border border-gray-700"
+          >
+            <Music className="w-5 h-5 text-primary-400" />
+            Shapes
+          </Link>
           <button
             type="button"
             onClick={() => setShowBatchConfirm(true)}

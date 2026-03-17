@@ -83,6 +83,7 @@ export const AdminCifras = lazy(() => import('./AdminCifras'));
 export const AdminCifraForm = lazy(() => import('./AdminCifraForm'));
 export const AdminCifraMigrationPage = lazy(() => import('./AdminCifraMigrationPage'));
 export const AdminCifraV2Editor = lazy(() => import('./AdminCifraV2Editor'));
+export const AdminCifraChordShapes = lazy(() => import('./AdminCifraChordShapes'));
 export const AdminHinario = lazy(() => import('./AdminHinario'));
 export const AdminHinarioForm = lazy(() => import('./AdminHinarioForm'));
 export const AdminArchiveImport = lazy(() => import('./AdminArchiveImport'));

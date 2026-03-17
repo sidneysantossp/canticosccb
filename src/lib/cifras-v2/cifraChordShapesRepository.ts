@@ -1,4 +1,4 @@
-import { supabaseFetch } from '@/lib/supabaseRest';
+import { supabaseAuthDelete, supabaseAuthInsert, supabaseAuthUpdate, supabaseFetch } from '@/lib/supabaseRest';
 import type { CifraChordShape, CifraInstrument } from '@/types/cifras-v2';
 import { parseChord } from '@/utils/chordUtils';
 
@@ -9,6 +9,17 @@ export interface FetchCifraChordShapesParams {
   chordNames?: string[];
   onlyActive?: boolean;
   limit?: number;
+}
+
+export interface UpsertCifraChordShapeInput {
+  instrument: CifraInstrument;
+  chord_name: string;
+  variation_name?: string;
+  fingering?: Record<string, unknown>;
+  base_fret?: number;
+  priority?: number;
+  is_left_handed_supported?: boolean;
+  is_active?: boolean;
 }
 
 function normalizeChordNames(chordNames: string[]): string[] {
@@ -78,6 +89,39 @@ export async function fetchCifraChordShapes(params: FetchCifraChordShapesParams 
 
   const rows = await supabaseFetch<any>('cifra_chord_shapes', filters);
   return rows.map(mapCifraChordShapeRow);
+}
+
+function normalizeShapePayload(input: UpsertCifraChordShapeInput) {
+  return {
+    instrument: input.instrument,
+    chord_name: input.chord_name.trim(),
+    variation_name: input.variation_name?.trim() || 'default',
+    fingering: input.fingering ?? {},
+    base_fret: Number(input.base_fret ?? 1) || 1,
+    priority: Number(input.priority ?? 0) || 0,
+    is_left_handed_supported: Boolean(input.is_left_handed_supported),
+    is_active: input.is_active !== false,
+  };
+}
+
+export async function createCifraChordShape(input: UpsertCifraChordShapeInput): Promise<CifraChordShape> {
+  const rows = await supabaseAuthInsert<any>('cifra_chord_shapes', normalizeShapePayload(input));
+  if (!rows[0]) {
+    throw new Error('Nao foi possivel criar o shape do acorde.');
+  }
+  return mapCifraChordShapeRow(rows[0]);
+}
+
+export async function updateCifraChordShape(id: string, input: UpsertCifraChordShapeInput): Promise<CifraChordShape> {
+  const rows = await supabaseAuthUpdate<any>('cifra_chord_shapes', { id: `eq.${id}` }, normalizeShapePayload(input));
+  if (!rows[0]) {
+    throw new Error('Nao foi possivel atualizar o shape do acorde.');
+  }
+  return mapCifraChordShapeRow(rows[0]);
+}
+
+export async function deleteCifraChordShape(id: string): Promise<void> {
+  await supabaseAuthDelete<any>('cifra_chord_shapes', { id: `eq.${id}` });
 }
 
 export async function fetchPreferredCifraChordShapes(

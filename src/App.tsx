@@ -109,6 +109,7 @@ import {
   AdminCategories,
   AdminCategoryForm,
   AdminCifraForm,
+  AdminCifraChordShapes,
   AdminCifraMigrationPage,
   AdminCifraV2Editor,
   AdminCifras,
@@ -597,6 +598,7 @@ const AppContent: React.FC = () => {
           <Route path="admin/cifras/:id/migrate" element={<ProtectedRoute requireAdmin><AdminCifraMigrationPage /></ProtectedRoute>} />
           <Route path="admin/cifras-v2/new" element={<ProtectedRoute requireAdmin><AdminCifraV2Editor /></ProtectedRoute>} />
           <Route path="admin/cifras-v2/versions/:versionId/edit" element={<ProtectedRoute requireAdmin><AdminCifraV2Editor /></ProtectedRoute>} />
+          <Route path="admin/cifras-v2/shapes" element={<ProtectedRoute requireAdmin><AdminCifraChordShapes /></ProtectedRoute>} />
 
           {/* Hinário Management */}
           <Route path="admin/hinario" element={<ProtectedRoute requireAdmin><AdminHinario /></ProtectedRoute>} />

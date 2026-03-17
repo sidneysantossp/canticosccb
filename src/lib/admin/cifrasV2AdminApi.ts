@@ -1,4 +1,12 @@
 export {
+  createCifraChordShape,
+  deleteCifraChordShape,
+  fetchCifraChordShapes,
+  updateCifraChordShape,
+  type FetchCifraChordShapesParams,
+  type UpsertCifraChordShapeInput,
+} from '@/lib/cifras-v2/cifraChordShapesRepository';
+export {
   buildLegacyCifraMigrationPreview,
   fetchLegacyCifraMigrationStatuses,
   migrateLegacyCifra,
