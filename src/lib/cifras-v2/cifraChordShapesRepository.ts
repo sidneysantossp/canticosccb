@@ -2,6 +2,7 @@ import { supabaseAuthDelete, supabaseAuthInsert, supabaseAuthUpdate, supabaseFet
 import type { CifraChordShape, CifraInstrument } from '@/types/cifras-v2';
 import { parseChord } from '@/utils/chordUtils';
 
+import { getCifraChordShapePresets, type CifraChordPresetGroup } from './chordShapePresets';
 import { mapCifraChordShapeRow } from './mappers';
 
 export interface FetchCifraChordShapesParams {
@@ -20,6 +21,13 @@ export interface UpsertCifraChordShapeInput {
   priority?: number;
   is_left_handed_supported?: boolean;
   is_active?: boolean;
+}
+
+export interface SyncCifraChordShapePresetsResult {
+  group: CifraChordPresetGroup;
+  processed: number;
+  created: number;
+  updated: number;
 }
 
 function normalizeChordNames(chordNames: string[]): string[] {
@@ -122,6 +130,59 @@ export async function updateCifraChordShape(id: string, input: UpsertCifraChordS
 
 export async function deleteCifraChordShape(id: string): Promise<void> {
   await supabaseAuthDelete<any>('cifra_chord_shapes', { id: `eq.${id}` });
+}
+
+function buildShapeNaturalKey(input: Pick<UpsertCifraChordShapeInput, 'instrument' | 'chord_name' | 'variation_name'>): string {
+  return `${input.instrument}::${input.chord_name.trim().toLowerCase()}::${(input.variation_name?.trim() || 'default').toLowerCase()}`;
+}
+
+export async function syncCifraChordShapePresets(group: CifraChordPresetGroup): Promise<SyncCifraChordShapePresetsResult> {
+  const presets = getCifraChordShapePresets(group);
+  if (presets.length === 0) {
+    return {
+      group,
+      processed: 0,
+      created: 0,
+      updated: 0,
+    };
+  }
+
+  const instruments = Array.from(new Set(presets.map((item) => item.instrument)));
+  const existingRows = await Promise.all(
+    instruments.map((instrument) => fetchCifraChordShapes({
+      instrument,
+      onlyActive: undefined,
+      limit: 500,
+    })),
+  );
+
+  const existingMap = new Map<string, CifraChordShape>();
+  existingRows.flat().forEach((shape) => {
+    existingMap.set(buildShapeNaturalKey(shape), shape);
+  });
+
+  let created = 0;
+  let updated = 0;
+
+  for (const preset of presets) {
+    const existing = existingMap.get(buildShapeNaturalKey(preset));
+    if (existing) {
+      await updateCifraChordShape(existing.id, preset);
+      updated += 1;
+      continue;
+    }
+
+    const createdRow = await createCifraChordShape(preset);
+    existingMap.set(buildShapeNaturalKey(createdRow), createdRow);
+    created += 1;
+  }
+
+  return {
+    group,
+    processed: presets.length,
+    created,
+    updated,
+  };
 }
 
 export async function fetchPreferredCifraChordShapes(

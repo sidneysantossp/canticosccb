@@ -1,13 +1,16 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { AlertCircle, Music, Plus, RefreshCw, Save, Trash2 } from 'lucide-react';
+import { AlertCircle, Download, Music, Plus, RefreshCw, Save, Trash2 } from 'lucide-react';
 
 import AlertModal from '@/components/ui/AlertModal';
 import {
+  CIFRA_CHORD_PRESET_GROUPS,
   createCifraChordShape,
   deleteCifraChordShape,
   fetchCifraChordShapes,
+  syncCifraChordShapePresets,
   updateCifraChordShape,
 } from '@/lib/admin/cifrasV2AdminApi';
+import type { CifraChordPresetGroup } from '@/lib/admin/cifrasV2AdminApi';
 import { CIFRA_V2_INSTRUMENTS, type CifraChordShape, type CifraInstrument } from '@/types/cifras-v2';
 
 type ShapeFormState = {
@@ -97,8 +100,10 @@ const AdminCifraChordShapes: React.FC = () => {
   const [shapes, setShapes] = useState<CifraChordShape[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  const [isSyncingPresets, setIsSyncingPresets] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [instrumentFilter, setInstrumentFilter] = useState<CifraInstrument | ''>('');
+  const [presetGroup, setPresetGroup] = useState<CifraChordPresetGroup>('all');
   const [form, setForm] = useState<ShapeFormState>(EMPTY_FORM);
   const [alertModal, setAlertModal] = useState<{ isOpen: boolean; title: string; message: string; type: 'success' | 'error' | 'info' }>({
     isOpen: false,
@@ -249,6 +254,30 @@ const AdminCifraChordShapes: React.FC = () => {
     }
   }
 
+  async function handleSyncPresets() {
+    try {
+      setIsSyncingPresets(true);
+      const result = await syncCifraChordShapePresets(presetGroup);
+      await loadShapes();
+      setAlertModal({
+        isOpen: true,
+        title: 'Presets aplicados',
+        message: `${result.processed} shapes processados. ${result.created} criados e ${result.updated} atualizados.`,
+        type: 'success',
+      });
+    } catch (error: any) {
+      console.error('Erro ao aplicar presets:', error);
+      setAlertModal({
+        isOpen: true,
+        title: 'Erro ao aplicar presets',
+        message: error?.message || 'Nao foi possivel sincronizar os presets de shapes.',
+        type: 'error',
+      });
+    } finally {
+      setIsSyncingPresets(false);
+    }
+  }
+
   return (
     <div className="max-w-7xl mx-auto py-8">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between mb-8">
@@ -278,6 +307,37 @@ const AdminCifraChordShapes: React.FC = () => {
             <RefreshCw className="w-4 h-4" />
             Atualizar
           </button>
+        </div>
+      </div>
+
+      <div className="rounded-2xl border border-primary-500/20 bg-primary-500/5 p-5 mb-8">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+          <div>
+            <h2 className="text-lg font-semibold text-white">Importar presets base</h2>
+            <p className="text-sm text-gray-300 mt-1">
+              Sincroniza o dicionario inicial de acordes para violao, guitarra, ukulele, cavaco e teclado sem depender do seed SQL.
+            </p>
+          </div>
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+            <select
+              value={presetGroup}
+              onChange={(event) => setPresetGroup(event.target.value as CifraChordPresetGroup)}
+              className="rounded-xl border border-gray-700 bg-gray-800 px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-primary-500"
+            >
+              {CIFRA_CHORD_PRESET_GROUPS.map((group) => (
+                <option key={group.value} value={group.value}>{group.label}</option>
+              ))}
+            </select>
+            <button
+              type="button"
+              onClick={() => void handleSyncPresets()}
+              disabled={isSyncingPresets}
+              className="inline-flex items-center justify-center gap-2 rounded-xl bg-primary-500 px-5 py-3 font-semibold text-black transition-colors hover:bg-primary-400 disabled:opacity-60 disabled:cursor-not-allowed"
+            >
+              <Download className="w-4 h-4" />
+              {isSyncingPresets ? 'Sincronizando...' : 'Aplicar presets'}
+            </button>
+          </div>
         </div>
       </div>
 

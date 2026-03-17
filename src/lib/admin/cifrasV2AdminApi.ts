@@ -2,10 +2,16 @@ export {
   createCifraChordShape,
   deleteCifraChordShape,
   fetchCifraChordShapes,
+  syncCifraChordShapePresets,
   updateCifraChordShape,
   type FetchCifraChordShapesParams,
+  type SyncCifraChordShapePresetsResult,
   type UpsertCifraChordShapeInput,
 } from '@/lib/cifras-v2/cifraChordShapesRepository';
+export {
+  CIFRA_CHORD_PRESET_GROUPS,
+  type CifraChordPresetGroup,
+} from '@/lib/cifras-v2/chordShapePresets';
 export {
   buildLegacyCifraMigrationPreview,
   fetchLegacyCifraMigrationStatuses,
