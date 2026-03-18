@@ -15,7 +15,10 @@ export {
 export {
   CIFRA_CHORD_PRESET_GROUPS,
   findCifraChordShapePreset,
+  findCifraChordShapePresetMatch,
   type CifraChordPresetGroup,
+  type CifraChordShapePresetMatch,
+  type CifraChordShapePresetMatchStrategy,
   type CifraChordShapePreset,
 } from '@/lib/cifras-v2/chordShapePresets';
 export {

@@ -7,6 +7,19 @@ export interface CifraChordShapePreset extends UpsertCifraChordShapeInput {
   variation_name: string;
 }
 
+export type CifraChordShapePresetMatchStrategy =
+  | 'exact'
+  | 'slash_root'
+  | 'minor_base'
+  | 'root_only';
+
+export interface CifraChordShapePresetMatch {
+  requestedChordName: string;
+  matchedChordName: string;
+  strategy: CifraChordShapePresetMatchStrategy;
+  preset: CifraChordShapePreset;
+}
+
 const GUITAR_TUNING = 'E A D G B E';
 const UKULELE_TUNING = 'G C E A';
 const CAVACO_TUNING = 'D G B D';
@@ -197,31 +210,65 @@ export function getCifraChordShapePresets(group: CifraChordPresetGroup): CifraCh
   return CIFRA_CHORD_SHAPE_PRESETS[group] ?? [];
 }
 
-function buildChordPresetCandidates(chordName: string): string[] {
+function buildChordPresetCandidates(
+  chordName: string,
+): Array<{ candidate: string; strategy: CifraChordShapePresetMatchStrategy }> {
   const trimmed = chordName.trim();
   if (!trimmed) {
     return [];
   }
 
-  const candidates = [trimmed];
+  const candidates: Array<{ candidate: string; strategy: CifraChordShapePresetMatchStrategy }> = [
+    { candidate: trimmed, strategy: 'exact' },
+  ];
 
   if (trimmed.includes('/')) {
-    candidates.push(trimmed.split('/')[0].trim());
+    candidates.push({
+      candidate: trimmed.split('/')[0].trim(),
+      strategy: 'slash_root',
+    });
   }
 
   const parsed = parseChord(trimmed);
   if (parsed) {
-    candidates.push(`${parsed.root}${parsed.suffix.startsWith('m') ? 'm' : ''}`);
-    candidates.push(parsed.root);
+    const minorBase = `${parsed.root}${parsed.suffix.startsWith('m') ? 'm' : ''}`;
+    if (minorBase !== trimmed) {
+      candidates.push({
+        candidate: minorBase,
+        strategy: 'minor_base',
+      });
+    }
+
+    if (parsed.root !== trimmed) {
+      candidates.push({
+        candidate: parsed.root,
+        strategy: 'root_only',
+      });
+    }
   }
 
-  return Array.from(new Set(candidates.filter(Boolean)));
+  const seen = new Set<string>();
+  return candidates.filter(({ candidate }) => {
+    const normalized = candidate.trim();
+    if (!normalized || seen.has(normalized)) {
+      return false;
+    }
+    seen.add(normalized);
+    return true;
+  });
 }
 
 export function findCifraChordShapePreset(
   instrument: CifraInstrument,
   chordName: string,
 ): CifraChordShapePreset | null {
+  return findCifraChordShapePresetMatch(instrument, chordName)?.preset ?? null;
+}
+
+export function findCifraChordShapePresetMatch(
+  instrument: CifraInstrument,
+  chordName: string,
+): CifraChordShapePresetMatch | null {
   if (instrument === 'outro') {
     return null;
   }
@@ -229,10 +276,15 @@ export function findCifraChordShapePreset(
   const presets = CIFRA_CHORD_SHAPE_PRESETS[instrument] ?? [];
   const candidates = buildChordPresetCandidates(chordName);
 
-  for (const candidate of candidates) {
+  for (const { candidate, strategy } of candidates) {
     const preset = presets.find((item) => item.chord_name === candidate);
     if (preset) {
-      return preset;
+      return {
+        requestedChordName: chordName.trim(),
+        matchedChordName: candidate,
+        strategy,
+        preset,
+      };
     }
   }
 

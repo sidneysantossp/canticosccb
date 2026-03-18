@@ -13,7 +13,7 @@ import {
   fetchCifraSongById,
   fetchCifraVersionById,
   fetchCifraVersionSections,
-  findCifraChordShapePreset,
+  findCifraChordShapePresetMatch,
   parsePlainTextSectionLines,
   publishCifraVersion,
   saveCifraVersionDraft,
@@ -22,6 +22,7 @@ import {
   updateCifraChordShape,
   updateCifraReportStatus,
   type CifraChordShapePreset,
+  type CifraChordShapePresetMatch,
   type CifraEngagementSnapshot,
   type CifraVersionSectionDraft,
 } from '@/lib/admin/cifrasV2AdminApi';
@@ -189,6 +190,39 @@ function mapChordPresetToEditorForm(preset: CifraChordShapePreset): EditableChor
     isLeftHandedSupported: Boolean(preset.is_left_handed_supported),
     isActive: preset.is_active !== false,
   };
+}
+
+function getChordPresetMatchCopy(match: CifraChordShapePresetMatch): {
+  badgeLabel: string;
+  description: string;
+  actionLabel: string;
+} {
+  switch (match.strategy) {
+    case 'slash_root':
+      return {
+        badgeLabel: 'Equivalência por baixo',
+        description: `Use ${match.matchedChordName} como base para ${match.requestedChordName}.`,
+        actionLabel: `Usar ${match.matchedChordName}`,
+      };
+    case 'minor_base':
+      return {
+        badgeLabel: 'Preset simplificado menor',
+        description: `Use ${match.matchedChordName} como versão simplificada para ${match.requestedChordName}.`,
+        actionLabel: `Usar ${match.matchedChordName}`,
+      };
+    case 'root_only':
+      return {
+        badgeLabel: 'Preset simplificado',
+        description: `Use ${match.matchedChordName} como shape base para ${match.requestedChordName}.`,
+        actionLabel: `Usar ${match.matchedChordName}`,
+      };
+    default:
+      return {
+        badgeLabel: 'Preset exato disponível',
+        description: `Existe um preset pronto para ${match.requestedChordName}.`,
+        actionLabel: 'Usar preset',
+      };
+  }
 }
 
 const AdminCifraV2Editor: React.FC = () => {
@@ -428,21 +462,30 @@ const AdminCifraV2Editor: React.FC = () => {
     [chordShapeVariants, detectedChords],
   );
 
-  const chordPresetSuggestions = useMemo<Record<string, CifraChordShapePreset>>(
+  const chordPresetSuggestions = useMemo<Record<string, CifraChordShapePresetMatch>>(
     () =>
       Object.fromEntries(
         detectedChords
           .map((chord) => {
-            const preset = findCifraChordShapePreset(form.instrument as any, chord);
-            return preset ? [chord, preset] : null;
+            const presetMatch = findCifraChordShapePresetMatch(form.instrument as any, chord);
+            return presetMatch ? [chord, presetMatch] : null;
           })
-          .filter((entry): entry is [string, CifraChordShapePreset] => Boolean(entry)),
+          .filter((entry): entry is [string, CifraChordShapePresetMatch] => Boolean(entry)),
       ),
     [detectedChords, form.instrument],
   );
 
   const missingChordsWithPresetCount = useMemo(
     () => detectedChords.filter((chord) => (chordShapeVariants[chord]?.length ?? 0) === 0 && Boolean(chordPresetSuggestions[chord])).length,
+    [chordPresetSuggestions, chordShapeVariants, detectedChords],
+  );
+
+  const missingChordsWithEquivalentPresetCount = useMemo(
+    () =>
+      detectedChords.filter((chord) => {
+        const match = chordPresetSuggestions[chord];
+        return (chordShapeVariants[chord]?.length ?? 0) === 0 && match && match.strategy !== 'exact';
+      }).length,
     [chordPresetSuggestions, chordShapeVariants, detectedChords],
   );
 
@@ -675,14 +718,14 @@ const AdminCifraV2Editor: React.FC = () => {
   };
 
   const handleApplyPresetToInlineShape = (chordName = selectedChordName) => {
-    const preset = chordPresetSuggestions[chordName];
-    if (!preset) {
+    const presetMatch = chordPresetSuggestions[chordName];
+    if (!presetMatch) {
       return;
     }
 
     setSelectedChordName(chordName);
     setSelectedShapeId('');
-    setInlineShapeForm(mapChordPresetToEditorForm(preset));
+    setInlineShapeForm(mapChordPresetToEditorForm(presetMatch.preset));
   };
 
   const handleSaveInlineShape = async () => {
@@ -1105,7 +1148,14 @@ const AdminCifraV2Editor: React.FC = () => {
 
             {missingChordsWithPresetCount > 0 ? (
               <div className="mb-4 rounded-xl border border-primary-500/20 bg-primary-500/5 p-4 text-sm text-gray-300">
-                {missingChordsWithPresetCount} acorde(s) sem shape salvo já possuem preset compatível para {form.instrument}.
+                <p>
+                  {missingChordsWithPresetCount} acorde(s) sem shape salvo já possuem preset compatível para {form.instrument}.
+                </p>
+                {missingChordsWithEquivalentPresetCount > 0 ? (
+                  <p className="mt-2 text-xs text-gray-400">
+                    {missingChordsWithEquivalentPresetCount} deles usam equivalência simplificada, como baixo invertido ou extensões fora do preset base.
+                  </p>
+                ) : null}
               </div>
             ) : null}
 
@@ -1121,6 +1171,8 @@ const AdminCifraV2Editor: React.FC = () => {
                   const variants = chordShapeVariants[chord] || [];
                   const primaryVariant = variants[0];
                   const shapeLink = `/admin/cifras-v2/shapes?instrument=${encodeURIComponent(form.instrument)}&chord=${encodeURIComponent(chord)}`;
+                  const presetMatch = chordPresetSuggestions[chord];
+                  const presetCopy = presetMatch ? getChordPresetMatchCopy(presetMatch) : null;
 
                   return (
                     <div key={chord} className="rounded-xl border border-gray-700 bg-black/20 p-4">
@@ -1170,17 +1222,20 @@ const AdminCifraV2Editor: React.FC = () => {
                             </span>
                           ))}
                         </div>
-                      ) : chordPresetSuggestions[chord] ? (
+                      ) : presetMatch && presetCopy ? (
                         <div className="mt-3 flex flex-wrap items-center gap-2">
                           <span className="rounded-full border border-primary-500/30 bg-primary-500/10 px-2.5 py-1 text-xs text-primary-200">
-                            Preset base disponível
+                            {presetCopy.badgeLabel}
+                          </span>
+                          <span className="text-xs text-gray-400">
+                            {presetCopy.description}
                           </span>
                           <button
                             type="button"
                             onClick={() => handleApplyPresetToInlineShape(chord)}
                             className="rounded-full border border-primary-500/30 bg-primary-500/10 px-3 py-1.5 text-xs text-primary-100 hover:bg-primary-500/20 transition-colors"
                           >
-                            Usar preset
+                            {presetCopy.actionLabel}
                           </button>
                         </div>
                       ) : null}
@@ -1221,9 +1276,11 @@ const AdminCifraV2Editor: React.FC = () => {
                   <div className="rounded-xl border border-primary-500/20 bg-primary-500/5 p-4">
                     <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                       <div>
-                        <p className="text-sm font-semibold text-white">Preset compatível encontrado</p>
+                        <p className="text-sm font-semibold text-white">
+                          {getChordPresetMatchCopy(selectedChordPreset).badgeLabel}
+                        </p>
                         <p className="mt-1 text-sm text-gray-300">
-                          Use o preset base de {selectedChordPreset.chord_name} para acelerar o cadastro desta variação.
+                          {getChordPresetMatchCopy(selectedChordPreset).description}
                         </p>
                       </div>
                       <button
@@ -1231,7 +1288,7 @@ const AdminCifraV2Editor: React.FC = () => {
                         onClick={() => handleApplyPresetToInlineShape()}
                         className="inline-flex items-center justify-center rounded-xl border border-primary-500/30 bg-primary-500/10 px-4 py-2 text-sm text-primary-100 hover:bg-primary-500/20 transition-colors"
                       >
-                        Aplicar preset
+                        {getChordPresetMatchCopy(selectedChordPreset).actionLabel}
                       </button>
                     </div>
                   </div>
