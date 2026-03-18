@@ -7,7 +7,7 @@ import { fetchCifraBySlug, incrementCifraViews, type Cifra, INSTRUMENTS, ALL_KEY
 import { buildHinoUrl } from '@/utils/slugUrl';
 import {
   addCifraFavorite,
-  fetchPreferredCifraChordShapes,
+  fetchCifraChordShapeVariants,
   fetchCifraEngagementSnapshot,
   fetchPublicCifraPageBySlug,
   removeCifraFavorite,
@@ -88,7 +88,8 @@ const CifraPage: React.FC = () => {
   const [relatedHymn, setRelatedHymn] = useState<{ id: string; numero: number; titulo: string } | null>(null);
   const [relatedLyric, setRelatedLyric] = useState<{ numero: number; titulo: string } | null>(null);
   const [engagement, setEngagement] = useState<CifraEngagementSnapshot | null>(null);
-  const [chordShapes, setChordShapes] = useState<Record<string, CifraChordShape>>({});
+  const [chordShapeVariants, setChordShapeVariants] = useState<Record<string, CifraChordShape[]>>({});
+  const [selectedShapeIds, setSelectedShapeIds] = useState<Record<string, string>>({});
   const [isFavoriteLoading, setIsFavoriteLoading] = useState(false);
   const [isSubmittingReport, setIsSubmittingReport] = useState(false);
   const [showReportModal, setShowReportModal] = useState(false);
@@ -211,7 +212,8 @@ const CifraPage: React.FC = () => {
 
     const loadChordShapes = async () => {
       if (!showChords || !cifra) {
-        setChordShapes({});
+        setChordShapeVariants({});
+        setSelectedShapeIds({});
         return;
       }
 
@@ -220,19 +222,37 @@ const CifraPage: React.FC = () => {
       ).slice(0, 12);
 
       if (visibleChords.length === 0) {
-        setChordShapes({});
+        setChordShapeVariants({});
+        setSelectedShapeIds({});
         return;
       }
 
       try {
-        const shapes = await fetchPreferredCifraChordShapes(selectedInstrument as CifraInstrument, visibleChords);
+        const shapes = await fetchCifraChordShapeVariants(selectedInstrument as CifraInstrument, visibleChords);
         if (!cancelled) {
-          setChordShapes(shapes);
+          setChordShapeVariants(shapes);
+          setSelectedShapeIds((current) => {
+            const next: Record<string, string> = {};
+
+            visibleChords.forEach((chord) => {
+              const options = shapes[chord] || [];
+              if (options.length === 0) {
+                return;
+              }
+
+              const currentSelection = current[chord];
+              const currentStillExists = currentSelection && options.some((shape) => shape.id === currentSelection);
+              next[chord] = currentStillExists ? currentSelection : options[0].id;
+            });
+
+            return next;
+          });
         }
       } catch (shapeError) {
         console.error('Erro ao carregar shapes de acordes da cifra:', shapeError);
         if (!cancelled) {
-          setChordShapes({});
+          setChordShapeVariants({});
+          setSelectedShapeIds({});
         }
       }
     };
@@ -337,12 +357,14 @@ const CifraPage: React.FC = () => {
   const visibleChordCards = chords
     .slice(0, 12)
     .map((chord) => {
-      const databaseShape = chordShapes[chord];
-      if (databaseShape) {
+      const databaseShapes = chordShapeVariants[chord];
+      if (databaseShapes?.length) {
+        const selectedShape = databaseShapes.find((shape) => shape.id === selectedShapeIds[chord]) || databaseShapes[0];
         return {
           chord,
           kind: 'database' as const,
-          shape: databaseShape,
+          shapes: databaseShapes,
+          selectedShape,
         };
       }
 
@@ -360,8 +382,12 @@ const CifraPage: React.FC = () => {
       return null;
     })
     .filter((item): item is
-      | { chord: string; kind: 'database'; shape: CifraChordShape }
+      | { chord: string; kind: 'database'; shapes: CifraChordShape[]; selectedShape: CifraChordShape }
       | { chord: string; kind: 'fallback'; diagram: ChordDiagram } => Boolean(item));
+
+  const handleShapeSelection = (chord: string, shapeId: string) => {
+    setSelectedShapeIds((current) => ({ ...current, [chord]: shapeId }));
+  };
 
   const transposeUp = () => {
     const majorKeys = ALL_KEYS.filter(k => !k.includes('m'));
@@ -994,7 +1020,13 @@ const CifraPage: React.FC = () => {
           <div className="flex gap-4 overflow-x-auto pb-3 scrollbar-hide">
             {visibleChordCards.map((item) => (
               item.kind === 'database' ? (
-                <DatabaseChordShapeCard key={`${item.chord}-${item.shape.id}`} shape={item.shape} />
+                <DatabaseChordShapeCard
+                  key={`${item.chord}-${item.selectedShape.id}`}
+                  chord={item.chord}
+                  shapes={item.shapes}
+                  selectedShapeId={item.selectedShape.id}
+                  onSelectShape={handleShapeSelection}
+                />
               ) : (
                 <div key={item.chord} className="flex-shrink-0 text-center">
                   <ChordDiagramSVG diagram={item.diagram} />
@@ -1543,15 +1575,37 @@ const FretboardShapeSVG: React.FC<FretboardShapeSVGProps> = ({ diagram }) => {
 };
 
 interface DatabaseChordShapeCardProps {
-  shape: CifraChordShape;
+  chord: string;
+  shapes: CifraChordShape[];
+  selectedShapeId: string;
+  onSelectShape: (chord: string, shapeId: string) => void;
 }
 
-const DatabaseChordShapeCard: React.FC<DatabaseChordShapeCardProps> = ({ shape }) => {
+function getShapeVariationLabel(requestedChord: string, shape: CifraChordShape): string {
+  const variation = (shape.variation_name || '').trim();
+  if (variation && variation.toLowerCase() !== 'default') {
+    return variation;
+  }
+
+  if (shape.chord_name !== requestedChord) {
+    return shape.chord_name;
+  }
+
+  return 'Padrao';
+}
+
+const DatabaseChordShapeCard: React.FC<DatabaseChordShapeCardProps> = ({
+  chord,
+  shapes,
+  selectedShapeId,
+  onSelectShape,
+}) => {
+  const shape = shapes.find((item) => item.id === selectedShapeId) || shapes[0];
   const diagram = normalizeDatabaseShape(shape);
   const notes = buildShapeNotes(shape);
 
   return (
-    <div className="flex-shrink-0 rounded-2xl border border-white/10 bg-background-secondary px-4 py-3 text-center min-w-[132px]">
+    <div className="flex-shrink-0 rounded-2xl border border-white/10 bg-background-secondary px-4 py-3 text-center min-w-[168px] max-w-[198px]">
       {diagram ? (
         <FretboardShapeSVG diagram={diagram} />
       ) : (
@@ -1570,6 +1624,27 @@ const DatabaseChordShapeCard: React.FC<DatabaseChordShapeCardProps> = ({ shape }
           </p>
         ))}
       </div>
+      {shapes.length > 1 ? (
+        <div className="mt-3 flex flex-wrap justify-center gap-2">
+          {shapes.map((option) => {
+            const isActive = option.id === shape.id;
+            return (
+              <button
+                key={option.id}
+                type="button"
+                onClick={() => onSelectShape(chord, option.id)}
+                className={`rounded-full border px-2.5 py-1 text-[10px] font-medium transition-colors ${
+                  isActive
+                    ? 'border-primary-500 bg-primary-500 text-black'
+                    : 'border-white/10 bg-white/5 text-gray-300 hover:border-primary-500/40 hover:text-white'
+                }`}
+              >
+                {getShapeVariationLabel(chord, option)}
+              </button>
+            );
+          })}
+        </div>
+      ) : null}
     </div>
   );
 };

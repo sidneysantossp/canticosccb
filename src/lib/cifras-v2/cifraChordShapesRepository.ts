@@ -189,6 +189,18 @@ export async function fetchPreferredCifraChordShapes(
   instrument: CifraInstrument,
   chordNames: string[],
 ): Promise<Record<string, CifraChordShape>> {
+  const groupedShapes = await fetchCifraChordShapeVariants(instrument, chordNames);
+  return Object.fromEntries(
+    Object.entries(groupedShapes)
+      .map(([chordName, shapes]) => [chordName, shapes[0]])
+      .filter((entry): entry is [string, CifraChordShape] => Boolean(entry[1])),
+  );
+}
+
+export async function fetchCifraChordShapeVariants(
+  instrument: CifraInstrument,
+  chordNames: string[],
+): Promise<Record<string, CifraChordShape[]>> {
   const requests = normalizeChordNames(chordNames);
   if (requests.length === 0) {
     return {};
@@ -202,16 +214,18 @@ export async function fetchPreferredCifraChordShapes(
     limit: Math.max(50, allCandidates.length * 4),
   });
 
-  const result: Record<string, CifraChordShape> = {};
+  const result: Record<string, CifraChordShape[]> = {};
 
   for (const chordName of requests) {
     const candidates = buildChordCandidates(chordName);
-    const match = candidates
-      .map((candidate) => shapes.find((shape) => shape.chord_name === candidate))
-      .find((shape): shape is CifraChordShape => Boolean(shape));
+    const matches = candidates.flatMap((candidate) => (
+      shapes.filter((shape) => shape.chord_name === candidate)
+    ));
 
-    if (match) {
-      result[chordName] = match;
+    if (matches.length > 0) {
+      result[chordName] = Array.from(new Map(
+        matches.map((shape) => [shape.id, shape]),
+      ).values());
     }
   }
 
