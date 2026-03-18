@@ -204,10 +204,22 @@ function getChordPresetMatchCopy(match: CifraChordShapePresetMatch): {
         description: `Use ${match.matchedChordName} como base para ${match.requestedChordName}.`,
         actionLabel: `Usar ${match.matchedChordName}`,
       };
+    case 'enharmonic':
+      return {
+        badgeLabel: 'Equivalência enarmônica',
+        description: `Use ${match.matchedChordName} como equivalente enarmônico para ${match.requestedChordName}.`,
+        actionLabel: `Usar ${match.matchedChordName}`,
+      };
     case 'minor_base':
       return {
         badgeLabel: 'Preset simplificado menor',
         description: `Use ${match.matchedChordName} como versão simplificada para ${match.requestedChordName}.`,
+        actionLabel: `Usar ${match.matchedChordName}`,
+      };
+    case 'extension_family':
+      return {
+        badgeLabel: 'Aproximação por extensão',
+        description: `Use ${match.matchedChordName} como aproximação harmônica para ${match.requestedChordName}.`,
         actionLabel: `Usar ${match.matchedChordName}`,
       };
     case 'root_only':

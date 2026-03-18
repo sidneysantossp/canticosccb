@@ -10,7 +10,9 @@ export interface CifraChordShapePreset extends UpsertCifraChordShapeInput {
 export type CifraChordShapePresetMatchStrategy =
   | 'exact'
   | 'slash_root'
+  | 'enharmonic'
   | 'minor_base'
+  | 'extension_family'
   | 'root_only';
 
 export interface CifraChordShapePresetMatch {
@@ -24,6 +26,18 @@ const GUITAR_TUNING = 'E A D G B E';
 const UKULELE_TUNING = 'G C E A';
 const CAVACO_TUNING = 'D G B D';
 const KEYBOARD_HANDING = 'mao direita';
+const ENHARMONIC_EQUIVALENTS: Record<string, string> = {
+  'A#': 'Bb',
+  'Bb': 'A#',
+  'C#': 'Db',
+  'Db': 'C#',
+  'D#': 'Eb',
+  'Eb': 'D#',
+  'F#': 'Gb',
+  'Gb': 'F#',
+  'G#': 'Ab',
+  'Ab': 'G#',
+};
 
 type FretPresetTuple = [
   chord_name: string,
@@ -231,7 +245,34 @@ function buildChordPresetCandidates(
 
   const parsed = parseChord(trimmed);
   if (parsed) {
-    const minorBase = `${parsed.root}${parsed.suffix.startsWith('m') ? 'm' : ''}`;
+    const rawSuffix = parsed.suffix.trim();
+    const normalizedSuffix = rawSuffix
+      .replace(/\s+/g, '')
+      .replace(/[Δ△]/g, 'maj')
+      .toLowerCase();
+    const isMinorQuality = normalizedSuffix.startsWith('m') && !normalizedSuffix.startsWith('maj');
+    const isMajorSeventhFamily =
+      normalizedSuffix.includes('maj') ||
+      normalizedSuffix.includes('7m') ||
+      normalizedSuffix.includes('9m') ||
+      normalizedSuffix.includes('11m') ||
+      normalizedSuffix.includes('13m');
+    const hasExtendedDominant =
+      /(7|9|11|13)/.test(normalizedSuffix) && !isMajorSeventhFamily && !isMinorQuality;
+    const hasOtherExtension = /(add|sus|dim|aug|6|°|ø|\+)/.test(normalizedSuffix);
+    const minorBase = `${parsed.root}${isMinorQuality ? 'm' : ''}`;
+    const enharmonicRoot = ENHARMONIC_EQUIVALENTS[parsed.root] || null;
+
+    if (enharmonicRoot) {
+      const enharmonicExact = `${enharmonicRoot}${rawSuffix}`;
+      if (enharmonicExact !== trimmed) {
+        candidates.push({
+          candidate: enharmonicExact,
+          strategy: 'enharmonic',
+        });
+      }
+    }
+
     if (minorBase !== trimmed) {
       candidates.push({
         candidate: minorBase,
@@ -239,10 +280,73 @@ function buildChordPresetCandidates(
       });
     }
 
+    if (enharmonicRoot) {
+      const enharmonicQualityBase = `${enharmonicRoot}${isMinorQuality ? 'm' : ''}`;
+      if (enharmonicQualityBase !== trimmed && enharmonicQualityBase !== minorBase) {
+        candidates.push({
+          candidate: enharmonicQualityBase,
+          strategy: 'enharmonic',
+        });
+      }
+    }
+
+    if (hasExtendedDominant) {
+      const dominantBase = `${parsed.root}7`;
+      if (dominantBase !== trimmed && dominantBase !== minorBase) {
+        candidates.push({
+          candidate: dominantBase,
+          strategy: 'extension_family',
+        });
+      }
+
+      if (enharmonicRoot) {
+        const enharmonicDominantBase = `${enharmonicRoot}7`;
+        if (
+          enharmonicDominantBase !== trimmed &&
+          enharmonicDominantBase !== dominantBase &&
+          enharmonicDominantBase !== minorBase
+        ) {
+          candidates.push({
+            candidate: enharmonicDominantBase,
+            strategy: 'enharmonic',
+          });
+        }
+      }
+    }
+
+    if (hasOtherExtension || isMajorSeventhFamily) {
+      if (minorBase !== trimmed) {
+        candidates.push({
+          candidate: minorBase,
+          strategy: 'extension_family',
+        });
+      }
+
+      if (enharmonicRoot) {
+        const enharmonicExtensionBase = `${enharmonicRoot}${isMinorQuality ? 'm' : ''}`;
+        if (
+          enharmonicExtensionBase !== trimmed &&
+          enharmonicExtensionBase !== minorBase
+        ) {
+          candidates.push({
+            candidate: enharmonicExtensionBase,
+            strategy: 'enharmonic',
+          });
+        }
+      }
+    }
+
     if (parsed.root !== trimmed) {
       candidates.push({
         candidate: parsed.root,
         strategy: 'root_only',
+      });
+    }
+
+    if (enharmonicRoot && enharmonicRoot !== parsed.root) {
+      candidates.push({
+        candidate: enharmonicRoot,
+        strategy: 'enharmonic',
       });
     }
   }
