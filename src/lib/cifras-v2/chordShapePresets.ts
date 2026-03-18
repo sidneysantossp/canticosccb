@@ -360,6 +360,39 @@ function scorePresetCandidate(
   return score;
 }
 
+function getChordMatchStrategy(
+  requestedChordName: string,
+  matchedChordName: string,
+): CifraChordShapePresetMatchStrategy | null {
+  const normalizedMatched = matchedChordName.trim();
+  if (!normalizedMatched) {
+    return null;
+  }
+
+  return buildChordPresetCandidates(requestedChordName).find(
+    ({ candidate }) => candidate === normalizedMatched,
+  )?.strategy ?? null;
+}
+
+export function scoreCifraChordNameMatch(
+  requestedChordName: string,
+  matchedChordName: string,
+  options?: CifraChordShapePresetMatchOptions,
+): number {
+  const strategy = getChordMatchStrategy(requestedChordName, matchedChordName);
+  if (strategy) {
+    return scorePresetCandidate(requestedChordName, matchedChordName, strategy, options);
+  }
+
+  const parsedRequested = parseChord(requestedChordName);
+  const parsedMatched = parseChord(matchedChordName);
+  if (parsedRequested && parsedMatched && parsedRequested.root === parsedMatched.root) {
+    return scorePresetCandidate(requestedChordName, matchedChordName, 'root_only', options) - 40;
+  }
+
+  return -1000;
+}
+
 function buildChordPresetCandidates(
   chordName: string,
 ): Array<{ candidate: string; strategy: CifraChordShapePresetMatchStrategy }> {

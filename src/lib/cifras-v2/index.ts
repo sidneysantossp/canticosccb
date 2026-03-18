@@ -2,6 +2,7 @@ export * from './cifraPublicationService';
 export * from './cifraSectionsRepository';
 export * from './cifraSongsRepository';
 export * from './cifraChordShapesRepository';
+export * from './chordShapePresets';
 export * from './cifraVersionsRepository';
 export * from './cifraEngagementApi';
 export * from './legacyCifraMigrationService';

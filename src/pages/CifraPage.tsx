@@ -11,6 +11,7 @@ import {
   fetchCifraEngagementSnapshot,
   fetchPublicCifraPageBySlug,
   removeCifraFavorite,
+  scoreCifraChordNameMatch,
   serializeSectionLines,
   submitCifraReport,
   trackCifraUsageEvent,
@@ -75,6 +76,33 @@ function buildInitialEngagement(cifra: PublicCifraPageData): CifraEngagementSnap
     lastInteractionAt: cifra.last_interaction_at || null,
     isFavorited: false,
   };
+}
+
+function sortChordShapeVariantsForContext(
+  requestedChordName: string,
+  shapes: CifraChordShape[],
+  options: {
+    preferredKey?: string | null;
+    originalKey?: string | null;
+    progression?: string[] | null;
+  },
+): CifraChordShape[] {
+  return [...shapes].sort((left, right) => {
+    const leftScore =
+      scoreCifraChordNameMatch(requestedChordName, left.chord_name, options) +
+      left.priority * 5 +
+      ((left.variation_name || 'default').trim().toLowerCase() === 'default' ? 10 : 0);
+    const rightScore =
+      scoreCifraChordNameMatch(requestedChordName, right.chord_name, options) +
+      right.priority * 5 +
+      ((right.variation_name || 'default').trim().toLowerCase() === 'default' ? 10 : 0);
+
+    if (leftScore !== rightScore) {
+      return rightScore - leftScore;
+    }
+
+    return left.variation_name.localeCompare(right.variation_name);
+  });
 }
 
 const CifraPage: React.FC = () => {
@@ -230,12 +258,23 @@ const CifraPage: React.FC = () => {
       try {
         const shapes = await fetchCifraChordShapeVariants(selectedInstrument as CifraInstrument, visibleChords);
         if (!cancelled) {
-          setChordShapeVariants(shapes);
+          const sortedShapes = Object.fromEntries(
+            Object.entries(shapes).map(([chord, options]) => [
+              chord,
+              sortChordShapeVariantsForContext(chord, options, {
+                preferredKey: selectedKey,
+                originalKey: cifra.original_key,
+                progression: visibleChords,
+              }),
+            ]),
+          );
+
+          setChordShapeVariants(sortedShapes);
           setSelectedShapeIds((current) => {
             const next: Record<string, string> = {};
 
             visibleChords.forEach((chord) => {
-              const options = shapes[chord] || [];
+              const options = sortedShapes[chord] || [];
               if (options.length === 0) {
                 return;
               }
