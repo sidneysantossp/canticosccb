@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { AlertCircle, Download, Music, Plus, RefreshCw, Save, Trash2 } from 'lucide-react';
+import { AlertCircle, Download, Music, Plus, RefreshCw, Save, Star, Trash2 } from 'lucide-react';
 
 import AlertModal from '@/components/ui/AlertModal';
 import {
@@ -7,6 +7,7 @@ import {
   createCifraChordShape,
   deleteCifraChordShape,
   fetchCifraChordShapes,
+  prioritizeCifraChordShape,
   syncCifraChordShapePresets,
   updateCifraChordShape,
 } from '@/lib/admin/cifrasV2AdminApi';
@@ -145,6 +146,20 @@ const AdminCifraChordShapes: React.FC = () => {
     })
   ), [instrumentFilter, searchTerm, shapes]);
 
+  const preferredShapeIds = useMemo(() => {
+    const entries = new Map<string, string>();
+
+    shapes.forEach((shape) => {
+      const key = `${shape.instrument}::${shape.chord_name.toLowerCase()}`;
+      const currentId = entries.get(key);
+      if (!currentId) {
+        entries.set(key, shape.id);
+      }
+    });
+
+    return entries;
+  }, [shapes]);
+
   function resetForm(nextInstrument?: CifraInstrument) {
     const instrument = nextInstrument ?? form.instrument ?? 'violao';
     setForm({
@@ -278,6 +293,27 @@ const AdminCifraChordShapes: React.FC = () => {
     }
   }
 
+  async function handlePrioritize(shape: CifraChordShape) {
+    try {
+      const result = await prioritizeCifraChordShape(shape.id);
+      await loadShapes();
+      setAlertModal({
+        isOpen: true,
+        title: 'Variacao destacada',
+        message: `${result.target.chord_name} (${result.target.instrument}) agora usa essa variacao como principal.`,
+        type: 'success',
+      });
+    } catch (error: any) {
+      console.error('Erro ao priorizar shape:', error);
+      setAlertModal({
+        isOpen: true,
+        title: 'Erro ao destacar',
+        message: error?.message || 'Nao foi possivel definir essa variacao como principal.',
+        type: 'error',
+      });
+    }
+  }
+
   return (
     <div className="max-w-7xl mx-auto py-8">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between mb-8">
@@ -383,7 +419,7 @@ const AdminCifraChordShapes: React.FC = () => {
           </div>
 
           <div className="rounded-2xl border border-gray-800 bg-gray-900/60 overflow-hidden">
-            <div className="grid grid-cols-[1.2fr,1fr,140px,120px,120px] gap-3 px-5 py-3 text-xs uppercase tracking-[0.18em] text-gray-500 border-b border-gray-800">
+            <div className="grid grid-cols-[1.2fr,1fr,140px,120px,160px] gap-3 px-5 py-3 text-xs uppercase tracking-[0.18em] text-gray-500 border-b border-gray-800">
               <span>Acorde</span>
               <span>Variacao</span>
               <span>Instrumento</span>
@@ -396,9 +432,16 @@ const AdminCifraChordShapes: React.FC = () => {
               ) : filteredShapes.length === 0 ? (
                 <div className="px-5 py-10 text-center text-gray-400">Nenhum shape encontrado.</div>
               ) : filteredShapes.map((shape) => (
-                <div key={shape.id} className="grid grid-cols-[1.2fr,1fr,140px,120px,120px] gap-3 px-5 py-4 items-center">
+                <div key={shape.id} className="grid grid-cols-[1.2fr,1fr,140px,120px,160px] gap-3 px-5 py-4 items-center">
                   <div>
-                    <p className="font-semibold text-white">{shape.chord_name}</p>
+                    <div className="flex items-center gap-2">
+                      <p className="font-semibold text-white">{shape.chord_name}</p>
+                      {preferredShapeIds.get(`${shape.instrument}::${shape.chord_name.toLowerCase()}`) === shape.id ? (
+                        <span className="rounded-full border border-primary-500/30 bg-primary-500/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-primary-200">
+                          Principal
+                        </span>
+                      ) : null}
+                    </div>
                     <p className="text-xs text-gray-500 mt-1">
                       Base fret {shape.base_fret} · {shape.is_active ? 'Ativo' : 'Inativo'}
                     </p>
@@ -406,7 +449,16 @@ const AdminCifraChordShapes: React.FC = () => {
                   <p className="text-sm text-gray-300">{shape.variation_name}</p>
                   <p className="text-sm text-gray-300">{shape.instrument}</p>
                   <p className="text-sm text-gray-300">{shape.priority}</p>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <button
+                      type="button"
+                      onClick={() => void handlePrioritize(shape)}
+                      className="rounded-lg border border-amber-500/30 bg-amber-500/10 p-2 text-amber-200 hover:bg-amber-500/20 transition-colors"
+                      aria-label={`Destacar ${shape.chord_name}`}
+                      title="Definir como variacao principal"
+                    >
+                      <Star className="w-4 h-4" />
+                    </button>
                     <button
                       type="button"
                       onClick={() => setForm(mapShapeToForm(shape))}

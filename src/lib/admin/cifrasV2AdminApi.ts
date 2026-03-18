@@ -1,10 +1,13 @@
 export {
   createCifraChordShape,
   deleteCifraChordShape,
+  fetchCifraChordShapeById,
   fetchCifraChordShapes,
+  prioritizeCifraChordShape,
   syncCifraChordShapePresets,
   updateCifraChordShape,
   type FetchCifraChordShapesParams,
+  type PrioritizeCifraChordShapeResult,
   type SyncCifraChordShapePresetsResult,
   type UpsertCifraChordShapeInput,
 } from '@/lib/cifras-v2/cifraChordShapesRepository';
