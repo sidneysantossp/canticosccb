@@ -356,6 +356,7 @@ function buildFullHtml(meta: PageMeta): string {
     <meta name="description" content="${esc(meta.description)}">
     <meta name="robots" content="${robotsContent}">
     <meta name="googlebot" content="${robotsContent}">
+    <meta name="google-adsense-account" content="ca-pub-3459130972339055">
     <link rel="canonical" href="${esc(meta.canonical)}">
     <meta name="author" content="Cânticos CCB">
     <meta name="keywords" content="hinos CCB, hinário 5, congregação cristã no brasil, cifras CCB, hinos cantados, hinos tocados, compositores CCB">
