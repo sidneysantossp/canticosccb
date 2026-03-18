@@ -13,6 +13,7 @@ import {
   fetchCifraSongById,
   fetchCifraVersionById,
   fetchCifraVersionSections,
+  findCifraChordShapePreset,
   parsePlainTextSectionLines,
   publishCifraVersion,
   saveCifraVersionDraft,
@@ -20,6 +21,7 @@ import {
   submitCifraVersionForReview,
   updateCifraChordShape,
   updateCifraReportStatus,
+  type CifraChordShapePreset,
   type CifraEngagementSnapshot,
   type CifraVersionSectionDraft,
 } from '@/lib/admin/cifrasV2AdminApi';
@@ -166,6 +168,26 @@ function mapChordShapeToEditorForm(shape: CifraChordShape): EditableChordShape {
     priority: String(shape.priority ?? 0),
     isLeftHandedSupported: shape.is_left_handed_supported,
     isActive: shape.is_active,
+  };
+}
+
+function mapChordPresetToEditorForm(preset: CifraChordShapePreset): EditableChordShape {
+  return {
+    id: null,
+    chordName: preset.chord_name,
+    variationName: preset.variation_name || 'default',
+    frets: stringifyList((preset.fingering as Record<string, unknown>).frets ?? (preset.fingering as Record<string, unknown>).positions ?? (preset.fingering as Record<string, unknown>).strings),
+    fingers: stringifyList((preset.fingering as Record<string, unknown>).fingers),
+    barres: stringifyList((preset.fingering as Record<string, unknown>).barres),
+    notes: stringifyList((preset.fingering as Record<string, unknown>).notes),
+    tuning: typeof (preset.fingering as Record<string, unknown>).tuning === 'string'
+      ? ((preset.fingering as Record<string, unknown>).tuning as string)
+      : DEFAULT_TUNING_BY_INSTRUMENT[preset.instrument],
+    stringCount: String((preset.fingering as Record<string, unknown>).stringCount ?? getDefaultStringCount(preset.instrument)),
+    baseFret: String(preset.base_fret || 1),
+    priority: String(preset.priority ?? 0),
+    isLeftHandedSupported: Boolean(preset.is_left_handed_supported),
+    isActive: preset.is_active !== false,
   };
 }
 
@@ -406,10 +428,30 @@ const AdminCifraV2Editor: React.FC = () => {
     [chordShapeVariants, detectedChords],
   );
 
+  const chordPresetSuggestions = useMemo<Record<string, CifraChordShapePreset>>(
+    () =>
+      Object.fromEntries(
+        detectedChords
+          .map((chord) => {
+            const preset = findCifraChordShapePreset(form.instrument as any, chord);
+            return preset ? [chord, preset] : null;
+          })
+          .filter((entry): entry is [string, CifraChordShapePreset] => Boolean(entry)),
+      ),
+    [detectedChords, form.instrument],
+  );
+
+  const missingChordsWithPresetCount = useMemo(
+    () => detectedChords.filter((chord) => (chordShapeVariants[chord]?.length ?? 0) === 0 && Boolean(chordPresetSuggestions[chord])).length,
+    [chordPresetSuggestions, chordShapeVariants, detectedChords],
+  );
+
   const selectedChordVariants = useMemo(
     () => (selectedChordName ? chordShapeVariants[selectedChordName] || [] : []),
     [chordShapeVariants, selectedChordName],
   );
+
+  const selectedChordPreset = selectedChordName ? chordPresetSuggestions[selectedChordName] || null : null;
 
   useEffect(() => {
     if (detectedChords.length === 0) {
@@ -630,6 +672,17 @@ const AdminCifraV2Editor: React.FC = () => {
     setSelectedChordName(chordName);
     setSelectedShapeId('');
     setInlineShapeForm(createEmptyChordShape(form.instrument, chordName));
+  };
+
+  const handleApplyPresetToInlineShape = (chordName = selectedChordName) => {
+    const preset = chordPresetSuggestions[chordName];
+    if (!preset) {
+      return;
+    }
+
+    setSelectedChordName(chordName);
+    setSelectedShapeId('');
+    setInlineShapeForm(mapChordPresetToEditorForm(preset));
   };
 
   const handleSaveInlineShape = async () => {
@@ -1050,6 +1103,12 @@ const AdminCifraV2Editor: React.FC = () => {
               </div>
             </div>
 
+            {missingChordsWithPresetCount > 0 ? (
+              <div className="mb-4 rounded-xl border border-primary-500/20 bg-primary-500/5 p-4 text-sm text-gray-300">
+                {missingChordsWithPresetCount} acorde(s) sem shape salvo já possuem preset compatível para {form.instrument}.
+              </div>
+            ) : null}
+
             {isLoadingChordShapes ? (
               <div className="py-8 text-center text-sm text-gray-400">Carregando variações salvas...</div>
             ) : detectedChords.length === 0 ? (
@@ -1111,6 +1170,19 @@ const AdminCifraV2Editor: React.FC = () => {
                             </span>
                           ))}
                         </div>
+                      ) : chordPresetSuggestions[chord] ? (
+                        <div className="mt-3 flex flex-wrap items-center gap-2">
+                          <span className="rounded-full border border-primary-500/30 bg-primary-500/10 px-2.5 py-1 text-xs text-primary-200">
+                            Preset base disponível
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => handleApplyPresetToInlineShape(chord)}
+                            className="rounded-full border border-primary-500/30 bg-primary-500/10 px-3 py-1.5 text-xs text-primary-100 hover:bg-primary-500/20 transition-colors"
+                          >
+                            Usar preset
+                          </button>
+                        </div>
                       ) : null}
                     </div>
                   );
@@ -1145,6 +1217,26 @@ const AdminCifraV2Editor: React.FC = () => {
               </div>
             ) : (
               <div className="space-y-4">
+                {selectedChordPreset && !inlineShapeForm.id ? (
+                  <div className="rounded-xl border border-primary-500/20 bg-primary-500/5 p-4">
+                    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                      <div>
+                        <p className="text-sm font-semibold text-white">Preset compatível encontrado</p>
+                        <p className="mt-1 text-sm text-gray-300">
+                          Use o preset base de {selectedChordPreset.chord_name} para acelerar o cadastro desta variação.
+                        </p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => handleApplyPresetToInlineShape()}
+                        className="inline-flex items-center justify-center rounded-xl border border-primary-500/30 bg-primary-500/10 px-4 py-2 text-sm text-primary-100 hover:bg-primary-500/20 transition-colors"
+                      >
+                        Aplicar preset
+                      </button>
+                    </div>
+                  </div>
+                ) : null}
+
                 <div className="grid gap-4 md:grid-cols-2">
                   <label className="space-y-2">
                     <span className="text-sm text-gray-300">Acorde detectado</span>

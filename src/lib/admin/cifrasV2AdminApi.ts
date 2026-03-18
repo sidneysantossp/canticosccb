@@ -14,7 +14,9 @@ export {
 } from '@/lib/cifras-v2/cifraChordShapesRepository';
 export {
   CIFRA_CHORD_PRESET_GROUPS,
+  findCifraChordShapePreset,
   type CifraChordPresetGroup,
+  type CifraChordShapePreset,
 } from '@/lib/cifras-v2/chordShapePresets';
 export {
   buildLegacyCifraMigrationPreview,

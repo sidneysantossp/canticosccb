@@ -1,4 +1,5 @@
 import type { CifraInstrument } from '@/types/cifras-v2';
+import { parseChord } from '@/utils/chordUtils';
 
 import type { UpsertCifraChordShapeInput } from './cifraChordShapesRepository';
 
@@ -194,4 +195,46 @@ export function getCifraChordShapePresets(group: CifraChordPresetGroup): CifraCh
   }
 
   return CIFRA_CHORD_SHAPE_PRESETS[group] ?? [];
+}
+
+function buildChordPresetCandidates(chordName: string): string[] {
+  const trimmed = chordName.trim();
+  if (!trimmed) {
+    return [];
+  }
+
+  const candidates = [trimmed];
+
+  if (trimmed.includes('/')) {
+    candidates.push(trimmed.split('/')[0].trim());
+  }
+
+  const parsed = parseChord(trimmed);
+  if (parsed) {
+    candidates.push(`${parsed.root}${parsed.suffix.startsWith('m') ? 'm' : ''}`);
+    candidates.push(parsed.root);
+  }
+
+  return Array.from(new Set(candidates.filter(Boolean)));
+}
+
+export function findCifraChordShapePreset(
+  instrument: CifraInstrument,
+  chordName: string,
+): CifraChordShapePreset | null {
+  if (instrument === 'outro') {
+    return null;
+  }
+
+  const presets = CIFRA_CHORD_SHAPE_PRESETS[instrument] ?? [];
+  const candidates = buildChordPresetCandidates(chordName);
+
+  for (const candidate of candidates) {
+    const preset = presets.find((item) => item.chord_name === candidate);
+    if (preset) {
+      return preset;
+    }
+  }
+
+  return null;
 }
