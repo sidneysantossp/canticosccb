@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { AlertCircle, Download, Music, Plus, RefreshCw, Save, Star, Trash2 } from 'lucide-react';
+import { useSearchParams } from 'react-router-dom';
 
 import AlertModal from '@/components/ui/AlertModal';
 import {
@@ -98,6 +99,7 @@ function mapShapeToForm(shape: CifraChordShape): ShapeFormState {
 }
 
 const AdminCifraChordShapes: React.FC = () => {
+  const [searchParams] = useSearchParams();
   const [shapes, setShapes] = useState<CifraChordShape[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
@@ -116,6 +118,31 @@ const AdminCifraChordShapes: React.FC = () => {
   useEffect(() => {
     void loadShapes();
   }, []);
+
+  useEffect(() => {
+    const instrument = searchParams.get('instrument') as CifraInstrument | null;
+    const chord = searchParams.get('chord')?.trim() || '';
+
+    if (instrument && CIFRA_V2_INSTRUMENTS.some((item) => item.value === instrument)) {
+      setInstrumentFilter(instrument);
+      setForm({
+        ...EMPTY_FORM,
+        instrument,
+        chord_name: chord,
+        tuning: DEFAULT_TUNING[instrument],
+        stringCount: instrument === 'ukulele' ? '4' : instrument === 'cavaco' ? '4' : instrument === 'teclado' ? '7' : '6',
+      });
+    } else if (chord) {
+      setForm((current) => ({
+        ...current,
+        chord_name: chord,
+      }));
+    }
+
+    if (chord) {
+      setSearchTerm(chord);
+    }
+  }, [searchParams]);
 
   async function loadShapes() {
     try {

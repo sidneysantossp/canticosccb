@@ -3,6 +3,7 @@ export {
   deleteCifraChordShape,
   fetchCifraChordShapeById,
   fetchCifraChordShapes,
+  fetchCifraChordShapeVariants,
   prioritizeCifraChordShape,
   syncCifraChordShapePresets,
   updateCifraChordShape,

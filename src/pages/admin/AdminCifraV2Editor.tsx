@@ -7,6 +7,7 @@ import {
   createCifraSong,
   createCifraVersion,
   fetchCifraEngagementSnapshot,
+  fetchCifraChordShapeVariants,
   fetchCifraReportsByVersion,
   fetchCifraSongById,
   fetchCifraVersionById,
@@ -23,11 +24,13 @@ import {
 import {
   CIFRA_V2_ARRANGEMENTS,
   CIFRA_V2_INSTRUMENTS,
+  type CifraChordShape,
   type CifraReport,
   type CifraReportStatus,
   type CifraSectionKey,
   type CifraSourceType,
 } from '@/types/cifras-v2';
+import { extractChords } from '@/utils/chordUtils';
 
 type EditableSection = {
   key: CifraSectionKey;
@@ -76,6 +79,8 @@ const AdminCifraV2Editor: React.FC = () => {
   const [engagement, setEngagement] = useState<CifraEngagementSnapshot | null>(null);
   const [reports, setReports] = useState<CifraReport[]>([]);
   const [updatingReportId, setUpdatingReportId] = useState<string | null>(null);
+  const [isLoadingChordShapes, setIsLoadingChordShapes] = useState(false);
+  const [chordShapeVariants, setChordShapeVariants] = useState<Record<string, CifraChordShape[]>>({});
   const [songId, setSongId] = useState('');
   const [songForm, setSongForm] = useState({
     title: '',
@@ -233,6 +238,54 @@ const AdminCifraV2Editor: React.FC = () => {
         lines: parsePlainTextSectionLines(section.text),
       })),
     [sections],
+  );
+
+  const detectedChords = useMemo(() => {
+    const sectionText = sections
+      .map((section) => section.text.trim())
+      .filter(Boolean)
+      .join('\n\n');
+
+    return extractChords(sectionText);
+  }, [sections]);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const loadChordShapes = async () => {
+      if (detectedChords.length === 0) {
+        setChordShapeVariants({});
+        return;
+      }
+
+      try {
+        setIsLoadingChordShapes(true);
+        const variants = await fetchCifraChordShapeVariants(form.instrument as any, detectedChords);
+        if (isMounted) {
+          setChordShapeVariants(variants);
+        }
+      } catch (shapeError) {
+        console.error('Erro ao carregar shapes detectados da cifra:', shapeError);
+        if (isMounted) {
+          setChordShapeVariants({});
+        }
+      } finally {
+        if (isMounted) {
+          setIsLoadingChordShapes(false);
+        }
+      }
+    };
+
+    void loadChordShapes();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [detectedChords, form.instrument]);
+
+  const chordsWithShapeCount = useMemo(
+    () => detectedChords.filter((chord) => (chordShapeVariants[chord]?.length ?? 0) > 0).length,
+    [chordShapeVariants, detectedChords],
   );
 
   const createVersionForNewSong = async () => {
@@ -741,6 +794,95 @@ const AdminCifraV2Editor: React.FC = () => {
               <p>Linhas totais: <span className="text-white">{sectionDrafts.reduce((sum, section) => sum + section.lines.length, 0)}</span></p>
               <p>Blocos prontos para publicação: <span className="text-white">{sectionDrafts.filter((section) => section.lines.length > 0).length}</span></p>
             </div>
+          </div>
+
+          <div className="bg-gray-800/30 border border-gray-700 rounded-xl p-6">
+            <div className="flex items-start justify-between gap-4 mb-4">
+              <div>
+                <h2 className="text-xl font-semibold text-white">Acordes detectados</h2>
+                <p className="text-sm text-gray-400 mt-1">
+                  O editor lê o conteúdo atual e mostra as variações já cadastradas para {form.instrument}.
+                </p>
+              </div>
+              <Link
+                to="/admin/cifras-v2/shapes"
+                className="inline-flex items-center gap-2 rounded-xl border border-gray-700 bg-gray-800 px-3 py-2 text-sm text-white hover:bg-gray-700 transition-colors"
+              >
+                Abrir dicionário
+              </Link>
+            </div>
+
+            <div className="grid grid-cols-3 gap-3 mb-4">
+              <div className="rounded-xl border border-gray-700 bg-black/20 p-3">
+                <p className="text-xs uppercase tracking-[0.16em] text-gray-500">Detectados</p>
+                <p className="mt-1 text-2xl font-bold text-white">{detectedChords.length}</p>
+              </div>
+              <div className="rounded-xl border border-gray-700 bg-black/20 p-3">
+                <p className="text-xs uppercase tracking-[0.16em] text-gray-500">Com shapes</p>
+                <p className="mt-1 text-2xl font-bold text-primary-300">{chordsWithShapeCount}</p>
+              </div>
+              <div className="rounded-xl border border-gray-700 bg-black/20 p-3">
+                <p className="text-xs uppercase tracking-[0.16em] text-gray-500">Pendentes</p>
+                <p className="mt-1 text-2xl font-bold text-amber-300">{Math.max(detectedChords.length - chordsWithShapeCount, 0)}</p>
+              </div>
+            </div>
+
+            {isLoadingChordShapes ? (
+              <div className="py-8 text-center text-sm text-gray-400">Carregando variações salvas...</div>
+            ) : detectedChords.length === 0 ? (
+              <div className="rounded-xl border border-dashed border-gray-700 bg-black/10 p-4 text-sm text-gray-400">
+                Adicione linhas de acordes nas seções para detectar shapes e abrir o fluxo de cadastro rapidamente.
+              </div>
+            ) : (
+              <div className="space-y-3 max-h-[420px] overflow-y-auto pr-1">
+                {detectedChords.map((chord) => {
+                  const variants = chordShapeVariants[chord] || [];
+                  const primaryVariant = variants[0];
+                  const shapeLink = `/admin/cifras-v2/shapes?instrument=${encodeURIComponent(form.instrument)}&chord=${encodeURIComponent(chord)}`;
+
+                  return (
+                    <div key={chord} className="rounded-xl border border-gray-700 bg-black/20 p-4">
+                      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                        <div>
+                          <p className="text-lg font-semibold text-white">{chord}</p>
+                          <p className="mt-1 text-sm text-gray-400">
+                            {variants.length > 0
+                              ? `${variants.length} variação(ões) cadastrada(s). Principal: ${primaryVariant?.variation_name || 'default'}.`
+                              : 'Nenhum shape salvo para este acorde no instrumento atual.'}
+                          </p>
+                        </div>
+                        <div className="flex flex-wrap gap-2">
+                          <Link
+                            to={shapeLink}
+                            className="inline-flex items-center justify-center rounded-lg border border-gray-700 px-3 py-2 text-sm text-white hover:bg-gray-800 transition-colors"
+                          >
+                            {variants.length > 0 ? 'Gerenciar' : 'Cadastrar shape'}
+                          </Link>
+                        </div>
+                      </div>
+
+                      {variants.length > 0 ? (
+                        <div className="mt-3 flex flex-wrap gap-2">
+                          {variants.map((variant) => (
+                            <span
+                              key={variant.id}
+                              className={`rounded-full border px-2.5 py-1 text-xs ${
+                                variant.id === primaryVariant?.id
+                                  ? 'border-primary-500/30 bg-primary-500/10 text-primary-200'
+                                  : 'border-gray-700 bg-gray-900/70 text-gray-300'
+                              }`}
+                            >
+                              {variant.variation_name}
+                              {variant.id === primaryVariant?.id ? ' · principal' : ''}
+                            </span>
+                          ))}
+                        </div>
+                      ) : null}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
           </div>
 
           {!isCreateMode ? (
