@@ -4,6 +4,7 @@ import { ArrowLeft, Eye, Plus, Save, Send, Trash2, Upload } from 'lucide-react';
 
 import AlertModal from '@/components/ui/AlertModal';
 import {
+  createCifraChordShape,
   createCifraSong,
   createCifraVersion,
   fetchCifraEngagementSnapshot,
@@ -17,6 +18,7 @@ import {
   saveCifraVersionDraft,
   serializeSectionLines,
   submitCifraVersionForReview,
+  updateCifraChordShape,
   updateCifraReportStatus,
   type CifraEngagementSnapshot,
   type CifraVersionSectionDraft,
@@ -36,6 +38,22 @@ type EditableSection = {
   key: CifraSectionKey;
   label: string;
   text: string;
+};
+
+type EditableChordShape = {
+  id: string | null;
+  chordName: string;
+  variationName: string;
+  frets: string;
+  fingers: string;
+  barres: string;
+  notes: string;
+  tuning: string;
+  stringCount: string;
+  baseFret: string;
+  priority: string;
+  isLeftHandedSupported: boolean;
+  isActive: boolean;
 };
 
 const DIFFICULTY_OPTIONS = [
@@ -68,6 +86,89 @@ const REPORT_STATUS_LABELS: Record<CifraReportStatus, string> = {
   dismissed: 'Descartada',
 };
 
+const DEFAULT_TUNING_BY_INSTRUMENT = {
+  violao: 'E A D G B E',
+  guitarra: 'E A D G B E',
+  ukulele: 'G C E A',
+  teclado: 'C D E F G A B',
+  cavaco: 'D G B D',
+  outro: '',
+} as const;
+
+function getDefaultStringCount(instrument: string): string {
+  switch (instrument) {
+    case 'ukulele':
+    case 'cavaco':
+      return '4';
+    case 'teclado':
+      return '7';
+    default:
+      return '6';
+  }
+}
+
+function createEmptyChordShape(instrument: string, chordName = ''): EditableChordShape {
+  return {
+    id: null,
+    chordName,
+    variationName: 'default',
+    frets: '',
+    fingers: '',
+    barres: '',
+    notes: '',
+    tuning: DEFAULT_TUNING_BY_INSTRUMENT[instrument as keyof typeof DEFAULT_TUNING_BY_INSTRUMENT] || '',
+    stringCount: getDefaultStringCount(instrument),
+    baseFret: '1',
+    priority: '0',
+    isLeftHandedSupported: false,
+    isActive: true,
+  };
+}
+
+function parseNumberList(value: string): number[] {
+  return value
+    .split(',')
+    .map((item) => item.trim())
+    .filter(Boolean)
+    .map((item) => Number(item))
+    .filter((item) => Number.isFinite(item));
+}
+
+function parseStringList(value: string): string[] {
+  return value
+    .split(',')
+    .map((item) => item.trim())
+    .filter(Boolean);
+}
+
+function stringifyList(values: unknown): string {
+  if (!Array.isArray(values)) {
+    return '';
+  }
+
+  return values.join(', ');
+}
+
+function mapChordShapeToEditorForm(shape: CifraChordShape): EditableChordShape {
+  return {
+    id: shape.id,
+    chordName: shape.chord_name,
+    variationName: shape.variation_name || 'default',
+    frets: stringifyList(shape.fingering.frets ?? shape.fingering.positions ?? shape.fingering.strings),
+    fingers: stringifyList(shape.fingering.fingers),
+    barres: stringifyList(shape.fingering.barres),
+    notes: stringifyList(shape.fingering.notes),
+    tuning: typeof shape.fingering.tuning === 'string'
+      ? shape.fingering.tuning
+      : DEFAULT_TUNING_BY_INSTRUMENT[shape.instrument],
+    stringCount: String(shape.fingering.stringCount ?? getDefaultStringCount(shape.instrument)),
+    baseFret: String(shape.base_fret || 1),
+    priority: String(shape.priority ?? 0),
+    isLeftHandedSupported: shape.is_left_handed_supported,
+    isActive: shape.is_active,
+  };
+}
+
 const AdminCifraV2Editor: React.FC = () => {
   const navigate = useNavigate();
   const { versionId } = useParams<{ versionId: string }>();
@@ -80,7 +181,11 @@ const AdminCifraV2Editor: React.FC = () => {
   const [reports, setReports] = useState<CifraReport[]>([]);
   const [updatingReportId, setUpdatingReportId] = useState<string | null>(null);
   const [isLoadingChordShapes, setIsLoadingChordShapes] = useState(false);
+  const [isSavingInlineShape, setIsSavingInlineShape] = useState(false);
   const [chordShapeVariants, setChordShapeVariants] = useState<Record<string, CifraChordShape[]>>({});
+  const [selectedChordName, setSelectedChordName] = useState('');
+  const [selectedShapeId, setSelectedShapeId] = useState('');
+  const [inlineShapeForm, setInlineShapeForm] = useState<EditableChordShape>(createEmptyChordShape('violao'));
   const [songId, setSongId] = useState('');
   const [songForm, setSongForm] = useState({
     title: '',
@@ -156,6 +261,9 @@ const AdminCifraV2Editor: React.FC = () => {
         publicSlug: '',
       });
       setSections([{ key: 'verse', label: 'Corpo', text: '' }]);
+      setSelectedChordName('');
+      setSelectedShapeId('');
+      setInlineShapeForm(createEmptyChordShape('violao'));
       setError(null);
       setIsLoading(false);
       return;
@@ -249,18 +357,28 @@ const AdminCifraV2Editor: React.FC = () => {
     return extractChords(sectionText);
   }, [sections]);
 
+  const fetchDetectedChordShapes = async (instrument: string, chords: string[]) => {
+    if (chords.length === 0) {
+      return {};
+    }
+
+    return fetchCifraChordShapeVariants(instrument as any, chords);
+  };
+
   useEffect(() => {
     let isMounted = true;
 
     const loadChordShapes = async () => {
       if (detectedChords.length === 0) {
-        setChordShapeVariants({});
+        if (isMounted) {
+          setChordShapeVariants({});
+        }
         return;
       }
 
       try {
         setIsLoadingChordShapes(true);
-        const variants = await fetchCifraChordShapeVariants(form.instrument as any, detectedChords);
+        const variants = await fetchDetectedChordShapes(form.instrument, detectedChords);
         if (isMounted) {
           setChordShapeVariants(variants);
         }
@@ -287,6 +405,49 @@ const AdminCifraV2Editor: React.FC = () => {
     () => detectedChords.filter((chord) => (chordShapeVariants[chord]?.length ?? 0) > 0).length,
     [chordShapeVariants, detectedChords],
   );
+
+  const selectedChordVariants = useMemo(
+    () => (selectedChordName ? chordShapeVariants[selectedChordName] || [] : []),
+    [chordShapeVariants, selectedChordName],
+  );
+
+  useEffect(() => {
+    if (detectedChords.length === 0) {
+      setSelectedChordName('');
+      setSelectedShapeId('');
+      setInlineShapeForm(createEmptyChordShape(form.instrument));
+      return;
+    }
+
+    setSelectedChordName((current) => (detectedChords.includes(current) ? current : detectedChords[0]));
+  }, [detectedChords, form.instrument]);
+
+  useEffect(() => {
+    if (!selectedChordName) {
+      setSelectedShapeId('');
+      setInlineShapeForm(createEmptyChordShape(form.instrument));
+      return;
+    }
+
+    const variants = chordShapeVariants[selectedChordName] || [];
+
+    if (selectedShapeId) {
+      const selectedShape = variants.find((variant) => variant.id === selectedShapeId);
+      if (selectedShape) {
+        setInlineShapeForm(mapChordShapeToEditorForm(selectedShape));
+        return;
+      }
+    }
+
+    if (variants[0]) {
+      setSelectedShapeId(variants[0].id);
+      setInlineShapeForm(mapChordShapeToEditorForm(variants[0]));
+      return;
+    }
+
+    setSelectedShapeId('');
+    setInlineShapeForm(createEmptyChordShape(form.instrument, selectedChordName));
+  }, [chordShapeVariants, form.instrument, selectedChordName, selectedShapeId]);
 
   const createVersionForNewSong = async () => {
     const canonicalSongTitle = songForm.title.trim() || form.title.trim();
@@ -463,6 +624,68 @@ const AdminCifraV2Editor: React.FC = () => {
 
   const removeSection = (index: number) => {
     setSections((current) => current.filter((_, sectionIndex) => sectionIndex !== index));
+  };
+
+  const handleCreateInlineVariation = (chordName = selectedChordName) => {
+    setSelectedChordName(chordName);
+    setSelectedShapeId('');
+    setInlineShapeForm(createEmptyChordShape(form.instrument, chordName));
+  };
+
+  const handleSaveInlineShape = async () => {
+    if (!selectedChordName) {
+      return;
+    }
+
+    try {
+      setIsSavingInlineShape(true);
+
+      const payload = {
+        instrument: form.instrument as any,
+        chord_name: selectedChordName,
+        variation_name: inlineShapeForm.variationName.trim() || 'default',
+        base_fret: Number(inlineShapeForm.baseFret || 1) || 1,
+        priority: Number(inlineShapeForm.priority || 0) || 0,
+        is_left_handed_supported: inlineShapeForm.isLeftHandedSupported,
+        is_active: inlineShapeForm.isActive,
+        fingering: {
+          frets: parseNumberList(inlineShapeForm.frets),
+          fingers: parseNumberList(inlineShapeForm.fingers),
+          barres: parseNumberList(inlineShapeForm.barres),
+          notes: parseStringList(inlineShapeForm.notes),
+          tuning: inlineShapeForm.tuning.trim(),
+          stringCount: Number(inlineShapeForm.stringCount || 0) || undefined,
+        },
+      };
+
+      const savedShape = inlineShapeForm.id
+        ? await updateCifraChordShape(inlineShapeForm.id, payload)
+        : await createCifraChordShape(payload);
+
+      const refreshedVariants = await fetchDetectedChordShapes(form.instrument, detectedChords);
+      setChordShapeVariants(refreshedVariants);
+      setSelectedChordName(savedShape.chord_name);
+      setSelectedShapeId(savedShape.id);
+      setInlineShapeForm(mapChordShapeToEditorForm(savedShape));
+      setAlert({
+        isOpen: true,
+        title: inlineShapeForm.id ? 'Shape atualizado' : 'Shape criado',
+        message: inlineShapeForm.id
+          ? `A variação ${savedShape.variation_name} foi atualizada no editor rápido.`
+          : `A nova variação ${savedShape.variation_name} foi criada para ${savedShape.chord_name}.`,
+        type: 'success',
+      });
+    } catch (shapeError: any) {
+      console.error('Erro ao salvar shape inline da cifra:', shapeError);
+      setAlert({
+        isOpen: true,
+        title: 'Erro ao salvar shape',
+        message: shapeError?.message || 'Não foi possível salvar a variação do acorde.',
+        type: 'error',
+      });
+    } finally {
+      setIsSavingInlineShape(false);
+    }
   };
 
   const handleUpdateReportStatus = async (reportId: string, status: CifraReportStatus) => {
@@ -852,6 +1075,17 @@ const AdminCifraV2Editor: React.FC = () => {
                           </p>
                         </div>
                         <div className="flex flex-wrap gap-2">
+                          <button
+                            type="button"
+                            onClick={() => setSelectedChordName(chord)}
+                            className={`inline-flex items-center justify-center rounded-lg border px-3 py-2 text-sm transition-colors ${
+                              selectedChordName === chord
+                                ? 'border-primary-500/40 bg-primary-500/10 text-primary-200'
+                                : 'border-gray-700 text-white hover:bg-gray-800'
+                            }`}
+                          >
+                            Editar aqui
+                          </button>
                           <Link
                             to={shapeLink}
                             className="inline-flex items-center justify-center rounded-lg border border-gray-700 px-3 py-2 text-sm text-white hover:bg-gray-800 transition-colors"
@@ -881,6 +1115,214 @@ const AdminCifraV2Editor: React.FC = () => {
                     </div>
                   );
                 })}
+              </div>
+            )}
+          </div>
+
+          <div className="bg-gray-800/30 border border-gray-700 rounded-xl p-6">
+            <div className="flex items-start justify-between gap-4 mb-4">
+              <div>
+                <h2 className="text-xl font-semibold text-white">Editor rápido de shape</h2>
+                <p className="text-sm text-gray-400 mt-1">
+                  Cadastre ou ajuste uma variação sem sair da cifra. O instrumento segue a versão atual.
+                </p>
+              </div>
+              {selectedChordName ? (
+                <button
+                  type="button"
+                  onClick={() => handleCreateInlineVariation()}
+                  className="inline-flex items-center gap-2 rounded-xl border border-gray-700 bg-gray-800 px-3 py-2 text-sm text-white hover:bg-gray-700 transition-colors"
+                >
+                  <Plus className="w-4 h-4" />
+                  Nova variação
+                </button>
+              ) : null}
+            </div>
+
+            {detectedChords.length === 0 ? (
+              <div className="rounded-xl border border-dashed border-gray-700 bg-black/10 p-4 text-sm text-gray-400">
+                Quando houver acordes detectados nas seções, este editor rápido ficará disponível.
+              </div>
+            ) : (
+              <div className="space-y-4">
+                <div className="grid gap-4 md:grid-cols-2">
+                  <label className="space-y-2">
+                    <span className="text-sm text-gray-300">Acorde detectado</span>
+                    <select
+                      value={selectedChordName}
+                      onChange={(event) => {
+                        setSelectedChordName(event.target.value);
+                        setSelectedShapeId('');
+                      }}
+                      className="w-full rounded-xl border border-gray-700 bg-gray-800 px-4 py-3 text-white"
+                    >
+                      {detectedChords.map((chord) => (
+                        <option key={chord} value={chord}>{chord}</option>
+                      ))}
+                    </select>
+                  </label>
+
+                  <label className="space-y-2">
+                    <span className="text-sm text-gray-300">Variação existente</span>
+                    <select
+                      value={selectedShapeId || '__new'}
+                      onChange={(event) => {
+                        if (event.target.value === '__new') {
+                          handleCreateInlineVariation();
+                          return;
+                        }
+                        setSelectedShapeId(event.target.value);
+                      }}
+                      className="w-full rounded-xl border border-gray-700 bg-gray-800 px-4 py-3 text-white"
+                    >
+                      <option value="__new">Nova variação</option>
+                      {selectedChordVariants.map((variant) => (
+                        <option key={variant.id} value={variant.id}>
+                          {variant.variation_name} {variant.priority > 0 ? `· prioridade ${variant.priority}` : ''}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                </div>
+
+                <div className="grid gap-4 md:grid-cols-3">
+                  <label className="space-y-2">
+                    <span className="text-sm text-gray-300">Variação</span>
+                    <input
+                      type="text"
+                      value={inlineShapeForm.variationName}
+                      onChange={(event) => setInlineShapeForm((current) => ({ ...current, variationName: event.target.value }))}
+                      className="w-full rounded-xl border border-gray-700 bg-gray-800 px-4 py-3 text-white"
+                    />
+                  </label>
+                  <label className="space-y-2">
+                    <span className="text-sm text-gray-300">Base fret</span>
+                    <input
+                      type="number"
+                      min="1"
+                      value={inlineShapeForm.baseFret}
+                      onChange={(event) => setInlineShapeForm((current) => ({ ...current, baseFret: event.target.value }))}
+                      className="w-full rounded-xl border border-gray-700 bg-gray-800 px-4 py-3 text-white"
+                    />
+                  </label>
+                  <label className="space-y-2">
+                    <span className="text-sm text-gray-300">Prioridade</span>
+                    <input
+                      type="number"
+                      value={inlineShapeForm.priority}
+                      onChange={(event) => setInlineShapeForm((current) => ({ ...current, priority: event.target.value }))}
+                      className="w-full rounded-xl border border-gray-700 bg-gray-800 px-4 py-3 text-white"
+                    />
+                  </label>
+                </div>
+
+                <div className="grid gap-4 md:grid-cols-2">
+                  <label className="space-y-2">
+                    <span className="text-sm text-gray-300">Frets / posições</span>
+                    <input
+                      type="text"
+                      value={inlineShapeForm.frets}
+                      onChange={(event) => setInlineShapeForm((current) => ({ ...current, frets: event.target.value }))}
+                      placeholder="0, 2, 2, 1, 0, 0"
+                      className="w-full rounded-xl border border-gray-700 bg-gray-800 px-4 py-3 text-white"
+                    />
+                  </label>
+                  <label className="space-y-2">
+                    <span className="text-sm text-gray-300">Dedos</span>
+                    <input
+                      type="text"
+                      value={inlineShapeForm.fingers}
+                      onChange={(event) => setInlineShapeForm((current) => ({ ...current, fingers: event.target.value }))}
+                      placeholder="0, 2, 3, 1, 0, 0"
+                      className="w-full rounded-xl border border-gray-700 bg-gray-800 px-4 py-3 text-white"
+                    />
+                  </label>
+                </div>
+
+                <div className="grid gap-4 md:grid-cols-2">
+                  <label className="space-y-2">
+                    <span className="text-sm text-gray-300">Barres</span>
+                    <input
+                      type="text"
+                      value={inlineShapeForm.barres}
+                      onChange={(event) => setInlineShapeForm((current) => ({ ...current, barres: event.target.value }))}
+                      placeholder="1, 1"
+                      className="w-full rounded-xl border border-gray-700 bg-gray-800 px-4 py-3 text-white"
+                    />
+                  </label>
+                  <label className="space-y-2">
+                    <span className="text-sm text-gray-300">Notas</span>
+                    <input
+                      type="text"
+                      value={inlineShapeForm.notes}
+                      onChange={(event) => setInlineShapeForm((current) => ({ ...current, notes: event.target.value }))}
+                      placeholder="A, C, E"
+                      className="w-full rounded-xl border border-gray-700 bg-gray-800 px-4 py-3 text-white"
+                    />
+                  </label>
+                </div>
+
+                <div className="grid gap-4 md:grid-cols-2">
+                  <label className="space-y-2">
+                    <span className="text-sm text-gray-300">Afinação</span>
+                    <input
+                      type="text"
+                      value={inlineShapeForm.tuning}
+                      onChange={(event) => setInlineShapeForm((current) => ({ ...current, tuning: event.target.value }))}
+                      className="w-full rounded-xl border border-gray-700 bg-gray-800 px-4 py-3 text-white"
+                    />
+                  </label>
+                  <label className="space-y-2">
+                    <span className="text-sm text-gray-300">Qtde. de cordas / notas</span>
+                    <input
+                      type="number"
+                      min="1"
+                      value={inlineShapeForm.stringCount}
+                      onChange={(event) => setInlineShapeForm((current) => ({ ...current, stringCount: event.target.value }))}
+                      className="w-full rounded-xl border border-gray-700 bg-gray-800 px-4 py-3 text-white"
+                    />
+                  </label>
+                </div>
+
+                <div className="grid gap-3 md:grid-cols-2">
+                  <label className="flex items-center gap-3 rounded-xl border border-gray-700 bg-black/20 p-3 text-sm text-gray-300">
+                    <input
+                      type="checkbox"
+                      checked={inlineShapeForm.isLeftHandedSupported}
+                      onChange={(event) => setInlineShapeForm((current) => ({ ...current, isLeftHandedSupported: event.target.checked }))}
+                    />
+                    Suporta canhoto
+                  </label>
+                  <label className="flex items-center gap-3 rounded-xl border border-gray-700 bg-black/20 p-3 text-sm text-gray-300">
+                    <input
+                      type="checkbox"
+                      checked={inlineShapeForm.isActive}
+                      onChange={(event) => setInlineShapeForm((current) => ({ ...current, isActive: event.target.checked }))}
+                    />
+                    Shape ativo
+                  </label>
+                </div>
+
+                <div className="flex flex-wrap gap-3">
+                  <button
+                    type="button"
+                    onClick={() => void handleSaveInlineShape()}
+                    disabled={isSavingInlineShape || !selectedChordName}
+                    className="inline-flex items-center gap-2 rounded-xl bg-primary-500 px-4 py-3 font-semibold text-black transition-colors hover:bg-primary-400 disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    <Save className="w-4 h-4" />
+                    {isSavingInlineShape ? 'Salvando...' : inlineShapeForm.id ? 'Atualizar shape' : 'Criar shape'}
+                  </button>
+
+                  {selectedChordName ? (
+                    <Link
+                      to={`/admin/cifras-v2/shapes?instrument=${encodeURIComponent(form.instrument)}&chord=${encodeURIComponent(selectedChordName)}`}
+                      className="inline-flex items-center gap-2 rounded-xl border border-gray-700 bg-gray-800 px-4 py-3 text-white hover:bg-gray-700 transition-colors"
+                    >
+                      Abrir editor completo
+                    </Link>
+                  ) : null}
+                </div>
               </div>
             )}
           </div>
