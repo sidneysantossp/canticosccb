@@ -479,12 +479,16 @@ const AdminCifraV2Editor: React.FC = () => {
       Object.fromEntries(
         detectedChords
           .map((chord) => {
-            const presetMatch = findCifraChordShapePresetMatch(form.instrument as any, chord);
+            const presetMatch = findCifraChordShapePresetMatch(form.instrument as any, chord, {
+              preferredKey: form.preferredKey || form.originalKey,
+              originalKey: form.originalKey,
+              progression: detectedChords,
+            });
             return presetMatch ? [chord, presetMatch] : null;
           })
           .filter((entry): entry is [string, CifraChordShapePresetMatch] => Boolean(entry)),
       ),
-    [detectedChords, form.instrument],
+    [detectedChords, form.instrument, form.originalKey, form.preferredKey],
   );
 
   const missingChordsWithPresetCount = useMemo(

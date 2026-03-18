@@ -22,10 +22,30 @@ export interface CifraChordShapePresetMatch {
   preset: CifraChordShapePreset;
 }
 
+export interface CifraChordShapePresetMatchOptions {
+  preferredKey?: string | null;
+  originalKey?: string | null;
+  progression?: string[] | null;
+}
+
 const GUITAR_TUNING = 'E A D G B E';
 const UKULELE_TUNING = 'G C E A';
 const CAVACO_TUNING = 'D G B D';
 const KEYBOARD_HANDING = 'mao direita';
+const FLAT_PREFERRED_KEYS = new Set([
+  'F',
+  'Bb',
+  'Eb',
+  'Ab',
+  'Db',
+  'Gb',
+  'Dm',
+  'Gm',
+  'Cm',
+  'Fm',
+  'Bbm',
+  'Ebm',
+]);
 const ENHARMONIC_EQUIVALENTS: Record<string, string> = {
   'A#': 'Bb',
   'Bb': 'A#',
@@ -224,6 +244,122 @@ export function getCifraChordShapePresets(group: CifraChordPresetGroup): CifraCh
   return CIFRA_CHORD_SHAPE_PRESETS[group] ?? [];
 }
 
+function getRootAccidental(note: string): 'flat' | 'sharp' | 'natural' {
+  if (note.includes('b')) {
+    return 'flat';
+  }
+  if (note.includes('#')) {
+    return 'sharp';
+  }
+  return 'natural';
+}
+
+function inferFlatPreference(options?: CifraChordShapePresetMatchOptions): boolean | null {
+  const contextualKeys = [options?.preferredKey, options?.originalKey]
+    .map((key) => key?.trim())
+    .filter((key): key is string => Boolean(key));
+
+  for (const key of contextualKeys) {
+    const parsed = parseChord(key);
+    const normalized = parsed ? `${parsed.root}${parsed.suffix}` : key;
+    if (FLAT_PREFERRED_KEYS.has(normalized) || normalized.includes('b')) {
+      return true;
+    }
+    if (normalized.includes('#')) {
+      return false;
+    }
+  }
+
+  const progression = options?.progression ?? [];
+  if (progression.length > 0) {
+    let flats = 0;
+    let sharps = 0;
+
+    progression.forEach((chord) => {
+      const parsed = parseChord(chord);
+      if (!parsed) {
+        return;
+      }
+      const accidental = getRootAccidental(parsed.root);
+      if (accidental === 'flat') {
+        flats += 1;
+      } else if (accidental === 'sharp') {
+        sharps += 1;
+      }
+    });
+
+    if (flats > sharps) {
+      return true;
+    }
+    if (sharps > flats) {
+      return false;
+    }
+  }
+
+  return null;
+}
+
+function getStrategyBaseScore(strategy: CifraChordShapePresetMatchStrategy): number {
+  switch (strategy) {
+    case 'exact':
+      return 600;
+    case 'slash_root':
+      return 520;
+    case 'enharmonic':
+      return 470;
+    case 'minor_base':
+      return 430;
+    case 'extension_family':
+      return 390;
+    case 'root_only':
+      return 340;
+    default:
+      return 0;
+  }
+}
+
+function scorePresetCandidate(
+  requestedChordName: string,
+  candidate: string,
+  strategy: CifraChordShapePresetMatchStrategy,
+  options?: CifraChordShapePresetMatchOptions,
+): number {
+  const parsedCandidate = parseChord(candidate);
+  const parsedRequested = parseChord(requestedChordName);
+  const flatPreference = inferFlatPreference(options);
+  const candidateAccidental = parsedCandidate ? getRootAccidental(parsedCandidate.root) : 'natural';
+  const requestedAccidental = parsedRequested ? getRootAccidental(parsedRequested.root) : 'natural';
+
+  let score = getStrategyBaseScore(strategy);
+
+  if (flatPreference === true) {
+    if (candidateAccidental === 'flat') {
+      score += 35;
+    } else if (candidateAccidental === 'sharp') {
+      score -= 20;
+    }
+  } else if (flatPreference === false) {
+    if (candidateAccidental === 'sharp') {
+      score += 35;
+    } else if (candidateAccidental === 'flat') {
+      score -= 20;
+    }
+  }
+
+  if (candidateAccidental === requestedAccidental && requestedAccidental !== 'natural') {
+    score += 12;
+  }
+
+  if (options?.preferredKey) {
+    const preferredRoot = parseChord(options.preferredKey)?.root;
+    if (preferredRoot && parsedCandidate?.root === preferredRoot) {
+      score += 10;
+    }
+  }
+
+  return score;
+}
+
 function buildChordPresetCandidates(
   chordName: string,
 ): Array<{ candidate: string; strategy: CifraChordShapePresetMatchStrategy }> {
@@ -365,13 +501,15 @@ function buildChordPresetCandidates(
 export function findCifraChordShapePreset(
   instrument: CifraInstrument,
   chordName: string,
+  options?: CifraChordShapePresetMatchOptions,
 ): CifraChordShapePreset | null {
-  return findCifraChordShapePresetMatch(instrument, chordName)?.preset ?? null;
+  return findCifraChordShapePresetMatch(instrument, chordName, options)?.preset ?? null;
 }
 
 export function findCifraChordShapePresetMatch(
   instrument: CifraInstrument,
   chordName: string,
+  options?: CifraChordShapePresetMatchOptions,
 ): CifraChordShapePresetMatch | null {
   if (instrument === 'outro') {
     return null;
@@ -379,18 +517,29 @@ export function findCifraChordShapePresetMatch(
 
   const presets = CIFRA_CHORD_SHAPE_PRESETS[instrument] ?? [];
   const candidates = buildChordPresetCandidates(chordName);
+  const matches: CifraChordShapePresetMatch[] = [];
 
   for (const { candidate, strategy } of candidates) {
     const preset = presets.find((item) => item.chord_name === candidate);
     if (preset) {
-      return {
+      matches.push({
         requestedChordName: chordName.trim(),
         matchedChordName: candidate,
         strategy,
         preset,
-      };
+      });
     }
   }
 
-  return null;
+  if (matches.length === 0) {
+    return null;
+  }
+
+  matches.sort((left, right) => {
+    const rightScore = scorePresetCandidate(chordName, right.matchedChordName, right.strategy, options);
+    const leftScore = scorePresetCandidate(chordName, left.matchedChordName, left.strategy, options);
+    return rightScore - leftScore;
+  });
+
+  return matches[0];
 }
