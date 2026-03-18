@@ -22,6 +22,12 @@ export interface CifraChordShapePresetMatch {
   preset: CifraChordShapePreset;
 }
 
+export interface CifraChordNameMatchExplanation {
+  strategy: CifraChordShapePresetMatchStrategy | 'same_root' | 'fallback';
+  label: string;
+  detail: string;
+}
+
 export interface CifraChordShapePresetMatchOptions {
   preferredKey?: string | null;
   originalKey?: string | null;
@@ -372,6 +378,95 @@ function getChordMatchStrategy(
   return buildChordPresetCandidates(requestedChordName).find(
     ({ candidate }) => candidate === normalizedMatched,
   )?.strategy ?? null;
+}
+
+function buildNotationContextHint(
+  requestedChordName: string,
+  matchedChordName: string,
+  options?: CifraChordShapePresetMatchOptions,
+): string | null {
+  const flatPreference = inferFlatPreference(options);
+  const requestedRoot = parseChord(requestedChordName)?.root || '';
+  const matchedRoot = parseChord(matchedChordName)?.root || '';
+
+  if (flatPreference === true && matchedRoot.includes('b') && requestedRoot !== matchedRoot) {
+    return 'O contexto tonal atual favorece a grafia com bemol.';
+  }
+
+  if (flatPreference === false && matchedRoot.includes('#') && requestedRoot !== matchedRoot) {
+    return 'O contexto tonal atual favorece a grafia com sustenido.';
+  }
+
+  return null;
+}
+
+export function explainCifraChordNameMatch(
+  requestedChordName: string,
+  matchedChordName: string,
+  options?: CifraChordShapePresetMatchOptions,
+): CifraChordNameMatchExplanation {
+  const strategy = getChordMatchStrategy(requestedChordName, matchedChordName);
+  const notationHint = buildNotationContextHint(requestedChordName, matchedChordName, options);
+
+  if (strategy) {
+    switch (strategy) {
+      case 'exact':
+        return {
+          strategy,
+          label: 'Acorde exato',
+          detail: 'Esta variação corresponde exatamente ao acorde exibido na cifra atual.',
+        };
+      case 'slash_root':
+        return {
+          strategy,
+          label: 'Baixo alternativo',
+          detail: `Esta leitura usa a base de ${matchedChordName} para representar ${requestedChordName}.`,
+        };
+      case 'enharmonic':
+        return {
+          strategy,
+          label: 'Equivalente enarmônico',
+          detail: [`${matchedChordName} foi priorizado como equivalente de ${requestedChordName}.`, notationHint]
+            .filter(Boolean)
+            .join(' '),
+        };
+      case 'minor_base':
+        return {
+          strategy,
+          label: 'Base menor',
+          detail: `Esta variação simplifica ${requestedChordName} para a base ${matchedChordName}.`,
+        };
+      case 'extension_family':
+        return {
+          strategy,
+          label: 'Mesma família harmônica',
+          detail: `Esta opção aproxima ${requestedChordName} por uma extensão compatível em ${matchedChordName}.`,
+        };
+      case 'root_only':
+        return {
+          strategy,
+          label: 'Raiz do acorde',
+          detail: `Esta sugestão preserva a tônica de ${requestedChordName} em ${matchedChordName}.`,
+        };
+    }
+  }
+
+  const parsedRequested = parseChord(requestedChordName);
+  const parsedMatched = parseChord(matchedChordName);
+
+  if (parsedRequested && parsedMatched && parsedRequested.root === parsedMatched.root) {
+    return {
+      strategy: 'same_root',
+      label: 'Mesma tônica',
+      detail: `A variação mantém a mesma tônica de ${requestedChordName} no instrumento atual.`,
+    };
+  }
+
+  return {
+    strategy: 'fallback',
+    label: 'Shape disponível',
+    detail: 'Esta foi a melhor variação disponível encontrada para o acorde e instrumento atuais.',
+  };
 }
 
 export function scoreCifraChordNameMatch(

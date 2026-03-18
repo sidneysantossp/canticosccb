@@ -7,6 +7,7 @@ import { fetchCifraBySlug, incrementCifraViews, type Cifra, INSTRUMENTS, ALL_KEY
 import { buildHinoUrl } from '@/utils/slugUrl';
 import {
   addCifraFavorite,
+  explainCifraChordNameMatch,
   fetchCifraChordShapeVariants,
   fetchCifraEngagementSnapshot,
   fetchPublicCifraPageBySlug,
@@ -1065,6 +1066,11 @@ const CifraPage: React.FC = () => {
                   shapes={item.shapes}
                   selectedShapeId={item.selectedShape.id}
                   onSelectShape={handleShapeSelection}
+                  matchOptions={{
+                    preferredKey: selectedKey,
+                    originalKey: cifra.original_key,
+                    progression: chords,
+                  }}
                 />
               ) : (
                 <div key={item.chord} className="flex-shrink-0 text-center">
@@ -1618,6 +1624,11 @@ interface DatabaseChordShapeCardProps {
   shapes: CifraChordShape[];
   selectedShapeId: string;
   onSelectShape: (chord: string, shapeId: string) => void;
+  matchOptions: {
+    preferredKey?: string | null;
+    originalKey?: string | null;
+    progression?: string[] | null;
+  };
 }
 
 function getShapeVariationLabel(requestedChord: string, shape: CifraChordShape): string {
@@ -1638,10 +1649,13 @@ const DatabaseChordShapeCard: React.FC<DatabaseChordShapeCardProps> = ({
   shapes,
   selectedShapeId,
   onSelectShape,
+  matchOptions,
 }) => {
   const shape = shapes.find((item) => item.id === selectedShapeId) || shapes[0];
   const diagram = normalizeDatabaseShape(shape);
   const notes = buildShapeNotes(shape);
+  const explanation = explainCifraChordNameMatch(chord, shape.chord_name, matchOptions);
+  const isPrimaryShape = shapes[0]?.id === shape.id;
 
   return (
     <div className="flex-shrink-0 rounded-2xl border border-white/10 bg-background-secondary px-4 py-3 text-center min-w-[168px] max-w-[198px]">
@@ -1657,6 +1671,19 @@ const DatabaseChordShapeCard: React.FC<DatabaseChordShapeCardProps> = ({
       )}
       <div className="mt-2 space-y-1">
         <p className="text-[11px] uppercase tracking-[0.18em] text-gray-500">{shape.instrument}</p>
+        <div className="flex flex-wrap justify-center gap-1.5">
+          <span className="rounded-full border border-primary-500/30 bg-primary-500/10 px-2 py-0.5 text-[10px] font-medium text-primary-200">
+            {explanation.label}
+          </span>
+          {shapes.length > 1 && isPrimaryShape ? (
+            <span className="rounded-full border border-white/10 bg-white/5 px-2 py-0.5 text-[10px] font-medium text-gray-300">
+              Principal
+            </span>
+          ) : null}
+        </div>
+        <p className="text-[11px] text-gray-400 leading-relaxed">
+          {explanation.detail}
+        </p>
         {notes.slice(0, 2).map((note) => (
           <p key={note} className="text-[11px] text-gray-400 leading-relaxed">
             {note}
