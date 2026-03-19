@@ -22,6 +22,27 @@ export { uploadFile, uploadAudio, uploadCover, uploadAvatar } from './supabase-u
 // ==================== STUBS PARA COMPATIBILIDADE ====================
 // Estas funções retornam dados vazios para não quebrar imports existentes
 
+async function resolveHinoCategoriasByName(categorias: string[]): Promise<Array<{ id: string; nome: string }>> {
+  const names = Array.from(
+    new Set(
+      (categorias || [])
+        .map((item) => String(item || '').trim())
+        .filter(Boolean)
+    )
+  );
+
+  if (names.length === 0) {
+    return [];
+  }
+
+  const rows = await supabaseFetch<any>('categorias', {
+    select: 'id,nome',
+    limit: '1000',
+  });
+
+  return rows.filter((categoria: any) => names.includes(String(categoria.nome || '').trim()));
+}
+
 export const hinosApi = {
   list: async (params?: { compositor?: string; search?: string; ativo?: number; limit?: number }) => {
 
@@ -153,13 +174,7 @@ export const hinosApi = {
       if (result && (result as any).id && data.categorias && data.categorias.length > 0) {
         // Inserir relacionamentos com categorias
         const hinoId = (result as any).id;
-        
-        // Buscar IDs das categorias pelos nomes
-        const categoriaNames = data.categorias.join("','");
-        const categorias = await supabaseFetch<any>('categorias', {
-          nome: `in.('${categoriaNames}')`,
-          select: 'id,nome',
-        });
+        const categorias = await resolveHinoCategoriasByName(data.categorias);
         
         // Inserir relacionamentos
         for (const cat of categorias) {
@@ -182,58 +197,62 @@ export const hinosApi = {
   },
   update: async (id: string | number, data: any) => {
     try {
+      const updateData: Record<string, any> = {};
 
-      // Atualizar hino
-      const updateData: Record<string, any> = {
-        titulo: data.titulo,
-      };
+      if (data.titulo !== undefined) updateData.titulo = String(data.titulo || '').trim();
       const resolvedCategoria = data.categorias?.[0] || data.categoria;
-      if (resolvedCategoria !== undefined) updateData.categoria = resolvedCategoria;
-      if (data.numero !== undefined) updateData.numero = data.numero;
-      if (data.compositor) updateData.compositor_nome = data.compositor;
-      if (data.compositor_nome) updateData.compositor_nome = data.compositor_nome;
-      if (data.compositor_id) updateData.compositor_id = data.compositor_id;
-      if (data.cover_url !== undefined) updateData.cover_url = data.cover_url;
-      if (data.audio_url !== undefined) updateData.audio_url = data.audio_url;
-      if (data.duracao !== undefined) updateData.duracao = data.duracao;
-      if (data.letra !== undefined) updateData.letra = data.letra;
+      if (resolvedCategoria !== undefined) updateData.categoria = resolvedCategoria || '';
+      if (data.numero !== undefined) {
+        updateData.numero = data.numero === null || data.numero === '' || Number(data.numero) === 0
+          ? null
+          : Number(data.numero);
+      }
+      if (data.compositor !== undefined || data.compositor_nome !== undefined) {
+        const resolvedComposer = data.compositor_nome ?? data.compositor;
+        updateData.compositor_nome = String(resolvedComposer || '').trim() || null;
+      }
+      if (data.compositor_id !== undefined) updateData.compositor_id = data.compositor_id || null;
+      if (data.cover_url !== undefined) updateData.cover_url = data.cover_url || null;
+      if (data.audio_url !== undefined) updateData.audio_url = data.audio_url || null;
+      if (data.duracao !== undefined) updateData.duracao = data.duracao || null;
+      if (data.letra !== undefined) updateData.letra = data.letra || null;
       if (data.ativo !== undefined) updateData.ativo = data.ativo;
-      if (data.status !== undefined) updateData.status = data.status;
-      if (data.youtube_source) updateData.youtube_source = data.youtube_source;
-      if (data.participacao_especial !== undefined) updateData.participacao_especial = data.participacao_especial;
+      if (data.status !== undefined) {
+        updateData.status = data.status;
+      } else if (data.ativo !== undefined) {
+        updateData.status = data.ativo === 1 || data.ativo === true ? 'published' : 'pending';
+      }
+      if (data.youtube_source !== undefined) updateData.youtube_source = data.youtube_source || null;
+      if (data.participacao_especial !== undefined) {
+        updateData.participacao_especial = String(data.participacao_especial || '').trim() || null;
+      }
       
       console.log('📀 [hinosApi.update] Updating hino', id, 'with:', updateData);
-      const { data: result, error: updateError } = await supabase
-        .from('hinos')
-        .update(updateData)
-        .eq('id', id)
-        .select();
-      
-      if (updateError) {
-        console.error('📀 [hinosApi.update] Supabase error:', updateError);
-        return { data: null, error: updateError.message };
+      const result = await supabaseUpdate<any>('hinos', { id: `eq.${id}` }, updateData);
+
+      if (!Array.isArray(result) || result.length === 0) {
+        throw new Error('Nenhum registro foi atualizado. Verifique permissões ou se o hino ainda existe.');
       }
+
       console.log('📀 [hinosApi.update] Success:', result);
       
       // Atualizar categorias se fornecidas
       if (data.categorias && Array.isArray(data.categorias)) {
         // Remover relacionamentos antigos
-        await supabase.from('hino_categorias').delete().eq('hino_id', id);
+        const deleted = await supabaseDelete('hino_categorias', { hino_id: `eq.${id}` });
+        if (!deleted) {
+          throw new Error('Nao foi possivel atualizar as categorias do hino.');
+        }
         
         // Adicionar novos relacionamentos
         if (data.categorias.length > 0) {
-          const { data: categorias } = await supabase
-            .from('categorias')
-            .select('id,nome')
-            .in('nome', data.categorias);
+          const categorias = await resolveHinoCategoriasByName(data.categorias);
           
-          if (categorias) {
-            for (const cat of categorias) {
-              await supabase.from('hino_categorias').insert({
-                hino_id: id,
-                categoria_id: cat.id,
-              });
-            }
+          for (const cat of categorias) {
+            await supabaseInsert('hino_categorias', {
+              hino_id: id,
+              categoria_id: cat.id,
+            });
           }
         }
       }
