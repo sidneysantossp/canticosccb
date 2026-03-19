@@ -13,6 +13,7 @@ const AuthCallbackPage: React.FC = () => {
       try {
         const callbackType = searchParams.get('type');
         const isEmailVerification = callbackType === 'email_verification';
+        const isPasswordRecovery = callbackType === 'recovery';
 
         const resolvePostAuthDestination = async (sessionUser: { id: string; email?: string | null; user_metadata?: Record<string, any> }) => {
           const { data: dbUser } = await supabase
@@ -98,6 +99,16 @@ const AuthCallbackPage: React.FC = () => {
               return;
             }
           }
+        }
+
+        if (isPasswordRecovery && session) {
+          await new Promise(resolve => setTimeout(resolve, 300));
+          navigate('/reset-password', { replace: true });
+          return;
+        }
+
+        if (isPasswordRecovery) {
+          throw new Error('Link de recuperação inválido ou expirado. Solicite um novo email.');
         }
 
         // If this is an email verification callback, go to onboarding

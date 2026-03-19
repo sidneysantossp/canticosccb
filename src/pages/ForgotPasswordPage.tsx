@@ -1,13 +1,7 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowLeft, Mail, CheckCircle } from 'lucide-react';
-// Firebase removed - using mock implementation
-const mockSendPasswordResetEmail = async (email: string) => {
-  // Mock implementation - replace with actual email service
-  console.log('Password reset requested for:', email);
-  await new Promise(resolve => setTimeout(resolve, 1000));
-  return true;
-};
+import { requestPasswordReset } from '@/lib/supabase-auth';
 
 const ForgotPasswordPage: React.FC = () => {
   const [email, setEmail] = useState('');
@@ -21,16 +15,15 @@ const ForgotPasswordPage: React.FC = () => {
     setLoading(true);
 
     try {
-      await mockSendPasswordResetEmail(email);
+      await requestPasswordReset(email);
       setSuccess(true);
     } catch (err: any) {
       console.error('Erro ao enviar email:', err);
-      
-      // Mock error handling - replace with actual error codes from your email service
-      if (err.message && err.message.includes('not found')) {
-        setError('Usuário não encontrado com este email');
-      } else if (err.message && err.message.includes('invalid')) {
+
+      if (err.message && err.message.toLowerCase().includes('invalid')) {
         setError('Email inválido');
+      } else if (err.message && err.message.toLowerCase().includes('rate limit')) {
+        setError('Muitas tentativas. Aguarde um instante e tente novamente.');
       } else {
         setError('Erro ao enviar email. Tente novamente.');
       }

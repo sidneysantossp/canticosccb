@@ -63,6 +63,7 @@ import {
   ProfilePage,
   RadioPage,
   RegisterPage,
+  ResetPasswordPage,
   SearchPage,
   SettingsPageNew,
   SubscriptionPage,
@@ -197,6 +198,7 @@ const NOINDEX_EXACT_PATHS = new Set([
   '/cadastro',
   '/verify-email',
   '/forgot-password',
+  '/reset-password',
   '/auth/callback',
   '/onboarding',
   '/compositor/cadastro',
@@ -273,6 +275,7 @@ const AppContent: React.FC = () => {
         <Route path="/auth/callback" element={<AuthCallbackPage />} />
 
         <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+        <Route path="/reset-password" element={<ResetPasswordPage />} />
 
         {/* Public Routes - With Layout */}
         <Route path="/" element={<Layout />}>

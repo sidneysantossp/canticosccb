@@ -12,15 +12,6 @@ export type CategoryRecord = {
   ativo?: number;
 };
 
-// Mock data for fallback
-const mockCategories: CategoryRecord[] = [
-  { id: '1', name: 'Adoração', slug: 'adoracao', background_color: '#6366f1', description: 'Cânticos de adoração' },
-  { id: '2', name: 'Louvor', slug: 'louvor', background_color: '#10b981', description: 'Cânticos de louvor' },
-  { id: '3', name: 'Comunhão', slug: 'comunhao', background_color: '#f59e0b', description: 'Cânticos de comunhão' },
-  { id: '4', name: 'Evangelização', slug: 'evangelizacao', background_color: '#ef4444', description: 'Cânticos para evangelização' },
-  { id: '5', name: 'Especial', slug: 'especial', background_color: '#8b5cf6', description: 'Cânticos especiais' }
-];
-
 function mapCategory(raw: any): CategoryRecord {
   return {
     id: String(raw.id),
@@ -35,8 +26,8 @@ function mapCategory(raw: any): CategoryRecord {
 
 export const getAll = async (params?: { search?: string; page?: number; limit?: number }) => {
   if (!isSupabaseConfigured) {
-    console.warn('⚠️ [categoriesApi] Supabase NOT configured - using mock data');
-    return mockCategories;
+    console.warn('⚠️ [categoriesApi] Supabase NOT configured');
+    return [];
   }
 
   try {
@@ -53,17 +44,12 @@ export const getAll = async (params?: { search?: string; page?: number; limit?: 
     
     console.log(`✅ [categoriesApi] Supabase returned ${rows.length} categories`);
     
-    if (rows.length === 0) {
-      console.warn('⚠️ [categoriesApi] No categories in database - using mock data');
-      return mockCategories;
-    }
-    
     const mapped = rows.map(mapCategory);
     console.log('📋 [categoriesApi] Categories:', mapped.map(c => c.name).join(', '));
     return mapped;
   } catch (error) {
-    console.error('❌ [categoriesApi] Supabase error - using mock data:', error);
-    return mockCategories;
+    console.error('❌ [categoriesApi] Supabase error:', error);
+    return [];
   }
 };
 

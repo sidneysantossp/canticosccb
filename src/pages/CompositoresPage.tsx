@@ -21,72 +21,8 @@ interface Compositor {
 export default function CompositoresPage() {
   const [composers, setComposers] = useState<Compositor[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [isUsingMockData, setIsUsingMockData] = useState(false);
   const [selectedPeriod, setSelectedPeriod] = useState<'hoje' | 'semana' | 'mes'>('hoje');
   const navigate = useNavigate();
-
-  // Mock data para demonstração
-  const mockComposers: Compositor[] = [
-    {
-      id: '1',
-      name: 'Irmão João Pereira',
-      image: 'https://picsum.photos/400/400?random=1',
-      followers: 125000,
-      popularHino: 'Hino 450 - Jesus Cristo é o Caminho',
-      isTrending: true
-    },
-    {
-      id: '2',
-      name: 'Irmão José Silva',
-      image: 'https://picsum.photos/400/400?random=2',
-      followers: 89000,
-      popularHino: 'Hino 320 - Paz Divina'
-    },
-    {
-      id: '3',
-      name: 'Irmão Paulo Oliveira',
-      image: 'https://picsum.photos/400/400?random=3',
-      followers: 54000,
-      popularHino: 'Hino 125 - Graça Sublime',
-      isTrending: true
-    },
-    {
-      id: '4',
-      name: 'Irmão Pedro Costa',
-      image: 'https://picsum.photos/400/400?random=4',
-      followers: 42000,
-      popularHino: 'Hino 200 - Amor Eterno'
-    },
-    {
-      id: '5',
-      name: 'Irmão Carlos Santos',
-      image: 'https://picsum.photos/400/400?random=5',
-      followers: 38000,
-      popularHino: 'Hino 180 - Esperança Viva'
-    },
-    {
-      id: '6',
-      name: 'Irmão Miguel Ferreira',
-      image: 'https://picsum.photos/400/400?random=6',
-      followers: 31000,
-      popularHino: 'Hino 95 - Fé Inabalável'
-    },
-    {
-      id: '7',
-      name: 'Irmão Antonio Lima',
-      image: 'https://picsum.photos/400/400?random=7',
-      followers: 28000,
-      popularHino: 'Hino 340 - Glória Celestial',
-      isTrending: true
-    },
-    {
-      id: '8',
-      name: 'Irmão Rafael Souza',
-      image: 'https://picsum.photos/400/400?random=8',
-      followers: 25000,
-      popularHino: 'Hino 275 - Luz Divina'
-    }
-  ];
 
   useEffect(() => {
     loadComposers();
@@ -107,22 +43,56 @@ export default function CompositoresPage() {
       });
 
       if (dbComposers && dbComposers.length > 0) {
-        setIsUsingMockData(false);
         // Buscar contagem real de seguidores da tabela user_follows
         let followCounts: Record<string, number> = {};
+        let popularHymnsByComposerId: Record<string, string> = {};
         try {
           const composerIds = dbComposers.map((c: any) => String(c.id));
-          const followRows = await supabaseFetch<{ composer_id: string }>('user_follows', {
-            composer_id: `in.(${composerIds.join(',')})`,
-            select: 'composer_id',
-          });
+          const [followRows, hymnRows] = await Promise.all([
+            supabaseFetch<{ composer_id: string }>('user_follows', {
+              composer_id: `in.(${composerIds.join(',')})`,
+              select: 'composer_id',
+            }),
+            supabaseFetch<{
+              id: string;
+              numero?: number | null;
+              titulo?: string | null;
+              compositor_id?: string | null;
+              compositor_nome?: string | null;
+            }>('hinos', {
+              ativo: 'eq.true',
+              select: 'id,numero,titulo,compositor_id,compositor_nome',
+              order: 'created_at.desc',
+              limit: '1500',
+            }).catch(() => []),
+          ]);
           for (const row of followRows) {
             const cid = String(row.composer_id);
             followCounts[cid] = (followCounts[cid] || 0) + 1;
           }
+          const normalize = (value: string | null | undefined) =>
+            String(value || '')
+              .normalize('NFD')
+              .replace(/[\u0300-\u036f]/g, '')
+              .toLowerCase()
+              .trim();
+
+          for (const composer of dbComposers) {
+            const composerId = String(composer.id);
+            const composerName = normalize(composer.name);
+            const hymn = hymnRows.find((row) =>
+              String(row.compositor_id || '') === composerId ||
+              normalize(row.compositor_nome) === composerName
+            );
+            if (hymn) {
+              popularHymnsByComposerId[composerId] = hymn.numero
+                ? `Hino ${hymn.numero} - ${hymn.titulo || 'Sem título'}`
+                : (hymn.titulo || 'Repertório disponível na plataforma');
+            }
+          }
           console.log('👥 [CompositoresPage] Followers counts:', followCounts);
         } catch (followErr) {
-          console.warn('⚠️ [CompositoresPage] Erro ao buscar seguidores:', followErr);
+          console.warn('⚠️ [CompositoresPage] Erro ao buscar métricas reais:', followErr);
         }
 
         // Converter dados do banco para o formato esperado
@@ -137,7 +107,7 @@ export default function CompositoresPage() {
             name: composer.name,
             image: finalImage,
             followers: followCounts[String(composer.id)] || 0,
-            popularHino: `Hino ${Math.floor(Math.random() * 500) + 1} - ${composer.name}`,
+            popularHino: popularHymnsByComposerId[String(composer.id)] || 'Repertório disponível na plataforma',
             isTrending: composer.is_trending || false,
             rank: index + 1,
             registeredDate: new Date(composer.created_at || Date.now())
@@ -170,25 +140,12 @@ export default function CompositoresPage() {
 
         setComposers(convertedComposers);
       } else {
-        // Fallback para dados mock (sem filtro de período)
-        console.log('⚠️ Nenhum compositor no banco, usando mock data');
-        setIsUsingMockData(true);
-        let filteredMock = [...mockComposers];
-
-        // Ordenar por seguidores
-        filteredMock.sort((a, b) => b.followers - a.followers);
-        filteredMock = filteredMock.map((c, i) => ({ ...c, rank: i + 1 }));
-
-        setComposers(filteredMock);
+        console.log('ℹ️ Nenhum compositor público encontrado');
+        setComposers([]);
       }
     } catch (error) {
       console.error('❌ Erro ao carregar compositores:', error);
-      console.log('🔄 Usando mock data como fallback');
-      setIsUsingMockData(true);
-      let filteredMock = [...mockComposers];
-      filteredMock.sort((a, b) => b.followers - a.followers);
-      filteredMock = filteredMock.map((c, i) => ({ ...c, rank: i + 1 }));
-      setComposers(filteredMock);
+      setComposers([]);
     } finally {
       setIsLoading(false);
     }
@@ -246,7 +203,7 @@ export default function CompositoresPage() {
         description="Conheça compositores da CCB, descubra perfis públicos, hinos associados e o ranking de seguidores da plataforma."
         keywords="compositores ccb, compositores dos hinos ccb, perfil de compositor ccb, ranking compositores ccb"
         canonical="/compositores"
-        noindex={isUsingMockData}
+        noindex={!isLoading && composers.length === 0}
         schemaData={[
           generateItemListSchema({
             name: 'Compositores CCB',

@@ -1,4 +1,3 @@
-import { mockPlaylists, mockArtists, mockCategories } from '@/data/mockData';
 import { apiFetch } from '@/lib/api-helper';
 import { ASSETS } from '@/constants/index';
 import { isSupabaseConfigured, supabaseFetch } from '@/lib/supabaseRest';
@@ -701,7 +700,7 @@ export async function getHomePageData(): Promise<HomePageData> {
 
   const newReleases: HomeHymn[] = [];
 
-  const composers = (composersDocs.length ? composersDocs : mockArtists).map((composer, index) =>
+  const composers = composersDocs.map((composer, index) =>
     mapComposer(
       {
         ...composer,
@@ -711,11 +710,11 @@ export async function getHomePageData(): Promise<HomePageData> {
     ),
   );
 
-  const playlists = (playlistsDocs.length ? playlistsDocs : mockPlaylists).map((playlist, index) =>
+  const playlists = playlistsDocs.map((playlist, index) =>
     mapPlaylist(playlist, index),
   );
 
-  const categories = (categoriesDocs.length ? categoriesDocs : mockCategories).map((category, index) =>
+  const categories = categoriesDocs.map((category, index) =>
     mapCategory(
       {
         ...category,

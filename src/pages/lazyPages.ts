@@ -7,6 +7,7 @@ export const RegisterPage = lazy(() => import('./RegisterPage'));
 export const OnboardingPage = lazy(() => import('./OnboardingPage'));
 export const VerifyEmailPage = lazy(() => import('./VerifyEmailPage'));
 export const ForgotPasswordPage = lazy(() => import('./ForgotPasswordPage'));
+export const ResetPasswordPage = lazy(() => import('./ResetPasswordPage'));
 export const AuthCallbackPage = lazy(() => import('./AuthCallbackPage'));
 export const AlbumsPage = lazy(() => import('./AlbumsPage'));
 export const AlbumDetailPage = lazy(() => import('./AlbumDetailPage'));

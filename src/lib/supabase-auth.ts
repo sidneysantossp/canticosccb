@@ -293,6 +293,36 @@ export async function register(data: { nome: string; email: string; senha: strin
 }
 
 /**
+ * Disparar email de recuperação de senha
+ */
+export async function requestPasswordReset(email: string): Promise<void> {
+  const redirectBase =
+    import.meta.env.VITE_APP_URL ||
+    (typeof window !== 'undefined' ? window.location.origin : '');
+
+  const { error } = await supabase.auth.resetPasswordForEmail(email, {
+    redirectTo: `${redirectBase}/auth/callback?type=recovery`,
+  });
+
+  if (error) {
+    throw error;
+  }
+}
+
+/**
+ * Atualizar senha do usuário autenticado no fluxo de recovery
+ */
+export async function updatePassword(newPassword: string): Promise<void> {
+  const { error } = await supabase.auth.updateUser({
+    password: newPassword,
+  });
+
+  if (error) {
+    throw error;
+  }
+}
+
+/**
  * Login com Google usando ID Token (Google Identity Services)
  */
 export async function googleLogin(idToken: string): Promise<void> {
@@ -503,6 +533,8 @@ export const authClient = {
   register,
   googleLogin,
   handleOAuthCallback,
+  requestPasswordReset,
+  updatePassword,
   logout,
   isAuthenticated,
   getCurrentUser,
