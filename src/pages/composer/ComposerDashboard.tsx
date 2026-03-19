@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { getComposerOverviewByComposerId, getTopSongsByComposerId } from '@/lib/composerStatsApi';
+import { getComposerRecentActivityByComposerId } from '@/lib/composerCatalogApi';
 import useNotificationsStore, { createFollowNotification } from '@/stores/notificationsStore';
 import { useActiveComposer } from '@/hooks/useActiveComposer';
 
@@ -107,7 +108,18 @@ const fetchHighlights = async (params: { composerId?: string | number; usuarioId
 };
 
 const fetchRecentActivities = async (params: { composerId?: string | number; usuarioId?: string | number }): Promise<RecentActivity[]> => {
-  return [];
+  const { composerId } = params;
+  if (!composerId) return [];
+
+  const activities = await getComposerRecentActivityByComposerId(composerId, 8);
+  return activities.map((activity) => ({
+    id: activity.id,
+    type: activity.type,
+    title: activity.title,
+    description: activity.description,
+    message: activity.message,
+    timestamp: activity.timestamp,
+  }));
 };
 
 const ComposerDashboard: React.FC = () => {
@@ -252,9 +264,14 @@ const ComposerDashboard: React.FC = () => {
   const getActivityIcon = (type: string) => {
     switch (type) {
       case 'milestone': return Award;
-      case 'followers': return Users;
+      case 'followers':
+      case 'follower': return Users;
       case 'trending': return TrendingUp;
       case 'save_rate': return Heart;
+      case 'song_created': return Music;
+      case 'song_updated': return Clock;
+      case 'album_created': return Plus;
+      case 'album_updated': return Eye;
       default: return Music;
     }
   };
