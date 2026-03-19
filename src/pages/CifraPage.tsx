@@ -1,6 +1,6 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Minus, Plus, ScrollText, Settings2, Eye, Printer, Share2, Music, X, Heart, Flag } from 'lucide-react';
+import { ArrowLeft, Minus, Plus, ScrollText, Settings2, Eye, Printer, Share2, Music, X, Heart, Flag, Gauge, Hand, Target, RefreshCw } from 'lucide-react';
 import SEOHead from '@/components/SEO/SEOHead';
 import { generateCifraSchema, generateBreadcrumbSchema } from '@/utils/schemaGenerator';
 import { fetchCifraBySlug, incrementCifraViews, type Cifra, INSTRUMENTS, ALL_KEYS } from '@/api/cifras';
@@ -134,9 +134,18 @@ const CifraPage: React.FC = () => {
   const [autoScrollSpeed, setAutoScrollSpeed] = useState(0); // 0 = off
   const [showOptions, setShowOptions] = useState(false);
   const [showKeySelector, setShowKeySelector] = useState(false);
+  const [showLeftHandedDiagrams, setShowLeftHandedDiagrams] = useState(false);
+  const [useTwoColumnLayout, setUseTwoColumnLayout] = useState(false);
+  const [studyModeEnabled, setStudyModeEnabled] = useState(false);
+  const [focusedSectionIndex, setFocusedSectionIndex] = useState<number | null>(null);
+  const [metronomeEnabled, setMetronomeEnabled] = useState(false);
+  const [metronomeBpm, setMetronomeBpm] = useState(72);
 
   const contentRef = useRef<HTMLDivElement>(null);
   const scrollIntervalRef = useRef<number | null>(null);
+  const metronomeIntervalRef = useRef<number | null>(null);
+  const metronomeBeatRef = useRef(0);
+  const audioContextRef = useRef<AudioContext | null>(null);
 
   useEffect(() => {
     if (slug) loadCifra(slug);
@@ -304,16 +313,157 @@ const CifraPage: React.FC = () => {
     };
   }, [cifra, selectedInstrument, selectedKey, showChords]);
 
+  const measureBeats = useMemo(() => {
+    if (!cifra || !isCifraV2(cifra) || !cifra.time_signature) {
+      return 4;
+    }
+
+    const numerator = Number.parseInt(String(cifra.time_signature).split('/')[0] || '4', 10);
+    return Number.isFinite(numerator) && numerator > 0 ? numerator : 4;
+  }, [cifra]);
+
+  const structuredSectionItems = useMemo(
+    () => (isCifraV2(cifra) ? cifra.sections.map((section, index) => ({ section, index })) : []),
+    [cifra],
+  );
+
+  const visibleStructuredSections = useMemo(() => {
+    if (!isCifraV2(cifra)) {
+      return [];
+    }
+
+    if (!studyModeEnabled || focusedSectionIndex === null) {
+      return structuredSectionItems;
+    }
+
+    return structuredSectionItems.filter((item) => item.index === focusedSectionIndex);
+  }, [cifra, focusedSectionIndex, studyModeEnabled, structuredSectionItems]);
+
+  const ensureAudioContext = useCallback(() => {
+    const AudioContextCtor = window.AudioContext || ((window as Window & typeof globalThis & { webkitAudioContext?: typeof AudioContext }).webkitAudioContext);
+    if (!AudioContextCtor) {
+      showToast('warning', 'Metrônomo indisponível', 'Este navegador não oferece suporte ao metrônomo nesta página.');
+      return null;
+    }
+
+    if (!audioContextRef.current) {
+      audioContextRef.current = new AudioContextCtor();
+    }
+
+    if (audioContextRef.current.state === 'suspended') {
+      void audioContextRef.current.resume();
+    }
+
+    return audioContextRef.current;
+  }, [showToast]);
+
+  const playMetronomeClick = useCallback((accent: boolean) => {
+    const audioContext = ensureAudioContext();
+    if (!audioContext) {
+      return;
+    }
+
+    const oscillator = audioContext.createOscillator();
+    const gainNode = audioContext.createGain();
+    const now = audioContext.currentTime;
+
+    oscillator.type = accent ? 'square' : 'sine';
+    oscillator.frequency.setValueAtTime(accent ? 1360 : 980, now);
+
+    gainNode.gain.setValueAtTime(0.0001, now);
+    gainNode.gain.exponentialRampToValueAtTime(accent ? 0.18 : 0.11, now + 0.01);
+    gainNode.gain.exponentialRampToValueAtTime(0.0001, now + 0.09);
+
+    oscillator.connect(gainNode);
+    gainNode.connect(audioContext.destination);
+    oscillator.start(now);
+    oscillator.stop(now + 0.1);
+  }, [ensureAudioContext]);
+
+  const stopMetronome = useCallback(() => {
+    if (metronomeIntervalRef.current) {
+      clearInterval(metronomeIntervalRef.current);
+      metronomeIntervalRef.current = null;
+    }
+    metronomeBeatRef.current = 0;
+  }, []);
+
+  const startMetronome = useCallback(() => {
+    stopMetronome();
+
+    if (metronomeBpm <= 0) {
+      return;
+    }
+
+    if (!ensureAudioContext()) {
+      setMetronomeEnabled(false);
+      return;
+    }
+
+    playMetronomeClick(true);
+    metronomeBeatRef.current = 1 % measureBeats;
+
+    const intervalMs = Math.max(120, Math.round((60_000 / metronomeBpm)));
+    metronomeIntervalRef.current = window.setInterval(() => {
+      const isAccent = metronomeBeatRef.current % measureBeats === 0;
+      playMetronomeClick(isAccent);
+      metronomeBeatRef.current = (metronomeBeatRef.current + 1) % measureBeats;
+    }, intervalMs);
+  }, [ensureAudioContext, measureBeats, metronomeBpm, playMetronomeClick, stopMetronome]);
+
+  useEffect(() => {
+    if (metronomeEnabled) {
+      startMetronome();
+    } else {
+      stopMetronome();
+    }
+
+    return () => stopMetronome();
+  }, [metronomeEnabled, metronomeBpm, measureBeats, startMetronome, stopMetronome]);
+
+  useEffect(() => {
+    return () => {
+      stopMetronome();
+      if (audioContextRef.current) {
+        void audioContextRef.current.close().catch(() => undefined);
+      }
+    };
+  }, [stopMetronome]);
+
+  const scrollToSection = useCallback((index: number) => {
+    const item = structuredSectionItems.find((entry) => entry.index === index);
+    if (!item) {
+      return;
+    }
+
+    const element = document.getElementById(getSectionAnchor(item.section.section_label, index));
+    element?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }, [structuredSectionItems]);
+
+  const restartFocusedSection = useCallback(() => {
+    if (focusedSectionIndex !== null) {
+      scrollToSection(focusedSectionIndex);
+      return;
+    }
+
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, [focusedSectionIndex, scrollToSection]);
+
   const loadCifra = async (slug: string) => {
     try {
       setIsLoading(true);
       setError(null);
+      setStudyModeEnabled(false);
+      setFocusedSectionIndex(null);
+      setUseTwoColumnLayout(false);
+      setMetronomeEnabled(false);
       const publicData = await fetchPublicCifraPageBySlug(slug);
       if (publicData) {
         setCifra(publicData);
         setEngagement(buildInitialEngagement(publicData));
         setSelectedKey(publicData.preferred_key || publicData.original_key);
         setSelectedInstrument(publicData.instrument);
+        setMetronomeBpm(publicData.tempo_bpm || 72);
         return;
       }
 
@@ -323,6 +473,7 @@ const CifraPage: React.FC = () => {
         setEngagement(null);
         setSelectedKey(data.original_key);
         setSelectedInstrument(data.instrument);
+        setMetronomeBpm(72);
         incrementCifraViews(data.id);
       } else {
         setEngagement(null);
@@ -394,6 +545,9 @@ const CifraPage: React.FC = () => {
   const transposedContent = cifra ? transposeCifraContent(cifra.content, semitones, selectedKey) : '';
   const chords = extractChords(transposedContent);
   const structuredSections = isCifraV2(cifra) ? cifra.sections : [];
+  const supportsStudyTools = isCifraV2(cifra) && structuredSections.length > 0;
+  const supportsTwoColumnLayout = isCifraV2(cifra) && structuredSections.length > 1;
+  const shouldRenderTwoColumns = supportsTwoColumnLayout && useTwoColumnLayout && !studyModeEnabled;
   const visibleChordCards = chords
     .slice(0, 12)
     .map((chord) => {
@@ -619,6 +773,7 @@ const CifraPage: React.FC = () => {
     ? [
         { label: 'Instrumento', value: instrumentLabel },
         { label: 'Tom principal', value: selectedKey },
+        ...(cifra.tuning ? [{ label: 'Afinação', value: cifra.tuning }] : []),
         ...(cifra.tempo_bpm ? [{ label: 'Andamento', value: `${cifra.tempo_bpm} BPM` }] : []),
         ...(cifra.time_signature ? [{ label: 'Compasso', value: cifra.time_signature }] : []),
         ...(cifra.difficulty_level ? [{ label: 'Dificuldade', value: cifra.difficulty_level }] : []),
@@ -857,6 +1012,159 @@ const CifraPage: React.FC = () => {
         </div>
       ) : null}
 
+      {supportsStudyTools ? (
+        <div className="mb-6 rounded-2xl border border-primary-500/20 bg-primary-500/5 p-5">
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+            <div>
+              <div className="flex items-center gap-2">
+                <Target className="w-5 h-5 text-primary-400" />
+                <h2 className="text-lg font-semibold text-white">Modo estudo</h2>
+              </div>
+              <p className="mt-2 text-sm text-gray-400">
+                Foque por seção, mantenha o pulso com o metrônomo e adapte a leitura para estudo ou ensaio.
+              </p>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <button
+                type="button"
+                onClick={() => setStudyModeEnabled((current) => !current)}
+                className={`inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-sm font-medium transition-colors ${
+                  studyModeEnabled
+                    ? 'border-primary-500 bg-primary-500 text-black'
+                    : 'border-gray-700 bg-gray-800 text-gray-200 hover:border-primary-500/40 hover:text-white'
+                }`}
+              >
+                <Target className="w-4 h-4" />
+                {studyModeEnabled ? 'Estudo ativo' : 'Ativar estudo'}
+              </button>
+              <button
+                type="button"
+                onClick={() => setMetronomeEnabled((current) => !current)}
+                className={`inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-sm font-medium transition-colors ${
+                  metronomeEnabled
+                    ? 'border-primary-500 bg-primary-500 text-black'
+                    : 'border-gray-700 bg-gray-800 text-gray-200 hover:border-primary-500/40 hover:text-white'
+                }`}
+              >
+                <Gauge className="w-4 h-4" />
+                {metronomeEnabled ? 'Parar metrônomo' : 'Iniciar metrônomo'}
+              </button>
+            </div>
+          </div>
+
+          <div className="mt-4 grid gap-4 xl:grid-cols-[minmax(0,1.3fr)_minmax(280px,0.7fr)]">
+            <div className="rounded-2xl border border-white/10 bg-background-primary p-4">
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <p className="text-xs uppercase tracking-[0.18em] text-text-muted">Seções</p>
+                  <p className="mt-1 text-sm text-white">Selecione uma parte específica ou estude a cifra inteira.</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setFocusedSectionIndex(null);
+                    setStudyModeEnabled(true);
+                  }}
+                  className={`rounded-full border px-3 py-1 text-xs font-medium transition-colors ${
+                    focusedSectionIndex === null
+                      ? 'border-primary-500/50 bg-primary-500/10 text-primary-300'
+                      : 'border-gray-700 bg-gray-800 text-gray-200 hover:border-primary-500/40 hover:text-white'
+                  }`}
+                >
+                  Todas
+                </button>
+              </div>
+              <div className="mt-3 flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
+                {structuredSectionItems.map(({ section, index }) => (
+                  <button
+                    key={section.id}
+                    type="button"
+                    onClick={() => {
+                      setStudyModeEnabled(true);
+                      setFocusedSectionIndex(index);
+                      setTimeout(() => scrollToSection(index), 80);
+                    }}
+                    className={`shrink-0 rounded-full border px-3 py-2 text-sm transition-colors ${
+                      focusedSectionIndex === index
+                        ? 'border-primary-500 bg-primary-500 text-black'
+                        : 'border-gray-700 bg-gray-800 text-gray-200 hover:border-primary-500/40 hover:text-white'
+                    }`}
+                  >
+                    {section.section.section_label || `Seção ${index + 1}`}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="rounded-2xl border border-white/10 bg-background-primary p-4">
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <p className="text-xs uppercase tracking-[0.18em] text-text-muted">Pulso e leitura</p>
+                  <p className="mt-1 text-sm text-white">
+                    {metronomeBpm} BPM · {measureBeats}/4 · {showLeftHandedDiagrams ? 'Canhoto ativo' : 'Destro'} · {shouldRenderTwoColumns ? '2 colunas' : '1 coluna'}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => restartFocusedSection()}
+                  className="inline-flex items-center gap-2 rounded-full border border-gray-700 bg-gray-800 px-3 py-1.5 text-xs font-medium text-gray-200 transition-colors hover:border-primary-500/40 hover:text-white"
+                >
+                  <RefreshCw className="w-3.5 h-3.5" />
+                  Reiniciar leitura
+                </button>
+              </div>
+              <div className="mt-4 flex items-center gap-3">
+                <button onClick={() => setMetronomeBpm((current) => Math.max(40, current - 2))} className="rounded-lg bg-gray-800 p-2 text-white transition-colors hover:bg-gray-700">
+                  <Minus className="w-4 h-4" />
+                </button>
+                <input
+                  type="range"
+                  min={40}
+                  max={180}
+                  step={1}
+                  value={metronomeBpm}
+                  onChange={(event) => setMetronomeBpm(Number(event.target.value))}
+                  className="flex-1 accent-primary-500"
+                />
+                <button onClick={() => setMetronomeBpm((current) => Math.min(180, current + 2))} className="rounded-lg bg-gray-800 p-2 text-white transition-colors hover:bg-gray-700">
+                  <Plus className="w-4 h-4" />
+                </button>
+              </div>
+              <div className="mt-4 grid gap-2 sm:grid-cols-2">
+                {selectedInstrument !== 'teclado' ? (
+                  <button
+                    type="button"
+                    onClick={() => setShowLeftHandedDiagrams((current) => !current)}
+                    className={`inline-flex items-center justify-center gap-2 rounded-xl border px-3 py-2 text-sm font-medium transition-colors ${
+                      showLeftHandedDiagrams
+                        ? 'border-primary-500 bg-primary-500/10 text-primary-300'
+                        : 'border-gray-700 bg-gray-800 text-gray-200 hover:border-primary-500/40 hover:text-white'
+                    }`}
+                  >
+                    <Hand className="w-4 h-4" />
+                    {showLeftHandedDiagrams ? 'Canhoto ativo' : 'Ativar canhoto'}
+                  </button>
+                ) : null}
+                {supportsTwoColumnLayout ? (
+                  <button
+                    type="button"
+                    onClick={() => setUseTwoColumnLayout((current) => !current)}
+                    className={`inline-flex items-center justify-center gap-2 rounded-xl border px-3 py-2 text-sm font-medium transition-colors ${
+                      useTwoColumnLayout
+                        ? 'border-primary-500 bg-primary-500/10 text-primary-300'
+                        : 'border-gray-700 bg-gray-800 text-gray-200 hover:border-primary-500/40 hover:text-white'
+                    }`}
+                  >
+                    <Eye className="w-4 h-4" />
+                    {useTwoColumnLayout ? 'Desativar 2 colunas' : 'Ativar 2 colunas'}
+                  </button>
+                ) : null}
+              </div>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
       {isCifraV2(cifra) && structuredSections.length > 1 ? (
         <div className="mb-6 rounded-2xl border border-white/10 bg-background-secondary p-5">
           <h2 className="text-lg font-semibold text-white">Navegacao por secoes</h2>
@@ -864,15 +1172,21 @@ const CifraPage: React.FC = () => {
             Pule direto para introducao, estrofes, coro e demais partes publicadas desta cifra.
           </p>
           <div className="mt-4 flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
-            {structuredSections.map((section, index) => (
+            {structuredSectionItems.map(({ section, index }) => (
               <button
                 key={section.id}
                 type="button"
                 onClick={() => {
-                  const element = document.getElementById(getSectionAnchor(section.section_label, index));
-                  element?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                  if (studyModeEnabled) {
+                    setFocusedSectionIndex(index);
+                  }
+                  scrollToSection(index);
                 }}
-                className="shrink-0 rounded-full border border-gray-700 bg-gray-800 px-3 py-2 text-sm text-gray-200 transition-colors hover:border-primary-500/40 hover:text-white"
+                className={`shrink-0 rounded-full border px-3 py-2 text-sm transition-colors ${
+                  focusedSectionIndex === index
+                    ? 'border-primary-500 bg-primary-500 text-black'
+                    : 'border-gray-700 bg-gray-800 text-gray-200 hover:border-primary-500/40 hover:text-white'
+                }`}
               >
                 {section.section_label || `Secao ${index + 1}`}
               </button>
@@ -953,6 +1267,68 @@ const CifraPage: React.FC = () => {
             Acordes
           </button>
 
+          <button
+            onClick={() => setMetronomeEnabled((current) => !current)}
+            className={`shrink-0 px-3 py-2 rounded-lg border text-sm transition-colors ${
+              metronomeEnabled
+                ? 'bg-primary-500/20 border-primary-500/50 text-primary-400'
+                : 'bg-gray-800 border-gray-700 text-gray-400 hover:text-white'
+            }`}
+          >
+            <Gauge className="w-4 h-4 inline mr-1" />
+            {metronomeEnabled ? `${metronomeBpm} BPM` : 'Metrônomo'}
+          </button>
+
+          {selectedInstrument !== 'teclado' ? (
+            <button
+              onClick={() => setShowLeftHandedDiagrams((current) => !current)}
+              className={`shrink-0 px-3 py-2 rounded-lg border text-sm transition-colors ${
+                showLeftHandedDiagrams
+                  ? 'bg-primary-500/20 border-primary-500/50 text-primary-400'
+                  : 'bg-gray-800 border-gray-700 text-gray-400 hover:text-white'
+              }`}
+            >
+              <Hand className="w-4 h-4 inline mr-1" />
+              Canhoto
+            </button>
+          ) : null}
+
+          {supportsTwoColumnLayout ? (
+            <button
+              onClick={() => setUseTwoColumnLayout((current) => !current)}
+              className={`shrink-0 px-3 py-2 rounded-lg border text-sm transition-colors ${
+                useTwoColumnLayout
+                  ? 'bg-primary-500/20 border-primary-500/50 text-primary-400'
+                  : 'bg-gray-800 border-gray-700 text-gray-400 hover:text-white'
+              }`}
+            >
+              <Eye className="w-4 h-4 inline mr-1" />
+              2 colunas
+            </button>
+          ) : null}
+
+          {supportsStudyTools ? (
+            <button
+              onClick={() => {
+                setStudyModeEnabled((current) => {
+                  const next = !current;
+                  if (!next) {
+                    setFocusedSectionIndex(null);
+                  }
+                  return next;
+                });
+              }}
+              className={`shrink-0 px-3 py-2 rounded-lg border text-sm transition-colors ${
+                studyModeEnabled
+                  ? 'bg-primary-500/20 border-primary-500/50 text-primary-400'
+                  : 'bg-gray-800 border-gray-700 text-gray-400 hover:text-white'
+              }`}
+            >
+              <Target className="w-4 h-4 inline mr-1" />
+              Estudo
+            </button>
+          ) : null}
+
           {/* Options */}
           <button
             onClick={() => setShowOptions(!showOptions)}
@@ -1024,6 +1400,42 @@ const CifraPage: React.FC = () => {
                 Compartilhar
               </button>
               <div className="border-t border-gray-700 pt-3">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-gray-400 text-xs">Metrônomo</p>
+                    <p className="text-white font-medium">{metronomeBpm} BPM · {measureBeats}/4</p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setMetronomeEnabled((current) => !current)}
+                    className={`rounded-full border px-3 py-1 text-xs font-semibold transition-colors ${
+                      metronomeEnabled
+                        ? 'border-primary-500 bg-primary-500 text-black'
+                        : 'border-gray-700 bg-gray-800 text-gray-200 hover:border-primary-500/40 hover:text-white'
+                    }`}
+                  >
+                    {metronomeEnabled ? 'Parar' : 'Iniciar'}
+                  </button>
+                </div>
+                <div className="mt-3 flex items-center gap-3">
+                  <button onClick={() => setMetronomeBpm((current) => Math.max(40, current - 2))} className="p-1 bg-gray-800 rounded text-white">
+                    <Minus className="w-3 h-3" />
+                  </button>
+                  <input
+                    type="range"
+                    min={40}
+                    max={180}
+                    step={1}
+                    value={metronomeBpm}
+                    onChange={(event) => setMetronomeBpm(Number(event.target.value))}
+                    className="flex-1 accent-primary-500"
+                  />
+                  <button onClick={() => setMetronomeBpm((current) => Math.min(180, current + 2))} className="p-1 bg-gray-800 rounded text-white">
+                    <Plus className="w-3 h-3" />
+                  </button>
+                </div>
+              </div>
+              <div className="border-t border-gray-700 pt-3">
                 <p className="text-gray-400 text-xs mb-2">Tamanho da fonte</p>
                 <div className="flex items-center gap-3">
                   <button onClick={() => setFontSize(prev => Math.max(10, prev - 1))} className="p-1 bg-gray-800 rounded text-white">
@@ -1034,6 +1446,36 @@ const CifraPage: React.FC = () => {
                     <Plus className="w-3 h-3" />
                   </button>
                 </div>
+              </div>
+              <div className="border-t border-gray-700 pt-3 space-y-2">
+                {selectedInstrument !== 'teclado' ? (
+                  <button
+                    type="button"
+                    onClick={() => setShowLeftHandedDiagrams((current) => !current)}
+                    className={`flex w-full items-center justify-between rounded-xl border px-3 py-2 text-sm transition-colors ${
+                      showLeftHandedDiagrams
+                        ? 'border-primary-500/50 bg-primary-500/10 text-primary-300'
+                        : 'border-gray-700 bg-gray-800 text-gray-200 hover:border-primary-500/40 hover:text-white'
+                    }`}
+                  >
+                    <span>Montagem para canhoto</span>
+                    <Hand className="w-4 h-4" />
+                  </button>
+                ) : null}
+                {supportsTwoColumnLayout ? (
+                  <button
+                    type="button"
+                    onClick={() => setUseTwoColumnLayout((current) => !current)}
+                    className={`flex w-full items-center justify-between rounded-xl border px-3 py-2 text-sm transition-colors ${
+                      useTwoColumnLayout
+                        ? 'border-primary-500/50 bg-primary-500/10 text-primary-300'
+                        : 'border-gray-700 bg-gray-800 text-gray-200 hover:border-primary-500/40 hover:text-white'
+                    }`}
+                  >
+                    <span>Leitura em duas colunas</span>
+                    <Eye className="w-4 h-4" />
+                  </button>
+                ) : null}
               </div>
               {cifra.capo > 0 && (
                 <div className="border-t border-gray-700 pt-3">
@@ -1066,6 +1508,7 @@ const CifraPage: React.FC = () => {
                   shapes={item.shapes}
                   selectedShapeId={item.selectedShape.id}
                   onSelectShape={handleShapeSelection}
+                  leftHanded={showLeftHandedDiagrams}
                   matchOptions={{
                     preferredKey: selectedKey,
                     originalKey: cifra.original_key,
@@ -1074,7 +1517,7 @@ const CifraPage: React.FC = () => {
                 />
               ) : (
                 <div key={item.chord} className="flex-shrink-0 text-center">
-                  <ChordDiagramSVG diagram={item.diagram} />
+                  <ChordDiagramSVG diagram={item.diagram} leftHanded={showLeftHandedDiagrams} />
                 </div>
               )
             ))}
@@ -1095,12 +1538,15 @@ const CifraPage: React.FC = () => {
           {cifra.capo > 0 && (
             <span className="text-gray-500 ml-4">Capo: {cifra.capo}ª casa</span>
           )}
+          {isCifraV2(cifra) && cifra.tuning ? (
+            <span className="text-gray-500 ml-4">Afinação: {cifra.tuning}</span>
+          ) : null}
         </div>
 
         {/* Lines */}
         {isCifraV2(cifra) && structuredSections.length > 0 ? (
-          <div className="space-y-8">
-            {structuredSections.map((section, sectionIndex) => {
+          <div className={shouldRenderTwoColumns ? 'lg:columns-2 lg:gap-8' : 'space-y-8'}>
+            {visibleStructuredSections.map(({ section, index: sectionIndex }) => {
               const sectionContent = transposeCifraContent(
                 serializeSectionLines(section.content_ast),
                 semitones,
@@ -1111,7 +1557,8 @@ const CifraPage: React.FC = () => {
                 <section
                   key={section.id}
                   id={getSectionAnchor(section.section_label, sectionIndex)}
-                  className="scroll-mt-28 sm:scroll-mt-32"
+                  className={`scroll-mt-28 sm:scroll-mt-32 ${shouldRenderTwoColumns ? 'mb-8' : ''}`}
+                  style={shouldRenderTwoColumns ? { breakInside: 'avoid-column' } : undefined}
                 >
                   {section.section_label ? (
                     <div className="mb-3 text-base font-bold text-white">
@@ -1133,7 +1580,7 @@ const CifraPage: React.FC = () => {
       </div>
 
       {/* Bottom toolbar (mobile) */}
-      <div className={`fixed bottom-0 left-0 right-0 bg-gray-900/95 backdrop-blur-sm border-t border-gray-800 px-4 py-3 grid items-center sm:hidden print:hidden z-30 ${isCifraV2(cifra) ? 'grid-cols-4' : 'grid-cols-2'}`}>
+      <div className={`fixed bottom-0 left-0 right-0 bg-gray-900/95 backdrop-blur-sm border-t border-gray-800 px-4 py-3 grid items-center sm:hidden print:hidden z-30 ${isCifraV2(cifra) ? 'grid-cols-5' : 'grid-cols-3'}`}>
         {isCifraV2(cifra) ? (
           <button
             onClick={() => void handleToggleFavorite()}
@@ -1145,12 +1592,28 @@ const CifraPage: React.FC = () => {
           </button>
         ) : null}
         <button
+          onClick={() => setMetronomeEnabled((current) => !current)}
+          className={`flex flex-col items-center gap-1 text-xs ${metronomeEnabled ? 'text-primary-400' : 'text-gray-400'}`}
+        >
+          <Gauge className="w-5 h-5" />
+          Metrônomo
+        </button>
+        <button
           onClick={() => setAutoScrollSpeed(prev => prev === 0 ? 1 : prev === 1 ? 2 : prev === 2 ? 3 : 0)}
           className={`flex flex-col items-center gap-1 text-xs ${autoScrollSpeed > 0 ? 'text-primary-400' : 'text-gray-400'}`}
         >
           <ScrollText className="w-5 h-5" />
           Rolagem
         </button>
+        {supportsStudyTools ? (
+          <button
+            onClick={() => setStudyModeEnabled((current) => !current)}
+            className={`flex flex-col items-center gap-1 text-xs ${studyModeEnabled ? 'text-primary-400' : 'text-gray-400'}`}
+          >
+            <Target className="w-5 h-5" />
+            Estudo
+          </button>
+        ) : null}
         <button
           onClick={() => setShowOptions(!showOptions)}
           className="flex flex-col items-center gap-1 text-xs text-gray-400"
@@ -1258,10 +1721,16 @@ const CifraPage: React.FC = () => {
 
 interface ChordDiagramSVGProps {
   diagram: ChordDiagram;
+  leftHanded?: boolean;
 }
 
-const ChordDiagramSVG: React.FC<ChordDiagramSVGProps> = ({ diagram }) => {
-  const { name, frets, baseFret, barres } = diagram;
+function mirrorStringValues<T>(values: T[], stringCount: number, enabled?: boolean): T[] {
+  const visible = values.slice(0, stringCount);
+  return enabled ? [...visible].reverse() : visible;
+}
+
+const ChordDiagramSVG: React.FC<ChordDiagramSVGProps> = ({ diagram, leftHanded = false }) => {
+  const { name, baseFret, barres } = diagram;
   const numStrings = 6;
   const numFrets = 5;
   const stringSpacing = 16;
@@ -1270,6 +1739,7 @@ const ChordDiagramSVG: React.FC<ChordDiagramSVGProps> = ({ diagram }) => {
   const startY = 30;
   const width = startX * 2 + stringSpacing * (numStrings - 1);
   const height = startY + fretSpacing * numFrets + 30;
+  const frets = mirrorStringValues(diagram.frets, numStrings, leftHanded);
 
   return (
     <div className="inline-flex flex-col items-center">
@@ -1483,10 +1953,11 @@ function buildShapeNotes(shape: CifraChordShape): string[] {
 
 interface FretboardShapeSVGProps {
   diagram: FretboardShapeDiagram;
+  leftHanded?: boolean;
 }
 
-const FretboardShapeSVG: React.FC<FretboardShapeSVGProps> = ({ diagram }) => {
-  const { name, frets, baseFret, barres, stringCount } = diagram;
+const FretboardShapeSVG: React.FC<FretboardShapeSVGProps> = ({ diagram, leftHanded = false }) => {
+  const { name, baseFret, barres, stringCount } = diagram;
   const numStrings = Math.max(1, stringCount);
   const numFrets = 5;
   const stringSpacing = numStrings <= 4 ? 18 : 16;
@@ -1495,6 +1966,7 @@ const FretboardShapeSVG: React.FC<FretboardShapeSVGProps> = ({ diagram }) => {
   const startY = 30;
   const width = startX * 2 + stringSpacing * (numStrings - 1);
   const height = startY + fretSpacing * numFrets + 30;
+  const frets = mirrorStringValues(diagram.frets, numStrings, leftHanded);
 
   return (
     <div className="inline-flex flex-col items-center">
@@ -1624,6 +2096,7 @@ interface DatabaseChordShapeCardProps {
   shapes: CifraChordShape[];
   selectedShapeId: string;
   onSelectShape: (chord: string, shapeId: string) => void;
+  leftHanded?: boolean;
   matchOptions: {
     preferredKey?: string | null;
     originalKey?: string | null;
@@ -1649,6 +2122,7 @@ const DatabaseChordShapeCard: React.FC<DatabaseChordShapeCardProps> = ({
   shapes,
   selectedShapeId,
   onSelectShape,
+  leftHanded = false,
   matchOptions,
 }) => {
   const shape = shapes.find((item) => item.id === selectedShapeId) || shapes[0];
@@ -1660,7 +2134,7 @@ const DatabaseChordShapeCard: React.FC<DatabaseChordShapeCardProps> = ({
   return (
     <div className="flex-shrink-0 rounded-2xl border border-white/10 bg-background-secondary px-4 py-3 text-center min-w-[168px] max-w-[198px]">
       {diagram ? (
-        <FretboardShapeSVG diagram={diagram} />
+        <FretboardShapeSVG diagram={diagram} leftHanded={leftHanded && shape.instrument !== 'teclado'} />
       ) : (
         <div className="flex min-h-[132px] flex-col items-center justify-center">
           <span className="text-primary-400 font-bold text-sm">{shape.chord_name}</span>
@@ -1675,6 +2149,11 @@ const DatabaseChordShapeCard: React.FC<DatabaseChordShapeCardProps> = ({
           <span className="rounded-full border border-primary-500/30 bg-primary-500/10 px-2 py-0.5 text-[10px] font-medium text-primary-200">
             {explanation.label}
           </span>
+          {leftHanded && shape.instrument !== 'teclado' ? (
+            <span className="rounded-full border border-white/10 bg-white/5 px-2 py-0.5 text-[10px] font-medium text-gray-300">
+              Canhoto
+            </span>
+          ) : null}
           {shapes.length > 1 && isPrimaryShape ? (
             <span className="rounded-full border border-white/10 bg-white/5 px-2 py-0.5 text-[10px] font-medium text-gray-300">
               Principal

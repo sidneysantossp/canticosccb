@@ -39,6 +39,7 @@ export interface PublicCifraPageData extends Omit<Cifra, 'id'> {
   publication_label: string;
   arrangement_type: string;
   difficulty_level: string;
+  tuning: string;
   preferred_key?: string | null;
   tempo_bpm?: number | null;
   time_signature?: string | null;
@@ -152,6 +153,7 @@ function mapPublicCifraPageData(
     publication_label: version.publication_label,
     arrangement_type: version.arrangement_type,
     difficulty_level: version.difficulty_level,
+    tuning: version.tuning,
     tempo_bpm: version.tempo_bpm,
     time_signature: version.time_signature,
     intro_notes: version.intro_notes,
@@ -228,6 +230,7 @@ export async function fetchMergedPublicCifrasList(): Promise<Array<Cifra | Publi
     publication_label: item.publication_label,
     arrangement_type: item.arrangement_type,
     difficulty_level: item.difficulty_level,
+    tuning: 'standard',
     tempo_bpm: item.tempo_bpm,
     time_signature: item.time_signature,
     intro_notes: null,
