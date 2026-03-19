@@ -19,7 +19,7 @@ const AdminCollections: React.FC = () => {
     try {
       setIsLoading(true);
       setError(null);
-      const response = await albunsApi.list({ page: currentPage, limit: 12 });
+      const response = await albunsApi.list({ page: currentPage, limit: 12, tipo: 'coletanea' });
       
       if (response.error) {
         setError(response.error);
@@ -31,9 +31,7 @@ const AdminCollections: React.FC = () => {
         const albumsData = response.data.albuns || response.data.data || response.data;
         
         if (Array.isArray(albumsData)) {
-          // Filtrar apenas coleções (tipo = 'coletanea')
-          const collectionsOnly = albumsData.filter((item: any) => item.tipo === 'coletanea');
-          setCollections(collectionsOnly);
+          setCollections(albumsData);
         } else {
           setCollections([]);
         }
@@ -52,7 +50,7 @@ const AdminCollections: React.FC = () => {
     }
   };
 
-  const handleDelete = async (id: number, title: string) => {
+  const handleDelete = async (id: number | string, title: string) => {
     if (!window.confirm(`Tem certeza que deseja deletar "${title}"?`)) return;
 
     try {
@@ -63,7 +61,7 @@ const AdminCollections: React.FC = () => {
     }
   };
 
-  const handleTogglePublished = async (id: number, currentStatus: number) => {
+  const handleTogglePublished = async (id: number | string, currentStatus: number | boolean | undefined) => {
     try {
       await albunsApi.update(id, { ativo: currentStatus ? 0 : 1 });
       loadCollections();
@@ -125,15 +123,15 @@ const AdminCollections: React.FC = () => {
               />
               <div className="absolute top-2 right-2 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                 <button
-                  onClick={() => handleTogglePublished(collection.id, collection.ativo)}
+                  onClick={() => handleTogglePublished(collection.id, (collection as any).ativo ?? (collection as any).active)}
                   className={`p-2 rounded-lg text-white transition-colors ${
-                    collection.ativo 
+                    ((collection as any).ativo ?? (collection as any).active)
                       ? 'bg-green-500/90 hover:bg-green-600' 
                       : 'bg-gray-500/90 hover:bg-gray-600'
                   }`}
-                  title={collection.ativo ? 'Publicado' : 'Rascunho'}
+                  title={((collection as any).ativo ?? (collection as any).active) ? 'Publicado' : 'Rascunho'}
                 >
-                  {collection.ativo ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
+                  {((collection as any).ativo ?? (collection as any).active) ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
                 </button>
                 <Link
                   to={`/admin/collections/editar/${collection.id}`}

@@ -47,7 +47,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const clearStoredUser = () => {
       setUser(null);
       setProfile(null);
-      localStorage.removeItem('user');
+      authClient.clearAuthStorage();
     };
 
     // Verificar se há usuário logado no localStorage
@@ -134,7 +134,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             ativo: user.status !== 'inactive' && !user.is_blocked,
           };
           
-          localStorage.setItem('user', JSON.stringify(usuarioCompat));
+          authClient.cacheCurrentUser(usuarioCompat);
           setUser(usuarioCompat);
           setProfile({
             ...usuarioCompat,
@@ -176,7 +176,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
               ativo: true,
             };
             
-            localStorage.setItem('user', JSON.stringify(usuarioCompat));
+            authClient.cacheCurrentUser(usuarioCompat);
             setUser(usuarioCompat);
             setProfile({
               ...usuarioCompat,
@@ -202,7 +202,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           ativo: true,
         };
         
-        localStorage.setItem('user', JSON.stringify(usuarioCompat));
+        authClient.cacheCurrentUser(usuarioCompat);
         setUser(usuarioCompat);
         setProfile({
           ...usuarioCompat,
@@ -318,7 +318,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             ativo: dbUser.status !== 'inactive' && !dbUser.is_blocked,
           };
 
-          localStorage.setItem('user', JSON.stringify(usuarioCompat));
+          authClient.cacheCurrentUser(usuarioCompat);
           localStorage.setItem('auth_fallback', 'true');
           setUser(usuarioCompat);
           setProfile({

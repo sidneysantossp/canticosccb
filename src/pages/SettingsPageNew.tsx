@@ -16,6 +16,7 @@ import { useEffect } from 'react';
 import { getPremiumVisibility } from '@/lib/admin/premiumAdminApi';
 import { usuariosApi } from '@/lib/api-client';
 import { buildAvatarUrl } from '@/lib/media-helper';
+import { clearAuthStorage } from '@/lib/supabase-auth';
 
 const SettingsPage: React.FC = () => {
   const navigate = useNavigate();
@@ -159,7 +160,7 @@ const SettingsPage: React.FC = () => {
     try {
       await signOut();
     } catch {}
-    try { localStorage.clear(); } catch {}
+    try { clearAuthStorage(); } catch {}
     try { sessionStorage.clear(); } catch {}
     window.location.href = '/login';
   };

@@ -13,6 +13,7 @@ import PublicMobileSidebar from './PublicMobileSidebar';
 import { quickSearch } from '@/lib/mockApis';
 import { buildAlbumUrl, buildCompositorUrl, buildHinoUrl } from '@/utils/slugUrl';
 import { useVoiceSearch } from '@/hooks/useVoiceSearch';
+import { clearAuthStorage } from '@/lib/supabase-auth';
 
 type HeaderSearchItem = {
   id: string;
@@ -236,8 +237,7 @@ const Header: React.FC = () => {
       
       console.log('✅ Logout - Success! Redirecting...');
       
-      // Limpar tudo
-      localStorage.clear();
+      clearAuthStorage();
       sessionStorage.clear();
       
       // Redirecionar e forçar reload
@@ -247,7 +247,7 @@ const Header: React.FC = () => {
       
       // Mesmo com erro, forçar logout local
       console.log('🔄 Logout - Forcing local logout...');
-      localStorage.clear();
+      clearAuthStorage();
       sessionStorage.clear();
       window.location.href = '/login';
     }

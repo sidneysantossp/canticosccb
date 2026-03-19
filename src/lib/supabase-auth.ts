@@ -59,6 +59,29 @@ export interface LoginResponse {
   usuario: Usuario;
 }
 
+const USER_STORAGE_KEY = 'user';
+const AUTH_TOKEN_STORAGE_KEY = 'auth_token';
+const AUTH_FALLBACK_STORAGE_KEY = 'auth_fallback';
+
+export function cacheCurrentUser(usuario: Usuario | null): void {
+  if (typeof localStorage === 'undefined') return;
+
+  if (!usuario) {
+    localStorage.removeItem(USER_STORAGE_KEY);
+    return;
+  }
+
+  localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(usuario));
+}
+
+export function clearAuthStorage(): void {
+  if (typeof localStorage === 'undefined') return;
+
+  localStorage.removeItem(USER_STORAGE_KEY);
+  localStorage.removeItem(AUTH_TOKEN_STORAGE_KEY);
+  localStorage.removeItem(AUTH_FALLBACK_STORAGE_KEY);
+}
+
 // Função helper para mapear campos para compatibilidade
 function mapUserForCompatibility(user: any): Usuario {
   return {
@@ -148,7 +171,7 @@ export async function login(email: string, senha: string): Promise<LoginResponse
     const usuario = mapUserForCompatibility(user);
 
     // 3. Salvar no localStorage para compatibilidade
-    localStorage.setItem('user', JSON.stringify(usuario));
+    cacheCurrentUser(usuario);
 
     return {
       success: true,
@@ -275,11 +298,11 @@ export async function register(data: { nome: string; email: string; senha: strin
 
     // Só persiste no cliente quando existe sessão ativa.
     if (authData.session) {
-      localStorage.setItem('user', JSON.stringify(usuario));
-      localStorage.removeItem('auth_fallback');
+      cacheCurrentUser(usuario);
+      localStorage.removeItem(AUTH_FALLBACK_STORAGE_KEY);
     } else {
-      localStorage.removeItem('user');
-      localStorage.removeItem('auth_fallback');
+      cacheCurrentUser(null);
+      localStorage.removeItem(AUTH_FALLBACK_STORAGE_KEY);
     }
 
     return {
@@ -409,7 +432,7 @@ export async function handleOAuthCallback(): Promise<LoginResponse> {
     }
 
     const usuario = mapUserForCompatibility(user);
-    localStorage.setItem('user', JSON.stringify(usuario));
+    cacheCurrentUser(usuario);
 
     return {
       success: true,
@@ -427,23 +450,23 @@ export async function handleOAuthCallback(): Promise<LoginResponse> {
  */
 export async function logout(): Promise<void> {
   await supabase.auth.signOut();
-  localStorage.removeItem('user');
-  localStorage.removeItem('auth_token');
-  localStorage.removeItem('auth_fallback');
+  clearAuthStorage();
 }
 
 /**
  * Verificar se está logado
  */
 export function isAuthenticated(): boolean {
-  return !!localStorage.getItem('user');
+  return !!getCurrentUser();
 }
 
 /**
  * Pegar usuário do localStorage
  */
 export function getCurrentUser(): Usuario | null {
-  const userStr = localStorage.getItem('user');
+  if (typeof localStorage === 'undefined') return null;
+
+  const userStr = localStorage.getItem(USER_STORAGE_KEY);
   if (!userStr) return null;
 
   try {
@@ -484,7 +507,7 @@ export async function updateUserProfile(userId: string, data: Partial<Usuario>):
   if (error) throw error;
 
   const usuario = mapUserForCompatibility(user);
-  localStorage.setItem('user', JSON.stringify(usuario));
+  cacheCurrentUser(usuario);
   return usuario;
 }
 
@@ -515,13 +538,13 @@ export function onAuthStateChange(callback: (user: Usuario | null) => void) {
 
       if (user) {
         const usuario = mapUserForCompatibility(user);
-        localStorage.setItem('user', JSON.stringify(usuario));
+        cacheCurrentUser(usuario);
         callback(usuario);
       } else {
         callback(null);
       }
     } else {
-      localStorage.removeItem('user');
+      cacheCurrentUser(null);
       callback(null);
     }
   });

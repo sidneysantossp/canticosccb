@@ -3,6 +3,7 @@ import { Link, useLocation } from 'react-router-dom';
 import { X, Home, Search, Library, Music, Mic, User, Heart, LogOut, Shield, Star, Grid, List, FileText, BookOpen } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { usePremiumEnabled } from '@/hooks/usePremiumEnabled';
+import { clearAuthStorage } from '@/lib/supabase-auth';
 
 interface PublicMobileSidebarProps {
   isOpen: boolean;
@@ -33,7 +34,7 @@ const PublicMobileSidebar: React.FC<PublicMobileSidebarProps> = ({ isOpen, onClo
       window.location.href = '/login';
     } catch (error) {
       console.error('Erro no logout:', error);
-      localStorage.clear();
+      clearAuthStorage();
       sessionStorage.clear();
       window.location.href = '/login';
     }

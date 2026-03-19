@@ -666,8 +666,17 @@ export const compositoresApi = {
   },
 };
 
+const mapAlbumForCompatibility = (album: any) => ({
+  ...album,
+  titulo: album.title || album.titulo || '',
+  descricao: album.description || album.descricao || '',
+  ativo: album.active === false ? 0 : 1,
+  status: album.is_published === false ? 'draft' : 'published',
+  tipo: album.tipo || 'album',
+});
+
 export const albunsApi = {
-  list: async (params?: { page?: number; limit?: number; search?: string; compositor_id?: string }) => {
+  list: async (params?: { page?: number; limit?: number; search?: string; compositor_id?: string; tipo?: string }) => {
     try {
 
       const pageSize = params?.limit || 12;
@@ -675,7 +684,7 @@ export const albunsApi = {
 
       let query = supabase
         .from('albums')
-        .select('id,title,artist,description,cover_url,total_tracks,release_date,composer_id,created_at,updated_at', { count: 'exact' })
+        .select('id,title,artist,description,cover_url,total_tracks,release_date,composer_id,created_at,updated_at,is_published,active,featured,featured_order,genre,tipo', { count: 'exact' })
         .order('created_at', { ascending: false });
 
       if (params?.search) {
@@ -683,6 +692,9 @@ export const albunsApi = {
       }
       if (params?.compositor_id) {
         query = query.eq('composer_id', params.compositor_id);
+      }
+      if (params?.tipo) {
+        query = query.eq('tipo', params.tipo);
       }
 
       query = query.range((page - 1) * pageSize, page * pageSize - 1);
@@ -712,7 +724,7 @@ export const albunsApi = {
         }
       }
 
-      const enriched = (rows || []).map((r: any) => ({
+      const enriched = (rows || []).map((r: any) => mapAlbumForCompatibility({
         ...r,
         total_tracks: trackCounts[r.id] || r.total_tracks || 0,
       }));
@@ -736,13 +748,10 @@ export const albunsApi = {
     try {
       const rows = await supabaseFetch<any>('albums', {
         id: `eq.${id}`,
-        select: 'id,title,artist,description,cover_url,total_tracks,release_date,composer_id,is_published,active,created_at,updated_at,featured,featured_order,genre',
+        select: 'id,title,artist,description,cover_url,total_tracks,release_date,composer_id,is_published,active,created_at,updated_at,featured,featured_order,genre,tipo',
         limit: '1'
       });
-      const album = rows?.[0] || null;
-      if (album) {
-        (album as any).status = (album as any).is_published ? 'published' : 'draft';
-      }
+      const album = rows?.[0] ? mapAlbumForCompatibility(rows[0]) : null;
       return { data: album, error: null };
     } catch (error: any) {
       console.error('📀 [albunsApi.get] Error:', error);
@@ -794,7 +803,10 @@ export const albunsApi = {
       return { data: { hinos: [] }, error: error.message };
     }
   },
-  getAll: async () => [],
+  getAll: async () => {
+    const result = await albunsApi.list({ limit: 1000 });
+    return result.data?.albuns || [];
+  },
   getById: async (id: number | string) => {
     const result = await albunsApi.get(id);
     return result.data;
@@ -813,6 +825,7 @@ export const albunsApi = {
 
       // Campos opcionais importantes
       if (data.genre) insertData.genre = data.genre;
+      if (data.tipo) insertData.tipo = data.tipo;
       if (data.compositor_id) insertData.composer_id = data.compositor_id;
       if (data.ano) insertData.release_date = `${data.ano}-01-01`;
       if (data.release_date) insertData.release_date = data.release_date;
@@ -827,7 +840,7 @@ export const albunsApi = {
         return { data: null, error: 'Falha ao criar álbum. Verifique suas permissões.' };
       }
       console.log('✅ [albunsApi.create] Result:', result[0]);
-      return { data: result[0], error: null };
+      return { data: mapAlbumForCompatibility(result[0]), error: null };
     } catch (error: any) {
       console.error('❌ [albunsApi.create] Error:', error);
       return { data: null, error: error.message };
@@ -844,6 +857,7 @@ export const albunsApi = {
       if (data.cover_url !== undefined) updateData.cover_url = data.cover_url;
       if (data.artist !== undefined) updateData.artist = data.artist;
       if (data.genre !== undefined) updateData.genre = data.genre;
+      if (data.tipo !== undefined) updateData.tipo = data.tipo;
       if (data.is_published !== undefined) updateData.is_published = data.is_published;
       if (data.ativo !== undefined) updateData.active = data.ativo !== 0;
       if (data.ano !== undefined) updateData.release_date = `${data.ano}-01-01`;
@@ -858,7 +872,7 @@ export const albunsApi = {
         console.warn('⚠️ [albunsApi.update] Nenhuma linha atualizada - verifique RLS policies ou se o ID existe');
         return { data: null, error: 'Nenhuma linha atualizada. Verifique se o álbum existe e se você tem permissão.' };
       }
-      return { data: result[0], error: null };
+      return { data: mapAlbumForCompatibility(result[0]), error: null };
     } catch (error: any) {
       console.error('❌ [albunsApi.update] Error:', error);
       return { data: null, error: error.message };
