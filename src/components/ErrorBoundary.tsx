@@ -1,6 +1,7 @@
 import React, { Component, ErrorInfo, ReactNode } from 'react';
 import { AlertTriangle, RefreshCw, Home } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { isChunkLoadFailure } from '@/utils/chunkLoadRecovery';
 
 interface Props {
   children: ReactNode;
@@ -44,6 +45,8 @@ class ErrorBoundary extends Component<Props, State> {
         return this.props.fallback;
       }
 
+      const isChunkError = isChunkLoadFailure(this.state.error);
+
       return (
         <div className="min-h-screen bg-background-primary flex items-center justify-center p-6">
           <div className="max-w-md w-full bg-background-secondary rounded-lg p-8 text-center">
@@ -55,7 +58,9 @@ class ErrorBoundary extends Component<Props, State> {
                 Ops! Algo deu errado
               </h1>
               <p className="text-gray-400 mb-6">
-                Encontramos um erro inesperado. Tente recarregar a página ou voltar ao início.
+                {isChunkError
+                  ? 'Uma nova versão do site foi publicada e este trecho da aplicação ficou desatualizado. Recarregue a página para buscar os arquivos corretos.'
+                  : 'Encontramos um erro inesperado. Tente recarregar a página ou voltar ao início.'}
               </p>
             </div>
 
