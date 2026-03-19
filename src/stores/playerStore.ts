@@ -172,6 +172,21 @@ export const usePlayerStore = create<PlayerStore>((set, get) => ({
 
   playNext: () => {
     const { queue, repeat, currentTrack, onTrackEnd } = get();
+    const gate = !isUserLoggedIn() ? useFreePlayGateStore.getState() : null;
+
+    // Visitante pode ouvir apenas o primeiro hino.
+    // Ao tentar seguir ouvindo depois disso, mostramos o gate e encerramos o player atual.
+    if (gate && currentTrack && gate.getPlayCount() >= 1) {
+      gate.showGate(currentTrack);
+      set({
+        currentTrack: null,
+        isPlaying: false,
+        currentTime: 0,
+        duration: 0,
+        playbackContext: null,
+      });
+      return;
+    }
     
     // Se tem callback personalizado (para álbuns), usa ele
     if (onTrackEnd) {

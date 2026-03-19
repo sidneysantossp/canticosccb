@@ -2,7 +2,6 @@ import React, { useState, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { 
   User, 
-  Crown, 
   Shield, 
   Volume2, 
   Download,
@@ -13,7 +12,6 @@ import {
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useEffect } from 'react';
-import { getPremiumVisibility } from '@/lib/admin/premiumAdminApi';
 import { usuariosApi } from '@/lib/api-client';
 import { buildAvatarUrl } from '@/lib/media-helper';
 import { clearAuthStorage } from '@/lib/supabase-auth';
@@ -49,17 +47,8 @@ const SettingsPage: React.FC = () => {
     emailNotifications: false
   });
 
-  const [premiumEnabled, setPremiumEnabled] = useState<boolean>(false);
   const SETTINGS_STORAGE_KEY = 'user_settings_prefs_v1';
   const updateTimer = useRef<number | null>(null);
-
-  useEffect(() => {
-    const load = async () => {
-      const enabled = await getPremiumVisibility();
-      setPremiumEnabled(enabled);
-    };
-    load();
-  }, []);
 
   useEffect(() => {
     try {
@@ -262,19 +251,6 @@ const SettingsPage: React.FC = () => {
             </div>
             <ChevronRight className="w-5 h-5 text-text-muted" />
           </Link>
-          
-          {premiumEnabled && (
-            <Link
-              to="/subscription"
-              className="flex items-center justify-between p-4 hover:bg-background-tertiary transition-colors"
-            >
-              <div>
-                <h4 className="text-white font-medium">Plano e assinatura</h4>
-                <p className="text-text-muted text-sm">Premium</p>
-              </div>
-              <ChevronRight className="w-5 h-5 text-text-muted" />
-            </Link>
-          )}
           
           <Link
             to="/privacy"

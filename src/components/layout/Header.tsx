@@ -429,11 +429,6 @@ const Header: React.FC = () => {
                     <p className="text-xs text-text-muted truncate">
                       {profile?.email || user?.email}
                     </p>
-                    {profile?.plan === 'premium' && (
-                      <span className="inline-block mt-1 px-2 py-0.5 text-xs font-bold bg-gradient-to-r from-yellow-500 to-yellow-600 text-black rounded-full">
-                        ⭐ Premium
-                      </span>
-                    )}
                   </div>
 
                   {/* Menu Items */}
@@ -480,19 +475,6 @@ const Header: React.FC = () => {
                       </Link>
                     )}
                     
-                    {premiumEnabled && profile?.plan === 'premium' && (
-                      <Link
-                        to="/subscription"
-                        className="flex items-center gap-3 px-4 py-2.5 hover:bg-background-hover transition-colors text-text-primary"
-                        onClick={() => setShowUserMenu(false)}
-                      >
-                        <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                          <path d="M4 4a2 2 0 00-2 2v1h16V6a2 2 0 00-2-2H4z" />
-                          <path fillRule="evenodd" d="M18 9H2v5a2 2 0 002 2h12a2 2 0 002-2V9zM4 13a1 1 0 011-1h1a1 1 0 110 2H5a1 1 0 01-1-1zm5-1a1 1 0 100 2h1a1 1 0 100-2H9z" clipRule="evenodd" />
-                        </svg>
-                        Minha Assinatura
-                      </Link>
-                    )}
                   </div>
                   
                   {/* Panel Links */}

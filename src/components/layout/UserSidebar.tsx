@@ -6,7 +6,6 @@ import {
   Library,
   Heart,
   ListMusic,
-  Crown,
   Users,
   Grid,
   Music,
@@ -17,26 +16,15 @@ import {
 import { getLogoByType } from '@/lib/mockApis';
 import { useAuth } from '@/contexts/AuthContext';
 import { compositorGerentesApi } from '@/lib/api-client';
-import { getPremiumVisibility } from '@/lib/admin/premiumAdminApi';
 
 const UserSidebar: React.FC = () => {
   const location = useLocation();
   const { user } = useAuth();
   const [isManager, setIsManager] = useState(false);
-  const [premiumEnabled, setPremiumEnabled] = useState<boolean>(false);
 
   useEffect(() => {
     checkIfManager();
   }, [user]);
-
-  useEffect(() => {
-    (async () => {
-      try {
-        const enabled = await getPremiumVisibility();
-        setPremiumEnabled(enabled);
-      } catch { }
-    })();
-  }, []);
 
   const checkIfManager = async () => {
     if (!user?.id) return;
@@ -74,12 +62,6 @@ const UserSidebar: React.FC = () => {
         { icon: BookOpen, label: 'Hinário', path: '/hinario' }
       ]
     },
-    ...(premiumEnabled ? [{
-      category: 'Dashboard',
-      items: [
-        { icon: Crown, label: 'Assinatura', path: '/subscription' }
-      ]
-    }] : []),
     ...(isManager ? [{
       category: 'Gerenciamento',
       items: [

@@ -86,10 +86,10 @@ const FreePlayGateModal: React.FC = () => {
 
             {/* Message */}
             <h2 className="text-white font-bold text-xl sm:text-2xl mb-2 leading-tight">
-              Crie sua conta gratuita<br />para continuar ouvindo
+              Você já ouviu seu primeiro hino gratuito
             </h2>
             <p className="text-white/70 text-sm mb-6">
-              Ouça milhares de hinos da CCB sem limites
+              Faça um cadastro gratuito para continuar ouvindo todo o acervo da plataforma.
             </p>
 
             {/* Google Login Button */}

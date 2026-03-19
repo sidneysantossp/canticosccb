@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, Navigate } from 'react-router-dom';
 import { 
   ArrowLeft, 
   Crown, 
@@ -45,8 +45,13 @@ const SubscriptionPage: React.FC = () => {
     load();
   }, []);
 
-  const currentPlan = user?.isPremium ? 'premium' : 'free';
   const visiblePlans = plans.filter(p => p.is_active && p.interval === billingCycle);
+
+  if (!premiumEnabled || visiblePlans.length === 0) {
+    return <Navigate to="/" replace />;
+  }
+
+  const currentPlan = user?.isPremium ? 'premium' : 'free';
   const hasPremiumCatalog = premiumEnabled && visiblePlans.length > 0;
 
   const handleSubscribe = (planType: string) => {

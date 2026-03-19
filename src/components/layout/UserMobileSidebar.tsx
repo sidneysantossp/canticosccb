@@ -6,17 +6,13 @@ import {
   Library,
   Heart,
   ListMusic,
-  Clock,
   User,
   Settings,
-  Crown,
-  TrendingUp,
   X,
   Users
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { compositorGerentesApi } from '@/lib/api-client';
-import { getPremiumVisibility } from '@/lib/admin/premiumAdminApi';
 
 interface UserMobileSidebarProps {
   isOpen: boolean;
@@ -27,20 +23,10 @@ const UserMobileSidebar: React.FC<UserMobileSidebarProps> = ({ isOpen, onClose }
   const location = useLocation();
   const { user } = useAuth();
   const [isManager, setIsManager] = useState(false);
-  const [premiumEnabled, setPremiumEnabled] = useState<boolean>(false);
 
   const isActive = (path: string) => {
     return location.pathname === path;
   };
-
-  useEffect(() => {
-    (async () => {
-      try {
-        const enabled = await getPremiumVisibility();
-        setPremiumEnabled(enabled);
-      } catch { }
-    })();
-  }, []);
 
   // Sem carregamento dinâmico de logo no mobile: usa URL fixa informada
 
@@ -70,8 +56,7 @@ const UserMobileSidebar: React.FC<UserMobileSidebarProps> = ({ isOpen, onClose }
       category: 'Dashboard',
       items: [
         { icon: User, label: 'Meu Perfil', path: '/profile' },
-        { icon: Settings, label: 'Configurações', path: '/settings' },
-        ...(premiumEnabled ? [{ icon: Crown, label: 'Assinatura', path: '/subscription' }] : [])
+        { icon: Settings, label: 'Configurações', path: '/settings' }
       ]
     },
     ...(isManager ? [{
