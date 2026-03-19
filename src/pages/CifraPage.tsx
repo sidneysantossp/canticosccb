@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Minus, Plus, ScrollText, Settings2, Eye, Printer, Share2, Music, X, Heart, Flag, Gauge, Hand, Target, RefreshCw } from 'lucide-react';
+import { ArrowLeft, Minus, Plus, ScrollText, Settings2, Eye, Printer, Share2, Music, X, Heart, Flag, Gauge, Hand, Target, RefreshCw, Play, Pause, RotateCcw } from 'lucide-react';
 import SEOHead from '@/components/SEO/SEOHead';
 import { generateCifraSchema, generateBreadcrumbSchema } from '@/utils/schemaGenerator';
 import { fetchCifraBySlug, incrementCifraViews, type Cifra, INSTRUMENTS, ALL_KEYS } from '@/api/cifras';
@@ -21,9 +21,12 @@ import {
 } from '@/lib/cifras-v2';
 import { getHinarioRangeForNumero } from '@/lib/hinarioRanges';
 import { extractHymnNumber, findRelatedHinario, findRelatedHymn } from '@/lib/hymnConnectionsApi';
+import { hinosApi } from '@/lib/api-client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/contexts/ToastContext';
 import { CIFRA_V2_INSTRUMENTS, type CifraChordShape, type CifraInstrument, type CifraReportType } from '@/types/cifras-v2';
+import type { Hino } from '@/types';
+import { usePlayerStore } from '@/stores/playerStore';
 import {
   isChordLine,
   isSectionLine,
@@ -106,16 +109,80 @@ function sortChordShapeVariantsForContext(
   });
 }
 
+function parseDurationLabelToSeconds(value?: string | null): number | null {
+  const normalized = String(value || '').trim();
+  if (!normalized) {
+    return null;
+  }
+
+  const parts = normalized.split(':').map((part) => Number.parseInt(part, 10));
+  if (parts.some((part) => !Number.isFinite(part))) {
+    return null;
+  }
+
+  if (parts.length === 2) {
+    return parts[0] * 60 + parts[1];
+  }
+
+  if (parts.length === 3) {
+    return parts[0] * 3600 + parts[1] * 60 + parts[2];
+  }
+
+  return null;
+}
+
+function buildPlayerTrackFromHymn(row: any, fallbackCoverUrl?: string | null): Hino {
+  return {
+    id: String(row.id),
+    title: String(row.titulo || 'Hino CCB'),
+    number: Number(row.numero || 0),
+    category: String(row.categoria || 'Hinos CCB'),
+    artist: String(row.compositor_nome || 'Canticos CCB'),
+    duration: String(row.duracao || '00:00'),
+    audioUrl: row.youtube_source ? '' : (row.audio_url || undefined),
+    coverUrl: row.cover_url || fallbackCoverUrl || undefined,
+    lyrics: row.letra || undefined,
+    plays: 0,
+    isLiked: false,
+    createdAt: row.created_at || new Date().toISOString(),
+    youtubeSource: row.youtube_source || undefined,
+  };
+}
+
+function estimateSectionWindow(index: number, totalSections: number, durationSeconds: number) {
+  const safeTotal = Math.max(totalSections, 1);
+  const start = (durationSeconds * index) / safeTotal;
+  const end = (durationSeconds * (index + 1)) / safeTotal;
+
+  return {
+    start: Math.max(0, start),
+    end: Math.max(start, end),
+  };
+}
+
 const CifraPage: React.FC = () => {
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
   const { user } = useAuth();
   const { showToast } = useToast();
+  const {
+    currentTrack,
+    isPlaying: isPlayerPlaying,
+    currentTime: playerCurrentTime,
+    duration: playerDuration,
+    play,
+    pause,
+    resume,
+    setCurrentTime,
+    setPlaybackContext,
+  } = usePlayerStore();
   const [cifra, setCifra] = useState<DisplayCifra | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [relatedHymn, setRelatedHymn] = useState<{ id: string; numero: number; titulo: string } | null>(null);
   const [relatedLyric, setRelatedLyric] = useState<{ numero: number; titulo: string } | null>(null);
+  const [relatedHymnTrack, setRelatedHymnTrack] = useState<Hino | null>(null);
+  const [isRelatedTrackLoading, setIsRelatedTrackLoading] = useState(false);
   const [engagement, setEngagement] = useState<CifraEngagementSnapshot | null>(null);
   const [chordShapeVariants, setChordShapeVariants] = useState<Record<string, CifraChordShape[]>>({});
   const [selectedShapeIds, setSelectedShapeIds] = useState<Record<string, string>>({});
@@ -138,6 +205,8 @@ const CifraPage: React.FC = () => {
   const [useTwoColumnLayout, setUseTwoColumnLayout] = useState(false);
   const [studyModeEnabled, setStudyModeEnabled] = useState(false);
   const [focusedSectionIndex, setFocusedSectionIndex] = useState<number | null>(null);
+  const [syncStudyWithAudio, setSyncStudyWithAudio] = useState(false);
+  const [loopFocusedSection, setLoopFocusedSection] = useState(false);
   const [metronomeEnabled, setMetronomeEnabled] = useState(false);
   const [metronomeBpm, setMetronomeBpm] = useState(72);
 
@@ -146,6 +215,9 @@ const CifraPage: React.FC = () => {
   const metronomeIntervalRef = useRef<number | null>(null);
   const metronomeBeatRef = useRef(0);
   const audioContextRef = useRef<AudioContext | null>(null);
+  const queuedSeekRef = useRef<number | null>(null);
+  const lastSyncedSectionRef = useRef<number | null>(null);
+  const lastLoopAtRef = useRef(0);
 
   useEffect(() => {
     if (slug) loadCifra(slug);
@@ -204,6 +276,45 @@ const CifraPage: React.FC = () => {
       cancelled = true;
     };
   }, [cifra]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const loadRelatedTrack = async () => {
+      if (!relatedHymn) {
+        setRelatedHymnTrack(null);
+        setIsRelatedTrackLoading(false);
+        return;
+      }
+
+      try {
+        setIsRelatedTrackLoading(true);
+        const { data, error: hymnError } = await hinosApi.get(relatedHymn.id);
+        if (hymnError) {
+          throw new Error(hymnError);
+        }
+
+        if (!cancelled && data) {
+          setRelatedHymnTrack(buildPlayerTrackFromHymn(data, cifra?.cover_url || null));
+        }
+      } catch (trackError) {
+        console.error('Erro ao carregar o áudio do hino relacionado:', trackError);
+        if (!cancelled) {
+          setRelatedHymnTrack(null);
+        }
+      } finally {
+        if (!cancelled) {
+          setIsRelatedTrackLoading(false);
+        }
+      }
+    };
+
+    void loadRelatedTrack();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [cifra?.cover_url, relatedHymn]);
 
   useEffect(() => {
     let cancelled = false;
@@ -339,6 +450,21 @@ const CifraPage: React.FC = () => {
     return structuredSectionItems.filter((item) => item.index === focusedSectionIndex);
   }, [cifra, focusedSectionIndex, studyModeEnabled, structuredSectionItems]);
 
+  const isRelatedTrackActive = Boolean(relatedHymnTrack && currentTrack?.id === relatedHymnTrack.id);
+  const canPlayRelatedTrack = Boolean(relatedHymnTrack && (relatedHymnTrack.audioUrl || relatedHymnTrack.youtubeSource));
+  const hasStructuredSections = structuredSectionItems.length > 0;
+  const effectiveRelatedDuration = useMemo(() => {
+    if (!relatedHymnTrack) {
+      return null;
+    }
+
+    if (isRelatedTrackActive && playerDuration > 0) {
+      return playerDuration;
+    }
+
+    return parseDurationLabelToSeconds(relatedHymnTrack.duration);
+  }, [isRelatedTrackActive, playerDuration, relatedHymnTrack]);
+
   const ensureAudioContext = useCallback(() => {
     const AudioContextCtor = window.AudioContext || ((window as Window & typeof globalThis & { webkitAudioContext?: typeof AudioContext }).webkitAudioContext);
     if (!AudioContextCtor) {
@@ -449,12 +575,95 @@ const CifraPage: React.FC = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }, [focusedSectionIndex, scrollToSection]);
 
+  const queueSeekToSecond = useCallback((targetSecond: number) => {
+    queuedSeekRef.current = Math.max(0, targetSecond);
+    setCurrentTime(Math.max(0, targetSecond));
+  }, [setCurrentTime]);
+
+  const seekToSectionStart = useCallback((sectionIndex: number) => {
+    if (!hasStructuredSections || !effectiveRelatedDuration || structuredSectionItems.length === 0) {
+      return;
+    }
+
+    const { start } = estimateSectionWindow(sectionIndex, structuredSectionItems.length, effectiveRelatedDuration);
+    queueSeekToSecond(start);
+  }, [effectiveRelatedDuration, hasStructuredSections, queueSeekToSecond, structuredSectionItems.length]);
+
+  const handlePlayRelatedTrack = useCallback((options?: { seekToFocusedSection?: boolean }) => {
+    if (!relatedHymnTrack || !canPlayRelatedTrack) {
+      showToast('info', 'Áudio indisponível', 'Este hino relacionado ainda não possui áudio público para reprodução direta.');
+      return;
+    }
+
+    setPlaybackContext({ type: 'unknown', id: `cifra:${slug || relatedHymnTrack.id}` });
+
+    if (isRelatedTrackActive) {
+      if (options?.seekToFocusedSection && focusedSectionIndex !== null) {
+        seekToSectionStart(focusedSectionIndex);
+      }
+
+      if (isPlayerPlaying) {
+        pause();
+      } else {
+        resume();
+      }
+      return;
+    }
+
+    play(relatedHymnTrack);
+    if (options?.seekToFocusedSection && focusedSectionIndex !== null) {
+      window.setTimeout(() => {
+        seekToSectionStart(focusedSectionIndex);
+      }, 450);
+    }
+  }, [
+    canPlayRelatedTrack,
+    focusedSectionIndex,
+    isPlayerPlaying,
+    isRelatedTrackActive,
+    pause,
+    play,
+    relatedHymnTrack,
+    resume,
+    seekToSectionStart,
+    setPlaybackContext,
+    showToast,
+    slug,
+  ]);
+
+  const handleRestartRelatedTrack = useCallback(() => {
+    if (!relatedHymnTrack || !canPlayRelatedTrack) {
+      return;
+    }
+
+    if (!isRelatedTrackActive) {
+      handlePlayRelatedTrack({ seekToFocusedSection: false });
+      window.setTimeout(() => queueSeekToSecond(0), 450);
+      return;
+    }
+
+    queueSeekToSecond(0);
+    if (!isPlayerPlaying) {
+      resume();
+    }
+  }, [
+    canPlayRelatedTrack,
+    handlePlayRelatedTrack,
+    isPlayerPlaying,
+    isRelatedTrackActive,
+    queueSeekToSecond,
+    relatedHymnTrack,
+    resume,
+  ]);
+
   const loadCifra = async (slug: string) => {
     try {
       setIsLoading(true);
       setError(null);
       setStudyModeEnabled(false);
       setFocusedSectionIndex(null);
+      setSyncStudyWithAudio(false);
+      setLoopFocusedSection(false);
       setUseTwoColumnLayout(false);
       setMetronomeEnabled(false);
       const publicData = await fetchPublicCifraPageBySlug(slug);
@@ -486,6 +695,101 @@ const CifraPage: React.FC = () => {
       setIsLoading(false);
     }
   };
+
+  useEffect(() => {
+    if (queuedSeekRef.current === null || !isRelatedTrackActive || playerDuration <= 0) {
+      return;
+    }
+
+    const targetSecond = queuedSeekRef.current;
+    const currentDrift = Math.abs(playerCurrentTime - targetSecond);
+    if (currentDrift <= 1.2) {
+      queuedSeekRef.current = null;
+    } else {
+      setCurrentTime(targetSecond);
+    }
+  }, [isRelatedTrackActive, playerCurrentTime, playerDuration, setCurrentTime]);
+
+  useEffect(() => {
+    if (!studyModeEnabled || !syncStudyWithAudio || loopFocusedSection || !hasStructuredSections || !isRelatedTrackActive || playerDuration <= 0) {
+      return;
+    }
+
+    const progressRatio = Math.min(0.999, Math.max(0, playerCurrentTime / playerDuration));
+    const estimatedIndex = Math.min(
+      structuredSectionItems.length - 1,
+      Math.floor(progressRatio * structuredSectionItems.length),
+    );
+
+    if (lastSyncedSectionRef.current === estimatedIndex) {
+      return;
+    }
+
+    lastSyncedSectionRef.current = estimatedIndex;
+    setFocusedSectionIndex(estimatedIndex);
+    scrollToSection(estimatedIndex);
+  }, [
+    hasStructuredSections,
+    isRelatedTrackActive,
+    loopFocusedSection,
+    playerCurrentTime,
+    playerDuration,
+    scrollToSection,
+    structuredSectionItems.length,
+    studyModeEnabled,
+    syncStudyWithAudio,
+  ]);
+
+  useEffect(() => {
+    if (!studyModeEnabled || !loopFocusedSection || focusedSectionIndex === null || !hasStructuredSections || !isRelatedTrackActive || playerDuration <= 0) {
+      return;
+    }
+
+    const { start, end } = estimateSectionWindow(focusedSectionIndex, structuredSectionItems.length, playerDuration);
+    const now = Date.now();
+
+    if (
+      playerCurrentTime >= Math.max(start + 0.35, end - 0.4) &&
+      now - lastLoopAtRef.current > 900
+    ) {
+      lastLoopAtRef.current = now;
+      setCurrentTime(start);
+      if (!isPlayerPlaying) {
+        resume();
+      }
+      scrollToSection(focusedSectionIndex);
+    }
+  }, [
+    focusedSectionIndex,
+    hasStructuredSections,
+    isPlayerPlaying,
+    isRelatedTrackActive,
+    loopFocusedSection,
+    playerCurrentTime,
+    playerDuration,
+    resume,
+    scrollToSection,
+    setCurrentTime,
+    structuredSectionItems.length,
+    studyModeEnabled,
+  ]);
+
+  useEffect(() => {
+    if (!studyModeEnabled) {
+      setSyncStudyWithAudio(false);
+      setLoopFocusedSection(false);
+      lastSyncedSectionRef.current = null;
+      return;
+    }
+
+    if (!syncStudyWithAudio) {
+      lastSyncedSectionRef.current = null;
+    }
+
+    if (focusedSectionIndex === null) {
+      setLoopFocusedSection(false);
+    }
+  }, [focusedSectionIndex, studyModeEnabled, syncStudyWithAudio]);
 
   const refreshEngagement = async (versionId: string) => {
     try {
@@ -548,6 +852,13 @@ const CifraPage: React.FC = () => {
   const supportsStudyTools = isCifraV2(cifra) && structuredSections.length > 0;
   const supportsTwoColumnLayout = isCifraV2(cifra) && structuredSections.length > 1;
   const shouldRenderTwoColumns = supportsTwoColumnLayout && useTwoColumnLayout && !studyModeEnabled;
+  const focusedSectionWindow = useMemo(() => {
+    if (focusedSectionIndex === null || !effectiveRelatedDuration || structuredSectionItems.length === 0) {
+      return null;
+    }
+
+    return estimateSectionWindow(focusedSectionIndex, structuredSectionItems.length, effectiveRelatedDuration);
+  }, [effectiveRelatedDuration, focusedSectionIndex, structuredSectionItems.length]);
   const visibleChordCards = chords
     .slice(0, 12)
     .map((chord) => {
@@ -769,10 +1080,15 @@ const CifraPage: React.FC = () => {
         }))
     : PUBLIC_INSTRUMENTS;
   const instrumentLabel = PUBLIC_INSTRUMENTS.find(i => i.value === cifra.instrument)?.label || cifra.instrument;
+  const editorialPreferredKey =
+    isCifraV2(cifra) && cifra.preferred_key && cifra.preferred_key !== cifra.original_key
+      ? cifra.preferred_key
+      : null;
   const studyFacts = isCifraV2(cifra)
     ? [
         { label: 'Instrumento', value: instrumentLabel },
         { label: 'Tom principal', value: selectedKey },
+        ...(editorialPreferredKey ? [{ label: 'Tom editorial', value: editorialPreferredKey }] : []),
         ...(cifra.tuning ? [{ label: 'Afinação', value: cifra.tuning }] : []),
         ...(cifra.tempo_bpm ? [{ label: 'Andamento', value: `${cifra.tempo_bpm} BPM` }] : []),
         ...(cifra.time_signature ? [{ label: 'Compasso', value: cifra.time_signature }] : []),
@@ -858,6 +1174,7 @@ const CifraPage: React.FC = () => {
                   ? `Versão ${cifra.publication_label === 'official' ? 'oficial' : cifra.publication_label === 'reviewed' ? 'revisada' : 'publicada'}`
                   : `${cifra.views_count.toLocaleString()} exibições`}
               </span>
+              {isCifraV2(cifra) ? <span>{cifra.arrangement_type.replace('_', ' ')}</span> : null}
               {engagement ? <span>{engagement.viewsCount.toLocaleString()} visualizações</span> : null}
               {engagement ? <span>{engagement.favoritesCount.toLocaleString()} favoritos</span> : null}
               {engagement ? <span>{engagement.openReportsCount.toLocaleString()} denúncias abertas</span> : null}
@@ -898,6 +1215,17 @@ const CifraPage: React.FC = () => {
                 >
                   Ouvir este hino
                 </Link>
+              ) : null}
+              {relatedHymnTrack ? (
+                <button
+                  type="button"
+                  onClick={() => handlePlayRelatedTrack()}
+                  disabled={isRelatedTrackLoading || !canPlayRelatedTrack}
+                  className="inline-flex w-full items-center justify-center gap-2 rounded-full border border-primary-500 bg-primary-500 px-3 py-1.5 text-sm font-semibold text-black transition-colors hover:bg-primary-600 disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
+                >
+                  {isRelatedTrackActive && isPlayerPlaying ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
+                  {isRelatedTrackActive && isPlayerPlaying ? 'Pausar áudio' : 'Tocar áudio aqui'}
+                </button>
               ) : null}
               {relatedLyric ? (
                 <Link
@@ -958,6 +1286,17 @@ const CifraPage: React.FC = () => {
               >
                 Pagina do Hino {relatedHymn.numero || relatedNumber || ''}
               </Link>
+            ) : null}
+            {relatedHymnTrack ? (
+              <button
+                type="button"
+                onClick={() => handlePlayRelatedTrack()}
+                disabled={isRelatedTrackLoading || !canPlayRelatedTrack}
+                className="inline-flex w-full items-center justify-center gap-2 rounded-full border border-primary-500 bg-primary-500 px-3 py-1.5 text-sm font-semibold text-black transition-colors hover:bg-primary-600 disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
+              >
+                {isRelatedTrackActive && isPlayerPlaying ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
+                {isRelatedTrackActive && isPlayerPlaying ? 'Pausar hino' : 'Ouvir enquanto estuda'}
+              </button>
             ) : null}
             {relatedLyric ? (
               <Link
@@ -1113,6 +1452,103 @@ const CifraPage: React.FC = () => {
                   Reiniciar leitura
                 </button>
               </div>
+              {relatedHymnTrack ? (
+                <div className="mt-4 rounded-2xl border border-primary-500/15 bg-primary-500/5 p-4">
+                  <div className="flex flex-col gap-3">
+                    <div>
+                      <p className="text-xs uppercase tracking-[0.18em] text-text-muted">Áudio relacionado</p>
+                      <p className="mt-1 text-sm text-white">
+                        Use o hino publicado como guia de ensaio. A sincronização por seção é aproximada pelo progresso do áudio.
+                      </p>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      <button
+                        type="button"
+                        onClick={() => handlePlayRelatedTrack()}
+                        disabled={isRelatedTrackLoading || !canPlayRelatedTrack}
+                        className="inline-flex items-center gap-2 rounded-full border border-primary-500 bg-primary-500 px-3 py-2 text-sm font-semibold text-black transition-colors hover:bg-primary-600 disabled:cursor-not-allowed disabled:opacity-60"
+                      >
+                        {isRelatedTrackActive && isPlayerPlaying ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
+                        {isRelatedTrackActive && isPlayerPlaying ? 'Pausar áudio' : 'Ouvir hino'}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleRestartRelatedTrack()}
+                        disabled={isRelatedTrackLoading || !canPlayRelatedTrack}
+                        className="inline-flex items-center gap-2 rounded-full border border-gray-700 bg-gray-800 px-3 py-2 text-sm font-medium text-gray-200 transition-colors hover:border-primary-500/40 hover:text-white disabled:cursor-not-allowed disabled:opacity-60"
+                      >
+                        <RotateCcw className="w-4 h-4" />
+                        Recomeçar áudio
+                      </button>
+                      {focusedSectionIndex !== null ? (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (!isRelatedTrackActive) {
+                              handlePlayRelatedTrack({ seekToFocusedSection: true });
+                              return;
+                            }
+
+                            seekToSectionStart(focusedSectionIndex);
+                            if (!isPlayerPlaying) {
+                              resume();
+                            }
+                          }}
+                          disabled={isRelatedTrackLoading || !canPlayRelatedTrack}
+                          className="inline-flex items-center gap-2 rounded-full border border-gray-700 bg-gray-800 px-3 py-2 text-sm font-medium text-gray-200 transition-colors hover:border-primary-500/40 hover:text-white disabled:cursor-not-allowed disabled:opacity-60"
+                        >
+                          <RefreshCw className="w-4 h-4" />
+                          Ir para este trecho
+                        </button>
+                      ) : null}
+                    </div>
+                    <div className="grid gap-2 sm:grid-cols-2">
+                      <button
+                        type="button"
+                        onClick={() => setSyncStudyWithAudio((current) => !current)}
+                        disabled={!canPlayRelatedTrack || !effectiveRelatedDuration}
+                        className={`flex items-center justify-between rounded-xl border px-3 py-2 text-sm transition-colors ${
+                          syncStudyWithAudio
+                            ? 'border-primary-500/50 bg-primary-500/10 text-primary-300'
+                            : 'border-gray-700 bg-gray-800 text-gray-200 hover:border-primary-500/40 hover:text-white'
+                        } disabled:cursor-not-allowed disabled:opacity-60`}
+                      >
+                        <span>Seguir áudio por seção</span>
+                        <Music className="w-4 h-4" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setLoopFocusedSection((current) => {
+                            const next = !current;
+                            if (next && focusedSectionIndex !== null) {
+                              seekToSectionStart(focusedSectionIndex);
+                              if (isRelatedTrackActive && !isPlayerPlaying) {
+                                resume();
+                              }
+                            }
+                            return next;
+                          });
+                        }}
+                        disabled={focusedSectionIndex === null || !canPlayRelatedTrack || !effectiveRelatedDuration}
+                        className={`flex items-center justify-between rounded-xl border px-3 py-2 text-sm transition-colors ${
+                          loopFocusedSection
+                            ? 'border-primary-500/50 bg-primary-500/10 text-primary-300'
+                            : 'border-gray-700 bg-gray-800 text-gray-200 hover:border-primary-500/40 hover:text-white'
+                        } disabled:cursor-not-allowed disabled:opacity-60`}
+                      >
+                        <span>Loop desta seção</span>
+                        <RefreshCw className="w-4 h-4" />
+                      </button>
+                    </div>
+                    {focusedSectionWindow ? (
+                      <p className="text-xs text-gray-400">
+                        Trecho estimado: {Math.floor(focusedSectionWindow.start)}s até {Math.ceil(focusedSectionWindow.end)}s do áudio publicado.
+                      </p>
+                    ) : null}
+                  </div>
+                </div>
+              ) : null}
               <div className="mt-4 flex items-center gap-3">
                 <button onClick={() => setMetronomeBpm((current) => Math.max(40, current - 2))} className="rounded-lg bg-gray-800 p-2 text-white transition-colors hover:bg-gray-700">
                   <Minus className="w-4 h-4" />
@@ -1225,6 +1661,19 @@ const CifraPage: React.FC = () => {
               <Plus className="w-4 h-4" />
             </button>
           </div>
+
+          {editorialPreferredKey ? (
+            <button
+              onClick={() => setSelectedKey(editorialPreferredKey)}
+              className={`shrink-0 px-3 py-2 rounded-lg border text-sm transition-colors ${
+                selectedKey === editorialPreferredKey
+                  ? 'bg-primary-500/20 border-primary-500/50 text-primary-400'
+                  : 'bg-gray-800 border-gray-700 text-gray-400 hover:text-white hover:border-primary-500/40'
+              }`}
+            >
+              Tom editorial {editorialPreferredKey}
+            </button>
+          ) : null}
 
           {/* Font size */}
           <div className="flex shrink-0 items-center gap-1 bg-gray-800 border border-gray-700 rounded-lg">
