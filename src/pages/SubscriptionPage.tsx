@@ -46,6 +46,8 @@ const SubscriptionPage: React.FC = () => {
   }, []);
 
   const currentPlan = user?.isPremium ? 'premium' : 'free';
+  const visiblePlans = plans.filter(p => p.is_active && p.interval === billingCycle);
+  const hasPremiumCatalog = premiumEnabled && visiblePlans.length > 0;
 
   const handleSubscribe = (planType: string) => {
     // Simular processo de assinatura
@@ -81,8 +83,6 @@ const SubscriptionPage: React.FC = () => {
     ]
   };
 
-  const visiblePlans = plans.filter(p => p.is_active && p.interval === billingCycle);
-
   return (
     <div className="max-w-6xl mx-auto p-6">
       {/* Header */}
@@ -116,8 +116,10 @@ const SubscriptionPage: React.FC = () => {
               </h2>
               <p className="text-white/80">
                 {currentPlan === 'premium' 
-                  ? 'Próxima cobrança em 15 de Nov, 2024'
-                  : 'Faça upgrade para ter acesso completo'
+                  ? 'Seu acesso premium está ativo no momento.'
+                  : premiumEnabled
+                    ? 'O recurso premium está visível, mas o catálogo de planos ainda não está disponível.'
+                    : 'Faça upgrade quando o premium estiver disponível novamente.'
                 }
               </p>
             </div>
@@ -134,7 +136,7 @@ const SubscriptionPage: React.FC = () => {
       </div>
 
       {/* Billing Cycle Toggle (somente quando premium estiver habilitado) */}
-      {premiumEnabled && (
+      {hasPremiumCatalog && (
         <div className="flex justify-center mb-8">
           <div className="bg-background-secondary rounded-lg p-1 flex">
             <button
@@ -164,8 +166,22 @@ const SubscriptionPage: React.FC = () => {
         </div>
       )}
 
+      {premiumEnabled && !hasPremiumCatalog && (
+        <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-xl p-4 mb-8">
+          <div className="flex items-start gap-3">
+            <Shield className="w-5 h-5 text-yellow-400 mt-0.5" />
+            <div>
+              <h2 className="text-yellow-200 font-semibold">Catálogo de assinatura indisponível</h2>
+              <p className="text-yellow-100/80 text-sm mt-1">
+                O premium está habilitado na plataforma, mas os planos de assinatura ainda não estão sendo operados nesta fase.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Plans Grid */}
-      <div className={`grid grid-cols-1 ${premiumEnabled ? 'md:grid-cols-3' : ''} gap-6 mb-8`}>
+      <div className={`grid grid-cols-1 ${hasPremiumCatalog ? 'md:grid-cols-3' : ''} gap-6 mb-8`}>
         {/* Free plan - always visible */}
         <div className={`relative bg-background-secondary rounded-xl p-6 border-2 transition-all ${
             selectedPlan === 'free' ? 'border-primary-500 scale-105' : 'border-transparent hover:border-gray-700'
@@ -202,7 +218,7 @@ const SubscriptionPage: React.FC = () => {
         </div>
 
         {/* Active premium plans from admin (somente quando premium estiver habilitado) */}
-        {premiumEnabled && visiblePlans.map((plan) => (
+        {hasPremiumCatalog && visiblePlans.map((plan) => (
           <div
             key={plan.id}
             className={`relative bg-background-secondary rounded-xl p-6 border-2 transition-all ${
@@ -279,7 +295,7 @@ const SubscriptionPage: React.FC = () => {
       )}
 
       {/* Benefits Comparison (somente quando premium estiver habilitado) */}
-      {premiumEnabled && (
+      {hasPremiumCatalog && (
         <div className="bg-background-secondary rounded-xl p-6">
           <h3 className="text-xl font-semibold text-white mb-6">Compare os Benefícios</h3>
           <div className="overflow-x-auto">

@@ -1,127 +1,157 @@
-import React, { useState, useEffect } from 'react';
-import { Crown, Search, Mail, Calendar, X, CheckCircle, XCircle, ToggleLeft, ToggleRight } from 'lucide-react';
-import { getPremiumVisibility, setPremiumVisibility } from '@/lib/admin/premiumAdminApi';
-
-interface PremiumUser {
-  id: string;
-  name: string;
-  email: string;
-  plan: 'premium';
-  subscriptionDate: string;
-  expiryDate: string;
-  status: 'active' | 'expired' | 'cancelled';
-  paymentMethod: string;
-  totalPaid: number;
-}
+import React, { useEffect, useMemo, useState } from 'react';
+import { AlertTriangle, CheckCircle, Crown, Search, Shield, Users, XCircle } from 'lucide-react';
+import {
+  PremiumUser,
+  cancelUserSubscription,
+  getPremiumStats,
+  getPremiumUsers,
+  getPremiumVisibility,
+  setPremiumVisibility,
+} from '@/lib/admin/premiumAdminApi';
 
 const AdminUsersPremium: React.FC = () => {
+  const [users, setUsers] = useState<PremiumUser[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
-  const [filterStatus, setFilterStatus] = useState<string>('all');
+  const [filterStatus, setFilterStatus] = useState<'all' | PremiumUser['status']>('all');
   const [premiumEnabled, setPremiumEnabled] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [togglingPremium, setTogglingPremium] = useState(false);
+  const [actioningUserId, setActioningUserId] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [stats, setStats] = useState({
+    activeSubscribers: 0,
+    totalPlans: 0,
+    conversionRate: 0,
+    totalRevenue: 0,
+  });
+
+  const loadData = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      const [enabled, premiumUsers, premiumStats] = await Promise.all([
+        getPremiumVisibility(),
+        getPremiumUsers(),
+        getPremiumStats(),
+      ]);
+
+      setPremiumEnabled(enabled);
+      setUsers(premiumUsers);
+      setStats(premiumStats);
+    } catch (err: any) {
+      console.error('Erro ao carregar premium:', err);
+      setError(err?.message || 'Erro ao carregar os usuários premium');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    getPremiumVisibility().then(setPremiumEnabled);
+    loadData();
   }, []);
+
+  const filteredUsers = useMemo(() => {
+    const normalizedQuery = searchQuery.trim().toLowerCase();
+
+    return users.filter((user) => {
+      const matchesSearch =
+        !normalizedQuery ||
+        user.name.toLowerCase().includes(normalizedQuery) ||
+        user.email.toLowerCase().includes(normalizedQuery);
+      const matchesStatus = filterStatus === 'all' || user.status === filterStatus;
+      return matchesSearch && matchesStatus;
+    });
+  }, [filterStatus, searchQuery, users]);
 
   const handleTogglePremium = async () => {
     setTogglingPremium(true);
     try {
-      const newValue = !premiumEnabled;
-      await setPremiumVisibility(newValue);
-      setPremiumEnabled(newValue);
+      const next = !premiumEnabled;
+      setPremiumEnabled(next);
+      await setPremiumVisibility(next);
     } catch (err) {
       console.error('Erro ao alterar visibilidade premium:', err);
+      setPremiumEnabled((prev) => !prev);
     } finally {
       setTogglingPremium(false);
     }
   };
 
-  const [users] = useState<PremiumUser[]>([
-    {
-      id: '1',
-      name: 'João Silva',
-      email: 'joao@email.com',
-      plan: 'premium',
-      subscriptionDate: '2025-01-15',
-      expiryDate: '2026-01-15',
-      status: 'active',
-      paymentMethod: 'Cartão de Crédito',
-      totalPaid: 199.90
-    },
-    {
-      id: '2',
-      name: 'Maria Santos',
-      email: 'maria@email.com',
-      plan: 'premium',
-      subscriptionDate: '2024-12-01',
-      expiryDate: '2025-12-01',
-      status: 'active',
-      paymentMethod: 'PIX',
-      totalPaid: 179.90
-    },
-    {
-      id: '3',
-      name: 'Pedro Costa',
-      email: 'pedro@email.com',
-      plan: 'premium',
-      subscriptionDate: '2024-06-10',
-      expiryDate: '2025-01-01',
-      status: 'expired',
-      paymentMethod: 'Boleto',
-      totalPaid: 149.90
+  const handleRemovePremium = async (user: PremiumUser) => {
+    if (!window.confirm(`Remover o status premium de "${user.name}"?`)) return;
+
+    try {
+      setActioningUserId(user.id);
+      await cancelUserSubscription(user.id);
+      await loadData();
+    } catch (err) {
+      console.error('Erro ao remover premium:', err);
+    } finally {
+      setActioningUserId(null);
     }
-  ]);
-
-  const filteredUsers = users.filter(user => {
-    const matchesSearch = user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         user.email.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesStatus = filterStatus === 'all' || user.status === filterStatus;
-    return matchesSearch && matchesStatus;
-  });
-
-  const handleCancelSubscription = (id: string, name: string) => {
-    if (!window.confirm(`Cancelar assinatura de "${name}"?`)) return;
-    console.log('Assinatura cancelada para:', id, name);
   };
 
-  const handleExtendSubscription = (id: string, name: string) => {
-    console.log('Assinatura estendida para:', id, name);
-  };
+  const formatDate = (dateString: string) => new Date(dateString).toLocaleDateString('pt-BR');
+
+  if (loading) {
+    return (
+      <div className="p-6 flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-500 mx-auto mb-4"></div>
+          <p className="text-gray-400">Carregando usuários premium...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="p-6">
+        <div className="bg-red-900/50 border border-red-500 rounded-lg p-6 text-center">
+          <AlertTriangle className="w-12 h-12 text-red-400 mx-auto mb-4" />
+          <h2 className="text-xl font-bold text-red-200 mb-2">Erro ao carregar o premium</h2>
+          <p className="text-red-300 mb-4">{error}</p>
+          <button
+            onClick={loadData}
+            className="px-6 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-lg transition-colors"
+          >
+            Tentar novamente
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="p-6 space-y-6">
-      {/* Header */}
       <div>
         <h1 className="text-3xl font-bold text-white mb-2">Usuários Premium</h1>
-        <p className="text-gray-400">Gerencie assinaturas e usuários premium</p>
+        <p className="text-gray-400">Acompanhe os usuários já marcados como premium e a visibilidade do recurso no site.</p>
       </div>
 
-      {/* Premium Toggle */}
       <div className="bg-gray-900/50 border border-gray-800 rounded-xl p-6">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
           <div className="flex items-center gap-4">
-            <div className={`p-3 rounded-xl ${premiumEnabled ? 'bg-yellow-500/20' : 'bg-gray-700/50'}`}>
-              <Crown className={`w-6 h-6 ${premiumEnabled ? 'text-yellow-400' : 'text-gray-500'}`} />
+            <div className={`p-3 rounded-xl ${premiumEnabled ? 'bg-green-500/20' : 'bg-gray-700/50'}`}>
+              <Shield className={`w-6 h-6 ${premiumEnabled ? 'text-green-400' : 'text-gray-500'}`} />
             </div>
             <div>
-              <h3 className="text-white font-semibold text-lg">Funcionalidade Premium</h3>
+              <h3 className="text-white font-semibold text-lg">Visibilidade do Premium</h3>
               <p className="text-gray-400 text-sm">
                 {premiumEnabled
-                  ? 'Ativada — o botão "Assinar Premium" está visível para os usuários'
-                  : 'Desativada — o botão "Assinar Premium" está oculto para todos os usuários'}
+                  ? 'Ativada. O premium está visível para os usuários no frontend.'
+                  : 'Desativada. O premium está oculto no frontend.'}
               </p>
             </div>
           </div>
           <button
             onClick={handleTogglePremium}
             disabled={togglingPremium}
-            className={`relative inline-flex h-8 w-14 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-900 ${
-              premiumEnabled
-                ? 'bg-yellow-500 focus:ring-yellow-500'
-                : 'bg-gray-600 focus:ring-gray-500'
+            className={`relative inline-flex h-8 w-14 items-center rounded-full transition-colors focus:outline-none ${
+              premiumEnabled ? 'bg-primary-500' : 'bg-gray-600'
             } ${togglingPremium ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
-            title={premiumEnabled ? 'Desativar Premium' : 'Ativar Premium'}
+            title={premiumEnabled ? 'Ocultar premium' : 'Mostrar premium'}
           >
             <span
               className={`inline-block h-6 w-6 transform rounded-full bg-white shadow-lg transition-transform ${
@@ -132,7 +162,6 @@ const AdminUsersPremium: React.FC = () => {
         </div>
       </div>
 
-      {/* Stats */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
         <div className="bg-gray-900/50 border border-gray-800 rounded-xl p-4">
           <div className="flex items-center gap-3">
@@ -149,9 +178,7 @@ const AdminUsersPremium: React.FC = () => {
             <CheckCircle className="w-8 h-8 text-green-400" />
             <div>
               <p className="text-gray-400 text-sm">Ativos</p>
-              <p className="text-2xl font-bold text-white">
-                {users.filter(u => u.status === 'active').length}
-              </p>
+              <p className="text-2xl font-bold text-white">{stats.activeSubscribers}</p>
             </div>
           </div>
         </div>
@@ -160,29 +187,24 @@ const AdminUsersPremium: React.FC = () => {
           <div className="flex items-center gap-3">
             <XCircle className="w-8 h-8 text-red-400" />
             <div>
-              <p className="text-gray-400 text-sm">Expirados</p>
-              <p className="text-2xl font-bold text-white">
-                {users.filter(u => u.status === 'expired').length}
-              </p>
+              <p className="text-gray-400 text-sm">Cancelados</p>
+              <p className="text-2xl font-bold text-white">{users.filter((user) => user.status === 'cancelled').length}</p>
             </div>
           </div>
         </div>
 
         <div className="bg-gray-900/50 border border-gray-800 rounded-xl p-4">
           <div className="flex items-center gap-3">
-            <Crown className="w-8 h-8 text-blue-400" />
+            <Users className="w-8 h-8 text-blue-400" />
             <div>
-              <p className="text-gray-400 text-sm">Receita Total</p>
-              <p className="text-2xl font-bold text-white">
-                R$ {users.reduce((sum, u) => sum + u.totalPaid, 0).toFixed(2)}
-              </p>
+              <p className="text-gray-400 text-sm">Conversão</p>
+              <p className="text-2xl font-bold text-white">{stats.conversionRate}%</p>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Filters */}
-      <div className="flex gap-4">
+      <div className="flex flex-col lg:flex-row gap-4">
         <div className="flex-1 relative">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 w-5 h-5" />
           <input
@@ -196,7 +218,7 @@ const AdminUsersPremium: React.FC = () => {
 
         <select
           value={filterStatus}
-          onChange={(e) => setFilterStatus(e.target.value)}
+          onChange={(e) => setFilterStatus(e.target.value as 'all' | PremiumUser['status'])}
           className="bg-gray-900/50 border border-gray-800 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-primary-600"
         >
           <option value="all">Todos os status</option>
@@ -206,108 +228,74 @@ const AdminUsersPremium: React.FC = () => {
         </select>
       </div>
 
-      {/* Users Table */}
       <div className="bg-gray-900/50 border border-gray-800 rounded-xl overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead className="bg-gray-800/50">
-              <tr>
-                <th className="text-left p-4 text-gray-400 font-medium">Usuário</th>
-                <th className="text-left p-4 text-gray-400 font-medium">Email</th>
-                <th className="text-left p-4 text-gray-400 font-medium">Assinatura</th>
-                <th className="text-left p-4 text-gray-400 font-medium">Validade</th>
-                <th className="text-left p-4 text-gray-400 font-medium">Status</th>
-                <th className="text-left p-4 text-gray-400 font-medium">Pagamento</th>
-                <th className="text-left p-4 text-gray-400 font-medium">Total Pago</th>
-                <th className="text-left p-4 text-gray-400 font-medium">Ações</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredUsers.map((user) => (
-                <tr key={user.id} className="border-t border-gray-800 hover:bg-gray-800/30 transition-colors">
-                  <td className="p-4">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 bg-gradient-to-br from-yellow-400 to-yellow-600 rounded-full flex items-center justify-center">
-                        <Crown className="w-5 h-5 text-white" />
-                      </div>
-                      <span className="text-white font-medium">{user.name}</span>
-                    </div>
-                  </td>
-                  <td className="p-4">
-                    <div className="flex items-center gap-2 text-gray-400">
-                      <Mail className="w-4 h-4" />
-                      {user.email}
-                    </div>
-                  </td>
-                  <td className="p-4">
-                    <div className="flex items-center gap-2 text-gray-400">
-                      <Calendar className="w-4 h-4" />
-                      {new Date(user.subscriptionDate).toLocaleDateString('pt-BR')}
-                    </div>
-                  </td>
-                  <td className="p-4 text-gray-400">
-                    {new Date(user.expiryDate).toLocaleDateString('pt-BR')}
-                  </td>
-                  <td className="p-4">
-                    <span
-                      className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                        user.status === 'active'
-                          ? 'bg-green-500/20 text-green-400 border border-green-500/30'
-                          : user.status === 'expired'
-                          ? 'bg-red-500/20 text-red-400 border border-red-500/30'
-                          : 'bg-gray-700 text-gray-400 border border-gray-600'
-                      }`}
-                    >
-                      {user.status === 'active' ? 'Ativo' : user.status === 'expired' ? 'Expirado' : 'Cancelado'}
-                    </span>
-                  </td>
-                  <td className="p-4 text-gray-400">{user.paymentMethod}</td>
-                  <td className="p-4 text-green-400 font-semibold">
-                    R$ {user.totalPaid.toFixed(2)}
-                  </td>
-                  <td className="p-4">
-                    <div className="flex gap-2">
-                      {user.status === 'active' && (
-                        <>
-                          <button
-                            onClick={() => handleExtendSubscription(user.id, user.name)}
-                            className="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white text-sm rounded-lg transition-colors"
-                          >
-                            Estender
-                          </button>
-                          <button
-                            onClick={() => handleCancelSubscription(user.id, user.name)}
-                            className="px-3 py-1 bg-red-600 hover:bg-red-700 text-white text-sm rounded-lg transition-colors"
-                          >
-                            Cancelar
-                          </button>
-                        </>
-                      )}
-                      {user.status === 'expired' && (
-                        <button
-                          onClick={() => console.log('Reativar assinatura em breve')}
-                          className="px-3 py-1 bg-green-600 hover:bg-green-700 text-white text-sm rounded-lg transition-colors"
-                        >
-                          Reativar
-                        </button>
-                      )}
-                    </div>
-                  </td>
+        {filteredUsers.length === 0 ? (
+          <div className="p-12 text-center">
+            <Crown className="w-16 h-16 text-gray-600 mx-auto mb-4" />
+            <p className="text-gray-400 text-lg">Nenhum usuário premium encontrado</p>
+            <p className="text-gray-500 text-sm">Ajuste os filtros ou marque usuários como premium no banco.</p>
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead className="bg-gray-800/50">
+                <tr>
+                  <th className="text-left p-4 text-gray-400 font-medium">Usuário</th>
+                  <th className="text-left p-4 text-gray-400 font-medium">Email</th>
+                  <th className="text-left p-4 text-gray-400 font-medium">Início</th>
+                  <th className="text-left p-4 text-gray-400 font-medium">Fim</th>
+                  <th className="text-left p-4 text-gray-400 font-medium">Status</th>
+                  <th className="text-left p-4 text-gray-400 font-medium">Pagamento</th>
+                  <th className="text-left p-4 text-gray-400 font-medium">Ações</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody>
+                {filteredUsers.map((user) => (
+                  <tr key={user.id} className="border-t border-gray-800 hover:bg-gray-800/30 transition-colors">
+                    <td className="p-4">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 bg-gradient-to-br from-yellow-400 to-yellow-600 rounded-full flex items-center justify-center">
+                          <Crown className="w-5 h-5 text-white" />
+                        </div>
+                        <div>
+                          <p className="text-white font-medium">{user.name}</p>
+                          <p className="text-gray-500 text-xs">{user.plan_name}</p>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="p-4 text-gray-300">{user.email}</td>
+                    <td className="p-4 text-gray-400">{formatDate(user.start_date)}</td>
+                    <td className="p-4 text-gray-400">{formatDate(user.end_date)}</td>
+                    <td className="p-4">
+                      <span
+                        className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                          user.status === 'active'
+                            ? 'bg-green-500/20 text-green-400 border border-green-500/30'
+                            : user.status === 'expired'
+                            ? 'bg-red-500/20 text-red-400 border border-red-500/30'
+                            : 'bg-gray-700 text-gray-400 border border-gray-600'
+                        }`}
+                      >
+                        {user.status === 'active' ? 'Ativo' : user.status === 'expired' ? 'Expirado' : 'Cancelado'}
+                      </span>
+                    </td>
+                    <td className="p-4 text-gray-400">{user.payment_method || 'Indisponível'}</td>
+                    <td className="p-4">
+                      <button
+                        onClick={() => handleRemovePremium(user)}
+                        disabled={actioningUserId === user.id}
+                        className="px-3 py-1 bg-red-600 hover:bg-red-700 disabled:opacity-50 text-white text-sm rounded-lg transition-colors"
+                      >
+                        {actioningUserId === user.id ? 'Salvando...' : 'Remover premium'}
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
-
-      {/* Empty State */}
-      {filteredUsers.length === 0 && (
-        <div className="bg-gray-900/50 border border-gray-800 rounded-xl p-12 text-center">
-          <Crown className="w-16 h-16 text-gray-600 mx-auto mb-4" />
-          <p className="text-gray-400 text-lg">Nenhum usuário premium encontrado</p>
-          <p className="text-gray-500 text-sm">Ajuste os filtros de busca</p>
-        </div>
-      )}
     </div>
   );
 };
