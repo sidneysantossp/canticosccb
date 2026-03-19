@@ -36,6 +36,34 @@ interface Song {
   plays_count?: number;
 }
 
+const normalizeCategoryText = (value: string) =>
+  String(value || '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .trim();
+
+const slugToTitle = (value: string) =>
+  String(value || '')
+    .split('-')
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(' ');
+
+const buildCategorySearchTerms = (slugValue: string, categoryName?: string) => {
+  const candidates = [
+    categoryName,
+    slugToTitle(slugValue),
+    String(slugValue || '').replace(/-/g, ' '),
+  ]
+    .map((value) => String(value || '').trim())
+    .filter(Boolean);
+
+  return candidates.filter((value, index, list) => {
+    const normalized = normalizeCategoryText(value);
+    return normalized && list.findIndex((candidate) => normalizeCategoryText(candidate) === normalized) === index;
+  });
+};
+
 const CategoryPage: React.FC = () => {
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
@@ -68,9 +96,8 @@ const CategoryPage: React.FC = () => {
       // 1) Resolver metadados da categoria pelo slug
       const all = await getAllCategories({ limit: 1000 });
       const found = (all || []).find((c: any) => String(c.slug).toLowerCase() === String(slug).toLowerCase());
-
-      const toTitle = (s: string) => s.split('-').map((p) => p.charAt(0).toUpperCase() + p.slice(1)).join(' ');
-      const resolvedName = found?.name || toTitle(String(slug));
+      const resolvedName = found?.name || slugToTitle(String(slug));
+      const searchTerms = buildCategorySearchTerms(String(slug), resolvedName);
 
       setCategory({
         id: String(found?.id || slug),
@@ -89,58 +116,105 @@ const CategoryPage: React.FC = () => {
         return;
       }
 
-      // Buscar via hino_categorias (múltiplas categorias) + fallback coluna única
-      let hinoIds: string[] = [];
-      try {
-        // Buscar o ID da categoria pelo nome
-        const cats = await supabaseFetch<any>('categorias', {
-          nome: `ilike.%${resolvedName}%`,
-          select: 'id',
-          limit: '5',
-        });
-        if (cats.length > 0) {
-          const catIds = cats.map((c: any) => String(c.id));
-          // Buscar hino_ids relacionados
-          const rels = await supabaseFetch<any>('hino_categorias', {
-            categoria_id: `in.(${catIds.join(',')})`,
-            select: 'hino_id',
-          });
-          hinoIds = rels.map((r: any) => String(r.hino_id));
-        }
-      } catch (e) {
-        console.warn('hino_categorias lookup failed, using fallback:', e);
-      }
+      const hymnSelect = 'id,numero,titulo,compositor_nome,categoria,cover_url,audio_url,duracao,plays_count,youtube_source,ativo';
+      const categoryIds = found?.id ? [String(found.id)] : [];
 
-      let list: any[] = [];
-      if (hinoIds.length > 0) {
-        // Buscar hinos pelos IDs encontrados via hino_categorias
-        list = await supabaseFetch<any>('hinos', {
-          id: `in.(${hinoIds.join(',')})`,
-          or: '(ativo.eq.true,ativo.eq.1)',
-          select: 'id,numero,titulo,compositor_nome,categoria,cover_url,audio_url,duracao,plays_count,youtube_source',
+      const directCategoryIdsPromise = categoryIds.length > 0
+        ? supabaseFetch<any>('hino_categorias', {
+            categoria_id: `in.(${categoryIds.join(',')})`,
+            select: 'hino_id',
+            limit: '5000',
+          }).catch((error) => {
+            console.warn('hino_categorias lookup failed:', error);
+            return [];
+          })
+        : Promise.resolve([]);
+
+      const textMatchPromises = searchTerms.map((term) =>
+        supabaseFetch<any>('hinos', {
+          or: `(categoria.ilike.*${term}*,titulo.ilike.*${term}*,compositor_nome.ilike.*${term}*)`,
+          select: hymnSelect,
           order: 'created_at.desc',
           limit: '200',
-        });
-      }
+        }).catch((error) => {
+          console.warn(`text hymn lookup failed for ${term}:`, error);
+          return [];
+        })
+      );
 
-      // Fallback: buscar pela coluna categoria única (para hinos sem hino_categorias)
-      const fallbackList = await supabaseFetch<any>('hinos', {
-        categoria: `ilike.%${resolvedName}%`,
-        or: '(ativo.eq.true,ativo.eq.1)',
-        select: 'id,numero,titulo,compositor_nome,categoria,cover_url,audio_url,duracao,plays_count,youtube_source',
-        limit: '200',
-      });
+      const albumMatchPromises = searchTerms.map((term) =>
+        supabaseFetch<any>('albums', {
+          or: `(title.ilike.*${term}*,description.ilike.*${term}*,artist.ilike.*${term}*)`,
+          select: 'id',
+          limit: '200',
+        }).catch((error) => {
+          console.warn(`album lookup failed for ${term}:`, error);
+          return [];
+        })
+      );
 
-      // Mesclar sem duplicatas
+      const [directRelations, ...queryGroups] = await Promise.all([
+        directCategoryIdsPromise,
+        ...textMatchPromises,
+        ...albumMatchPromises,
+      ]);
+
+      const textMatchLists = queryGroups.slice(0, textMatchPromises.length) as any[][];
+      const albumMatchLists = queryGroups.slice(textMatchPromises.length) as any[][];
+
+      const directHymnIds = Array.from(
+        new Set(directRelations.map((relation: any) => String(relation.hino_id || '')).filter(Boolean))
+      );
+
+      const matchedAlbums = albumMatchLists.flat();
+      const matchedAlbumIds = Array.from(
+        new Set(matchedAlbums.map((album: any) => String(album.id || '')).filter(Boolean))
+      );
+
+      const albumRelations = matchedAlbumIds.length > 0
+        ? await supabaseFetch<any>('album_hinos', {
+            album_id: `in.(${matchedAlbumIds.join(',')})`,
+            select: 'hino_id',
+            limit: '5000',
+          }).catch((error) => {
+            console.warn('album_hinos lookup failed:', error);
+            return [];
+          })
+        : [];
+
+      const albumHymnIds = Array.from(
+        new Set(albumRelations.map((relation: any) => String(relation.hino_id || '')).filter(Boolean))
+      );
+
+      const idMatchedHymns = Array.from(new Set([...directHymnIds, ...albumHymnIds]));
+      const directAndAlbumSongs = idMatchedHymns.length > 0
+        ? await supabaseFetch<any>('hinos', {
+            id: `in.(${idMatchedHymns.join(',')})`,
+            select: hymnSelect,
+            order: 'created_at.desc',
+            limit: '500',
+          }).catch((error) => {
+            console.warn('direct category hymn fetch failed:', error);
+            return [];
+          })
+        : [];
+
+      const list = [...directAndAlbumSongs];
       const seenIds = new Set(list.map((h: any) => String(h.id)));
-      for (const h of fallbackList) {
-        if (!seenIds.has(String(h.id))) {
-          list.push(h);
-          seenIds.add(String(h.id));
+
+      for (const group of textMatchLists) {
+        for (const h of group) {
+          const hymnId = String(h.id || '');
+          if (hymnId && !seenIds.has(hymnId)) {
+            list.push(h);
+            seenIds.add(hymnId);
+          }
         }
       }
 
-      const formattedSongs: Song[] = list.map((h: any) => ({
+      const formattedSongs: Song[] = list
+        .filter((h: any) => h?.ativo === true || h?.ativo === 1 || h?.ativo == null)
+        .map((h: any) => ({
         id: String(h.id),
         title: String(h.titulo || 'Hino'),
         number: h.numero != null ? Number(h.numero) : undefined,
