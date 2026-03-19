@@ -410,16 +410,18 @@ const CategoryPage: React.FC = () => {
   // Filtrar hinos por número, nome e compositor (client-side)
   const filteredSongs = songs.filter((song) => {
     if (filterNumber) {
-      const num = String(song.number || '');
-      if (!num.includes(filterNumber.trim())) return false;
+      const query = filterNumber.trim();
+      const numberText = String(song.number || '');
+      const titleNumbers = (String(song.title || '').match(/\d+/g) || []).join(' ');
+      if (!numberText.includes(query) && !titleNumbers.includes(query)) return false;
     }
     if (filterName) {
-      const name = song.title.toLowerCase();
-      if (!name.includes(filterName.toLowerCase().trim())) return false;
+      const name = normalizeCategoryText(song.title);
+      if (!name.includes(normalizeCategoryText(filterName))) return false;
     }
     if (filterComposer) {
-      const artist = song.artist.toLowerCase();
-      if (!artist.includes(filterComposer.toLowerCase().trim())) return false;
+      const artist = normalizeCategoryText(song.artist);
+      if (!artist.includes(normalizeCategoryText(filterComposer))) return false;
     }
     return true;
   });
