@@ -21,6 +21,10 @@ export interface CifraVersionSectionDraft {
   key?: CifraSectionKey;
   label: string;
   order?: number;
+  cueStartSeconds?: number | null;
+  cueEndSeconds?: number | null;
+  loopStartSeconds?: number | null;
+  loopEndSeconds?: number | null;
   lines: CifraLineNode[];
 }
 
@@ -56,6 +60,10 @@ function normalizeDraftSections(sections: CifraVersionSectionDraft[]): CifraSect
           key: section.key ?? 'custom',
           label: section.label,
           order: section.order ?? index + 1,
+          cueStartSeconds: section.cueStartSeconds ?? null,
+          cueEndSeconds: section.cueEndSeconds ?? null,
+          loopStartSeconds: section.loopStartSeconds ?? null,
+          loopEndSeconds: section.loopEndSeconds ?? null,
           lines: section.lines,
         },
         index + 1,
@@ -114,6 +122,10 @@ export function buildCifraPublicationSnapshot(sections: CifraVersionSectionDraft
       sectionOrder: index + 1,
       sectionKey: section.key,
       sectionLabel: section.label,
+      cueStartSeconds: section.cueStartSeconds ?? null,
+      cueEndSeconds: section.cueEndSeconds ?? null,
+      loopStartSeconds: section.loopStartSeconds ?? null,
+      loopEndSeconds: section.loopEndSeconds ?? null,
       contentAst: section.lines,
       plainText: plainLines.join('\n'),
       chordsIndex: Array.from(new Set(section.lines.flatMap((line) => extractLineChords(line)))).sort(),

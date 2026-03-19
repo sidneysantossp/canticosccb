@@ -41,6 +41,10 @@ type EditableSection = {
   key: CifraSectionKey;
   label: string;
   text: string;
+  cueStart: string;
+  cueEnd: string;
+  loopStart: string;
+  loopEnd: string;
 };
 
 type EditableChordShape = {
@@ -150,6 +154,24 @@ function stringifyList(values: unknown): string {
   }
 
   return values.join(', ');
+}
+
+function parseOptionalSecondsInput(value: string): number | null {
+  const normalized = String(value || '').trim().replace(',', '.');
+  if (!normalized) {
+    return null;
+  }
+
+  const parsed = Number.parseFloat(normalized);
+  return Number.isFinite(parsed) && parsed >= 0 ? parsed : null;
+}
+
+function formatOptionalSecondsInput(value?: number | null): string {
+  if (value === null || value === undefined || !Number.isFinite(value)) {
+    return '';
+  }
+
+  return Number.isInteger(value) ? String(value) : String(Number(value).toFixed(2));
 }
 
 function mapChordShapeToEditorForm(shape: CifraChordShape): EditableChordShape {
@@ -328,7 +350,7 @@ const AdminCifraV2Editor: React.FC = () => {
         isSearchable: true,
         publicSlug: '',
       });
-      setSections([{ key: 'verse', label: 'Corpo', text: '' }]);
+      setSections([{ key: 'verse', label: 'Corpo', text: '', cueStart: '', cueEnd: '', loopStart: '', loopEnd: '' }]);
       setSelectedChordName('');
       setSelectedShapeId('');
       setInlineShapeForm(createEmptyChordShape('violao'));
@@ -387,8 +409,12 @@ const AdminCifraV2Editor: React.FC = () => {
               key: section.section_key,
               label: section.section_label,
               text: serializeSectionLines(section.content_ast),
+              cueStart: formatOptionalSecondsInput(section.cue_start_seconds),
+              cueEnd: formatOptionalSecondsInput(section.cue_end_seconds),
+              loopStart: formatOptionalSecondsInput(section.loop_start_seconds),
+              loopEnd: formatOptionalSecondsInput(section.loop_end_seconds),
             }))
-          : [{ key: 'verse', label: 'Corpo', text: '' }],
+          : [{ key: 'verse', label: 'Corpo', text: '', cueStart: '', cueEnd: '', loopStart: '', loopEnd: '' }],
       );
 
       const [engagementSnapshot, reportRows] = await Promise.all([
@@ -411,6 +437,10 @@ const AdminCifraV2Editor: React.FC = () => {
         key: section.key,
         label: section.label.trim() || `Secao ${index + 1}`,
         order: index + 1,
+        cueStartSeconds: parseOptionalSecondsInput(section.cueStart),
+        cueEndSeconds: parseOptionalSecondsInput(section.cueEnd),
+        loopStartSeconds: parseOptionalSecondsInput(section.loopStart),
+        loopEndSeconds: parseOptionalSecondsInput(section.loopEnd),
         lines: parsePlainTextSectionLines(section.text),
       })),
     [sections],
@@ -719,6 +749,10 @@ const AdminCifraV2Editor: React.FC = () => {
         key: 'custom',
         label: `Secao ${current.length + 1}`,
         text: '',
+        cueStart: '',
+        cueEnd: '',
+        loopStart: '',
+        loopEnd: '',
       },
     ]);
   };
@@ -1083,7 +1117,7 @@ const AdminCifraV2Editor: React.FC = () => {
             <div className="flex items-center justify-between mb-5">
               <div>
                 <h2 className="text-xl font-semibold text-white">Seções</h2>
-                <p className="text-gray-400 text-sm mt-1">Cada seção mantém texto e acordes estruturados separadamente.</p>
+                <p className="text-gray-400 text-sm mt-1">Cada seção mantém texto e acordes estruturados separadamente, com timestamps editoriais opcionais para sincronização e loop.</p>
               </div>
               <button onClick={addSection} className="inline-flex items-center gap-2 px-4 py-2 bg-gray-800 hover:bg-gray-700 text-white rounded-xl transition-colors">
                 <Plus className="w-4 h-4" />
@@ -1102,6 +1136,57 @@ const AdminCifraV2Editor: React.FC = () => {
                     <button onClick={() => removeSection(index)} disabled={sections.length === 1} className="inline-flex items-center justify-center p-3 bg-red-500/10 hover:bg-red-500/20 disabled:opacity-50 text-red-400 rounded-xl transition-colors">
                       <Trash2 className="w-4 h-4" />
                     </button>
+                  </div>
+
+                  <div className="mt-3 grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
+                    <div>
+                      <label className="mb-2 block text-xs font-medium uppercase tracking-[0.16em] text-gray-400">Cue start (s)</label>
+                      <input
+                        type="number"
+                        min="0"
+                        step="0.1"
+                        value={section.cueStart}
+                        onChange={(event) => updateSection(index, { cueStart: event.target.value })}
+                        placeholder="Ex: 12.5"
+                        className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-xl text-white"
+                      />
+                    </div>
+                    <div>
+                      <label className="mb-2 block text-xs font-medium uppercase tracking-[0.16em] text-gray-400">Cue end (s)</label>
+                      <input
+                        type="number"
+                        min="0"
+                        step="0.1"
+                        value={section.cueEnd}
+                        onChange={(event) => updateSection(index, { cueEnd: event.target.value })}
+                        placeholder="Ex: 28.0"
+                        className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-xl text-white"
+                      />
+                    </div>
+                    <div>
+                      <label className="mb-2 block text-xs font-medium uppercase tracking-[0.16em] text-gray-400">Loop start (s)</label>
+                      <input
+                        type="number"
+                        min="0"
+                        step="0.1"
+                        value={section.loopStart}
+                        onChange={(event) => updateSection(index, { loopStart: event.target.value })}
+                        placeholder="Opcional"
+                        className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-xl text-white"
+                      />
+                    </div>
+                    <div>
+                      <label className="mb-2 block text-xs font-medium uppercase tracking-[0.16em] text-gray-400">Loop end (s)</label>
+                      <input
+                        type="number"
+                        min="0"
+                        step="0.1"
+                        value={section.loopEnd}
+                        onChange={(event) => updateSection(index, { loopEnd: event.target.value })}
+                        placeholder="Opcional"
+                        className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-xl text-white"
+                      />
+                    </div>
                   </div>
 
                   <textarea value={section.text} onChange={(event) => updateSection(index, { text: event.target.value })} rows={10} className="mt-3 w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-xl text-white font-mono text-sm whitespace-pre" />

@@ -8,6 +8,10 @@ export interface CreateCifraVersionSectionInput {
   sectionOrder: number;
   sectionKey: CifraSectionKey;
   sectionLabel: string;
+  cueStartSeconds?: number | null;
+  cueEndSeconds?: number | null;
+  loopStartSeconds?: number | null;
+  loopEndSeconds?: number | null;
   contentAst: CifraLineNode[];
   plainText?: string;
   chordsIndex?: string[];
@@ -22,6 +26,10 @@ function buildSectionPayload(data: CreateCifraVersionSectionInput | UpdateCifraV
   if (data.sectionOrder !== undefined) payload.section_order = data.sectionOrder;
   if (data.sectionKey !== undefined) payload.section_key = data.sectionKey;
   if (data.sectionLabel !== undefined) payload.section_label = data.sectionLabel?.trim();
+  if (data.cueStartSeconds !== undefined) payload.cue_start_seconds = data.cueStartSeconds;
+  if (data.cueEndSeconds !== undefined) payload.cue_end_seconds = data.cueEndSeconds;
+  if (data.loopStartSeconds !== undefined) payload.loop_start_seconds = data.loopStartSeconds;
+  if (data.loopEndSeconds !== undefined) payload.loop_end_seconds = data.loopEndSeconds;
   if (data.contentAst !== undefined) payload.content_ast = normalizeLineNodes(data.contentAst);
   if (data.plainText !== undefined) payload.plain_text = data.plainText;
   if (data.chordsIndex !== undefined) payload.chords_index = data.chordsIndex;

@@ -117,6 +117,10 @@ export function normalizeSectionNode(value: unknown, fallbackOrder = 1): CifraSe
     key: coerceEnum(row.key, SECTION_KEYS, 'custom'),
     label: label || `Secao ${fallbackOrder}`,
     order: Math.max(1, asNumber(row.order, fallbackOrder)),
+    cueStartSeconds: asNullableNumber(row.cueStartSeconds ?? row.cue_start_seconds),
+    cueEndSeconds: asNullableNumber(row.cueEndSeconds ?? row.cue_end_seconds),
+    loopStartSeconds: asNullableNumber(row.loopStartSeconds ?? row.loop_start_seconds),
+    loopEndSeconds: asNullableNumber(row.loopEndSeconds ?? row.loop_end_seconds),
     lines: normalizeLineNodes(row.lines),
   };
 }
@@ -205,6 +209,10 @@ export function mapCifraVersionSectionRow(row: any): CifraVersionSection {
     section_order: asNumber(row.section_order, 1),
     section_key: coerceEnum(row.section_key, SECTION_KEYS, 'custom'),
     section_label: asString(row.section_label),
+    cue_start_seconds: asNullableNumber(row.cue_start_seconds),
+    cue_end_seconds: asNullableNumber(row.cue_end_seconds),
+    loop_start_seconds: asNullableNumber(row.loop_start_seconds),
+    loop_end_seconds: asNullableNumber(row.loop_end_seconds),
     content_ast: normalizeLineNodes(row.content_ast),
     plain_text: asString(row.plain_text),
     chords_index: asStringArray(row.chords_index),

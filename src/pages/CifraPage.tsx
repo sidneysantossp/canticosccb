@@ -24,7 +24,7 @@ import { extractHymnNumber, findRelatedHinario, findRelatedHymn } from '@/lib/hy
 import { hinosApi } from '@/lib/api-client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/contexts/ToastContext';
-import { CIFRA_V2_INSTRUMENTS, type CifraChordShape, type CifraInstrument, type CifraReportType } from '@/types/cifras-v2';
+import { CIFRA_V2_INSTRUMENTS, type CifraChordShape, type CifraInstrument, type CifraReportType, type CifraVersionSection } from '@/types/cifras-v2';
 import type { Hino } from '@/types';
 import { usePlayerStore } from '@/stores/playerStore';
 import {
@@ -157,6 +157,32 @@ function estimateSectionWindow(index: number, totalSections: number, durationSec
   return {
     start: Math.max(0, start),
     end: Math.max(start, end),
+  };
+}
+
+function resolveSectionTiming(
+  sections: CifraVersionSection[],
+  sectionIndex: number,
+  durationSeconds: number,
+  options?: { preferLoopWindow?: boolean },
+) {
+  const estimated = estimateSectionWindow(sectionIndex, sections.length, durationSeconds);
+  const section = sections[sectionIndex];
+  const nextSection = sections[sectionIndex + 1];
+
+  if (!section) {
+    return estimated;
+  }
+
+  const preferLoopWindow = Boolean(options?.preferLoopWindow);
+  const cueStart = section.cue_start_seconds ?? estimated.start;
+  const cueEnd = section.cue_end_seconds ?? nextSection?.cue_start_seconds ?? estimated.end;
+  const loopStart = section.loop_start_seconds ?? cueStart;
+  const loopEnd = section.loop_end_seconds ?? cueEnd;
+
+  return {
+    start: Math.max(0, preferLoopWindow ? loopStart : cueStart),
+    end: Math.max(preferLoopWindow ? loopStart : cueStart, preferLoopWindow ? loopEnd : cueEnd),
   };
 }
 
@@ -585,9 +611,11 @@ const CifraPage: React.FC = () => {
       return;
     }
 
-    const { start } = estimateSectionWindow(sectionIndex, structuredSectionItems.length, effectiveRelatedDuration);
+    const { start } = resolveSectionTiming(structuredSections, sectionIndex, effectiveRelatedDuration, {
+      preferLoopWindow: loopFocusedSection,
+    });
     queueSeekToSecond(start);
-  }, [effectiveRelatedDuration, hasStructuredSections, queueSeekToSecond, structuredSectionItems.length]);
+  }, [effectiveRelatedDuration, hasStructuredSections, loopFocusedSection, queueSeekToSecond, structuredSectionItems.length, structuredSections]);
 
   const handlePlayRelatedTrack = useCallback((options?: { seekToFocusedSection?: boolean }) => {
     if (!relatedHymnTrack || !canPlayRelatedTrack) {
@@ -715,11 +743,18 @@ const CifraPage: React.FC = () => {
       return;
     }
 
+    const exactIndex = structuredSections.findIndex((_, index) => {
+      const timing = resolveSectionTiming(structuredSections, index, playerDuration);
+      return playerCurrentTime >= timing.start && playerCurrentTime < timing.end;
+    });
     const progressRatio = Math.min(0.999, Math.max(0, playerCurrentTime / playerDuration));
-    const estimatedIndex = Math.min(
-      structuredSectionItems.length - 1,
-      Math.floor(progressRatio * structuredSectionItems.length),
-    );
+    const estimatedIndex =
+      exactIndex >= 0
+        ? exactIndex
+        : Math.min(
+            structuredSectionItems.length - 1,
+            Math.floor(progressRatio * structuredSectionItems.length),
+          );
 
     if (lastSyncedSectionRef.current === estimatedIndex) {
       return;
@@ -736,6 +771,7 @@ const CifraPage: React.FC = () => {
     playerDuration,
     scrollToSection,
     structuredSectionItems.length,
+    structuredSections,
     studyModeEnabled,
     syncStudyWithAudio,
   ]);
@@ -745,7 +781,9 @@ const CifraPage: React.FC = () => {
       return;
     }
 
-    const { start, end } = estimateSectionWindow(focusedSectionIndex, structuredSectionItems.length, playerDuration);
+    const { start, end } = resolveSectionTiming(structuredSections, focusedSectionIndex, playerDuration, {
+      preferLoopWindow: true,
+    });
     const now = Date.now();
 
     if (
@@ -857,8 +895,18 @@ const CifraPage: React.FC = () => {
       return null;
     }
 
-    return estimateSectionWindow(focusedSectionIndex, structuredSectionItems.length, effectiveRelatedDuration);
-  }, [effectiveRelatedDuration, focusedSectionIndex, structuredSectionItems.length]);
+    return resolveSectionTiming(structuredSections, focusedSectionIndex, effectiveRelatedDuration, {
+      preferLoopWindow: loopFocusedSection,
+    });
+  }, [effectiveRelatedDuration, focusedSectionIndex, loopFocusedSection, structuredSectionItems.length, structuredSections]);
+  const focusedSectionHasEditorialTiming = focusedSectionIndex !== null
+    ? Boolean(
+        structuredSections[focusedSectionIndex]?.cue_start_seconds != null
+        || structuredSections[focusedSectionIndex]?.cue_end_seconds != null
+        || structuredSections[focusedSectionIndex]?.loop_start_seconds != null
+        || structuredSections[focusedSectionIndex]?.loop_end_seconds != null,
+      )
+    : false;
   const visibleChordCards = chords
     .slice(0, 12)
     .map((chord) => {
@@ -1543,7 +1591,7 @@ const CifraPage: React.FC = () => {
                     </div>
                     {focusedSectionWindow ? (
                       <p className="text-xs text-gray-400">
-                        Trecho estimado: {Math.floor(focusedSectionWindow.start)}s até {Math.ceil(focusedSectionWindow.end)}s do áudio publicado.
+                        {focusedSectionHasEditorialTiming ? 'Trecho editorial' : 'Trecho estimado'}: {Math.floor(focusedSectionWindow.start)}s até {Math.ceil(focusedSectionWindow.end)}s do áudio publicado.
                       </p>
                     ) : null}
                   </div>

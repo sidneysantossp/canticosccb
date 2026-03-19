@@ -142,6 +142,10 @@ export interface CifraVersionSection {
   section_order: number;
   section_key: CifraSectionKey;
   section_label: string;
+  cue_start_seconds?: number | null;
+  cue_end_seconds?: number | null;
+  loop_start_seconds?: number | null;
+  loop_end_seconds?: number | null;
   content_ast: CifraLineNode[];
   plain_text: string;
   chords_index: string[];
@@ -259,6 +263,10 @@ export interface CifraSectionNode {
   key: CifraSectionKey;
   label: string;
   order: number;
+  cueStartSeconds?: number | null;
+  cueEndSeconds?: number | null;
+  loopStartSeconds?: number | null;
+  loopEndSeconds?: number | null;
   lines: CifraLineNode[];
 }
 
