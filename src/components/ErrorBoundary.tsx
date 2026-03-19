@@ -1,7 +1,7 @@
 import React, { Component, ErrorInfo, ReactNode } from 'react';
 import { AlertTriangle, RefreshCw, Home } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { isChunkLoadFailure } from '@/utils/chunkLoadRecovery';
+import { isChunkLoadFailure, tryRecoverFromChunkLoadFailure } from '@/utils/chunkLoadRecovery';
 
 interface Props {
   children: ReactNode;
@@ -25,6 +25,11 @@ class ErrorBoundary extends Component<Props, State> {
 
   public componentDidCatch(error: Error, errorInfo: ErrorInfo) {
     console.error('ErrorBoundary caught an error:', error, errorInfo);
+
+    if (tryRecoverFromChunkLoadFailure(error)) {
+      return;
+    }
+
     this.setState({
       error,
       errorInfo

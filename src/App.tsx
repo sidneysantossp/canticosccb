@@ -174,12 +174,12 @@ import {
 } from '@/pages/admin/lazyPages';
 import SiteConfigRuntime from '@/components/SiteConfigRuntime';
 import PageLoader from '@/components/ui/PageLoader';
+import ProtectedRoute from '@/components/ProtectedRoute';
+import ProtectedComposerRoute from '@/components/ProtectedComposerRoute';
 import { Navigate, useLocation, useParams as useRouteParams } from 'react-router-dom';
 
 const AppRuntime = lazy(() => import('@/components/app/AppRuntime'));
 const Layout = lazy(() => import('@/components/layout/Layout'));
-const ProtectedRoute = lazy(() => import('@/components/ProtectedRoute'));
-const ProtectedComposerRoute = lazy(() => import('@/components/ProtectedComposerRoute'));
 
 const RedirectToCategoria: React.FC = () => {
   const { slug } = useRouteParams();

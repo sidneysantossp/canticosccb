@@ -37,6 +37,31 @@ export function isChunkLoadFailure(reason: unknown): boolean {
   return CHUNK_LOAD_PATTERNS.some((pattern) => pattern.test(message));
 }
 
+export function tryRecoverFromChunkLoadFailure(reason: unknown): boolean {
+  if (typeof window === 'undefined' || typeof sessionStorage === 'undefined') {
+    return false;
+  }
+
+  if (!isChunkLoadFailure(reason)) {
+    return false;
+  }
+
+  const pathKey = getChunkRecoveryKey(`${window.location.pathname}${window.location.search}`);
+
+  try {
+    if (sessionStorage.getItem(pathKey) === '1') {
+      return false;
+    }
+
+    sessionStorage.setItem(pathKey, '1');
+  } catch {
+    return false;
+  }
+
+  window.location.reload();
+  return true;
+}
+
 export function installChunkLoadRecovery(): void {
   if (typeof window === 'undefined' || typeof sessionStorage === 'undefined') {
     return;
@@ -52,35 +77,16 @@ export function installChunkLoadRecovery(): void {
     }, RECOVERY_RELEASE_MS);
   };
 
-  const tryRecover = (reason: unknown): boolean => {
-    if (!isChunkLoadFailure(reason)) {
-      return false;
-    }
-
-    try {
-      if (sessionStorage.getItem(pathKey) === '1') {
-        return false;
-      }
-
-      sessionStorage.setItem(pathKey, '1');
-    } catch {
-      return false;
-    }
-
-    window.location.reload();
-    return true;
-  };
-
   releaseRecoveryLock();
 
   window.addEventListener('unhandledrejection', (event) => {
-    if (tryRecover(event.reason)) {
+    if (tryRecoverFromChunkLoadFailure(event.reason)) {
       event.preventDefault();
     }
   });
 
   window.addEventListener('error', (event) => {
-    if (tryRecover(event.error || event.message)) {
+    if (tryRecoverFromChunkLoadFailure(event.error || event.message)) {
       event.preventDefault?.();
     }
   }, true);
