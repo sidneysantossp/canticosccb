@@ -5,8 +5,10 @@ import { fetchCifras, deleteCifra, toggleCifraActive, Cifra, INSTRUMENTS, CATEGO
 import ConfirmModal from '@/components/ConfirmModal';
 import AlertModal from '@/components/ui/AlertModal';
 import {
+  fetchCifraV2RolloutStats,
   fetchLegacyCifraMigrationStatuses,
   migrateLegacyCifraById,
+  type CifraV2RolloutStats,
   type LegacyCifraMigrationStatus,
 } from '@/lib/admin/cifrasV2AdminApi';
 
@@ -18,6 +20,8 @@ const AdminCifras: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterInstrument, setFilterInstrument] = useState('');
   const [filterCategory, setFilterCategory] = useState('');
+  const [filterV2Status, setFilterV2Status] = useState<'all' | 'pending' | 'migrated'>('all');
+  const [rolloutStats, setRolloutStats] = useState<CifraV2RolloutStats | null>(null);
   const [showBatchConfirm, setShowBatchConfirm] = useState(false);
   const [isBatchMigrating, setIsBatchMigrating] = useState(false);
   const [batchProgress, setBatchProgress] = useState({ completed: 0, total: 0 });
@@ -36,8 +40,12 @@ const AdminCifras: React.FC = () => {
     try {
       setIsLoading(true);
       setError(null);
-      const data = await fetchCifras();
+      const [data, rollout] = await Promise.all([
+        fetchCifras(),
+        fetchCifraV2RolloutStats(),
+      ]);
       setCifras(data);
+      setRolloutStats(rollout);
       const statuses = await fetchLegacyCifraMigrationStatuses(data.map((item) => item.id));
       setMigrationStatuses(statuses);
     } catch (err: any) {
@@ -74,7 +82,12 @@ const AdminCifras: React.FC = () => {
       c.artist.toLowerCase().includes(searchTerm.toLowerCase());
     const matchInstrument = !filterInstrument || c.instrument === filterInstrument;
     const matchCategory = !filterCategory || c.category === filterCategory;
-    return matchSearch && matchInstrument && matchCategory;
+    const migrationStatus = migrationStatuses[c.id];
+    const matchV2Status =
+      filterV2Status === 'all' ||
+      (filterV2Status === 'pending' && !migrationStatus) ||
+      (filterV2Status === 'migrated' && Boolean(migrationStatus));
+    return matchSearch && matchInstrument && matchCategory && matchV2Status;
   });
 
   const getInstrumentLabel = (value: string) =>
@@ -83,7 +96,7 @@ const AdminCifras: React.FC = () => {
   const getCategoryLabel = (value: string) =>
     CATEGORIES.find(c => c.value === value)?.label || value;
 
-  const hasActiveFilters = Boolean(searchTerm || filterInstrument || filterCategory);
+  const hasActiveFilters = Boolean(searchTerm || filterInstrument || filterCategory || filterV2Status !== 'all');
   const pendingCifras = filtered.filter((cifra) => !migrationStatuses[cifra.id]);
   const totalMigrated = cifras.filter((cifra) => migrationStatuses[cifra.id]).length;
   const totalPending = cifras.length - totalMigrated;
@@ -220,6 +233,53 @@ const AdminCifras: React.FC = () => {
         </div>
       )}
 
+      {rolloutStats && (
+        <div className={`mb-6 rounded-xl border p-4 ${
+          rolloutStats.publicCatalogItems > 0
+            ? 'bg-emerald-500/10 border-emerald-500/30'
+            : 'bg-amber-500/10 border-amber-500/30'
+        }`}>
+          <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+            <div>
+              <p className={`font-medium ${rolloutStats.publicCatalogItems > 0 ? 'text-emerald-300' : 'text-amber-300'}`}>
+                Rollout do Cifras V2
+              </p>
+              <p className="text-sm text-gray-300 mt-1">
+                {rolloutStats.publicCatalogItems > 0
+                  ? `Já existem ${rolloutStats.publicCatalogItems} versões V2 públicas visíveis no catálogo novo.`
+                  : 'O catálogo público V2 ainda está zerado. Para a experiência nova aparecer no frontend, é preciso migrar e publicar cifras legadas.'}
+              </p>
+            </div>
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 text-sm min-w-0">
+              <div className="bg-black/20 rounded-lg px-3 py-2">
+                <p className="text-gray-400">Songs V2</p>
+                <p className="text-white font-semibold">{rolloutStats.songsTotal}</p>
+              </div>
+              <div className="bg-black/20 rounded-lg px-3 py-2">
+                <p className="text-gray-400">Versões V2</p>
+                <p className="text-white font-semibold">{rolloutStats.versionsTotal}</p>
+              </div>
+              <div className="bg-black/20 rounded-lg px-3 py-2">
+                <p className="text-gray-400">Publicadas</p>
+                <p className="text-white font-semibold">{rolloutStats.publishedVersions}</p>
+              </div>
+              <div className="bg-black/20 rounded-lg px-3 py-2">
+                <p className="text-gray-400">No catálogo</p>
+                <p className="text-white font-semibold">{rolloutStats.publicCatalogItems}</p>
+              </div>
+              <div className="bg-black/20 rounded-lg px-3 py-2">
+                <p className="text-gray-400">Com seções</p>
+                <p className="text-white font-semibold">{rolloutStats.versionsWithSections}</p>
+              </div>
+              <div className="bg-black/20 rounded-lg px-3 py-2">
+                <p className="text-gray-400">Defaults estudo</p>
+                <p className="text-white font-semibold">{rolloutStats.versionsWithStudyDefaults}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Filters */}
       <div className="flex flex-col sm:flex-row gap-3 mb-6">
         <div className="relative flex-1">
@@ -251,6 +311,15 @@ const AdminCifras: React.FC = () => {
           {CATEGORIES.map(c => (
             <option key={c.value} value={c.value}>{c.label}</option>
           ))}
+        </select>
+        <select
+          value={filterV2Status}
+          onChange={e => setFilterV2Status(e.target.value as 'all' | 'pending' | 'migrated')}
+          className="px-4 py-3 bg-gray-800 border border-gray-700 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-primary-500"
+        >
+          <option value="all">Todas no legado</option>
+          <option value="pending">Somente V2 pendentes</option>
+          <option value="migrated">Somente V2 migradas</option>
         </select>
       </div>
 

@@ -1,9 +1,12 @@
 import {
   createCifraSong,
+  fetchCifraSongs as fetchCifraSongsInternal,
   fetchCifraSongById as fetchCifraSongByIdInternal,
 } from '@/lib/cifras-v2/cifraSongsRepository';
 import {
   createCifraVersion,
+  fetchCifraVersions as fetchCifraVersionsInternal,
+  fetchPublicCifraCatalog,
   fetchCifraVersionById as fetchCifraVersionByIdInternal,
 } from '@/lib/cifras-v2/cifraVersionsRepository';
 import { fetchCifraVersionSections as fetchCifraVersionSectionsInternal } from '@/lib/cifras-v2/cifraSectionsRepository';
@@ -70,6 +73,16 @@ export { parsePlainTextSectionLines, serializeSectionLines } from '@/lib/cifras-
 
 export { createCifraSong, createCifraVersion, type FetchCifraVersionChordOverridesOptions };
 
+export interface CifraV2RolloutStats {
+  songsTotal: number;
+  versionsTotal: number;
+  publishedVersions: number;
+  searchableVersions: number;
+  publicCatalogItems: number;
+  versionsWithSections: number;
+  versionsWithStudyDefaults: number;
+}
+
 export async function fetchCifraSongById(id: string) {
   return fetchCifraSongByIdInternal(id, { authenticated: true });
 }
@@ -90,4 +103,27 @@ export async function fetchCifraVersionChordOverrides(
     ...options,
     authenticated: options.authenticated ?? true,
   });
+}
+
+export async function fetchCifraV2RolloutStats(): Promise<CifraV2RolloutStats> {
+  const [songs, versions, publicCatalog] = await Promise.all([
+    fetchCifraSongsInternal({ limit: 1000 }, { authenticated: true }),
+    fetchCifraVersionsInternal({ limit: 1000 }, { authenticated: true }),
+    fetchPublicCifraCatalog({ limit: 1000 }),
+  ]);
+
+  return {
+    songsTotal: songs.length,
+    versionsTotal: versions.length,
+    publishedVersions: versions.filter((version) => version.status === 'published').length,
+    searchableVersions: versions.filter((version) => version.is_searchable).length,
+    publicCatalogItems: publicCatalog.length,
+    versionsWithSections: versions.filter((version) => version.sections_count > 0).length,
+    versionsWithStudyDefaults: versions.filter(
+      (version) =>
+        Boolean(version.default_study_section_order) ||
+        version.default_study_sync_audio ||
+        version.default_study_loop_section,
+    ).length,
+  };
 }
