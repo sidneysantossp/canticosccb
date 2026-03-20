@@ -30,6 +30,7 @@ import {
 import {
   createCifraVersion,
   fetchCifraVersions,
+  fetchPublicCifraCatalog,
 } from './cifraVersionsRepository';
 import { parseLegacyCifraContent } from './legacyCifraParser';
 
@@ -72,6 +73,12 @@ export interface LegacyCifraMigrationStatus {
   versionId: string | null;
   versionSlug: string | null;
   versionStatus: CifraVersionStatus | null;
+  versionIsPrimary: boolean;
+  versionIsSearchable: boolean;
+  publicCatalogVisible: boolean;
+  sectionsCount: number;
+  hasStudyDefaults: boolean;
+  publicPath: string | null;
   migratedAt: string | null;
 }
 
@@ -422,8 +429,12 @@ export async function migrateLegacyCifrasBatch(
 }
 
 export async function fetchLegacyCifraMigrationStatuses(legacyIds?: number[]): Promise<Record<number, LegacyCifraMigrationStatus>> {
-  const songs = await fetchCifraSongs({ limit: 1000 }, { authenticated: true });
+  const [songs, publicCatalog] = await Promise.all([
+    fetchCifraSongs({ limit: 1000 }, { authenticated: true }),
+    fetchPublicCifraCatalog({ limit: 1000 }),
+  ]);
   const statuses: Record<number, LegacyCifraMigrationStatus> = {};
+  const publicVersionIds = new Set(publicCatalog.map((item) => item.version_id));
 
   for (const song of songs) {
     const legacyId = Number(song.metadata.legacy_cifra_id);
@@ -445,6 +456,16 @@ export async function fetchLegacyCifraMigrationStatuses(legacyIds?: number[]): P
       versionId: preferredVersion?.id ?? null,
       versionSlug: preferredVersion?.public_slug ?? null,
       versionStatus: preferredVersion?.status ?? null,
+      versionIsPrimary: preferredVersion?.is_primary ?? false,
+      versionIsSearchable: preferredVersion?.is_searchable ?? false,
+      publicCatalogVisible: preferredVersion?.id ? publicVersionIds.has(preferredVersion.id) : false,
+      sectionsCount: preferredVersion?.sections_count ?? 0,
+      hasStudyDefaults: Boolean(
+        preferredVersion?.default_study_section_order ||
+        preferredVersion?.default_study_sync_audio ||
+        preferredVersion?.default_study_loop_section,
+      ),
+      publicPath: preferredVersion?.public_slug ? `/cifra/${preferredVersion.public_slug}` : null,
       migratedAt: song.updated_at ?? song.created_at ?? null,
     };
   }

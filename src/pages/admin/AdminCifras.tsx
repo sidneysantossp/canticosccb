@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Plus, Edit, Trash2, Eye, EyeOff, Search, Music, FileText, Sparkles, PenSquare, Wand2 } from 'lucide-react';
+import { Plus, Edit, Trash2, Eye, EyeOff, Search, Music, FileText, Sparkles, PenSquare, Wand2, ExternalLink } from 'lucide-react';
 import { fetchCifras, deleteCifra, toggleCifraActive, Cifra, INSTRUMENTS, CATEGORIES } from '@/api/cifras';
 import ConfirmModal from '@/components/ConfirmModal';
 import AlertModal from '@/components/ui/AlertModal';
@@ -98,6 +98,20 @@ const AdminCifras: React.FC = () => {
 
   const getCategoryLabel = (value: string) =>
     CATEGORIES.find(c => c.value === value)?.label || value;
+
+  const getV2StatusTone = (status: LegacyCifraMigrationStatus | undefined) => {
+    if (!status) return 'bg-amber-500/20 text-amber-300';
+    if (status.publicCatalogVisible) return 'bg-emerald-500/20 text-emerald-300';
+    if (status.versionStatus === 'published') return 'bg-cyan-500/20 text-cyan-300';
+    return 'bg-gray-600/20 text-gray-300';
+  };
+
+  const getV2StatusLabel = (status: LegacyCifraMigrationStatus | undefined) => {
+    if (!status) return 'V2 pendente';
+    if (status.publicCatalogVisible) return 'V2 no catálogo';
+    if (status.versionStatus === 'published') return 'V2 publicado';
+    return `V2 ${status.versionStatus || 'ok'}`;
+  };
 
   const hasActiveFilters = Boolean(searchTerm || filterInstrument || filterCategory || filterV2Status !== 'all');
   const pendingCifras = filtered.filter((cifra) => !migrationStatuses[cifra.id]);
@@ -501,15 +515,40 @@ const AdminCifras: React.FC = () => {
                           {cifra.is_active ? 'Ativa' : 'Inativa'}
                         </button>
                         {migrationStatuses[cifra.id] ? (
-                          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-cyan-500/20 text-cyan-300">
+                          <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium ${getV2StatusTone(migrationStatuses[cifra.id])}`}>
                             <Sparkles className="w-3.5 h-3.5" />
-                            V2 {migrationStatuses[cifra.id].versionStatus || 'ok'}
+                            {getV2StatusLabel(migrationStatuses[cifra.id])}
                           </span>
                         ) : (
                           <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-amber-500/20 text-amber-300">
                           <Sparkles className="w-3.5 h-3.5" />
                           V2 pendente
                         </span>
+                        )}
+                        {migrationStatuses[cifra.id]?.versionId && (
+                          <div className="flex flex-wrap gap-1.5">
+                            <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium ${
+                              migrationStatuses[cifra.id].versionIsPrimary
+                                ? 'bg-primary-500/20 text-primary-300'
+                                : 'bg-gray-700/60 text-gray-300'
+                            }`}>
+                              {migrationStatuses[cifra.id].versionIsPrimary ? 'Principal' : 'Secundária'}
+                            </span>
+                            <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium ${
+                              migrationStatuses[cifra.id].versionIsSearchable
+                                ? 'bg-emerald-500/20 text-emerald-300'
+                                : 'bg-red-500/20 text-red-300'
+                            }`}>
+                              {migrationStatuses[cifra.id].versionIsSearchable ? 'Busca on' : 'Busca off'}
+                            </span>
+                            <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium ${
+                              migrationStatuses[cifra.id].hasStudyDefaults
+                                ? 'bg-violet-500/20 text-violet-300'
+                                : 'bg-gray-700/60 text-gray-300'
+                            }`}>
+                              {migrationStatuses[cifra.id].hasStudyDefaults ? 'Estudo pronto' : 'Sem defaults'}
+                            </span>
+                          </div>
                         )}
                       </div>
                     </td>
@@ -546,6 +585,16 @@ const AdminCifras: React.FC = () => {
                             title="Abrir editor V2"
                           >
                             <PenSquare className="w-4 h-4" />
+                          </Link>
+                        )}
+                        {migrationStatuses[cifra.id]?.publicPath && (
+                          <Link
+                            to={migrationStatuses[cifra.id].publicPath}
+                            className="p-2 hover:bg-emerald-500/20 rounded-lg transition-colors text-emerald-400 hover:text-emerald-300"
+                            title={migrationStatuses[cifra.id].publicCatalogVisible ? 'Abrir página pública V2' : 'Abrir rota pública da versão V2'}
+                            target="_blank"
+                          >
+                            <ExternalLink className="w-4 h-4" />
                           </Link>
                         )}
                         <button
