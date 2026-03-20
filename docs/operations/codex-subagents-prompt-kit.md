@@ -6,6 +6,7 @@ Este documento reúne prompts prontos para copiar e usar com os subagentes do Co
 
 Ele complementa:
 
+- [codex-official-subagents-roster.md](/Applications/MAMP/htdocs/canticosccb-2026/docs/operations/codex-official-subagents-roster.md)
 - [codex-subagents-operating-model.md](/Applications/MAMP/htdocs/canticosccb-2026/docs/operations/codex-subagents-operating-model.md)
 - [codex-current-cycle-plan.md](/Applications/MAMP/htdocs/canticosccb-2026/docs/operations/codex-current-cycle-plan.md)
 - [codex-subagents-playbook.md](/Applications/MAMP/htdocs/canticosccb-2026/docs/operations/codex-subagents-playbook.md)
@@ -702,4 +703,3 @@ Com este kit, o time de subagentes deixa de depender de prompts improvisados e p
 - handoff consistente
 - aprovação previsível
 - maior velocidade sem perda de qualidade
-
