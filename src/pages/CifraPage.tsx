@@ -537,6 +537,9 @@ const CifraPage: React.FC = () => {
   const isRelatedTrackActive = Boolean(relatedHymnTrack && currentTrack?.id === relatedHymnTrack.id);
   const canPlayRelatedTrack = Boolean(relatedHymnTrack && (relatedHymnTrack.audioUrl || relatedHymnTrack.youtubeSource));
   const hasStructuredSections = structuredSectionItems.length > 0;
+  const structuredSections = isCifraV2(cifra) ? cifra.sections : [];
+  const supportsStudyTools = isCifraV2(cifra) && structuredSections.length > 0;
+  const supportsTwoColumnLayout = isCifraV2(cifra) && structuredSections.length > 1;
   const effectiveRelatedDuration = useMemo(() => {
     if (!relatedHymnTrack) {
       return null;
@@ -953,9 +956,6 @@ const CifraPage: React.FC = () => {
   const semitones = cifra ? getSemitonesBetweenKeys(cifra.original_key, selectedKey) : 0;
   const transposedContent = cifra ? transposeCifraContent(cifra.content, semitones, selectedKey) : '';
   const chords = extractChords(transposedContent);
-  const structuredSections = isCifraV2(cifra) ? cifra.sections : [];
-  const supportsStudyTools = isCifraV2(cifra) && structuredSections.length > 0;
-  const supportsTwoColumnLayout = isCifraV2(cifra) && structuredSections.length > 1;
   const shouldRenderTwoColumns = supportsTwoColumnLayout && useTwoColumnLayout && !studyModeEnabled;
   const focusedSectionWindow = useMemo(() => {
     if (focusedSectionIndex === null || !effectiveRelatedDuration || structuredSectionItems.length === 0) {
