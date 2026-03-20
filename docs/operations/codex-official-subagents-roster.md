@@ -208,8 +208,10 @@ Esses agentes entram como camada de veto ou validação especializada.
 
 Este quadro deve ser usado junto com:
 
+- [codex-active-fronts-board.md](/Applications/MAMP/htdocs/canticosccb-2026/docs/operations/codex-active-fronts-board.md)
 - [codex-subagents-operating-model.md](/Applications/MAMP/htdocs/canticosccb-2026/docs/operations/codex-subagents-operating-model.md)
 - [codex-current-cycle-plan.md](/Applications/MAMP/htdocs/canticosccb-2026/docs/operations/codex-current-cycle-plan.md)
+- [codex-kickoff-templates.md](/Applications/MAMP/htdocs/canticosccb-2026/docs/operations/codex-kickoff-templates.md)
 - [codex-subagents-playbook.md](/Applications/MAMP/htdocs/canticosccb-2026/docs/operations/codex-subagents-playbook.md)
 - [codex-subagents-prompt-kit.md](/Applications/MAMP/htdocs/canticosccb-2026/docs/operations/codex-subagents-prompt-kit.md)
 
