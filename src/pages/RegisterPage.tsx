@@ -1,11 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Eye, EyeOff, Mail, Lock, User, ArrowLeft, Check, AlertCircle } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { checkEmailExists, googleLogin } from '@/lib/auth-client';
 
 const RegisterPage: React.FC = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { signUp } = useAuth();
 
   const [formData, setFormData] = useState({
@@ -24,6 +25,7 @@ const RegisterPage: React.FC = () => {
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const [isGsiReady, setIsGsiReady] = useState(false);
   const googleBtnRef = useRef<HTMLDivElement | null>(null);
+  const cameFromGate = (location.state as any)?.reason === 'continue-listening';
 
   // Load Google Identity Services script and render official button
   useEffect(() => {
@@ -237,6 +239,14 @@ const RegisterPage: React.FC = () => {
           />
           <p className="text-text-muted">Junte-se a milhares de ouvintes</p>
         </div>
+
+        {cameFromGate && (
+          <div className="mb-4 rounded-xl border border-green-500/40 bg-green-500/10 p-4">
+            <p className="text-sm text-green-300">
+              Cadastro gratuito liberado para continuar ouvindo apos o primeiro hino.
+            </p>
+          </div>
+        )}
 
         {/* Register Form */}
         <div className="bg-background-secondary rounded-2xl p-8 shadow-xl border border-gray-800">

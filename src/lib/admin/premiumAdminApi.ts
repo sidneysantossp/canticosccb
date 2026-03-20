@@ -1,4 +1,4 @@
-import { supabaseFetch, supabaseInsert, supabaseUpdate } from '@/lib/supabaseRest';
+import { supabaseFetch, supabaseUpdate } from '@/lib/supabaseRest';
 
 export interface PremiumPlan {
   id: string;
@@ -35,15 +35,6 @@ export interface PremiumSettings {
   reminder_days_before: number[];
 }
 
-const PREMIUM_ENABLED_KEY = 'premium_enabled_flag_v1';
-const PREMIUM_ENABLED_COOKIE = 'premium_enabled';
-
-function setCookie(name: string, value: string, days = 30) {
-  if (typeof document === 'undefined') return;
-  const expires = new Date(Date.now() + days * 24 * 60 * 60 * 1000).toUTCString();
-  document.cookie = `${name}=${value}; expires=${expires}; path=/; SameSite=Lax`;
-}
-
 async function fetchPremiumUsersFromDB(): Promise<PremiumUser[]> {
   const rows = await supabaseFetch<any>('users', {
     select: 'id,email,name,plan,status,is_blocked,created_at,updated_at',
@@ -68,59 +59,13 @@ async function fetchPremiumUsersFromDB(): Promise<PremiumUser[]> {
 }
 
 export const getPremiumVisibility = async (): Promise<boolean> => {
-  try {
-    const cached = typeof localStorage !== 'undefined' ? localStorage.getItem(PREMIUM_ENABLED_KEY) : null;
-    if (cached !== null) {
-      fetchPremiumVisibilityFromDB().catch(() => {});
-      return cached === '1' || cached === 'true';
-    }
-
-    return await fetchPremiumVisibilityFromDB();
-  } catch {
-    return false;
-  }
+  return false;
 };
 
-async function fetchPremiumVisibilityFromDB(): Promise<boolean> {
-  try {
-    const rows = await supabaseFetch<any>('site_config', {
-      config_key: 'eq.premium_enabled',
-      select: 'config_value',
-      limit: '1',
-    });
-    const value = rows.length > 0 ? rows[0].config_value : 'false';
-    const enabled = value === 'true' || value === '1';
-
-    if (typeof localStorage !== 'undefined') {
-      localStorage.setItem(PREMIUM_ENABLED_KEY, enabled ? '1' : '0');
-    }
-
-    return enabled;
-  } catch {
-    return false;
-  }
-}
-
 export const setPremiumVisibility = async (enabled: boolean): Promise<void> => {
-  try {
-    if (typeof localStorage !== 'undefined') {
-      localStorage.setItem(PREMIUM_ENABLED_KEY, enabled ? '1' : '0');
-    }
-    setCookie(PREMIUM_ENABLED_COOKIE, enabled ? '1' : '0');
-
-    const existing = await supabaseFetch<any>('site_config', {
-      config_key: 'eq.premium_enabled',
-      select: 'id',
-      limit: '1',
-    });
-
-    if (existing.length > 0) {
-      await supabaseUpdate('site_config', { config_key: 'eq.premium_enabled' }, { config_value: String(enabled) });
-    } else {
-      await supabaseInsert('site_config', { config_key: 'premium_enabled', config_value: String(enabled) });
-    }
-  } catch (error) {
-    console.error('[setPremiumVisibility] Error:', error);
+  // Premium foi descontinuado. Mantido por compatibilidade de chamadas existentes.
+  if (enabled) {
+    console.warn('[premiumAdminApi] Premium visibility request ignored: premium is discontinued.');
   }
 };
 
@@ -182,6 +127,27 @@ export const cancelUserSubscription = async (id: string): Promise<{ success: boo
   } catch (error) {
     console.error('[cancelUserSubscription] Error:', error);
     return { success: false };
+  }
+};
+
+export const cleanupAllPremiumUsers = async (): Promise<{ success: boolean; updated: number }> => {
+  try {
+    const rows = await supabaseFetch<any>('users', {
+      select: 'id',
+      plan: 'eq.premium',
+      limit: '1000',
+    });
+
+    if (!rows.length) return { success: true, updated: 0 };
+
+    const ids = rows.map((row: any) => String(row.id)).filter(Boolean);
+    if (!ids.length) return { success: true, updated: 0 };
+
+    const result = await supabaseUpdate<any>('users', { id: `in.(${ids.join(',')})` }, { plan: 'free' });
+    return { success: true, updated: Array.isArray(result) ? result.length : ids.length };
+  } catch (error) {
+    console.error('[cleanupAllPremiumUsers] Error:', error);
+    return { success: false, updated: 0 };
   }
 };
 

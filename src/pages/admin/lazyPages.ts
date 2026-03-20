@@ -6,7 +6,6 @@ export const AdminApprovals = lazyWithChunkRecovery(() => import('./approvals/Ad
 export const AdminUsers = lazyWithChunkRecovery(() => import('./AdminUsers'));
 export const AdminUserEdit = lazyWithChunkRecovery(() => import('./AdminUserEdit'));
 export const AdminUserForm = lazyWithChunkRecovery(() => import('./AdminUserForm'));
-export const AdminUsersPremium = lazyWithChunkRecovery(() => import('./AdminUsersPremium'));
 
 export const AdminComposers = lazyWithChunkRecovery(() => import('./AdminComposers'));
 export const AdminComposersPending = lazyWithChunkRecovery(() => import('./AdminComposersPending'));
@@ -59,7 +58,6 @@ export const AdminCopyrightClaims = lazyWithChunkRecovery(() => import('./AdminC
 export const AdminSettingsGeneral = lazyWithChunkRecovery(() => import('./AdminSettingsGeneral'));
 export const AdminSettingsUsers = lazyWithChunkRecovery(() => import('./AdminSettingsUsers'));
 export const AdminSettingsComposers = lazyWithChunkRecovery(() => import('./AdminSettingsComposers'));
-export const AdminSettingsPremium = lazyWithChunkRecovery(() => import('./AdminSettingsPremium'));
 export const AdminSettingsEmail = lazyWithChunkRecovery(() => import('./AdminSettingsEmail'));
 export const AdminSettingsSecurity = lazyWithChunkRecovery(() => import('./AdminSettingsSecurity'));
 export const AdminSettingsIntegrations = lazyWithChunkRecovery(() => import('./AdminSettingsIntegrations'));

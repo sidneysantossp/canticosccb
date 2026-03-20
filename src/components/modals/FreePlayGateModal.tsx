@@ -18,18 +18,18 @@ const FreePlayGateModal: React.FC = () => {
       console.error('Erro no Google Login:', err);
       // Fallback: redirecionar para página de login
       closeGate();
-      navigate('/login', { state: { from: window.location.pathname } });
+      navigate('/login', { state: { from: window.location.pathname, reason: 'continue-listening' } });
     }
   };
 
   const handleEmailRegister = () => {
     closeGate();
-    navigate('/register', { state: { from: window.location.pathname } });
+    navigate('/register', { state: { from: window.location.pathname, reason: 'continue-listening' } });
   };
 
   const handleLogin = () => {
     closeGate();
-    navigate('/login', { state: { from: window.location.pathname } });
+    navigate('/login', { state: { from: window.location.pathname, reason: 'continue-listening' } });
   };
 
   const coverUrl = blockedTrack.coverUrl || '';
@@ -86,10 +86,10 @@ const FreePlayGateModal: React.FC = () => {
 
             {/* Message */}
             <h2 className="text-white font-bold text-xl sm:text-2xl mb-2 leading-tight">
-              Você já ouviu seu primeiro hino gratuito
+              Seu primeiro hino terminou
             </h2>
             <p className="text-white/70 text-sm mb-6">
-              Faça um cadastro gratuito para continuar ouvindo todo o acervo da plataforma.
+              Crie sua conta gratuita para continuar ouvindo todo o acervo sem interrupcao.
             </p>
 
             {/* Google Login Button */}

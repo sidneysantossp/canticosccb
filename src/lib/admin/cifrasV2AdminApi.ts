@@ -1,12 +1,12 @@
 import {
   createCifraSong,
-  fetchCifraSongs as fetchCifraSongsInternal,
+  fetchAllCifraSongs,
   fetchCifraSongById as fetchCifraSongByIdInternal,
 } from '@/lib/cifras-v2/cifraSongsRepository';
 import {
+  fetchAllCifraVersions,
+  fetchAllPublicCifraCatalog,
   createCifraVersion,
-  fetchCifraVersions as fetchCifraVersionsInternal,
-  fetchPublicCifraCatalog,
   fetchCifraVersionById as fetchCifraVersionByIdInternal,
   updateCifraVersion,
 } from '@/lib/cifras-v2/cifraVersionsRepository';
@@ -80,6 +80,9 @@ export interface CifraV2RolloutStats {
   publishedVersions: number;
   searchableVersions: number;
   publicCatalogItems: number;
+  eligibleCatalogVersions: number;
+  pendingCatalogVersions: number;
+  catalogCoveragePercent: number;
   versionsWithSections: number;
   versionsWithStudyDefaults: number;
 }
@@ -108,10 +111,30 @@ export async function fetchCifraVersionChordOverrides(
 
 export async function fetchCifraV2RolloutStats(): Promise<CifraV2RolloutStats> {
   const [songs, versions, publicCatalog] = await Promise.all([
-    fetchCifraSongsInternal({ limit: 1000 }, { authenticated: true }),
-    fetchCifraVersionsInternal({ limit: 1000 }, { authenticated: true }),
-    fetchPublicCifraCatalog({ limit: 1000 }),
+    fetchAllCifraSongs({}, { authenticated: true, pageSize: 250 }),
+    fetchAllCifraVersions({}, { authenticated: true, pageSize: 250 }),
+    fetchAllPublicCifraCatalog({}, { pageSize: 250 }),
   ]);
+  const publicVersionIds = new Set(publicCatalog.map((item) => item.version_id));
+  const eligibleCatalogVersions = versions.filter(
+    (version) =>
+      version.status === 'published' &&
+      version.is_searchable &&
+      version.is_active &&
+      version.sections_count > 0,
+  ).length;
+  const pendingCatalogVersions = versions.filter(
+    (version) =>
+      version.status === 'published' &&
+      version.is_searchable &&
+      version.is_active &&
+      version.sections_count > 0 &&
+      !publicVersionIds.has(version.id),
+  ).length;
+  const catalogCoveragePercent =
+    eligibleCatalogVersions > 0
+      ? Math.round(((eligibleCatalogVersions - pendingCatalogVersions) / eligibleCatalogVersions) * 100)
+      : 100;
 
   return {
     songsTotal: songs.length,
@@ -119,6 +142,9 @@ export async function fetchCifraV2RolloutStats(): Promise<CifraV2RolloutStats> {
     publishedVersions: versions.filter((version) => version.status === 'published').length,
     searchableVersions: versions.filter((version) => version.is_searchable).length,
     publicCatalogItems: publicCatalog.length,
+    eligibleCatalogVersions,
+    pendingCatalogVersions,
+    catalogCoveragePercent,
     versionsWithSections: versions.filter((version) => version.sections_count > 0).length,
     versionsWithStudyDefaults: versions.filter(
       (version) =>
@@ -162,13 +188,17 @@ export async function promoteCifraVersionToCatalog(versionId: string) {
         lines: section.content_ast,
       })),
       versionPatch: {
+        isActive: true,
         isSearchable: true,
       },
     });
   }
 
-  if (!version.is_searchable) {
-    return updateCifraVersion(versionId, { isSearchable: true });
+  if (!version.is_searchable || !version.is_active) {
+    return updateCifraVersion(versionId, {
+      isSearchable: true,
+      isActive: true,
+    });
   }
 
   return version;

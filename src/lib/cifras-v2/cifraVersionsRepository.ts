@@ -31,6 +31,14 @@ export interface FetchCifraVersionsOptions {
   authenticated?: boolean;
 }
 
+interface FetchAllCifraVersionsOptions extends FetchCifraVersionsOptions {
+  pageSize?: number;
+}
+
+interface FetchAllCifraPublicCatalogOptions {
+  pageSize?: number;
+}
+
 export interface CreateCifraVersionInput {
   songId: string;
   publicSlug?: string;
@@ -175,6 +183,36 @@ export async function fetchCifraVersions(
   return rows.map(mapCifraVersionRow);
 }
 
+export async function fetchAllCifraVersions(
+  params: Omit<FetchCifraVersionsParams, 'limit' | 'offset'> = {},
+  options: FetchAllCifraVersionsOptions = {},
+): Promise<CifraVersion[]> {
+  const pageSize = Math.max(50, Math.min(options.pageSize ?? 200, 500));
+  const allVersions: CifraVersion[] = [];
+  let offset = 0;
+
+  while (true) {
+    const page = await fetchCifraVersions(
+      {
+        ...params,
+        limit: pageSize,
+        offset,
+      },
+      options,
+    );
+
+    allVersions.push(...page);
+
+    if (page.length < pageSize) {
+      break;
+    }
+
+    offset += pageSize;
+  }
+
+  return allVersions;
+}
+
 export async function fetchCifraVersionById(
   id: string,
   options: FetchCifraVersionsOptions = {},
@@ -248,6 +286,33 @@ export async function fetchPublicCifraCatalog(params: {
 
   const rows = await supabaseFetch<any>('cifra_public_catalog', filters);
   return rows.map(mapCifraPublicCatalogRow);
+}
+
+export async function fetchAllPublicCifraCatalog(
+  params: Omit<Parameters<typeof fetchPublicCifraCatalog>[0], 'limit' | 'offset'> = {},
+  options: FetchAllCifraPublicCatalogOptions = {},
+): Promise<CifraPublicCatalogItem[]> {
+  const pageSize = Math.max(50, Math.min(options.pageSize ?? 200, 500));
+  const allItems: CifraPublicCatalogItem[] = [];
+  let offset = 0;
+
+  while (true) {
+    const page = await fetchPublicCifraCatalog({
+      ...params,
+      limit: pageSize,
+      offset,
+    });
+
+    allItems.push(...page);
+
+    if (page.length < pageSize) {
+      break;
+    }
+
+    offset += pageSize;
+  }
+
+  return allItems;
 }
 
 export async function fetchPublicCifraCatalogBySlug(publicSlug: string): Promise<CifraPublicCatalogItem | null> {

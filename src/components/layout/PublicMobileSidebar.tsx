@@ -2,7 +2,6 @@ import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { X, Home, Search, Library, Music, Mic, User, Heart, LogOut, Shield, Star, Grid, List, FileText, BookOpen } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
-import { usePremiumEnabled } from '@/hooks/usePremiumEnabled';
 import { clearAuthStorage } from '@/lib/supabase-auth';
 
 interface PublicMobileSidebarProps {
@@ -13,7 +12,6 @@ interface PublicMobileSidebarProps {
 const PublicMobileSidebar: React.FC<PublicMobileSidebarProps> = ({ isOpen, onClose }) => {
   const location = useLocation();
   const { user, profile, signOut, isAdmin, isComposer } = useAuth();
-  const premiumEnabled = usePremiumEnabled();
   const [avatarError, setAvatarError] = React.useState(false);
 
   // Reset avatar error when sidebar opens

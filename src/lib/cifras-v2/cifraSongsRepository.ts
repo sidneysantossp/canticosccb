@@ -19,6 +19,10 @@ export interface FetchCifraSongsOptions {
   authenticated?: boolean;
 }
 
+interface FetchAllCifraSongsOptions extends FetchCifraSongsOptions {
+  pageSize?: number;
+}
+
 export interface CreateCifraSongInput {
   canonicalSlug?: string;
   title: string;
@@ -125,6 +129,36 @@ export async function fetchCifraSongs(
   const fetcher = options.authenticated ? supabaseAuthFetch : supabaseFetch;
   const rows = await fetcher<any>('cifra_songs', filters);
   return rows.map(mapCifraSongRow);
+}
+
+export async function fetchAllCifraSongs(
+  params: Omit<FetchCifraSongsParams, 'limit' | 'offset'> = {},
+  options: FetchAllCifraSongsOptions = {},
+): Promise<CifraSong[]> {
+  const pageSize = Math.max(50, Math.min(options.pageSize ?? 200, 500));
+  const allSongs: CifraSong[] = [];
+  let offset = 0;
+
+  while (true) {
+    const page = await fetchCifraSongs(
+      {
+        ...params,
+        limit: pageSize,
+        offset,
+      },
+      options,
+    );
+
+    allSongs.push(...page);
+
+    if (page.length < pageSize) {
+      break;
+    }
+
+    offset += pageSize;
+  }
+
+  return allSongs;
 }
 
 export async function fetchCifraSongById(

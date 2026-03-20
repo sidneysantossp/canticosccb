@@ -27,8 +27,10 @@ const AdminCifras: React.FC = () => {
   const [rolloutStats, setRolloutStats] = useState<CifraV2RolloutStats | null>(null);
   const [showBatchConfirm, setShowBatchConfirm] = useState(false);
   const [isBatchMigrating, setIsBatchMigrating] = useState(false);
+  const [isBatchPromoting, setIsBatchPromoting] = useState(false);
   const [promotingVersionId, setPromotingVersionId] = useState<string | null>(null);
   const [batchProgress, setBatchProgress] = useState({ completed: 0, total: 0 });
+  const [batchPromoteProgress, setBatchPromoteProgress] = useState({ completed: 0, total: 0 });
   const [lastBatchFailures, setLastBatchFailures] = useState<Array<{ id: number; message: string }>>([]);
   const [alert, setAlert] = useState<{ isOpen: boolean; title: string; message: string; type: 'success' | 'error' | 'info' }>({
     isOpen: false,
@@ -126,8 +128,15 @@ const AdminCifras: React.FC = () => {
     return issues;
   };
 
+  const canPromoteVersion = (status: LegacyCifraMigrationStatus | undefined) =>
+    Boolean(status?.versionId) && !status?.publicCatalogVisible && (status?.sectionsCount ?? 0) > 0;
+
   const hasActiveFilters = Boolean(searchTerm || filterInstrument || filterCategory || filterV2Status !== 'all');
   const pendingCifras = filtered.filter((cifra) => !migrationStatuses[cifra.id]);
+  const promotableStatuses = filtered
+    .map((cifra) => migrationStatuses[cifra.id])
+    .filter((status): status is LegacyCifraMigrationStatus => canPromoteVersion(status));
+  const promoteBatch = promotableStatuses.slice(0, batchSize);
   const totalMigrated = cifras.filter((cifra) => migrationStatuses[cifra.id]).length;
   const totalPending = cifras.length - totalMigrated;
   const pendingBatch = pendingCifras.slice(0, batchSize);
@@ -200,6 +209,24 @@ const AdminCifras: React.FC = () => {
 
   const handlePromoteVersion = async (status: LegacyCifraMigrationStatus) => {
     if (!status.versionId) return;
+    if (status.publicCatalogVisible) {
+      setAlert({
+        isOpen: true,
+        title: 'Versão já está no catálogo',
+        message: `A cifra #${status.legacyId} já está visível no catálogo V2.`,
+        type: 'info',
+      });
+      return;
+    }
+    if (status.sectionsCount <= 0) {
+      setAlert({
+        isOpen: true,
+        title: 'Versão sem seções',
+        message: 'Esta versão ainda não possui seções publicáveis. Abra o editor V2 e salve as seções antes de promover.',
+        type: 'error',
+      });
+      return;
+    }
 
     try {
       setPromotingVersionId(status.versionId);
@@ -221,6 +248,58 @@ const AdminCifras: React.FC = () => {
       });
     } finally {
       setPromotingVersionId(null);
+    }
+  };
+
+  const handleBatchPromote = async () => {
+    const targets = promoteBatch.filter((status) => status.versionId && !status.publicCatalogVisible && status.sectionsCount > 0);
+    if (targets.length === 0) {
+      return;
+    }
+
+    const failures: Array<{ id: number; message: string }> = [];
+    try {
+      setIsBatchPromoting(true);
+      setBatchPromoteProgress({ completed: 0, total: targets.length });
+
+      let completed = 0;
+      for (const status of targets) {
+        try {
+          if (!status.versionId) {
+            throw new Error('Versão V2 ausente.');
+          }
+          await promoteCifraVersionToCatalog(status.versionId);
+        } catch (promotionError: any) {
+          failures.push({
+            id: status.legacyId,
+            message: promotionError?.message || 'Erro desconhecido durante a promoção.',
+          });
+        } finally {
+          completed += 1;
+          setBatchPromoteProgress({ completed, total: targets.length });
+        }
+      }
+
+      await loadCifras();
+      if (failures.length > 0) {
+        setLastBatchFailures((previous) => [...failures, ...previous].slice(0, 20));
+        setAlert({
+          isOpen: true,
+          title: 'Promoção concluída com pendências',
+          message: `${targets.length - failures.length} versões V2 foram levadas ao catálogo. ${failures.length} falharam.`,
+          type: 'error',
+        });
+      } else {
+        setAlert({
+          isOpen: true,
+          title: 'Promoção em lote concluída',
+          message: `${targets.length} versões V2 foram levadas ao catálogo com sucesso.`,
+          type: 'success',
+        });
+      }
+    } finally {
+      setIsBatchPromoting(false);
+      setBatchPromoteProgress({ completed: 0, total: 0 });
     }
   };
 
@@ -268,9 +347,22 @@ const AdminCifras: React.FC = () => {
               ? `Migrando ${batchProgress.completed}/${batchProgress.total}`
               : pendingBatch.length > 0
                 ? `Migrar ${pendingBatch.length} ${hasActiveFilters ? 'do filtro' : 'pendentes'}`
-                : hasActiveFilters && totalPending > 0
+              : hasActiveFilters && totalPending > 0
                   ? 'Nenhuma pendente no filtro'
                   : 'V2 em dia'}
+          </button>
+          <button
+            type="button"
+            onClick={() => void handleBatchPromote()}
+            disabled={isBatchPromoting || promoteBatch.length === 0}
+            className="inline-flex items-center gap-2 px-5 py-3 bg-primary-500 hover:bg-primary-400 disabled:opacity-60 disabled:cursor-not-allowed text-black font-semibold rounded-xl transition-colors"
+          >
+            <Rocket className="w-5 h-5" />
+            {isBatchPromoting
+              ? `Promovendo ${batchPromoteProgress.completed}/${batchPromoteProgress.total}`
+              : promoteBatch.length > 0
+                ? `Levar ${promoteBatch.length} ao catálogo`
+                : 'Sem promoção pendente'}
           </button>
           <Link
             to="/admin/cifras-v2/new"
@@ -300,6 +392,30 @@ const AdminCifras: React.FC = () => {
               className="h-full bg-cyan-400 transition-all"
               style={{
                 width: `${batchProgress.total > 0 ? (batchProgress.completed / batchProgress.total) * 100 : 0}%`,
+              }}
+            />
+          </div>
+        </div>
+      )}
+
+      {isBatchPromoting && (
+        <div className="mb-6 bg-primary-500/10 border border-primary-500/30 rounded-xl p-4">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <p className="text-primary-300 font-medium">Promovendo versões V2 para o catálogo público</p>
+              <p className="text-sm text-primary-100/80 mt-1">
+                {batchPromoteProgress.completed} de {batchPromoteProgress.total} versões processadas.
+              </p>
+            </div>
+            <p className="text-sm text-primary-200">
+              Publicação e busca serão ajustadas automaticamente quando necessário.
+            </p>
+          </div>
+          <div className="mt-4 h-2 rounded-full bg-black/30 overflow-hidden">
+            <div
+              className="h-full bg-primary-400 transition-all"
+              style={{
+                width: `${batchPromoteProgress.total > 0 ? (batchPromoteProgress.completed / batchPromoteProgress.total) * 100 : 0}%`,
               }}
             />
           </div>
@@ -355,8 +471,15 @@ const AdminCifras: React.FC = () => {
                   ? `Já existem ${rolloutStats.publicCatalogItems} versões V2 públicas visíveis no catálogo novo.`
                   : 'O catálogo público V2 ainda está zerado. Para a experiência nova aparecer no frontend, é preciso migrar e publicar cifras legadas.'}
               </p>
+              <p className="text-xs text-gray-400 mt-2">
+                Cobertura do catálogo: {rolloutStats.catalogCoveragePercent}% (
+                {rolloutStats.eligibleCatalogVersions > 0
+                  ? `${rolloutStats.eligibleCatalogVersions - rolloutStats.pendingCatalogVersions}/${rolloutStats.eligibleCatalogVersions} versões elegíveis`
+                  : 'sem versões elegíveis ainda'}
+                ).
+              </p>
             </div>
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 text-sm min-w-0">
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 text-sm min-w-0">
               <div className="bg-black/20 rounded-lg px-3 py-2">
                 <p className="text-gray-400">Songs V2</p>
                 <p className="text-white font-semibold">{rolloutStats.songsTotal}</p>
@@ -372,6 +495,14 @@ const AdminCifras: React.FC = () => {
               <div className="bg-black/20 rounded-lg px-3 py-2">
                 <p className="text-gray-400">No catálogo</p>
                 <p className="text-white font-semibold">{rolloutStats.publicCatalogItems}</p>
+              </div>
+              <div className="bg-black/20 rounded-lg px-3 py-2">
+                <p className="text-gray-400">Elegíveis</p>
+                <p className="text-white font-semibold">{rolloutStats.eligibleCatalogVersions}</p>
+              </div>
+              <div className="bg-black/20 rounded-lg px-3 py-2">
+                <p className="text-gray-400">Fora catálogo</p>
+                <p className="text-white font-semibold">{rolloutStats.pendingCatalogVersions}</p>
               </div>
               <div className="bg-black/20 rounded-lg px-3 py-2">
                 <p className="text-gray-400">Com seções</p>
@@ -477,12 +608,12 @@ const AdminCifras: React.FC = () => {
         <div className="text-center py-20">
           <Music className="w-16 h-16 text-gray-600 mx-auto mb-4" />
           <h3 className="text-xl text-gray-400 mb-2">
-            {searchTerm || filterInstrument || filterCategory ? 'Nenhuma cifra encontrada' : 'Nenhuma cifra cadastrada'}
+            {hasActiveFilters ? 'Nenhuma cifra encontrada' : 'Nenhuma cifra cadastrada'}
           </h3>
           <p className="text-gray-500 mb-6">
-            {searchTerm || filterInstrument || filterCategory ? 'Tente ajustar os filtros' : 'Comece adicionando a primeira cifra'}
+            {hasActiveFilters ? 'Tente ajustar os filtros' : 'Comece adicionando a primeira cifra'}
           </p>
-          {!searchTerm && !filterInstrument && !filterCategory && (
+          {!hasActiveFilters && (
             <Link
               to="/admin/cifras-v2/new"
               className="inline-flex items-center gap-2 px-5 py-3 bg-primary-500 hover:bg-primary-600 text-black font-semibold rounded-xl transition-colors"

@@ -177,7 +177,8 @@ export const usePlayerStore = create<PlayerStore>((set, get) => ({
     // Visitante pode ouvir apenas o primeiro hino.
     // Ao tentar seguir ouvindo depois disso, mostramos o gate e encerramos o player atual.
     if (gate && currentTrack && gate.getPlayCount() >= 1) {
-      gate.showGate(currentTrack);
+      const blockedTrack = queue[0] || currentTrack;
+      gate.showGate(blockedTrack);
       set({
         currentTrack: null,
         isPlaying: false,

@@ -23,14 +23,16 @@ import {
 } from './cifraPublicationService';
 import {
   createCifraSong,
+  fetchAllCifraSongs,
   fetchCifraSongByCanonicalSlug,
   fetchCifraSongs,
   updateCifraSong,
 } from './cifraSongsRepository';
 import {
   createCifraVersion,
+  fetchAllCifraVersions,
+  fetchAllPublicCifraCatalog,
   fetchCifraVersions,
-  fetchPublicCifraCatalog,
 } from './cifraVersionsRepository';
 import { parseLegacyCifraContent } from './legacyCifraParser';
 
@@ -80,6 +82,88 @@ export interface LegacyCifraMigrationStatus {
   hasStudyDefaults: boolean;
   publicPath: string | null;
   migratedAt: string | null;
+}
+
+function toNumericLegacyId(value: unknown): number | null {
+  if (typeof value === 'number' && Number.isFinite(value) && value > 0) {
+    return Math.trunc(value);
+  }
+
+  if (typeof value === 'string') {
+    const parsed = Number.parseInt(value, 10);
+    if (Number.isFinite(parsed) && parsed > 0) {
+      return parsed;
+    }
+  }
+
+  return null;
+}
+
+function extractLegacyIdsFromSong(song: CifraSong): number[] {
+  const metadata = song.metadata ?? {};
+  const collected: number[] = [];
+
+  const direct = toNumericLegacyId(metadata.legacy_cifra_id);
+  if (direct) {
+    collected.push(direct);
+  }
+
+  const list = metadata.legacy_cifra_ids;
+  if (Array.isArray(list)) {
+    for (const entry of list) {
+      const parsed = toNumericLegacyId(entry);
+      if (parsed) {
+        collected.push(parsed);
+      }
+    }
+  }
+
+  return Array.from(new Set(collected));
+}
+
+function buildPreferredVersion(versions: CifraVersion[]): CifraVersion | null {
+  if (versions.length === 0) {
+    return null;
+  }
+
+  return (
+    versions.find((version) => version.is_primary) ??
+    versions.find((version) => version.status === 'published') ??
+    versions[0]
+  );
+}
+
+function getStatusScore(status: LegacyCifraMigrationStatus): number {
+  if (status.publicCatalogVisible) return 400;
+  if (status.versionStatus === 'published' && status.versionIsSearchable) return 320;
+  if (status.versionStatus === 'published') return 300;
+  if (status.versionStatus === 'approved') return 240;
+  if (status.versionStatus === 'in_review') return 220;
+  if (status.versionId) return 180;
+  return 100;
+}
+
+function pickBestStatus(
+  current: LegacyCifraMigrationStatus | undefined,
+  candidate: LegacyCifraMigrationStatus,
+): LegacyCifraMigrationStatus {
+  if (!current) {
+    return candidate;
+  }
+
+  const currentScore = getStatusScore(current);
+  const candidateScore = getStatusScore(candidate);
+  if (candidateScore !== currentScore) {
+    return candidateScore > currentScore ? candidate : current;
+  }
+
+  const currentDate = current.migratedAt ? new Date(current.migratedAt).getTime() : 0;
+  const candidateDate = candidate.migratedAt ? new Date(candidate.migratedAt).getTime() : 0;
+  if (candidateDate !== currentDate) {
+    return candidateDate > currentDate ? candidate : current;
+  }
+
+  return current;
 }
 
 function buildSongCanonicalSlug(legacy: LegacyCifra, hinarioNumero: number | null): string {
@@ -429,45 +513,56 @@ export async function migrateLegacyCifrasBatch(
 }
 
 export async function fetchLegacyCifraMigrationStatuses(legacyIds?: number[]): Promise<Record<number, LegacyCifraMigrationStatus>> {
-  const [songs, publicCatalog] = await Promise.all([
-    fetchCifraSongs({ limit: 1000 }, { authenticated: true }),
-    fetchPublicCifraCatalog({ limit: 1000 }),
+  const legacyFilter = legacyIds?.length ? new Set(legacyIds) : null;
+  const [songs, publicCatalog, versions] = await Promise.all([
+    fetchAllCifraSongs({}, { authenticated: true, pageSize: 250 }),
+    fetchAllPublicCifraCatalog({}, { pageSize: 250 }),
+    fetchAllCifraVersions({}, { authenticated: true, pageSize: 250 }),
   ]);
   const statuses: Record<number, LegacyCifraMigrationStatus> = {};
   const publicVersionIds = new Set(publicCatalog.map((item) => item.version_id));
+  const versionsBySongId = versions.reduce<Record<string, CifraVersion[]>>((acc, version) => {
+    if (!acc[version.song_id]) {
+      acc[version.song_id] = [];
+    }
+    acc[version.song_id].push(version);
+    return acc;
+  }, {});
 
   for (const song of songs) {
-    const legacyId = Number(song.metadata.legacy_cifra_id);
-    if (!legacyId || (legacyIds?.length && !legacyIds.includes(legacyId))) {
+    const relatedLegacyIds = extractLegacyIdsFromSong(song).filter((legacyId) =>
+      legacyFilter ? legacyFilter.has(legacyId) : true,
+    );
+
+    if (relatedLegacyIds.length === 0) {
       continue;
     }
 
-    const versions = await fetchCifraVersions({ songId: song.id, limit: 20 }, { authenticated: true });
-    const preferredVersion =
-      versions.find((version) => version.is_primary) ??
-      versions.find((version) => version.status === 'published') ??
-      versions[0] ??
-      null;
+    const preferredVersion = buildPreferredVersion(versionsBySongId[song.id] ?? []);
 
-    statuses[legacyId] = {
-      legacyId,
-      songId: song.id,
-      songSlug: song.canonical_slug,
-      versionId: preferredVersion?.id ?? null,
-      versionSlug: preferredVersion?.public_slug ?? null,
-      versionStatus: preferredVersion?.status ?? null,
-      versionIsPrimary: preferredVersion?.is_primary ?? false,
-      versionIsSearchable: preferredVersion?.is_searchable ?? false,
-      publicCatalogVisible: preferredVersion?.id ? publicVersionIds.has(preferredVersion.id) : false,
-      sectionsCount: preferredVersion?.sections_count ?? 0,
-      hasStudyDefaults: Boolean(
-        preferredVersion?.default_study_section_order ||
-        preferredVersion?.default_study_sync_audio ||
-        preferredVersion?.default_study_loop_section,
-      ),
-      publicPath: preferredVersion?.public_slug ? `/cifra/${preferredVersion.public_slug}` : null,
-      migratedAt: song.updated_at ?? song.created_at ?? null,
-    };
+    for (const legacyId of relatedLegacyIds) {
+      const candidate: LegacyCifraMigrationStatus = {
+        legacyId,
+        songId: song.id,
+        songSlug: song.canonical_slug,
+        versionId: preferredVersion?.id ?? null,
+        versionSlug: preferredVersion?.public_slug ?? null,
+        versionStatus: preferredVersion?.status ?? null,
+        versionIsPrimary: preferredVersion?.is_primary ?? false,
+        versionIsSearchable: preferredVersion?.is_searchable ?? false,
+        publicCatalogVisible: preferredVersion?.id ? publicVersionIds.has(preferredVersion.id) : false,
+        sectionsCount: preferredVersion?.sections_count ?? 0,
+        hasStudyDefaults: Boolean(
+          preferredVersion?.default_study_section_order ||
+          preferredVersion?.default_study_sync_audio ||
+          preferredVersion?.default_study_loop_section,
+        ),
+        publicPath: preferredVersion?.public_slug ? `/cifra/${preferredVersion.public_slug}` : null,
+        migratedAt: song.updated_at ?? song.created_at ?? null,
+      };
+
+      statuses[legacyId] = pickBestStatus(statuses[legacyId], candidate);
+    }
   }
 
   return statuses;

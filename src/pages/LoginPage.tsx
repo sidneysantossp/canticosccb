@@ -19,6 +19,7 @@ const LoginPage: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const logoSrc = 'https://canticosccb.com.br/logo-canticos-ccb.png';
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
+  const cameFromGate = (location.state as any)?.reason === 'continue-listening';
 
   // Redirecionar quando o perfil carregar após login
   useEffect(() => {
@@ -103,6 +104,14 @@ const LoginPage: React.FC = () => {
           </Link>
           <p className="text-text-muted">Entre para continuar ouvindo</p>
         </div>
+
+        {cameFromGate && (
+          <div className="mb-4 rounded-xl border border-green-500/40 bg-green-500/10 p-4">
+            <p className="text-sm text-green-300">
+              Entre na sua conta para continuar ouvindo apos o primeiro hino.
+            </p>
+          </div>
+        )}
 
         {/* Login Form */}
         <div className="bg-background-secondary rounded-2xl p-8 shadow-xl border border-gray-800">
