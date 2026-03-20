@@ -1,3 +1,5 @@
+import { lazy, type ComponentType, type LazyExoticComponent } from 'react';
+
 const CHUNK_LOAD_PATTERNS = [
   /failed to fetch dynamically imported module/i,
   /importing a module script failed/i,
@@ -60,6 +62,22 @@ export function tryRecoverFromChunkLoadFailure(reason: unknown): boolean {
 
   window.location.reload();
   return true;
+}
+
+export function lazyWithChunkRecovery<T extends ComponentType<any>>(
+  importer: () => Promise<{ default: T }>
+): LazyExoticComponent<T> {
+  return lazy(async () => {
+    try {
+      return await importer();
+    } catch (error) {
+      if (tryRecoverFromChunkLoadFailure(error)) {
+        return new Promise<never>(() => {});
+      }
+
+      throw error;
+    }
+  });
 }
 
 export function installChunkLoadRecovery(): void {

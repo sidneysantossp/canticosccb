@@ -1,4 +1,4 @@
-import React, { Suspense, lazy } from 'react';
+import React, { Suspense } from 'react';
 import { Routes, Route } from 'react-router-dom';
 import { Helmet, HelmetProvider } from 'react-helmet-async';
 import { AuthProvider } from '@/contexts/AuthContext';
@@ -178,9 +178,10 @@ import PageLoader from '@/components/ui/PageLoader';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import ProtectedComposerRoute from '@/components/ProtectedComposerRoute';
 import { Navigate, useLocation, useParams as useRouteParams } from 'react-router-dom';
+import { lazyWithChunkRecovery } from '@/utils/chunkLoadRecovery';
 
-const AppRuntime = lazy(() => import('@/components/app/AppRuntime'));
-const Layout = lazy(() => import('@/components/layout/Layout'));
+const AppRuntime = lazyWithChunkRecovery(() => import('@/components/app/AppRuntime'));
+const Layout = lazyWithChunkRecovery(() => import('@/components/layout/Layout'));
 
 const RedirectToCategoria: React.FC = () => {
   const { slug } = useRouteParams();
