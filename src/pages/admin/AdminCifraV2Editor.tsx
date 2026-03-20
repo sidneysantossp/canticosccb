@@ -333,6 +333,9 @@ const AdminCifraV2Editor: React.FC = () => {
     tempoBpm: '',
     timeSignature: '',
     introNotes: '',
+    defaultStudySectionOrder: '',
+    defaultStudySyncAudio: false,
+    defaultStudyLoopSection: false,
     publicationLabel: 'community',
     isPrimary: true,
     isActive: true,
@@ -378,6 +381,9 @@ const AdminCifraV2Editor: React.FC = () => {
         tempoBpm: '',
         timeSignature: '',
         introNotes: '',
+        defaultStudySectionOrder: '',
+        defaultStudySyncAudio: false,
+        defaultStudyLoopSection: false,
         publicationLabel: 'community',
         isPrimary: true,
         isActive: true,
@@ -435,6 +441,9 @@ const AdminCifraV2Editor: React.FC = () => {
         tempoBpm: version.tempo_bpm ? String(version.tempo_bpm) : '',
         timeSignature: version.time_signature || '',
         introNotes: version.intro_notes || '',
+        defaultStudySectionOrder: version.default_study_section_order ? String(version.default_study_section_order) : '',
+        defaultStudySyncAudio: version.default_study_sync_audio,
+        defaultStudyLoopSection: version.default_study_loop_section,
         publicationLabel: version.publication_label,
         isPrimary: version.is_primary,
         isActive: version.is_active,
@@ -481,6 +490,15 @@ const AdminCifraV2Editor: React.FC = () => {
         loopStartSeconds: parseOptionalSecondsInput(section.loopStart),
         loopEndSeconds: parseOptionalSecondsInput(section.loopEnd),
         lines: parsePlainTextSectionLines(section.text),
+      })),
+    [sections],
+  );
+
+  const studySectionOptions = useMemo(
+    () =>
+      sections.map((section, index) => ({
+        value: String(index + 1),
+        label: section.label.trim() || `Secao ${index + 1}`,
       })),
     [sections],
   );
@@ -592,6 +610,34 @@ const AdminCifraV2Editor: React.FC = () => {
   );
 
   useEffect(() => {
+    if (!form.defaultStudySectionOrder) {
+      if (form.defaultStudySyncAudio || form.defaultStudyLoopSection) {
+        setForm((current) => ({
+          ...current,
+          defaultStudySyncAudio: false,
+          defaultStudyLoopSection: false,
+        }));
+      }
+      return;
+    }
+
+    const currentSectionExists = sections.some((_, index) => String(index + 1) === form.defaultStudySectionOrder);
+    if (!currentSectionExists) {
+      setForm((current) => ({
+        ...current,
+        defaultStudySectionOrder: '',
+        defaultStudySyncAudio: false,
+        defaultStudyLoopSection: false,
+      }));
+    }
+  }, [
+    form.defaultStudyLoopSection,
+    form.defaultStudySectionOrder,
+    form.defaultStudySyncAudio,
+    sections,
+  ]);
+
+  useEffect(() => {
     if (detectedChords.length === 0) {
       setSelectedChordName('');
       setSelectedShapeId('');
@@ -682,6 +728,9 @@ const AdminCifraV2Editor: React.FC = () => {
       tempoBpm: form.tempoBpm ? Number(form.tempoBpm) : null,
       timeSignature: form.timeSignature || null,
       introNotes: form.introNotes || null,
+      defaultStudySectionOrder: form.defaultStudySectionOrder ? Number(form.defaultStudySectionOrder) : null,
+      defaultStudySyncAudio: Boolean(form.defaultStudySectionOrder) && form.defaultStudySyncAudio,
+      defaultStudyLoopSection: Boolean(form.defaultStudySectionOrder) && form.defaultStudyLoopSection,
       publicationLabel: form.publicationLabel as any,
       isPrimary: form.isPrimary,
       isActive: form.isActive,
@@ -740,6 +789,9 @@ const AdminCifraV2Editor: React.FC = () => {
           tempoBpm: form.tempoBpm ? Number(form.tempoBpm) : null,
           timeSignature: form.timeSignature || null,
           introNotes: form.introNotes || null,
+          defaultStudySectionOrder: form.defaultStudySectionOrder ? Number(form.defaultStudySectionOrder) : null,
+          defaultStudySyncAudio: Boolean(form.defaultStudySectionOrder) && form.defaultStudySyncAudio,
+          defaultStudyLoopSection: Boolean(form.defaultStudySectionOrder) && form.defaultStudyLoopSection,
           publicationLabel: form.publicationLabel as any,
           isPrimary: form.isPrimary,
           isActive: form.isActive,
@@ -1250,6 +1302,79 @@ const AdminCifraV2Editor: React.FC = () => {
             <div className="mt-4">
               <label className="block text-sm font-medium text-gray-300 mb-2">Notas de introdução</label>
               <textarea value={form.introNotes} onChange={(event) => setForm((current) => ({ ...current, introNotes: event.target.value }))} rows={3} className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-xl text-white" />
+            </div>
+
+            <div className="mt-4 rounded-xl border border-primary-500/20 bg-primary-500/5 p-4">
+              <div className="flex flex-col gap-2">
+                <h3 className="text-sm font-semibold text-white">Abertura editorial do estudo</h3>
+                <p className="text-sm text-gray-400">
+                  Defina qual seção deve abrir por padrão na cifra pública. A janela de estudo continua vindo dos cues e loops de cada seção.
+                </p>
+              </div>
+
+              <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2">
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-2">Seção inicial do estudo</label>
+                  <select
+                    value={form.defaultStudySectionOrder}
+                    onChange={(event) =>
+                      setForm((current) => {
+                        const nextSectionOrder = event.target.value;
+                        return {
+                          ...current,
+                          defaultStudySectionOrder: nextSectionOrder,
+                          defaultStudySyncAudio: nextSectionOrder ? current.defaultStudySyncAudio : false,
+                          defaultStudyLoopSection: nextSectionOrder ? current.defaultStudyLoopSection : false,
+                        };
+                      })
+                    }
+                    className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-xl text-white"
+                  >
+                    <option value="">Abrir sem foco editorial</option>
+                    {studySectionOptions.map((option) => (
+                      <option key={option.value} value={option.value}>{option.label}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="flex flex-col justify-center rounded-xl border border-gray-700 bg-black/20 px-4 py-3 text-sm text-gray-300">
+                  {form.defaultStudySectionOrder ? (
+                    <>
+                      <span className="text-white font-medium">
+                        A cifra pública vai abrir focando {studySectionOptions.find((option) => option.value === form.defaultStudySectionOrder)?.label || `Secao ${form.defaultStudySectionOrder}`}.
+                      </span>
+                      <span className="mt-1 text-gray-400">
+                        Use sync e loop automáticos apenas quando os timestamps editoriais dessa seção estiverem ajustados.
+                      </span>
+                    </>
+                  ) : (
+                    <span className="text-gray-400">
+                      Sem seção editorial definida, a cifra continua abrindo no modo normal.
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              <div className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-2">
+                <label className="flex items-center gap-3 rounded-xl border border-gray-700 bg-black/20 p-3 text-gray-300">
+                  <input
+                    type="checkbox"
+                    checked={form.defaultStudySyncAudio}
+                    disabled={!form.defaultStudySectionOrder}
+                    onChange={(event) => setForm((current) => ({ ...current, defaultStudySyncAudio: event.target.checked }))}
+                  />
+                  Iniciar seguindo o áudio por seção
+                </label>
+                <label className="flex items-center gap-3 rounded-xl border border-gray-700 bg-black/20 p-3 text-gray-300">
+                  <input
+                    type="checkbox"
+                    checked={form.defaultStudyLoopSection}
+                    disabled={!form.defaultStudySectionOrder}
+                    onChange={(event) => setForm((current) => ({ ...current, defaultStudyLoopSection: event.target.checked }))}
+                  />
+                  Iniciar com loop da seção focada
+                </label>
+              </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mt-4">

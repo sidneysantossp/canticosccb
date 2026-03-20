@@ -112,6 +112,9 @@ export interface CifraVersion {
   tempo_bpm?: number | null;
   time_signature?: string | null;
   intro_notes?: string | null;
+  default_study_section_order?: number | null;
+  default_study_sync_audio: boolean;
+  default_study_loop_section: boolean;
   body_text: string;
   body_ast: CifraDocumentAst;
   chords_index: string[];
@@ -239,6 +242,9 @@ export interface CifraPublicCatalogItem {
   capo: number;
   tempo_bpm?: number | null;
   time_signature?: string | null;
+  default_study_section_order?: number | null;
+  default_study_sync_audio: boolean;
+  default_study_loop_section: boolean;
   publication_label: CifraPublicationLabel;
   is_primary: boolean;
   published_at?: string | null;

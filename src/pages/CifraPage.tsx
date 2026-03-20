@@ -213,6 +213,23 @@ function resolveSectionTiming(
   };
 }
 
+function resolveDefaultStudySectionIndex(
+  sections: CifraVersionSection[],
+  sectionOrder?: number | null,
+): number | null {
+  if (!Number.isFinite(sectionOrder) || !sectionOrder || sectionOrder < 1) {
+    return null;
+  }
+
+  const directMatch = sections.findIndex((section) => section.section_order === sectionOrder);
+  if (directMatch >= 0) {
+    return directMatch;
+  }
+
+  const positionalMatch = sectionOrder - 1;
+  return positionalMatch >= 0 && positionalMatch < sections.length ? positionalMatch : null;
+}
+
 const CifraPage: React.FC = () => {
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
@@ -737,11 +754,20 @@ const CifraPage: React.FC = () => {
       setMetronomeEnabled(false);
       const publicData = await fetchPublicCifraPageBySlug(slug);
       if (publicData) {
+        const defaultStudySectionIndex = resolveDefaultStudySectionIndex(
+          publicData.sections,
+          publicData.default_study_section_order,
+        );
+
         setCifra(publicData);
         setEngagement(buildInitialEngagement(publicData));
         setSelectedKey(publicData.preferred_key || publicData.original_key);
         setSelectedInstrument(publicData.instrument);
         setMetronomeBpm(publicData.tempo_bpm || 72);
+        setStudyModeEnabled(defaultStudySectionIndex !== null);
+        setFocusedSectionIndex(defaultStudySectionIndex);
+        setSyncStudyWithAudio(defaultStudySectionIndex !== null && publicData.default_study_sync_audio);
+        setLoopFocusedSection(defaultStudySectionIndex !== null && publicData.default_study_loop_section);
         return;
       }
 
@@ -948,6 +974,18 @@ const CifraPage: React.FC = () => {
         || structuredSections[focusedSectionIndex]?.loop_end_seconds != null,
       )
     : false;
+  const editorialStudySectionLabel = useMemo(() => {
+    if (!isCifraV2(cifra) || cifra.default_study_section_order == null) {
+      return null;
+    }
+
+    const sectionIndex = resolveDefaultStudySectionIndex(structuredSections, cifra.default_study_section_order);
+    if (sectionIndex === null) {
+      return null;
+    }
+
+    return structuredSections[sectionIndex]?.section_label || `Seção ${cifra.default_study_section_order}`;
+  }, [cifra, structuredSections]);
   const visibleChordCards = chords
     .slice(0, 12)
     .map((chord) => {
@@ -1455,6 +1493,13 @@ const CifraPage: React.FC = () => {
               <p className="mt-2 text-sm text-gray-400">
                 Foque por seção, mantenha o pulso com o metrônomo e adapte a leitura para estudo ou ensaio.
               </p>
+              {editorialStudySectionLabel ? (
+                <p className="mt-2 text-xs text-primary-300">
+                  Abertura editorial: {editorialStudySectionLabel}
+                  {isCifraV2(cifra) && cifra.default_study_sync_audio ? ' · sync com áudio' : ''}
+                  {isCifraV2(cifra) && cifra.default_study_loop_section ? ' · loop da seção' : ''}
+                </p>
+              ) : null}
             </div>
             <div className="flex flex-wrap gap-2">
               <button
@@ -1551,7 +1596,7 @@ const CifraPage: React.FC = () => {
                     <div>
                       <p className="text-xs uppercase tracking-[0.18em] text-text-muted">Áudio relacionado</p>
                       <p className="mt-1 text-sm text-white">
-                        Use o hino publicado como guia de ensaio. A sincronização por seção é aproximada pelo progresso do áudio.
+                        Use o hino publicado como guia de ensaio. A sincronização usa os marcadores editoriais quando disponíveis e cai para estimativa só como fallback.
                       </p>
                     </div>
                     <div className="flex flex-wrap gap-2">

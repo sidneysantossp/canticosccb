@@ -47,6 +47,9 @@ export interface PublicCifraPageData extends Omit<Cifra, 'id'> {
   tempo_bpm?: number | null;
   time_signature?: string | null;
   intro_notes?: string | null;
+  default_study_section_order?: number | null;
+  default_study_sync_audio: boolean;
+  default_study_loop_section: boolean;
   sections_count: number;
   lines_count: number;
   chords_index: string[];
@@ -162,6 +165,9 @@ function mapPublicCifraPageData(
     tempo_bpm: version.tempo_bpm,
     time_signature: version.time_signature,
     intro_notes: version.intro_notes,
+    default_study_section_order: version.default_study_section_order,
+    default_study_sync_audio: version.default_study_sync_audio,
+    default_study_loop_section: version.default_study_loop_section,
     sections_count: version.sections_count,
     lines_count: version.lines_count,
     chords_index: version.chords_index,
@@ -241,6 +247,9 @@ export async function fetchMergedPublicCifrasList(): Promise<Array<Cifra | Publi
     tempo_bpm: item.tempo_bpm,
     time_signature: item.time_signature,
     intro_notes: null,
+    default_study_section_order: item.default_study_section_order,
+    default_study_sync_audio: item.default_study_sync_audio,
+    default_study_loop_section: item.default_study_loop_section,
     sections_count: item.sections_count,
     lines_count: item.lines_count,
     chords_index: item.chords_index,

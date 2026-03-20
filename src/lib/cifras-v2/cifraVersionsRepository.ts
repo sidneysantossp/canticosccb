@@ -41,6 +41,9 @@ export interface CreateCifraVersionInput {
   tempoBpm?: number | null;
   timeSignature?: string | null;
   introNotes?: string | null;
+  defaultStudySectionOrder?: number | null;
+  defaultStudySyncAudio?: boolean;
+  defaultStudyLoopSection?: boolean;
   bodyText?: string;
   bodyAst?: CifraDocumentAst;
   chordsIndex?: string[];
@@ -89,6 +92,9 @@ function buildVersionPayload(data: CreateCifraVersionInput | UpdateCifraVersionI
   if (data.tempoBpm !== undefined) payload.tempo_bpm = data.tempoBpm ?? null;
   if (data.timeSignature !== undefined) payload.time_signature = data.timeSignature?.trim() || null;
   if (data.introNotes !== undefined) payload.intro_notes = data.introNotes?.trim() || null;
+  if (data.defaultStudySectionOrder !== undefined) payload.default_study_section_order = data.defaultStudySectionOrder ?? null;
+  if (data.defaultStudySyncAudio !== undefined) payload.default_study_sync_audio = data.defaultStudySyncAudio;
+  if (data.defaultStudyLoopSection !== undefined) payload.default_study_loop_section = data.defaultStudyLoopSection;
   if (data.bodyText !== undefined) payload.body_text = data.bodyText;
   if (data.bodyAst !== undefined) payload.body_ast = data.bodyAst;
   if (data.chordsIndex !== undefined) payload.chords_index = data.chordsIndex;
