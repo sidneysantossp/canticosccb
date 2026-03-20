@@ -8,6 +8,7 @@ import {
   fetchCifraVersions as fetchCifraVersionsInternal,
   fetchPublicCifraCatalog,
   fetchCifraVersionById as fetchCifraVersionByIdInternal,
+  updateCifraVersion,
 } from '@/lib/cifras-v2/cifraVersionsRepository';
 import { fetchCifraVersionSections as fetchCifraVersionSectionsInternal } from '@/lib/cifras-v2/cifraSectionsRepository';
 import {
@@ -126,4 +127,49 @@ export async function fetchCifraV2RolloutStats(): Promise<CifraV2RolloutStats> {
         version.default_study_loop_section,
     ).length,
   };
+}
+
+export async function setCifraVersionSearchable(versionId: string, isSearchable: boolean) {
+  return updateCifraVersion(versionId, { isSearchable });
+}
+
+export async function promoteCifraVersionToCatalog(versionId: string) {
+  const version = await fetchCifraVersionById(versionId);
+  if (!version) {
+    throw new Error('Versão V2 não encontrada.');
+  }
+
+  if (version.sections_count <= 0) {
+    throw new Error('A versão não possui seções publicáveis. Abra o editor V2 antes de enviar ao catálogo.');
+  }
+
+  if (version.status !== 'published') {
+    const sections = await fetchCifraVersionSections(versionId);
+    if (sections.length === 0) {
+      throw new Error('A versão não possui seções persistidas. Abra o editor V2 antes de publicar.');
+    }
+
+    return publishCifraVersion({
+      versionId,
+      sections: sections.map((section) => ({
+        key: section.section_key,
+        label: section.section_label,
+        order: section.section_order,
+        cueStartSeconds: section.cue_start_seconds,
+        cueEndSeconds: section.cue_end_seconds,
+        loopStartSeconds: section.loop_start_seconds,
+        loopEndSeconds: section.loop_end_seconds,
+        lines: section.content_ast,
+      })),
+      versionPatch: {
+        isSearchable: true,
+      },
+    });
+  }
+
+  if (!version.is_searchable) {
+    return updateCifraVersion(versionId, { isSearchable: true });
+  }
+
+  return version;
 }

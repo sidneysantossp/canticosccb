@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Plus, Edit, Trash2, Eye, EyeOff, Search, Music, FileText, Sparkles, PenSquare, Wand2, ExternalLink } from 'lucide-react';
+import { Plus, Edit, Trash2, Eye, EyeOff, Search, Music, FileText, Sparkles, PenSquare, Wand2, ExternalLink, Rocket } from 'lucide-react';
 import { fetchCifras, deleteCifra, toggleCifraActive, Cifra, INSTRUMENTS, CATEGORIES } from '@/api/cifras';
 import ConfirmModal from '@/components/ConfirmModal';
 import AlertModal from '@/components/ui/AlertModal';
@@ -8,6 +8,7 @@ import {
   fetchCifraV2RolloutStats,
   fetchLegacyCifraMigrationStatuses,
   migrateLegacyCifraById,
+  promoteCifraVersionToCatalog,
   type CifraV2RolloutStats,
   type LegacyCifraMigrationStatus,
 } from '@/lib/admin/cifrasV2AdminApi';
@@ -26,6 +27,7 @@ const AdminCifras: React.FC = () => {
   const [rolloutStats, setRolloutStats] = useState<CifraV2RolloutStats | null>(null);
   const [showBatchConfirm, setShowBatchConfirm] = useState(false);
   const [isBatchMigrating, setIsBatchMigrating] = useState(false);
+  const [promotingVersionId, setPromotingVersionId] = useState<string | null>(null);
   const [batchProgress, setBatchProgress] = useState({ completed: 0, total: 0 });
   const [lastBatchFailures, setLastBatchFailures] = useState<Array<{ id: number; message: string }>>([]);
   const [alert, setAlert] = useState<{ isOpen: boolean; title: string; message: string; type: 'success' | 'error' | 'info' }>({
@@ -113,6 +115,17 @@ const AdminCifras: React.FC = () => {
     return `V2 ${status.versionStatus || 'ok'}`;
   };
 
+  const getV2ReadinessIssues = (status: LegacyCifraMigrationStatus | undefined) => {
+    if (!status) return [];
+
+    const issues: string[] = [];
+    if (status.versionStatus !== 'published') issues.push('Publicar');
+    if (!status.versionIsSearchable) issues.push('Busca');
+    if (status.sectionsCount <= 0) issues.push('Seções');
+    if (!status.hasStudyDefaults) issues.push('Study');
+    return issues;
+  };
+
   const hasActiveFilters = Boolean(searchTerm || filterInstrument || filterCategory || filterV2Status !== 'all');
   const pendingCifras = filtered.filter((cifra) => !migrationStatuses[cifra.id]);
   const totalMigrated = cifras.filter((cifra) => migrationStatuses[cifra.id]).length;
@@ -182,6 +195,32 @@ const AdminCifras: React.FC = () => {
     } finally {
       setIsBatchMigrating(false);
       setBatchProgress({ completed: 0, total: 0 });
+    }
+  };
+
+  const handlePromoteVersion = async (status: LegacyCifraMigrationStatus) => {
+    if (!status.versionId) return;
+
+    try {
+      setPromotingVersionId(status.versionId);
+      await promoteCifraVersionToCatalog(status.versionId);
+      await loadCifras();
+      setAlert({
+        isOpen: true,
+        title: 'Versão enviada ao catálogo',
+        message: `A versão V2 da cifra #${status.legacyId} foi ajustada para publicação e busca.`,
+        type: 'success',
+      });
+    } catch (promotionError: any) {
+      console.error('Erro ao promover cifra V2 para o catálogo:', promotionError);
+      setAlert({
+        isOpen: true,
+        title: 'Não foi possível enviar ao catálogo',
+        message: promotionError?.message || 'Erro inesperado ao promover a versão V2.',
+        type: 'error',
+      });
+    } finally {
+      setPromotingVersionId(null);
     }
   };
 
@@ -548,7 +587,26 @@ const AdminCifras: React.FC = () => {
                             }`}>
                               {migrationStatuses[cifra.id].hasStudyDefaults ? 'Estudo pronto' : 'Sem defaults'}
                             </span>
+                            {getV2ReadinessIssues(migrationStatuses[cifra.id]).map((issue) => (
+                              <span
+                                key={`${cifra.id}-${issue}`}
+                                className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium bg-amber-500/20 text-amber-300"
+                              >
+                                Falta {issue}
+                              </span>
+                            ))}
                           </div>
+                        )}
+                        {migrationStatuses[cifra.id]?.versionId && !migrationStatuses[cifra.id].publicCatalogVisible && migrationStatuses[cifra.id].sectionsCount > 0 && (
+                          <button
+                            type="button"
+                            onClick={() => void handlePromoteVersion(migrationStatuses[cifra.id])}
+                            disabled={promotingVersionId === migrationStatuses[cifra.id].versionId}
+                            className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-primary-500/20 text-primary-300 hover:bg-primary-500/30 disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
+                          >
+                            <Rocket className="w-3.5 h-3.5" />
+                            {promotingVersionId === migrationStatuses[cifra.id].versionId ? 'Enviando...' : 'Levar ao catálogo'}
+                          </button>
                         )}
                       </div>
                     </td>
