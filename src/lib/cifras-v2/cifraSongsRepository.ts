@@ -1,4 +1,4 @@
-import { supabaseFetch, supabaseInsert, supabaseUpdate } from '@/lib/supabaseRest';
+import { supabaseAuthFetch, supabaseFetch, supabaseInsert, supabaseUpdate } from '@/lib/supabaseRest';
 import { generateSlug } from '@/lib/utils/slugUtils';
 import type { CifraSong, CifraSourceType } from '@/types/cifras-v2';
 
@@ -13,6 +13,10 @@ export interface FetchCifraSongsParams {
   onlyIndexable?: boolean;
   limit?: number;
   offset?: number;
+}
+
+export interface FetchCifraSongsOptions {
+  authenticated?: boolean;
 }
 
 export interface CreateCifraSongInput {
@@ -76,7 +80,10 @@ function buildSongPayload(data: CreateCifraSongInput | UpdateCifraSongInput) {
   return payload;
 }
 
-export async function fetchCifraSongs(params: FetchCifraSongsParams = {}): Promise<CifraSong[]> {
+export async function fetchCifraSongs(
+  params: FetchCifraSongsParams = {},
+  options: FetchCifraSongsOptions = {},
+): Promise<CifraSong[]> {
   const filters: Record<string, string> = {
     select: '*',
     order: 'hinario_numero.asc.nullslast,title.asc',
@@ -115,12 +122,17 @@ export async function fetchCifraSongs(params: FetchCifraSongsParams = {}): Promi
     filters.offset = String(params.offset);
   }
 
-  const rows = await supabaseFetch<any>('cifra_songs', filters);
+  const fetcher = options.authenticated ? supabaseAuthFetch : supabaseFetch;
+  const rows = await fetcher<any>('cifra_songs', filters);
   return rows.map(mapCifraSongRow);
 }
 
-export async function fetchCifraSongById(id: string): Promise<CifraSong | null> {
-  const rows = await supabaseFetch<any>('cifra_songs', {
+export async function fetchCifraSongById(
+  id: string,
+  options: FetchCifraSongsOptions = {},
+): Promise<CifraSong | null> {
+  const fetcher = options.authenticated ? supabaseAuthFetch : supabaseFetch;
+  const rows = await fetcher<any>('cifra_songs', {
     id: `eq.${id}`,
     select: '*',
     limit: '1',
@@ -129,8 +141,12 @@ export async function fetchCifraSongById(id: string): Promise<CifraSong | null> 
   return rows[0] ? mapCifraSongRow(rows[0]) : null;
 }
 
-export async function fetchCifraSongByCanonicalSlug(canonicalSlug: string): Promise<CifraSong | null> {
-  const rows = await supabaseFetch<any>('cifra_songs', {
+export async function fetchCifraSongByCanonicalSlug(
+  canonicalSlug: string,
+  options: FetchCifraSongsOptions = {},
+): Promise<CifraSong | null> {
+  const fetcher = options.authenticated ? supabaseAuthFetch : supabaseFetch;
+  const rows = await fetcher<any>('cifra_songs', {
     canonical_slug: `eq.${generateSlug(canonicalSlug)}`,
     select: '*',
     limit: '1',

@@ -1,4 +1,4 @@
-import { supabaseDelete, supabaseFetch, supabaseInsert, supabaseUpdate } from '@/lib/supabaseRest';
+import { supabaseAuthFetch, supabaseDelete, supabaseFetch, supabaseInsert, supabaseUpdate } from '@/lib/supabaseRest';
 import type { CifraLineNode, CifraSectionKey, CifraVersionSection } from '@/types/cifras-v2';
 
 import { mapCifraVersionSectionRow, normalizeLineNodes } from './mappers';
@@ -19,6 +19,10 @@ export interface CreateCifraVersionSectionInput {
 
 export type UpdateCifraVersionSectionInput = Partial<CreateCifraVersionSectionInput>;
 
+export interface FetchCifraVersionSectionsOptions {
+  authenticated?: boolean;
+}
+
 function buildSectionPayload(data: CreateCifraVersionSectionInput | UpdateCifraVersionSectionInput) {
   const payload: Record<string, unknown> = {};
 
@@ -37,8 +41,12 @@ function buildSectionPayload(data: CreateCifraVersionSectionInput | UpdateCifraV
   return payload;
 }
 
-export async function fetchCifraVersionSections(versionId: string): Promise<CifraVersionSection[]> {
-  const rows = await supabaseFetch<any>('cifra_version_sections', {
+export async function fetchCifraVersionSections(
+  versionId: string,
+  options: FetchCifraVersionSectionsOptions = {},
+): Promise<CifraVersionSection[]> {
+  const fetcher = options.authenticated ? supabaseAuthFetch : supabaseFetch;
+  const rows = await fetcher<any>('cifra_version_sections', {
     version_id: `eq.${versionId}`,
     select: '*',
     order: 'section_order.asc',

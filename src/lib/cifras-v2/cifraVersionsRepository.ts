@@ -1,4 +1,4 @@
-import { supabaseFetch, supabaseInsert, supabaseUpdate } from '@/lib/supabaseRest';
+import { supabaseAuthFetch, supabaseFetch, supabaseInsert, supabaseUpdate } from '@/lib/supabaseRest';
 import { generateSlug } from '@/lib/utils/slugUtils';
 import type {
   CifraArrangementType,
@@ -25,6 +25,10 @@ export interface FetchCifraVersionsParams {
   onlySearchable?: boolean;
   limit?: number;
   offset?: number;
+}
+
+export interface FetchCifraVersionsOptions {
+  authenticated?: boolean;
 }
 
 export interface CreateCifraVersionInput {
@@ -112,7 +116,10 @@ function buildVersionPayload(data: CreateCifraVersionInput | UpdateCifraVersionI
   return payload;
 }
 
-export async function fetchCifraVersions(params: FetchCifraVersionsParams = {}): Promise<CifraVersion[]> {
+export async function fetchCifraVersions(
+  params: FetchCifraVersionsParams = {},
+  options: FetchCifraVersionsOptions = {},
+): Promise<CifraVersion[]> {
   const filters: Record<string, string> = {
     select: '*',
     order: 'is_primary.desc,published_at.desc.nullslast,created_at.desc',
@@ -163,12 +170,17 @@ export async function fetchCifraVersions(params: FetchCifraVersionsParams = {}):
     filters.offset = String(params.offset);
   }
 
-  const rows = await supabaseFetch<any>('cifra_versions', filters);
+  const fetcher = options.authenticated ? supabaseAuthFetch : supabaseFetch;
+  const rows = await fetcher<any>('cifra_versions', filters);
   return rows.map(mapCifraVersionRow);
 }
 
-export async function fetchCifraVersionById(id: string): Promise<CifraVersion | null> {
-  const rows = await supabaseFetch<any>('cifra_versions', {
+export async function fetchCifraVersionById(
+  id: string,
+  options: FetchCifraVersionsOptions = {},
+): Promise<CifraVersion | null> {
+  const fetcher = options.authenticated ? supabaseAuthFetch : supabaseFetch;
+  const rows = await fetcher<any>('cifra_versions', {
     id: `eq.${id}`,
     select: '*',
     limit: '1',
@@ -177,8 +189,12 @@ export async function fetchCifraVersionById(id: string): Promise<CifraVersion | 
   return rows[0] ? mapCifraVersionRow(rows[0]) : null;
 }
 
-export async function fetchCifraVersionByPublicSlug(publicSlug: string): Promise<CifraVersion | null> {
-  const rows = await supabaseFetch<any>('cifra_versions', {
+export async function fetchCifraVersionByPublicSlug(
+  publicSlug: string,
+  options: FetchCifraVersionsOptions = {},
+): Promise<CifraVersion | null> {
+  const fetcher = options.authenticated ? supabaseAuthFetch : supabaseFetch;
+  const rows = await fetcher<any>('cifra_versions', {
     public_slug: `eq.${generateSlug(publicSlug)}`,
     select: '*',
     limit: '1',

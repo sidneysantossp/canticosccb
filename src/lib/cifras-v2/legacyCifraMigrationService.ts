@@ -155,21 +155,21 @@ function buildLegacySongMetadata(legacy: LegacyCifra) {
 
 async function findExistingSong(legacy: LegacyCifra, canonicalSlug: string, hinarioNumero: number | null): Promise<CifraSong | null> {
   if (legacy.hino_id) {
-    const byHino = await fetchCifraSongs({ hinoId: legacy.hino_id, limit: 10 });
+    const byHino = await fetchCifraSongs({ hinoId: legacy.hino_id, limit: 10 }, { authenticated: true });
     const exactLegacy = byHino.find((song) => Number(song.metadata.legacy_cifra_id) === legacy.id);
     if (exactLegacy) return exactLegacy;
     if (byHino[0]) return byHino[0];
   }
 
   if (hinarioNumero) {
-    const byNumero = await fetchCifraSongs({ hinarioNumero, limit: 10 });
+    const byNumero = await fetchCifraSongs({ hinarioNumero, limit: 10 }, { authenticated: true });
     const exactLegacy = byNumero.find((song) => Number(song.metadata.legacy_cifra_id) === legacy.id);
     if (exactLegacy) return exactLegacy;
     const exactSlug = byNumero.find((song) => song.canonical_slug === canonicalSlug);
     if (exactSlug) return exactSlug;
   }
 
-  return fetchCifraSongByCanonicalSlug(canonicalSlug);
+  return fetchCifraSongByCanonicalSlug(canonicalSlug, { authenticated: true });
 }
 
 async function ensureSongFromLegacy(
@@ -261,7 +261,7 @@ async function ensureVersionFromLegacy(
     songId: song.id,
     instrument: legacy.instrument as CifraInstrument,
     limit: 20,
-  });
+  }, { authenticated: true });
 
   const existingVersion = versions.find((version) => version.public_slug === publicSlug) || versions.find((version) => version.title === legacy.title);
   if (existingVersion) {
@@ -422,7 +422,7 @@ export async function migrateLegacyCifrasBatch(
 }
 
 export async function fetchLegacyCifraMigrationStatuses(legacyIds?: number[]): Promise<Record<number, LegacyCifraMigrationStatus>> {
-  const songs = await fetchCifraSongs({ limit: 1000 });
+  const songs = await fetchCifraSongs({ limit: 1000 }, { authenticated: true });
   const statuses: Record<number, LegacyCifraMigrationStatus> = {};
 
   for (const song of songs) {
@@ -431,7 +431,7 @@ export async function fetchLegacyCifraMigrationStatuses(legacyIds?: number[]): P
       continue;
     }
 
-    const versions = await fetchCifraVersions({ songId: song.id, limit: 20 });
+    const versions = await fetchCifraVersions({ songId: song.id, limit: 20 }, { authenticated: true });
     const preferredVersion =
       versions.find((version) => version.is_primary) ??
       versions.find((version) => version.status === 'published') ??

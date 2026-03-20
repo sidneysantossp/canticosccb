@@ -1,3 +1,17 @@
+import {
+  createCifraSong,
+  fetchCifraSongById as fetchCifraSongByIdInternal,
+} from '@/lib/cifras-v2/cifraSongsRepository';
+import {
+  createCifraVersion,
+  fetchCifraVersionById as fetchCifraVersionByIdInternal,
+} from '@/lib/cifras-v2/cifraVersionsRepository';
+import { fetchCifraVersionSections as fetchCifraVersionSectionsInternal } from '@/lib/cifras-v2/cifraSectionsRepository';
+import {
+  fetchCifraVersionChordOverrides as fetchCifraVersionChordOverridesInternal,
+  type FetchCifraVersionChordOverridesOptions,
+} from '@/lib/cifras-v2/cifraVersionChordOverridesRepository';
+
 export {
   createCifraChordShape,
   deleteCifraChordShape,
@@ -14,10 +28,8 @@ export {
 } from '@/lib/cifras-v2/cifraChordShapesRepository';
 export {
   deleteCifraVersionChordOverride,
-  fetchCifraVersionChordOverrides,
   resolveCifraVersionChordOverride,
   upsertCifraVersionChordOverride,
-  type FetchCifraVersionChordOverridesOptions,
   type UpsertCifraVersionChordOverrideInput,
 } from '@/lib/cifras-v2/cifraVersionChordOverridesRepository';
 export {
@@ -41,10 +53,6 @@ export {
   type LegacyCifraMigrationPreview,
   type LegacyCifraMigrationResult,
 } from '@/lib/cifras-v2/legacyCifraMigrationService';
-
-export { createCifraSong, fetchCifraSongById } from '@/lib/cifras-v2/cifraSongsRepository';
-export { createCifraVersion, fetchCifraVersionById } from '@/lib/cifras-v2/cifraVersionsRepository';
-export { fetchCifraVersionSections } from '@/lib/cifras-v2/cifraSectionsRepository';
 export {
   fetchCifraEngagementSnapshot,
   fetchCifraEngagementSnapshots,
@@ -59,3 +67,27 @@ export {
   type CifraVersionSectionDraft,
 } from '@/lib/cifras-v2/cifraPublicationService';
 export { parsePlainTextSectionLines, serializeSectionLines } from '@/lib/cifras-v2/legacyCifraParser';
+
+export { createCifraSong, createCifraVersion, type FetchCifraVersionChordOverridesOptions };
+
+export async function fetchCifraSongById(id: string) {
+  return fetchCifraSongByIdInternal(id, { authenticated: true });
+}
+
+export async function fetchCifraVersionById(id: string) {
+  return fetchCifraVersionByIdInternal(id, { authenticated: true });
+}
+
+export async function fetchCifraVersionSections(versionId: string) {
+  return fetchCifraVersionSectionsInternal(versionId, { authenticated: true });
+}
+
+export async function fetchCifraVersionChordOverrides(
+  versionId: string,
+  options: FetchCifraVersionChordOverridesOptions = {},
+) {
+  return fetchCifraVersionChordOverridesInternal(versionId, {
+    ...options,
+    authenticated: options.authenticated ?? true,
+  });
+}
