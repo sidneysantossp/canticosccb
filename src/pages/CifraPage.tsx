@@ -12,6 +12,7 @@ import {
   fetchCifraEngagementSnapshot,
   fetchPublicCifraPageBySlug,
   removeCifraFavorite,
+  resolveCifraVersionChordOverride,
   scoreCifraChordNameMatch,
   serializeSectionLines,
   submitCifraReport,
@@ -24,7 +25,7 @@ import { extractHymnNumber, findRelatedHinario, findRelatedHymn } from '@/lib/hy
 import { hinosApi } from '@/lib/api-client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/contexts/ToastContext';
-import { CIFRA_V2_INSTRUMENTS, type CifraChordShape, type CifraInstrument, type CifraReportType, type CifraVersionSection } from '@/types/cifras-v2';
+import { CIFRA_V2_INSTRUMENTS, type CifraChordShape, type CifraInstrument, type CifraReportType, type CifraVersionChordOverride, type CifraVersionSection } from '@/types/cifras-v2';
 import type { Hino } from '@/types';
 import { usePlayerStore } from '@/stores/playerStore';
 import {
@@ -107,6 +108,32 @@ function sortChordShapeVariantsForContext(
 
     return left.variation_name.localeCompare(right.variation_name);
   });
+}
+
+function prioritizeShapesForEditorialOverride(
+  shapes: CifraChordShape[],
+  overrideShapeId?: string | null,
+): CifraChordShape[] {
+  if (!overrideShapeId) {
+    return shapes;
+  }
+
+  const overrideIndex = shapes.findIndex((shape) => shape.id === overrideShapeId);
+  if (overrideIndex <= 0) {
+    return shapes;
+  }
+
+  return [shapes[overrideIndex], ...shapes.slice(0, overrideIndex), ...shapes.slice(overrideIndex + 1)];
+}
+
+function getEditorialOverrideLabel(override?: CifraVersionChordOverride | null): string | null {
+  if (!override) {
+    return null;
+  }
+
+  return override.applies_to_key?.trim()
+    ? `Editorial · ${override.applies_to_key.trim()}`
+    : 'Editorial';
 }
 
 function parseDurationLabelToSeconds(value?: string | null): number | null {
@@ -408,11 +435,16 @@ const CifraPage: React.FC = () => {
           const sortedShapes = Object.fromEntries(
             Object.entries(shapes).map(([chord, options]) => [
               chord,
-              sortChordShapeVariantsForContext(chord, options, {
-                preferredKey: selectedKey,
-                originalKey: cifra.original_key,
-                progression: visibleChords,
-              }),
+              prioritizeShapesForEditorialOverride(
+                sortChordShapeVariantsForContext(chord, options, {
+                  preferredKey: selectedKey,
+                  originalKey: cifra.original_key,
+                  progression: visibleChords,
+                }),
+                isCifraV2(cifra)
+                  ? resolveCifraVersionChordOverride(cifra.chord_overrides, chord, selectedKey)?.preferred_shape_id
+                  : null,
+              ),
             ]),
           );
 
@@ -423,6 +455,15 @@ const CifraPage: React.FC = () => {
             visibleChords.forEach((chord) => {
               const options = sortedShapes[chord] || [];
               if (options.length === 0) {
+                return;
+              }
+
+              const override = isCifraV2(cifra)
+                ? resolveCifraVersionChordOverride(cifra.chord_overrides, chord, selectedKey)
+                : null;
+              const overrideStillExists = override && options.some((shape) => shape.id === override.preferred_shape_id);
+              if (overrideStillExists) {
+                next[chord] = override.preferred_shape_id;
                 return;
               }
 
@@ -911,6 +952,9 @@ const CifraPage: React.FC = () => {
     .slice(0, 12)
     .map((chord) => {
       const databaseShapes = chordShapeVariants[chord];
+      const editorialOverride = isCifraV2(cifra)
+        ? resolveCifraVersionChordOverride(cifra.chord_overrides, chord, selectedKey)
+        : null;
       if (databaseShapes?.length) {
         const selectedShape = databaseShapes.find((shape) => shape.id === selectedShapeIds[chord]) || databaseShapes[0];
         return {
@@ -918,6 +962,7 @@ const CifraPage: React.FC = () => {
           kind: 'database' as const,
           shapes: databaseShapes,
           selectedShape,
+          editorialOverride,
         };
       }
 
@@ -935,7 +980,7 @@ const CifraPage: React.FC = () => {
       return null;
     })
     .filter((item): item is
-      | { chord: string; kind: 'database'; shapes: CifraChordShape[]; selectedShape: CifraChordShape }
+      | { chord: string; kind: 'database'; shapes: CifraChordShape[]; selectedShape: CifraChordShape; editorialOverride: CifraVersionChordOverride | null }
       | { chord: string; kind: 'fallback'; diagram: ChordDiagram } => Boolean(item));
 
   const handleShapeSelection = (chord: string, shapeId: string) => {
@@ -2006,6 +2051,7 @@ const CifraPage: React.FC = () => {
                   selectedShapeId={item.selectedShape.id}
                   onSelectShape={handleShapeSelection}
                   leftHanded={showLeftHandedDiagrams}
+                  editorialOverride={item.editorialOverride}
                   matchOptions={{
                     preferredKey: selectedKey,
                     originalKey: cifra.original_key,
@@ -2594,6 +2640,7 @@ interface DatabaseChordShapeCardProps {
   selectedShapeId: string;
   onSelectShape: (chord: string, shapeId: string) => void;
   leftHanded?: boolean;
+  editorialOverride?: CifraVersionChordOverride | null;
   matchOptions: {
     preferredKey?: string | null;
     originalKey?: string | null;
@@ -2620,6 +2667,7 @@ const DatabaseChordShapeCard: React.FC<DatabaseChordShapeCardProps> = ({
   selectedShapeId,
   onSelectShape,
   leftHanded = false,
+  editorialOverride,
   matchOptions,
 }) => {
   const shape = shapes.find((item) => item.id === selectedShapeId) || shapes[0];
@@ -2627,6 +2675,8 @@ const DatabaseChordShapeCard: React.FC<DatabaseChordShapeCardProps> = ({
   const notes = buildShapeNotes(shape);
   const explanation = explainCifraChordNameMatch(chord, shape.chord_name, matchOptions);
   const isPrimaryShape = shapes[0]?.id === shape.id;
+  const isEditorialShape = editorialOverride?.preferred_shape_id === shape.id;
+  const editorialLabel = getEditorialOverrideLabel(editorialOverride);
 
   return (
     <div className="flex-shrink-0 rounded-2xl border border-white/10 bg-background-secondary px-4 py-3 text-center min-w-[168px] max-w-[198px]">
@@ -2649,6 +2699,11 @@ const DatabaseChordShapeCard: React.FC<DatabaseChordShapeCardProps> = ({
           {leftHanded && shape.instrument !== 'teclado' ? (
             <span className="rounded-full border border-white/10 bg-white/5 px-2 py-0.5 text-[10px] font-medium text-gray-300">
               Canhoto
+            </span>
+          ) : null}
+          {isEditorialShape && editorialLabel ? (
+            <span className="rounded-full border border-amber-500/30 bg-amber-500/10 px-2 py-0.5 text-[10px] font-medium text-amber-200">
+              {editorialLabel}
             </span>
           ) : null}
           {shapes.length > 1 && isPrimaryShape ? (

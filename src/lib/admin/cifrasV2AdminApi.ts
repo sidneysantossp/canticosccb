@@ -13,6 +13,14 @@ export {
   type UpsertCifraChordShapeInput,
 } from '@/lib/cifras-v2/cifraChordShapesRepository';
 export {
+  deleteCifraVersionChordOverride,
+  fetchCifraVersionChordOverrides,
+  resolveCifraVersionChordOverride,
+  upsertCifraVersionChordOverride,
+  type FetchCifraVersionChordOverridesOptions,
+  type UpsertCifraVersionChordOverrideInput,
+} from '@/lib/cifras-v2/cifraVersionChordOverridesRepository';
+export {
   CIFRA_CHORD_PRESET_GROUPS,
   findCifraChordShapePreset,
   findCifraChordShapePresetMatch,

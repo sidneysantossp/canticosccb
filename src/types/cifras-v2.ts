@@ -167,6 +167,17 @@ export interface CifraChordShape {
   updated_at: string;
 }
 
+export interface CifraVersionChordOverride {
+  id: string;
+  version_id: string;
+  chord_name: string;
+  applies_to_key?: string | null;
+  preferred_shape_id: string;
+  notes?: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface CifraRevisionHistory {
   id: string;
   version_id: string;

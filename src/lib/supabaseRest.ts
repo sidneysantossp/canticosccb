@@ -159,6 +159,37 @@ export async function supabaseFetch<T>(table: string, params: Record<string, str
   }
 }
 
+export async function supabaseAuthFetch<T>(table: string, params: Record<string, string> = {}): Promise<T[]> {
+  if (!isSupabaseConfigured) {
+    console.warn(`[supabaseAuthFetch] Supabase not configured, returning empty array for table: ${table}`);
+    return [];
+  }
+
+  const url = buildUrl(table, params);
+  console.log(`[supabaseAuthFetch] Fetching ${table}:`, url.toString());
+
+  try {
+    const headers = await buildAuthHeaders();
+    const response = await fetch(url.toString(), {
+      method: 'GET',
+      headers,
+    });
+
+    if (!response.ok) {
+      const text = await response.text().catch(() => '');
+      console.error(`[supabaseAuthFetch] Error ${response.status} for ${table}:`, text);
+      throw new Error(`[supabaseRest] ${response.status} ${response.statusText} - ${text}`);
+    }
+
+    const payload = (await response.json()) as T[];
+    return Array.isArray(payload) ? payload : [];
+  } catch (error) {
+    const msg = error instanceof Error ? error.message : String(error);
+    console.error(`[supabaseAuthFetch] Exception for ${table}:`, msg);
+    throw error;
+  }
+}
+
 export async function supabaseInsert<T>(table: string, data: any): Promise<T | null> {
   if (!isSupabaseConfigured) {
     console.warn(`[supabaseInsert] Supabase not configured`);

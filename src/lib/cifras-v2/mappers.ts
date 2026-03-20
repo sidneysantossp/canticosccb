@@ -13,6 +13,7 @@ import type {
   CifraSong,
   CifraUsageEvent,
   CifraVersion,
+  CifraVersionChordOverride,
   CifraVersionSection,
 } from '@/types/cifras-v2';
 
@@ -232,6 +233,19 @@ export function mapCifraChordShapeRow(row: any): CifraChordShape {
     priority: asNumber(row.priority, 0),
     is_left_handed_supported: asBoolean(row.is_left_handed_supported, false),
     is_active: asBoolean(row.is_active, true),
+    created_at: asString(row.created_at, new Date().toISOString()),
+    updated_at: asString(row.updated_at, new Date().toISOString()),
+  };
+}
+
+export function mapCifraVersionChordOverrideRow(row: any): CifraVersionChordOverride {
+  return {
+    id: asString(row.id),
+    version_id: asString(row.version_id),
+    chord_name: asString(row.chord_name),
+    applies_to_key: asNullableString(row.applies_to_key),
+    preferred_shape_id: asString(row.preferred_shape_id),
+    notes: asNullableString(row.notes),
     created_at: asString(row.created_at, new Date().toISOString()),
     updated_at: asString(row.updated_at, new Date().toISOString()),
   };

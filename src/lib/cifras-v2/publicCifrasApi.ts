@@ -3,10 +3,12 @@ import type {
   CifraInstrument,
   CifraPublicCatalogItem,
   CifraVersion,
+  CifraVersionChordOverride,
   CifraVersionSection,
 } from '@/types/cifras-v2';
 
 import { fetchCifraVersionSections } from './cifraSectionsRepository';
+import { fetchCifraVersionChordOverrides } from './cifraVersionChordOverridesRepository';
 import { serializeSectionLines } from './legacyCifraParser';
 import {
   fetchCifraVersionById,
@@ -33,6 +35,7 @@ export interface PublicCifraPageData extends Omit<Cifra, 'id'> {
   hinario_numero: number | null;
   available_versions: PublicCifraVersionOption[];
   sections: CifraVersionSection[];
+  chord_overrides: CifraVersionChordOverride[];
   seo_title?: string | null;
   seo_description?: string | null;
   seo_keywords?: string | null;
@@ -122,6 +125,7 @@ function mapPublicCifraPageData(
   catalog: CifraPublicCatalogItem,
   version: CifraVersion,
   sections: CifraVersionSection[],
+  chordOverrides: CifraVersionChordOverride[],
   siblings: CifraPublicCatalogItem[],
 ): PublicCifraPageData {
   return {
@@ -147,6 +151,7 @@ function mapPublicCifraPageData(
     updated_at: version.updated_at,
     available_versions: mapSiblingVersions(siblings),
     sections,
+    chord_overrides: chordOverrides,
     seo_title: catalog.seo_title,
     seo_description: catalog.seo_description,
     seo_keywords: catalog.seo_keywords,
@@ -175,9 +180,10 @@ export async function fetchPublicCifraPageBySlug(publicSlug: string): Promise<Pu
     return null;
   }
 
-  const [version, sections, siblings] = await Promise.all([
+  const [version, sections, chordOverrides, siblings] = await Promise.all([
     fetchCifraVersionById(catalog.version_id),
     fetchCifraVersionSections(catalog.version_id),
+    fetchCifraVersionChordOverrides(catalog.version_id),
     fetchPublicCifraCatalog({ songId: catalog.song_id, limit: 50 }),
   ]);
 
@@ -185,7 +191,7 @@ export async function fetchPublicCifraPageBySlug(publicSlug: string): Promise<Pu
     return null;
   }
 
-  return mapPublicCifraPageData(catalog, version, sections, siblings);
+  return mapPublicCifraPageData(catalog, version, sections, chordOverrides, siblings);
 }
 
 export async function fetchMergedPublicCifrasList(): Promise<Array<Cifra | PublicCifraPageData>> {
@@ -224,6 +230,7 @@ export async function fetchMergedPublicCifrasList(): Promise<Array<Cifra | Publi
     updated_at: item.published_at || new Date().toISOString(),
     available_versions: [],
     sections: [],
+    chord_overrides: [],
     seo_title: item.seo_title,
     seo_description: item.seo_description,
     seo_keywords: item.seo_keywords,

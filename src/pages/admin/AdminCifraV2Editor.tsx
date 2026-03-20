@@ -7,18 +7,22 @@ import {
   createCifraChordShape,
   createCifraSong,
   createCifraVersion,
+  deleteCifraVersionChordOverride,
   fetchCifraEngagementSnapshot,
   fetchCifraChordShapeVariants,
   fetchCifraReportsByVersion,
   fetchCifraSongById,
   fetchCifraVersionById,
+  fetchCifraVersionChordOverrides,
   fetchCifraVersionSections,
   findCifraChordShapePresetMatch,
   parsePlainTextSectionLines,
   publishCifraVersion,
+  resolveCifraVersionChordOverride,
   saveCifraVersionDraft,
   serializeSectionLines,
   submitCifraVersionForReview,
+  upsertCifraVersionChordOverride,
   updateCifraChordShape,
   updateCifraReportStatus,
   type CifraChordShapePreset,
@@ -34,6 +38,7 @@ import {
   type CifraReportStatus,
   type CifraSectionKey,
   type CifraSourceType,
+  type CifraVersionChordOverride,
 } from '@/types/cifras-v2';
 import { extractChords } from '@/utils/chordUtils';
 
@@ -259,6 +264,31 @@ function getChordPresetMatchCopy(match: CifraChordShapePresetMatch): {
   }
 }
 
+function normalizeOverrideText(value?: string | null): string {
+  return String(value || '').trim().toLowerCase();
+}
+
+function getOverrideScopeLabel(appliesToKey?: string | null): string {
+  return appliesToKey?.trim() ? `Tom ${appliesToKey.trim()}` : 'Qualquer tom';
+}
+
+function getChordOverrideShapeLabel(
+  override: CifraVersionChordOverride,
+  variants: CifraChordShape[],
+): string {
+  const matchedShape = variants.find((variant) => variant.id === override.preferred_shape_id);
+  if (!matchedShape) {
+    return 'Shape definido';
+  }
+
+  const variationLabel = matchedShape.variation_name || 'default';
+  if (normalizeOverrideText(matchedShape.chord_name) !== normalizeOverrideText(override.chord_name)) {
+    return `${variationLabel} · ${matchedShape.chord_name}`;
+  }
+
+  return variationLabel;
+}
+
 const AdminCifraV2Editor: React.FC = () => {
   const navigate = useNavigate();
   const { versionId } = useParams<{ versionId: string }>();
@@ -272,9 +302,13 @@ const AdminCifraV2Editor: React.FC = () => {
   const [updatingReportId, setUpdatingReportId] = useState<string | null>(null);
   const [isLoadingChordShapes, setIsLoadingChordShapes] = useState(false);
   const [isSavingInlineShape, setIsSavingInlineShape] = useState(false);
+  const [isSavingChordOverride, setIsSavingChordOverride] = useState(false);
   const [chordShapeVariants, setChordShapeVariants] = useState<Record<string, CifraChordShape[]>>({});
+  const [chordOverrides, setChordOverrides] = useState<CifraVersionChordOverride[]>([]);
   const [selectedChordName, setSelectedChordName] = useState('');
   const [selectedShapeId, setSelectedShapeId] = useState('');
+  const [overrideKeyInput, setOverrideKeyInput] = useState('');
+  const [overrideNotes, setOverrideNotes] = useState('');
   const [inlineShapeForm, setInlineShapeForm] = useState<EditableChordShape>(createEmptyChordShape('violao'));
   const [songId, setSongId] = useState('');
   const [songForm, setSongForm] = useState({
@@ -353,6 +387,9 @@ const AdminCifraV2Editor: React.FC = () => {
       setSections([{ key: 'verse', label: 'Corpo', text: '', cueStart: '', cueEnd: '', loopStart: '', loopEnd: '' }]);
       setSelectedChordName('');
       setSelectedShapeId('');
+      setOverrideKeyInput('');
+      setOverrideNotes('');
+      setChordOverrides([]);
       setInlineShapeForm(createEmptyChordShape('violao'));
       setError(null);
       setIsLoading(false);
@@ -369,9 +406,10 @@ const AdminCifraV2Editor: React.FC = () => {
         return;
       }
 
-      const [song, versionSections] = await Promise.all([
+      const [song, versionSections, overrideRows] = await Promise.all([
         fetchCifraSongById(version.song_id),
         fetchCifraVersionSections(version.id),
+        fetchCifraVersionChordOverrides(version.id, { authenticated: true }),
       ]);
 
       setSongId(version.song_id);
@@ -416,6 +454,7 @@ const AdminCifraV2Editor: React.FC = () => {
             }))
           : [{ key: 'verse', label: 'Corpo', text: '', cueStart: '', cueEnd: '', loopStart: '', loopEnd: '' }],
       );
+      setChordOverrides(overrideRows);
 
       const [engagementSnapshot, reportRows] = await Promise.all([
         fetchCifraEngagementSnapshot(version.id),
@@ -541,6 +580,16 @@ const AdminCifraV2Editor: React.FC = () => {
   );
 
   const selectedChordPreset = selectedChordName ? chordPresetSuggestions[selectedChordName] || null : null;
+  const preferredOverrideKey = useMemo(
+    () => form.preferredKey.trim() || form.originalKey.trim(),
+    [form.originalKey, form.preferredKey],
+  );
+  const selectedChordOverride = useMemo(
+    () => (selectedChordName
+      ? resolveCifraVersionChordOverride(chordOverrides, selectedChordName, overrideKeyInput.trim() || null)
+      : null),
+    [chordOverrides, overrideKeyInput, selectedChordName],
+  );
 
   useEffect(() => {
     if (detectedChords.length === 0) {
@@ -552,6 +601,18 @@ const AdminCifraV2Editor: React.FC = () => {
 
     setSelectedChordName((current) => (detectedChords.includes(current) ? current : detectedChords[0]));
   }, [detectedChords, form.instrument]);
+
+  useEffect(() => {
+    if (!selectedChordName) {
+      setOverrideKeyInput(preferredOverrideKey);
+      setOverrideNotes('');
+      return;
+    }
+
+    const resolvedOverride = resolveCifraVersionChordOverride(chordOverrides, selectedChordName, preferredOverrideKey);
+    setOverrideKeyInput(resolvedOverride ? resolvedOverride.applies_to_key || '' : preferredOverrideKey);
+    setOverrideNotes(resolvedOverride?.notes || '');
+  }, [chordOverrides, preferredOverrideKey, selectedChordName]);
 
   useEffect(() => {
     if (!selectedChordName) {
@@ -759,6 +820,100 @@ const AdminCifraV2Editor: React.FC = () => {
 
   const removeSection = (index: number) => {
     setSections((current) => current.filter((_, sectionIndex) => sectionIndex !== index));
+  };
+
+  const handleSaveChordOverride = async () => {
+    if (!versionId) {
+      setAlert({
+        isOpen: true,
+        title: 'Salve a cifra primeiro',
+        message: 'Crie a versão da cifra antes de definir overrides editoriais de acorde.',
+        type: 'info',
+      });
+      return;
+    }
+
+    if (!selectedChordName || !selectedShapeId) {
+      setAlert({
+        isOpen: true,
+        title: 'Selecione uma variação',
+        message: 'Escolha um acorde e uma variação salva antes de definir o override editorial.',
+        type: 'info',
+      });
+      return;
+    }
+
+    try {
+      setIsSavingChordOverride(true);
+      const savedOverride = await upsertCifraVersionChordOverride({
+        versionId,
+        chordName: selectedChordName,
+        preferredShapeId: selectedShapeId,
+        appliesToKey: overrideKeyInput.trim() || null,
+        notes: overrideNotes.trim() || null,
+      });
+
+      setChordOverrides((current) => {
+        const normalizedChord = normalizeOverrideText(savedOverride.chord_name);
+        const normalizedKey = normalizeOverrideText(savedOverride.applies_to_key);
+        const remaining = current.filter((override) => !(
+          normalizeOverrideText(override.chord_name) === normalizedChord
+          && normalizeOverrideText(override.applies_to_key) === normalizedKey
+        ));
+        return [...remaining, savedOverride];
+      });
+
+      setAlert({
+        isOpen: true,
+        title: 'Override salvo',
+        message: 'A cifra pública agora pode abrir esta variação como padrão para o acorde selecionado.',
+        type: 'success',
+      });
+    } catch (overrideError: any) {
+      console.error('Erro ao salvar override editorial do acorde:', overrideError);
+      setAlert({
+        isOpen: true,
+        title: 'Erro ao salvar override',
+        message: overrideError?.message || 'Não foi possível salvar o override editorial do acorde.',
+        type: 'error',
+      });
+    } finally {
+      setIsSavingChordOverride(false);
+    }
+  };
+
+  const handleDeleteChordOverride = async () => {
+    if (!versionId || !selectedChordName || !selectedChordOverride) {
+      return;
+    }
+
+    try {
+      setIsSavingChordOverride(true);
+      await deleteCifraVersionChordOverride(versionId, selectedChordName, selectedChordOverride.applies_to_key || null);
+      setChordOverrides((current) =>
+        current.filter((override) => !(
+          normalizeOverrideText(override.chord_name) === normalizeOverrideText(selectedChordName)
+          && normalizeOverrideText(override.applies_to_key) === normalizeOverrideText(selectedChordOverride.applies_to_key)
+        )),
+      );
+      setOverrideNotes('');
+      setAlert({
+        isOpen: true,
+        title: 'Override removido',
+        message: 'A cifra pública voltou a usar a heurística padrão para este acorde e tom.',
+        type: 'success',
+      });
+    } catch (overrideError: any) {
+      console.error('Erro ao remover override editorial do acorde:', overrideError);
+      setAlert({
+        isOpen: true,
+        title: 'Erro ao remover override',
+        message: overrideError?.message || 'Não foi possível remover o override editorial do acorde.',
+        type: 'error',
+      });
+    } finally {
+      setIsSavingChordOverride(false);
+    }
   };
 
   const handleCreateInlineVariation = (chordName = selectedChordName) => {
@@ -1271,6 +1426,9 @@ const AdminCifraV2Editor: React.FC = () => {
                 {detectedChords.map((chord) => {
                   const variants = chordShapeVariants[chord] || [];
                   const primaryVariant = variants[0];
+                  const overridesForChord = chordOverrides.filter(
+                    (override) => normalizeOverrideText(override.chord_name) === normalizeOverrideText(chord),
+                  );
                   const shapeLink = `/admin/cifras-v2/shapes?instrument=${encodeURIComponent(form.instrument)}&chord=${encodeURIComponent(chord)}`;
                   const presetMatch = chordPresetSuggestions[chord];
                   const presetCopy = presetMatch ? getChordPresetMatchCopy(presetMatch) : null;
@@ -1340,6 +1498,19 @@ const AdminCifraV2Editor: React.FC = () => {
                           </button>
                         </div>
                       ) : null}
+
+                      {overridesForChord.length > 0 ? (
+                        <div className="mt-3 flex flex-wrap gap-2">
+                          {overridesForChord.map((override) => (
+                            <span
+                              key={override.id}
+                              className="rounded-full border border-amber-500/30 bg-amber-500/10 px-2.5 py-1 text-xs text-amber-200"
+                            >
+                              {getOverrideScopeLabel(override.applies_to_key)} · {getChordOverrideShapeLabel(override, variants)}
+                            </span>
+                          ))}
+                        </div>
+                      ) : null}
                     </div>
                   );
                 })}
@@ -1394,6 +1565,77 @@ const AdminCifraV2Editor: React.FC = () => {
                     </div>
                   </div>
                 ) : null}
+
+                <div className="rounded-xl border border-amber-500/20 bg-amber-500/5 p-4">
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                    <div>
+                      <h3 className="text-sm font-semibold text-white">Override editorial desta versão</h3>
+                      <p className="mt-1 text-sm text-gray-300">
+                        Escolha qual variação deve abrir por padrão na cifra pública para este acorde.
+                      </p>
+                    </div>
+                    <span className="rounded-full border border-amber-500/30 bg-amber-500/10 px-3 py-1 text-xs text-amber-200">
+                      {selectedChordOverride
+                        ? `${getOverrideScopeLabel(selectedChordOverride.applies_to_key)} ativo`
+                        : 'Sem override salvo'}
+                    </span>
+                  </div>
+
+                  <div className="mt-4 grid gap-4 md:grid-cols-2">
+                    <label className="space-y-2">
+                      <span className="text-sm text-gray-300">Tom do override</span>
+                      <input
+                        type="text"
+                        value={overrideKeyInput}
+                        onChange={(event) => setOverrideKeyInput(event.target.value)}
+                        placeholder="Ex: D, Gm ou deixe vazio para qualquer tom"
+                        className="w-full rounded-xl border border-gray-700 bg-gray-800 px-4 py-3 text-white"
+                      />
+                    </label>
+
+                    <label className="space-y-2">
+                      <span className="text-sm text-gray-300">Observação interna</span>
+                      <input
+                        type="text"
+                        value={overrideNotes}
+                        onChange={(event) => setOverrideNotes(event.target.value)}
+                        placeholder="Opcional. Ex: melhor abertura para o arranjo oficial"
+                        className="w-full rounded-xl border border-gray-700 bg-gray-800 px-4 py-3 text-white"
+                      />
+                    </label>
+                  </div>
+
+                  <div className="mt-3 text-xs text-gray-400">
+                    {selectedChordOverride ? (
+                      <>
+                        Override atual: <span className="text-white">{getOverrideScopeLabel(selectedChordOverride.applies_to_key)}</span>
+                        {' · '}
+                        <span className="text-white">{getChordOverrideShapeLabel(selectedChordOverride, selectedChordVariants)}</span>
+                      </>
+                    ) : (
+                      'Se o campo de tom ficar vazio, o shape selecionado abre por padrão em qualquer tom desta versão.'
+                    )}
+                  </div>
+
+                  <div className="mt-4 flex flex-wrap gap-2">
+                    <button
+                      type="button"
+                      onClick={() => void handleSaveChordOverride()}
+                      disabled={isSavingChordOverride || !selectedShapeId}
+                      className="inline-flex items-center justify-center rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-2 text-sm text-amber-100 hover:bg-amber-500/20 transition-colors disabled:cursor-not-allowed disabled:opacity-60"
+                    >
+                      {isSavingChordOverride ? 'Salvando override...' : 'Salvar override'}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => void handleDeleteChordOverride()}
+                      disabled={isSavingChordOverride || !selectedChordOverride}
+                      className="inline-flex items-center justify-center rounded-xl border border-gray-700 bg-gray-800 px-4 py-2 text-sm text-white hover:bg-gray-700 transition-colors disabled:cursor-not-allowed disabled:opacity-60"
+                    >
+                      Limpar override
+                    </button>
+                  </div>
+                </div>
 
                 <div className="grid gap-4 md:grid-cols-2">
                   <label className="space-y-2">
