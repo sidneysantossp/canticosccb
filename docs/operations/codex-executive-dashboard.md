@@ -300,10 +300,10 @@ SEO continua importante, mas o próximo gargalo relevante é catálogo e rollout
 
 ## Relação com os demais documentos
 
+- [codex-first-operational-assessment.md](/Applications/MAMP/htdocs/canticosccb-2026/docs/operations/codex-first-operational-assessment.md)
 - [codex-official-subagents-roster.md](/Applications/MAMP/htdocs/canticosccb-2026/docs/operations/codex-official-subagents-roster.md)
 - [codex-active-fronts-board.md](/Applications/MAMP/htdocs/canticosccb-2026/docs/operations/codex-active-fronts-board.md)
 - [codex-current-cycle-plan.md](/Applications/MAMP/htdocs/canticosccb-2026/docs/operations/codex-current-cycle-plan.md)
 - [codex-kickoff-templates.md](/Applications/MAMP/htdocs/canticosccb-2026/docs/operations/codex-kickoff-templates.md)
 - [codex-subagents-playbook.md](/Applications/MAMP/htdocs/canticosccb-2026/docs/operations/codex-subagents-playbook.md)
 - [codex-subagents-prompt-kit.md](/Applications/MAMP/htdocs/canticosccb-2026/docs/operations/codex-subagents-prompt-kit.md)
-
