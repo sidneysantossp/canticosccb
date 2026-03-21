@@ -94,6 +94,7 @@ const ForgotPasswordPage: React.FC = () => {
                   </label>
                   <input
                     type="email"
+                    autoComplete="email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     required
@@ -125,18 +126,20 @@ const ForgotPasswordPage: React.FC = () => {
           )}
         </div>
 
-        {/* Help Text */}
-        <div className="mt-6 text-center">
-          <p className="text-text-muted text-sm">
-            Não recebeu o email? Verifique sua pasta de spam ou{' '}
-            <button
-              onClick={() => setSuccess(false)}
-              className="text-primary-500 hover:text-primary-400 underline"
-            >
-              tente novamente
-            </button>
-          </p>
-        </div>
+        {success && (
+          <div className="mt-6 text-center">
+            <p className="text-text-muted text-sm">
+              Não recebeu o email? Verifique sua pasta de spam ou{' '}
+              <button
+                type="button"
+                onClick={() => setSuccess(false)}
+                className="text-primary-500 hover:text-primary-400 underline"
+              >
+                tente novamente
+              </button>
+            </p>
+          </div>
+        )}
       </div>
     </div>
   );
