@@ -149,6 +149,8 @@ const AdminCifras: React.FC = () => {
     }
 
     const failures: Array<{ id: number; message: string }> = [];
+    let promotedCount = 0;
+    let migratedCount = 0;
 
     try {
       setShowBatchConfirm(false);
@@ -163,6 +165,7 @@ const AdminCifras: React.FC = () => {
             publishActive: true,
             markAsPrimary: true,
           });
+          migratedCount += 1;
         } catch (migrationError: any) {
           failures.push({
             id: legacyId,
@@ -174,6 +177,33 @@ const AdminCifras: React.FC = () => {
         }
       }
 
+      const refreshedStatuses = await fetchLegacyCifraMigrationStatuses(targetIds);
+      const statusesToPromote = targetIds
+        .map((legacyId) => refreshedStatuses[legacyId])
+        .filter((status): status is LegacyCifraMigrationStatus => canPromoteVersion(status));
+
+      if (statusesToPromote.length > 0) {
+        setBatchProgress({ completed, total: targetIds.length + statusesToPromote.length });
+
+        for (const status of statusesToPromote) {
+          try {
+            if (!status.versionId) {
+              throw new Error('Versão V2 ausente para promoção.');
+            }
+            await promoteCifraVersionToCatalog(status.versionId);
+            promotedCount += 1;
+          } catch (promotionError: any) {
+            failures.push({
+              id: status.legacyId,
+              message: promotionError?.message || 'Erro desconhecido durante a promoção para o catálogo.',
+            });
+          } finally {
+            completed += 1;
+            setBatchProgress({ completed, total: targetIds.length + statusesToPromote.length });
+          }
+        }
+      }
+
       await loadCifras();
       setLastBatchFailures(failures);
 
@@ -181,24 +211,24 @@ const AdminCifras: React.FC = () => {
         const failedIds = failures.slice(0, 4).map((item) => `#${item.id}`).join(', ');
         setAlert({
           isOpen: true,
-          title: 'Migração concluída com pendências',
-          message: `${targetIds.length - failures.length} cifras foram migradas neste lote. ${failures.length} falharam (${failedIds}${failures.length > 4 ? ', ...' : ''}).`,
+          title: 'Rollout concluído com pendências',
+          message: `${migratedCount} cifras foram migradas e ${promotedCount} versões foram levadas ao catálogo neste lote. ${failures.length} etapas falharam (${failedIds}${failures.length > 4 ? ', ...' : ''}).`,
           type: 'error',
         });
       } else {
         setAlert({
           isOpen: true,
-          title: 'Backfill concluído',
-          message: `${targetIds.length} cifras legadas foram migradas neste lote para o módulo V2.`,
+          title: 'Rollout concluído',
+          message: `${migratedCount} cifras legadas foram migradas e ${promotedCount} versões foram publicadas no catálogo V2 neste lote.`,
           type: 'success',
         });
       }
     } catch (batchError: any) {
-      console.error('Erro ao executar backfill das cifras:', batchError);
+      console.error('Erro ao executar rollout das cifras V2:', batchError);
       setAlert({
         isOpen: true,
-        title: 'Erro no backfill',
-        message: batchError?.message || 'Não foi possível migrar as cifras pendentes.',
+        title: 'Erro no rollout',
+        message: batchError?.message || 'Não foi possível concluir o lote de rollout das cifras pendentes.',
         type: 'error',
       });
     } finally {
@@ -344,9 +374,9 @@ const AdminCifras: React.FC = () => {
           >
             <Wand2 className="w-5 h-5" />
             {isBatchMigrating
-              ? `Migrando ${batchProgress.completed}/${batchProgress.total}`
+              ? `Processando ${batchProgress.completed}/${batchProgress.total}`
               : pendingBatch.length > 0
-                ? `Migrar ${pendingBatch.length} ${hasActiveFilters ? 'do filtro' : 'pendentes'}`
+                ? `Rodar ${pendingBatch.length} ${hasActiveFilters ? 'do filtro' : 'pendentes'}`
               : hasActiveFilters && totalPending > 0
                   ? 'Nenhuma pendente no filtro'
                   : 'V2 em dia'}
@@ -378,13 +408,13 @@ const AdminCifras: React.FC = () => {
         <div className="mb-6 bg-cyan-500/10 border border-cyan-500/30 rounded-xl p-4">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <p className="text-cyan-300 font-medium">Executando backfill do legado para o módulo V2</p>
+              <p className="text-cyan-300 font-medium">Executando rollout do legado para o catálogo V2</p>
               <p className="text-sm text-cyan-100/80 mt-1">
-                {batchProgress.completed} de {batchProgress.total} cifras processadas.
+                {batchProgress.completed} de {batchProgress.total} etapas processadas.
               </p>
             </div>
             <p className="text-sm text-cyan-200">
-              O processo segue em lote e atualiza o catálogo V2 ao final.
+              O lote migra, reavalia e promove ao catálogo tudo que ficar elegível no mesmo fluxo.
             </p>
           </div>
           <div className="mt-4 h-2 rounded-full bg-black/30 overflow-hidden">
