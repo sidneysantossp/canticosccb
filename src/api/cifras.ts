@@ -1,5 +1,8 @@
 import { supabaseFetch, supabaseInsert, supabaseUpdate, supabaseDelete } from '@/lib/supabaseRest';
 
+const LEGACY_VIEW_DEDUP_PREFIX = 'legacy-cifra-view:';
+const pendingLegacyViewIncrements = new Set<string>();
+
 export interface Cifra {
   id: number;
   title: string;
@@ -48,6 +51,14 @@ function generateSlug(title: string): string {
     .replace(/[\u0300-\u036f]/g, '')
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-+|-+$/g, '');
+}
+
+function canUseSessionStorage() {
+  return typeof window !== 'undefined' && typeof sessionStorage !== 'undefined';
+}
+
+function getLegacyViewDedupKey(id: number) {
+  return `${LEGACY_VIEW_DEDUP_PREFIX}${id}`;
 }
 
 // =============================================
@@ -172,13 +183,28 @@ export async function toggleCifraActive(id: number): Promise<boolean> {
 }
 
 export async function incrementCifraViews(id: number): Promise<void> {
+  const dedupeKey = getLegacyViewDedupKey(id);
+
+  if (canUseSessionStorage()) {
+    if (pendingLegacyViewIncrements.has(dedupeKey) || sessionStorage.getItem(dedupeKey) === '1') {
+      return;
+    }
+  }
+
+  pendingLegacyViewIncrements.add(dedupeKey);
+
   try {
     const cifra = await fetchCifraById(id);
     if (cifra) {
       await supabaseUpdate('cifras', { id: `eq.${id}` }, { views_count: cifra.views_count + 1 });
+      if (canUseSessionStorage()) {
+        sessionStorage.setItem(dedupeKey, '1');
+      }
     }
   } catch (error) {
     console.error('[cifras] incrementCifraViews error:', error);
+  } finally {
+    pendingLegacyViewIncrements.delete(dedupeKey);
   }
 }
 

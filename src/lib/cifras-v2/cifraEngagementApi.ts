@@ -5,6 +5,7 @@ import { mapCifraReportRow } from './mappers';
 
 const SESSION_STORAGE_KEY = 'cifra-v2-session-key';
 const VIEW_DEDUP_PREFIX = 'cifra-v2-view:';
+const pendingViewEvents = new Set<string>();
 
 export interface CifraEngagementSnapshot {
   versionId: string;
@@ -130,11 +131,16 @@ export async function trackCifraUsageEvent(
     dedupeInSession?: boolean;
   } = {},
 ): Promise<boolean> {
+  const dedupeKey = eventType === 'view' ? getViewDedupKey(versionId) : null;
+
   if (eventType === 'view' && options.dedupeInSession !== false && canUseStorage()) {
-    const dedupeKey = getViewDedupKey(versionId);
-    if (sessionStorage.getItem(dedupeKey) === '1') {
+    if (dedupeKey && (pendingViewEvents.has(dedupeKey) || sessionStorage.getItem(dedupeKey) === '1')) {
       return false;
     }
+  }
+
+  if (dedupeKey) {
+    pendingViewEvents.add(dedupeKey);
   }
 
   const payload = {
@@ -146,12 +152,18 @@ export async function trackCifraUsageEvent(
   };
 
   const { error } = await supabase.from('cifra_usage_events').insert(payload);
-  if (error) {
-    throw error;
-  }
+  try {
+    if (error) {
+      throw error;
+    }
 
-  if (eventType === 'view' && options.dedupeInSession !== false && canUseStorage()) {
-    sessionStorage.setItem(getViewDedupKey(versionId), '1');
+    if (eventType === 'view' && options.dedupeInSession !== false && canUseStorage() && dedupeKey) {
+      sessionStorage.setItem(dedupeKey, '1');
+    }
+  } finally {
+    if (dedupeKey) {
+      pendingViewEvents.delete(dedupeKey);
+    }
   }
 
   return true;
