@@ -188,8 +188,6 @@ const HomePage: React.FC = () => {
 
   const popularHinos: PopularHino[] = homepageTrends;
   const popularHinosFiltered: PopularHino[] = popularHinos;
-  
-  console.log('ðŸŽµ Popular Hinos:', popularHinos.length, 'items');
 
   // Scroll to top quando a página carregar
   useEffect(() => {
@@ -203,7 +201,6 @@ const HomePage: React.FC = () => {
     const loadHomeData = async () => {
       try {
         setIsLoading(true);
-        console.log('ðŸ  HomePage - Loading data...');
         
         // Timeout de 8 segundos para toda a operaÃ§Ã£o
         const dataPromise = getHomePageData();
@@ -212,15 +209,10 @@ const HomePage: React.FC = () => {
         );
         
         const data = await Promise.race([dataPromise, timeoutPromise]) as any;
-        
-        console.log('ðŸ  HomePage - Data received:', data);
-        console.log('ðŸŽ¯ HomePage - Banners count:', data.banners?.length || 0);
-        console.log('ðŸŽ¯ HomePage - Banners data:', data.banners);
-        
+
         setHomeData(data);
       } catch (error) {
         console.error('âŒ Error loading homepage data:', error);
-        console.warn('âš ï¸ Using fallback homepage data');
         
         // FALLBACK COMPLETO
         setHomeData({
@@ -357,7 +349,6 @@ const HomePage: React.FC = () => {
   // Favoritos gerenciados pelo hook customizado (inclui sincronizaÃ§Ã£o automÃ¡tica)
 
   // Usar apenas álbuns reais do banco de dados (sem placeholders)
-  console.log('💿 homeData.albums:', homeData.albums?.length || 0, homeData.albums);
   const albums = homeData.albums && homeData.albums.length > 0
     ? homeData.albums.map(album => ({
         id: album.id,
@@ -366,8 +357,6 @@ const HomePage: React.FC = () => {
         cover: album.cover_url || ''
       }))
     : [];
-  
-  console.log('ðŸ’¿ Albums (final):', albums.length, 'items');
 
   const normalizeCategory = (value: string | undefined | null) =>
     String(value ?? '')
@@ -386,7 +375,6 @@ const HomePage: React.FC = () => {
   };
   
   // Converter hinos cantados do backend (apenas categoria Cantados)
-  console.log('ðŸŽµ homeData.hymnsCantados:', homeData.hymnsCantados?.length || 0, homeData.hymnsCantados);
   const hinosCantados = (homeData.hymnsCantados || [])
     .filter((h) => {
       const normalized = normalizeCategory(h.category);
@@ -404,11 +392,8 @@ const HomePage: React.FC = () => {
       coverUrl: hymn.cover_url || '',
     }));
   const hinosCantadosFinal = prioritizeRealCovers(hinosCantados, 12);
-  
-  console.log('ðŸŽµ Hinos Cantados (final):', hinosCantados.length, 'items');
-  
+
   // Converter hinos tocados do backend (apenas categoria Tocados)
-  console.log('ðŸŽ¹ homeData.hymnsTocados:', homeData.hymnsTocados?.length || 0, homeData.hymnsTocados);
   const hinosTocados = (homeData.hymnsTocados || [])
     .filter((h) => {
       const normalized = normalizeCategory(h.category);
@@ -426,11 +411,8 @@ const HomePage: React.FC = () => {
       coverUrl: hymn.cover_url || '',
     }));
   const hinosTocadosFinal = prioritizeRealCovers(hinosTocados, 12);
-  
-  console.log('ðŸŽ¹ Hinos Tocados (final):', hinosTocados.length, 'items');
-  
+
   // Converter hinos avulsos do backend (apenas categoria Avulsos)
-  console.log('ðŸŽ¼ homeData.hymnsAvulsos:', homeData.hymnsAvulsos?.length || 0, homeData.hymnsAvulsos);
   const hinosAvulsos = (homeData.hymnsAvulsos || [])
     .filter((h) => {
       const normalized = normalizeCategory(h.category);
@@ -448,8 +430,6 @@ const HomePage: React.FC = () => {
       coverUrl: hymn.cover_url || '',
     }));
   const hinosAvulsosFinal = prioritizeRealCovers(hinosAvulsos, 12);
-  
-  console.log('ðŸŽ¼ Hinos Avulsos (final):', hinosAvulsos.length, 'items');
 
   // FunÃ§Ã£o para calcular mudanÃ§a de ranking
   const getRankChange = (hino: any) => {
@@ -676,7 +656,6 @@ const HomePage: React.FC = () => {
 };
 
 export default HomePage;
-
 
 
 

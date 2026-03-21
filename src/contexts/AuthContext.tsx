@@ -53,9 +53,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     // Verificar se há usuário logado no localStorage
     const loadUser = () => {
       const currentUser = authClient.getCurrentUser();
-      console.log('🔍 loadUser chamado, currentUser:', currentUser);
       if (currentUser) {
-        console.log('🔐 Permissões (loadUser):', { tipo: currentUser.tipo });
         // Mapear para compatibilidade com interface User
         const userCompat: User = {
           id: String(currentUser.id),
@@ -120,9 +118,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
               user = updatedUser;
             }
           }
-
-          console.log('✅ Usuário encontrado no banco:', user.name);
-          console.log('🔐 Permissões:', { is_admin: user.is_admin, is_composer: user.is_composer });
           
           // Mapear para compatibilidade com a interface User
           const usuarioCompat: User = {
@@ -144,7 +139,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           });
           return true;
         } else {
-          console.log('⚠️ Usuário não encontrado no banco, criando/atualizando...');
           // Usar upsert para evitar erro de duplicate key
           const { data: newUser, error } = await authClient.supabase
             .from('users')
@@ -164,8 +158,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             .single();
           
           if (!error && newUser) {
-            console.log('✅ Usuário criado/atualizado:', newUser.name);
-            
             // Mapear para compatibilidade
             const usuarioCompat: User = {
               id: String(newUser.id),
@@ -192,7 +184,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       } catch (err: any) {
         console.error('❌ Erro ao sincronizar usuário:', err);
         // Se falhar (tabela não existe, RLS, AbortError), criar perfil mínimo em memória
-        console.log('🔄 Criando perfil mínimo em memória...');
         const usuarioCompat: User = {
           id: String(session.user.id),
           email: session.user.email!,
@@ -210,7 +201,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           is_admin: false,
           is_composer: false
         });
-        console.log('✅ Perfil mínimo criado em memória - login não bloqueado');
         return true;
       }
       return false;
@@ -219,7 +209,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     // Carregar usuário imediatamente
     const hasUser = loadUser();
     const hasFallbackAuth = localStorage.getItem('auth_fallback') === 'true';
-    console.log('🔐 Auth init, hasUser:', hasUser);
     
     // Restaurar estado de gerenciamento se existir
     const storedComposerId = sessionStorage.getItem('managingComposerId');
@@ -232,12 +221,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     // Listener para mudanças de autenticação do Supabase
     const { data: { subscription } } = authClient.supabase.auth.onAuthStateChange(
       async (event, session) => {
-        console.log('🔐 Auth state changed:', event, session?.user?.email);
-        
         if (event === 'SIGNED_IN' && session?.user) {
           // Sincronizar usuário do banco
-          const synced = await syncUserFromSession(session);
-          console.log('🔄 Sync após SIGNED_IN:', synced);
+          await syncUserFromSession(session);
           setLoading(false);
         } else if (event === 'INITIAL_SESSION') {
           // Sessão inicial - verificar se há usuário
@@ -267,7 +253,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     } else {
       // Timeout de segurança - se depois de 3s ainda estiver loading, desmarcar
       const timeout = setTimeout(() => {
-        console.log('⏰ Timeout de loading - desmarcando');
         setLoading(false);
       }, 3000);
       
@@ -285,14 +270,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const signIn = async (email: string, password: string) => {
     try {
-      console.log('🔑 [signIn] Tentando signInWithPassword...');
       const { data, error } = await authClient.supabase.auth.signInWithPassword({
         email,
         password,
       });
       if (error) {
-        console.error('🔑 [signIn] Erro do Supabase Auth:', error.message, 'status:', error.status);
-
         // Se Auth retorna 500 (RLS quebrando schema), usar fallback REST
         if (error.message?.includes('Database error querying schema') || error.status === 500) {
           console.warn('⚠️ Auth 500 - usando fallback REST para login...');
@@ -327,7 +309,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             is_admin: dbUser.is_admin === true,
             is_composer: dbUser.is_composer === true,
           });
-          console.log('✅ Fallback login OK:', dbUser.name, '| admin:', dbUser.is_admin);
           console.warn('⚠️ ATENÇÃO: Login sem JWT. Operações admin usarão REST API.');
           return;
         }
@@ -338,7 +319,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             : error.message
         );
       }
-      console.log('✅ [signIn] Login OK, session:', !!data?.session, 'user:', data?.user?.email);
       localStorage.removeItem('auth_fallback');
     } catch (error: any) {
       console.error('Sign-in error:', error?.message || error);
@@ -376,7 +356,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setManagingComposerName(composerName);
     sessionStorage.setItem('managingComposerId', composerId.toString());
     sessionStorage.setItem('managingComposerName', composerName);
-    console.log(`🔄 Alternando para gerenciar: ${composerName} (ID: ${composerId})`);
   };
 
   const switchBackToSelf = () => {
@@ -384,7 +363,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setManagingComposerName(null);
     sessionStorage.removeItem('managingComposerId');
     sessionStorage.removeItem('managingComposerName');
-    console.log('🔄 Voltando para conta própria');
   };
 
   const value: AuthContextType = {

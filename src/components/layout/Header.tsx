@@ -82,21 +82,8 @@ const Header: React.FC = () => {
     setSearchQuery((prev) => (prev === currentQuery ? prev : currentQuery));
   }, [location.pathname, location.search]);
 
-  // Debug: Log profile data e flags de autorização
   React.useEffect(() => {
     if (user && profile) {
-      console.log('🔐 PROFILE DEBUG:', {
-        name: (profile as any)?.name || (profile as any)?.nome,
-        email: profile.email,
-        is_admin: profile.is_admin,
-        is_composer: profile.is_composer,
-        avatar_url: profile.avatar_url,
-        '---': '---',
-        'isAdmin (computed)': isAdmin,
-        'isComposer (computed)': isComposer
-      });
-      
-      // Alerta crítico se compositor tiver is_admin = true
       if (profile.is_composer && profile.is_admin) {
         console.error('🚨 ERRO DE SEGURANÇA: Usuário tem is_admin E is_composer = true!');
         console.error('Isso pode ser um erro de dados no banco. Verifique a tabela users.');

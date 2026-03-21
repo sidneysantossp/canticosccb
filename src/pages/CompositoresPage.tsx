@@ -31,16 +31,9 @@ export default function CompositoresPage() {
   const loadComposers = async () => {
     try {
       setIsLoading(true);
-      console.log('🎵 CompositoresPage - Carregando compositores...');
 
       // Tentar carregar do banco de dados
       const dbComposers = await getFeaturedComposers();
-
-      console.log('📊 CompositoresPage - Dados recebidos:', {
-        length: dbComposers?.length || 0,
-        firstComposer: dbComposers?.[0]?.name,
-        allComposers: dbComposers?.map(c => c.name)
-      });
 
       if (dbComposers && dbComposers.length > 0) {
         // Buscar contagem real de seguidores da tabela user_follows
@@ -90,7 +83,6 @@ export default function CompositoresPage() {
                 : (hymn.titulo || 'Repertório disponível na plataforma');
             }
           }
-          console.log('👥 [CompositoresPage] Followers counts:', followCounts);
         } catch (followErr) {
           console.warn('⚠️ [CompositoresPage] Erro ao buscar métricas reais:', followErr);
         }
@@ -140,7 +132,6 @@ export default function CompositoresPage() {
 
         setComposers(convertedComposers);
       } else {
-        console.log('ℹ️ Nenhum compositor público encontrado');
         setComposers([]);
       }
     } catch (error) {

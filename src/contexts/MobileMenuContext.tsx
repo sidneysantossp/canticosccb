@@ -12,18 +12,11 @@ export const MobileMenuProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   const openMenu = useCallback(() => {
-    console.log('📱 MobileMenu: OPENING');
     setIsMenuOpen(true);
   }, []);
   const closeMenu = useCallback(() => {
-    console.log('📱 MobileMenu: CLOSING');
     setIsMenuOpen(false);
   }, []);
-
-  // Debug: log state changes
-  React.useEffect(() => {
-    console.log('📱 MobileMenu state changed:', isMenuOpen);
-  }, [isMenuOpen]);
 
   return (
     <MobileMenuContext.Provider value={{ isMenuOpen, openMenu, closeMenu }}>
