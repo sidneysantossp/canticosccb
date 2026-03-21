@@ -238,6 +238,31 @@ export async function rebuildCifraVersionSectionsFromStoredContent(versionId: st
   });
 }
 
+export async function prepareCifraVersionForCatalog(versionId: string) {
+  let version = await fetchCifraVersionById(versionId);
+  if (!version) {
+    throw new Error('Versão V2 não encontrada.');
+  }
+
+  if (version.sections_count <= 0) {
+    const rebuilt = await rebuildCifraVersionSectionsFromStoredContent(versionId);
+    if (!rebuilt) {
+      throw new Error('Não foi possível reconstruir as seções da versão.');
+    }
+    version = rebuilt;
+  }
+
+  if (version.sections_count > 0 && !version.default_study_section_order && !version.default_study_sync_audio && !version.default_study_loop_section) {
+    const withStudyDefaults = await applyCifraVersionStudyDefaults(versionId);
+    if (!withStudyDefaults) {
+      throw new Error('Não foi possível aplicar os study defaults da versão.');
+    }
+    version = withStudyDefaults;
+  }
+
+  return promoteCifraVersionToCatalog(versionId);
+}
+
 export async function promoteCifraVersionToCatalog(versionId: string) {
   const version = await fetchCifraVersionById(versionId);
   if (!version) {

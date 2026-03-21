@@ -9,6 +9,7 @@ import {
   fetchCifraV2RolloutStats,
   fetchLegacyCifraMigrationStatuses,
   migrateLegacyCifraById,
+  prepareCifraVersionForCatalog,
   promoteCifraVersionToCatalog,
   rebuildCifraVersionSectionsFromStoredContent,
   type CifraV2RolloutStats,
@@ -34,6 +35,7 @@ const AdminCifras: React.FC = () => {
   const [isBatchPromoting, setIsBatchPromoting] = useState(false);
   const [isBatchApplyingStudyDefaults, setIsBatchApplyingStudyDefaults] = useState(false);
   const [isBatchRebuildingSections, setIsBatchRebuildingSections] = useState(false);
+  const [preparingVersionId, setPreparingVersionId] = useState<string | null>(null);
   const [promotingVersionId, setPromotingVersionId] = useState<string | null>(null);
   const [applyingStudyDefaultsVersionId, setApplyingStudyDefaultsVersionId] = useState<string | null>(null);
   const [rebuildingSectionsVersionId, setRebuildingSectionsVersionId] = useState<string | null>(null);
@@ -99,6 +101,8 @@ const AdminCifras: React.FC = () => {
     Boolean(status?.versionId) && (status?.sectionsCount ?? 0) <= 0;
   const canApplyStudyDefaults = (status: LegacyCifraMigrationStatus | undefined) =>
     Boolean(status?.versionId) && (status?.sectionsCount ?? 0) > 0 && !status?.hasStudyDefaults;
+  const canPrepareVersion = (status: LegacyCifraMigrationStatus | undefined) =>
+    Boolean(status?.versionId) && !status?.publicCatalogVisible;
 
   const filtered = cifras.filter(c => {
     const matchSearch = !searchTerm ||
@@ -468,6 +472,42 @@ const AdminCifras: React.FC = () => {
       });
     } finally {
       setRebuildingSectionsVersionId(null);
+    }
+  };
+
+  const handlePrepareVersion = async (status: LegacyCifraMigrationStatus) => {
+    if (!status.versionId) return;
+
+    if (status.publicCatalogVisible) {
+      setAlert({
+        isOpen: true,
+        title: 'Versão já está pronta',
+        message: `A cifra #${status.legacyId} já está visível no catálogo V2.`,
+        type: 'info',
+      });
+      return;
+    }
+
+    try {
+      setPreparingVersionId(status.versionId);
+      await prepareCifraVersionForCatalog(status.versionId);
+      await loadCifras();
+      setAlert({
+        isOpen: true,
+        title: 'Versão preparada para catálogo',
+        message: `A cifra #${status.legacyId} foi preparada automaticamente e enviada ao catálogo V2.`,
+        type: 'success',
+      });
+    } catch (prepareError: any) {
+      console.error('Erro ao preparar cifra V2 para o catálogo:', prepareError);
+      setAlert({
+        isOpen: true,
+        title: 'Não foi possível preparar a versão',
+        message: prepareError?.message || 'Erro inesperado ao preparar a cifra V2.',
+        type: 'error',
+      });
+    } finally {
+      setPreparingVersionId(null);
     }
   };
 
@@ -1169,6 +1209,17 @@ const AdminCifras: React.FC = () => {
                           >
                             <Rocket className="w-3.5 h-3.5" />
                             {promotingVersionId === migrationStatuses[cifra.id].versionId ? 'Enviando...' : 'Levar ao catálogo'}
+                          </button>
+                        )}
+                        {canPrepareVersion(migrationStatuses[cifra.id]) && (
+                          <button
+                            type="button"
+                            onClick={() => void handlePrepareVersion(migrationStatuses[cifra.id])}
+                            disabled={preparingVersionId === migrationStatuses[cifra.id].versionId}
+                            className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-emerald-500/20 text-emerald-300 hover:bg-emerald-500/30 disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
+                          >
+                            <Rocket className="w-3.5 h-3.5" />
+                            {preparingVersionId === migrationStatuses[cifra.id].versionId ? 'Preparando...' : 'Preparar V2'}
                           </button>
                         )}
                         {canRebuildSections(migrationStatuses[cifra.id]) && (
