@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, AlertTriangle, Music } from 'lucide-react';
-import { useAuthHydration } from '@/hooks/useAuthHydration';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface PendingClaim {
   songId: string;
@@ -12,107 +13,63 @@ interface PendingClaim {
 }
 
 export default function PendingClaimNotification() {
-  const { isHydrated, isAuthenticated, user } = useAuthHydration();
+  const navigate = useNavigate();
+  const { user, profile, loading, isAdmin, isComposer } = useAuth();
   const [pendingClaim, setPendingClaim] = useState<PendingClaim | null>(null);
   const [isVisible, setIsVisible] = useState(false);
 
   // Verificar na montagem do componente
   useEffect(() => {
-    console.log('PendingClaimNotification - MONTAGEM do componente');
-    checkForPendingClaim();
-    
-    // Listener para teste manual
-    const handleTestClaim = () => {
-      console.log('Teste manual disparado!');
+    if (!loading) {
       checkForPendingClaim();
+    }
+
+    const handleTestClaim = () => {
+      if (!loading) {
+        checkForPendingClaim();
+      }
     };
-    
+
     window.addEventListener('checkPendingClaim', handleTestClaim);
-    
     return () => {
       window.removeEventListener('checkPendingClaim', handleTestClaim);
     };
-  }, []);
+  }, [loading, user, profile, isAdmin, isComposer]);
 
-  // Verificar quando auth mudar (só após hidratação)
   useEffect(() => {
-    if (!isHydrated) {
-      console.log('Aguardando hidratação...');
+    if (loading) {
       return;
     }
-    
-    console.log('PendingClaimNotification - AUTH mudou', {
-      isHydrated,
-      isAuthenticated,
-      user,
-      userRole: user?.role
-    });
-    
-    if (isAuthenticated && user) {
+
+    if (user && profile) {
       checkForPendingClaim();
     }
-  }, [isHydrated, isAuthenticated, user]);
+  }, [loading, user, profile, isAdmin, isComposer]);
 
   const checkForPendingClaim = () => {
     const savedClaim = sessionStorage.getItem('pendingCopyrightClaim');
-    console.log('Verificando claim pendente:', savedClaim);
-    
+
     if (!savedClaim) {
-      console.log('Nenhuma claim pendente encontrada');
       return;
     }
 
-    // Verificação dupla de autenticação
-    const zustandAuth = { isAuthenticated, user };
-    const localStorageData = localStorage.getItem('auth-storage');
-    
-    let finalUser = user;
-    let finalAuth = isAuthenticated;
-    
-    // Se Zustand falhar, tentar localStorage diretamente
-    if (!isAuthenticated && localStorageData) {
-      try {
-        const parsed = JSON.parse(localStorageData);
-        const state = parsed.state || parsed;
-        if (state.isAuthenticated && state.user) {
-          finalAuth = true;
-          finalUser = state.user;
-          console.log('Usando auth do localStorage:', state);
-        }
-      } catch (e) {
-        console.log('Erro ao ler localStorage:', e);
-      }
-    }
-
-    console.log('Auth final:', { finalAuth, finalUser });
-
-    if (!finalAuth || !finalUser) {
-      console.log('Usuário não autenticado, mantendo claim para depois');
+    if (!user || !profile) {
       return;
     }
 
     try {
       const claimData: PendingClaim = JSON.parse(savedClaim);
-      const userRole = finalUser?.role || 'user';
-      
-      console.log('Dados da claim:', claimData);
-      console.log('Role do usuário:', userRole);
-      
-      if (userRole === 'composer' || userRole === 'admin') {
-        console.log('Usuário é compositor/admin, mostrando notificação');
+
+      if (isComposer || isAdmin) {
         setPendingClaim(claimData);
         setIsVisible(true);
-        
-        // Auto-hide após 15 segundos
+
         setTimeout(() => {
-          console.log('Auto-hide da notificação');
           setIsVisible(false);
         }, 15000);
       } else {
-        console.log('Usuário não é compositor/admin, limpando claim');
         sessionStorage.removeItem('pendingCopyrightClaim');
       }
-      
     } catch (error) {
       console.error('Erro ao processar reivindicação pendente:', error);
       sessionStorage.removeItem('pendingCopyrightClaim');
@@ -121,15 +78,11 @@ export default function PendingClaimNotification() {
 
   const handleContinue = () => {
     if (pendingClaim) {
-      // Usar alert temporário para mostrar que funcionou
-      alert(`Continuando reivindicação para "${pendingClaim.songTitle}".\n\nEm uma implementação real, isso abriria o player com o hino e o formulário de reivindicação.`);
-      
-      // TODO: Implementar navegação real
-      // Opções:
-      // 1. window.location.href = `/player?song=${pendingClaim.songId}&openClaim=true`;
-      // 2. Usar react-router: navigate(`/player?song=${pendingClaim.songId}&openClaim=true`);
-      // 3. Chamar função do player store para tocar hino específico
-      
+      navigate('/compositor/direitos-autorais', {
+        state: {
+          pendingClaim,
+        },
+      });
       handleClose();
     }
   };
