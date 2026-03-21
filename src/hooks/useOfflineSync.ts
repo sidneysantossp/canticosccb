@@ -38,7 +38,6 @@ export const useOfflineSync = () => {
   // Auto-sync quando voltar online
   useEffect(() => {
     if (isOnline && pendingActions.length > 0) {
-      console.log('🔄 Back online, starting auto-sync...');
       syncPendingActions();
     }
   }, [isOnline, pendingActions.length]);
@@ -84,8 +83,6 @@ export const useOfflineSync = () => {
     const newActions = [...pendingActions, action];
     savePendingActions(newActions);
 
-    console.log('📝 Added pending action:', action);
-
     // Tentar sincronizar imediatamente se online
     if (isOnline) {
       syncPendingActions();
@@ -97,8 +94,6 @@ export const useOfflineSync = () => {
     if (!isOnline || pendingActions.length === 0 || syncStatus.issyncing) {
       return;
     }
-
-    console.log('🔄 Starting sync of', pendingActions.length, 'pending actions...');
 
     setSyncStatus(prev => ({ ...prev, issyncing: true, errors: [] }));
 
@@ -112,7 +107,6 @@ export const useOfflineSync = () => {
         
         if (success) {
           successfulActions.push(action.id);
-          console.log('✅ Synced action:', action.type, action.id);
         } else {
           // Incrementar tentativas
           const updatedAction = { ...action, retries: action.retries + 1 };
@@ -147,12 +141,6 @@ export const useOfflineSync = () => {
       lastSync: new Date(),
       errors
     }));
-
-    console.log('🔄 Sync completed:', {
-      successful: successfulActions.length,
-      failed: failedActions.length,
-      errors: errors.length
-    });
 
     // Recarregar downloads se houve mudanças
     if (successfulActions.length > 0) {

@@ -54,7 +54,6 @@ export const useOfflineDownloads = () => {
         const savedDownloads = request.result as DownloadedHymn[];
         setDownloads(savedDownloads);
         setIsLoading(false);
-        console.log('📱 Downloads loaded:', savedDownloads.length);
       };
 
       request.onerror = () => {
@@ -105,13 +104,10 @@ export const useOfflineDownloads = () => {
   const downloadHymn = useCallback(async (hymn: DownloadableHymn): Promise<boolean> => {
     // Verificar se já está baixado
     if (downloads.find(d => d.id === hymn.id && d.status === 'completed')) {
-      console.log('ℹ️ Hymn already downloaded:', hymn.title);
       return true;
     }
 
     try {
-      console.log('⬇️ Starting download:', hymn.title);
-
       // Criar entrada de download
       const downloadEntry: DownloadedHymn = {
         ...hymn,
@@ -140,8 +136,6 @@ export const useOfflineDownloads = () => {
 
         // Salvar no IndexedDB
         await saveDownloadToDB(downloadEntry);
-        
-        console.log('✅ Download completed:', hymn.title);
         return true;
       } else {
         throw new Error('Download failed');
@@ -207,8 +201,6 @@ export const useOfflineDownloads = () => {
   // Remover download
   const removeDownload = useCallback(async (hymnId: string): Promise<boolean> => {
     try {
-      console.log('🗑️ Removing download:', hymnId);
-
       // Remover do cache via Service Worker
       if (navigator.serviceWorker.controller) {
         navigator.serviceWorker.controller.postMessage({
@@ -230,8 +222,6 @@ export const useOfflineDownloads = () => {
 
       // Remover da lista
       setDownloads(prev => prev.filter(d => d.id !== hymnId));
-      
-      console.log('✅ Download removed:', hymnId);
       return true;
 
     } catch (error) {
@@ -260,8 +250,6 @@ export const useOfflineDownloads = () => {
   // Limpar todos os downloads
   const clearAllDownloads = useCallback(async (): Promise<boolean> => {
     try {
-      console.log('🧹 Clearing all downloads...');
-
       // Limpar cache via Service Worker
       if (navigator.serviceWorker.controller) {
         navigator.serviceWorker.controller.postMessage({
@@ -282,7 +270,6 @@ export const useOfflineDownloads = () => {
       });
 
       setDownloads([]);
-      console.log('✅ All downloads cleared');
       return true;
 
     } catch (error) {

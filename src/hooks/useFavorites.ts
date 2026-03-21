@@ -19,10 +19,8 @@ export const useFavorites = () => {
       try {
         if (user) {
           // Usuário logado: buscar do banco
-          console.log('💚 Carregando favoritos do banco...');
           const favIds = await getUserFavorites((user as any).id as number);
           setFavorites(new Set(favIds));
-          console.log('✅ Favoritos carregados:', favIds.length);
         } else {
           // Usuário não logado: buscar do localStorage
           const savedFavorites = localStorage.getItem('favoriteHymns');
@@ -46,13 +44,11 @@ export const useFavorites = () => {
       if (user) {
         const localFavorites = localStorage.getItem('favoriteHymns');
         if (localFavorites) {
-          console.log('🔄 Sincronizando favoritos locais com o banco...');
           try {
             await syncLocalFavoritesWithBackend((user as any).id as number);
             // Recarregar favoritos do banco
             const favIds = await getUserFavorites((user as any).id as number);
             setFavorites(new Set(favIds));
-            console.log('✅ Sincronização completa!');
           } catch (error) {
             console.error('Erro ao sincronizar favoritos:', error);
           }
@@ -72,7 +68,6 @@ export const useFavorites = () => {
       if (showModalCallback) {
         showModalCallback();
       } else {
-        console.warn('Favoritos: usuário não logado');
         navigate('/login', { state: { from: window.location.pathname } });
       }
       return;
@@ -84,7 +79,6 @@ export const useFavorites = () => {
       
       // Atualizar UI otimisticamente (antes da resposta do servidor)
       const wasRemoving = favorites.has(normalizedId);
-      console.log(`💚 toggleFavorite(${hymnId}) -> ${wasRemoving ? 'REMOVER' : 'ADICIONAR'}`, { normalizedId, favorites: Array.from(favorites) });
       
       setFavorites(prev => {
         const newFavorites = new Set(prev);
@@ -93,7 +87,6 @@ export const useFavorites = () => {
         } else {
           newFavorites.add(normalizedId);
         }
-        console.log('✅ Favoritos atualizados:', Array.from(newFavorites));
         return newFavorites;
       });
 
@@ -106,7 +99,6 @@ export const useFavorites = () => {
       }
 
       if (ok) {
-        console.log('✅ Favorito atualizado no backend com sucesso');
       } else {
         console.error('❌ Erro ao atualizar favorito no backend');
         // Reverter UI em caso de erro
@@ -146,9 +138,7 @@ export const useFavorites = () => {
   const isFavorited = (hymnId: string): boolean => {
     // Normalizar ID para string para garantir comparação correta
     const normalizedId = String(hymnId);
-    const result = favorites.has(normalizedId);
-    console.log(`🔍 isFavorited(${hymnId}) -> ${result}`, { normalizedId, favorites: Array.from(favorites) });
-    return result;
+    return favorites.has(normalizedId);
   };
 
   /**

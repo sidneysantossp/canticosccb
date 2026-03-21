@@ -29,13 +29,6 @@ export const useAudioPlayer = () => {
   const [prefs, setPrefs] = useState<{ autoplay: boolean; gaplessPlayback: boolean; crossfade: boolean } | null>(null);
 
   const attemptPlayback = (audio: HTMLAudioElement) => {
-    console.log('▶️ Tentando reproduzir áudio...', {
-      src: audio.src,
-      readyState: audio.readyState,
-      networkState: audio.networkState,
-      error: audio.error
-    });
-
     const playAttempt = () => {
       audio.muted = false;
       audio.volume = 1.0;
@@ -44,15 +37,6 @@ export const useAudioPlayer = () => {
         audio.setAttribute('volume', '1.0');
         audio.removeAttribute('muted');
       } catch { }
-
-      console.log('🔊 Antes de play():', {
-        volume: audio.volume,
-        muted: audio.muted,
-        paused: audio.paused,
-        ended: audio.ended,
-        currentTime: audio.currentTime,
-        duration: audio.duration
-      });
 
       const playPromise = audio.play();
 
@@ -181,14 +165,7 @@ export const useAudioPlayer = () => {
         });
       };
 
-      const onPlaying = () => {
-        console.log('🔊 playing:', {
-          volume: audio.volume,
-          muted: audio.muted,
-          readyState: audio.readyState,
-          networkState: audio.networkState
-        });
-      };
+      const onPlaying = () => {};
 
       const onTimeUpdate = () => {
         setCurrentTime(audio.currentTime);
@@ -273,13 +250,6 @@ export const useAudioPlayer = () => {
       return;
     }
 
-    console.log('🎵 useAudioPlayer - Track mudou:', {
-      hasTrack: !!currentTrack,
-      title: currentTrack?.title,
-      audioUrl: currentTrack?.audioUrl,
-      audioUrlType: typeof currentTrack?.audioUrl
-    });
-
     if (currentTrack?.audioUrl) {
       let audioUrl = currentTrack.audioUrl;
 
@@ -302,7 +272,6 @@ export const useAudioPlayer = () => {
         try {
           audioUrl = await getSignedSupabaseUrl(audioUrl, 'hinos');
 
-          console.log('🎵 Carregando URL no Audio element:', audioUrl);
           if (audio.src && audio.src !== audioUrl) {
             audio.pause();
           }
@@ -310,7 +279,6 @@ export const useAudioPlayer = () => {
           audio.muted = false;
           audio.volume = Math.max(0.1, volume);
           audio.load();
-          console.log('🔊 Volume configurado:', { volume: audio.volume, muted: audio.muted });
 
           if (usePlayerStore.getState().isPlaying) {
             attemptPlayback(audio);
@@ -339,7 +307,6 @@ export const useAudioPlayer = () => {
     if (isPlaying) {
       attemptPlayback(audio);
     } else {
-      console.log('⏸️ Pausando áudio...');
       audio.pause();
     }
   }, [isPlaying, pause, currentTrack?.audioUrl]);
