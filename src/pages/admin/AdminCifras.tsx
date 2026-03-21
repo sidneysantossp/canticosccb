@@ -5,6 +5,7 @@ import { fetchCifras, deleteCifra, toggleCifraActive, Cifra, INSTRUMENTS, CATEGO
 import ConfirmModal from '@/components/ConfirmModal';
 import AlertModal from '@/components/ui/AlertModal';
 import {
+  applyCifraVersionStudyDefaults,
   fetchCifraV2RolloutStats,
   fetchLegacyCifraMigrationStatuses,
   migrateLegacyCifraById,
@@ -30,9 +31,12 @@ const AdminCifras: React.FC = () => {
   const [showBatchConfirm, setShowBatchConfirm] = useState(false);
   const [isBatchMigrating, setIsBatchMigrating] = useState(false);
   const [isBatchPromoting, setIsBatchPromoting] = useState(false);
+  const [isBatchApplyingStudyDefaults, setIsBatchApplyingStudyDefaults] = useState(false);
   const [promotingVersionId, setPromotingVersionId] = useState<string | null>(null);
+  const [applyingStudyDefaultsVersionId, setApplyingStudyDefaultsVersionId] = useState<string | null>(null);
   const [batchProgress, setBatchProgress] = useState({ completed: 0, total: 0 });
   const [batchPromoteProgress, setBatchPromoteProgress] = useState({ completed: 0, total: 0 });
+  const [batchStudyDefaultsProgress, setBatchStudyDefaultsProgress] = useState({ completed: 0, total: 0 });
   const [lastBatchFailures, setLastBatchFailures] = useState<Array<{ id: number; message: string }>>([]);
   const [alert, setAlert] = useState<{ isOpen: boolean; title: string; message: string; type: 'success' | 'error' | 'info' }>({
     isOpen: false,
@@ -87,6 +91,8 @@ const AdminCifras: React.FC = () => {
 
   const isPromotableStatus = (status: LegacyCifraMigrationStatus | undefined) =>
     Boolean(status?.versionId) && !status?.publicCatalogVisible && (status?.sectionsCount ?? 0) > 0;
+  const canApplyStudyDefaults = (status: LegacyCifraMigrationStatus | undefined) =>
+    Boolean(status?.versionId) && (status?.sectionsCount ?? 0) > 0 && !status?.hasStudyDefaults;
 
   const filtered = cifras.filter(c => {
     const matchSearch = !searchTerm ||
@@ -144,8 +150,12 @@ const AdminCifras: React.FC = () => {
   const promotableStatuses = filtered
     .map((cifra) => migrationStatuses[cifra.id])
     .filter((status): status is LegacyCifraMigrationStatus => canPromoteVersion(status));
+  const studyDefaultableStatuses = filtered
+    .map((cifra) => migrationStatuses[cifra.id])
+    .filter((status): status is LegacyCifraMigrationStatus => canApplyStudyDefaults(status));
   const catalogVisibleCount = cifras.filter((cifra) => migrationStatuses[cifra.id]?.publicCatalogVisible).length;
   const promotableCount = cifras.filter((cifra) => isPromotableStatus(migrationStatuses[cifra.id])).length;
+  const studyDefaultableCount = cifras.filter((cifra) => canApplyStudyDefaults(migrationStatuses[cifra.id])).length;
   const missingSectionsCount = cifras.filter((cifra) => {
     const status = migrationStatuses[cifra.id];
     return Boolean(status?.versionId) && (status?.sectionsCount ?? 0) <= 0;
@@ -155,6 +165,7 @@ const AdminCifras: React.FC = () => {
     return Boolean(status?.versionId) && !status?.hasStudyDefaults;
   }).length;
   const promoteBatch = promotableStatuses.slice(0, batchSize);
+  const studyDefaultsBatch = studyDefaultableStatuses.slice(0, batchSize);
   const totalMigrated = cifras.filter((cifra) => migrationStatuses[cifra.id]).length;
   const totalPending = cifras.length - totalMigrated;
   const pendingBatch = pendingCifras.slice(0, batchSize);
@@ -169,6 +180,7 @@ const AdminCifras: React.FC = () => {
     const failures: Array<{ id: number; message: string }> = [];
     let promotedCount = 0;
     let migratedCount = 0;
+    let studyDefaultsCount = 0;
 
     try {
       setShowBatchConfirm(false);
@@ -196,12 +208,42 @@ const AdminCifras: React.FC = () => {
       }
 
       const refreshedStatuses = await fetchLegacyCifraMigrationStatuses(targetIds);
-      const statusesToPromote = targetIds
+      const statusesToApplyStudyDefaults = targetIds
         .map((legacyId) => refreshedStatuses[legacyId])
+        .filter((status): status is LegacyCifraMigrationStatus => canApplyStudyDefaults(status));
+
+      if (statusesToApplyStudyDefaults.length > 0) {
+        setBatchProgress({ completed, total: targetIds.length + statusesToApplyStudyDefaults.length });
+
+        for (const status of statusesToApplyStudyDefaults) {
+          try {
+            if (!status.versionId) {
+              throw new Error('Versão V2 ausente para aplicar study defaults.');
+            }
+            await applyCifraVersionStudyDefaults(status.versionId);
+            studyDefaultsCount += 1;
+          } catch (studyDefaultsError: any) {
+            failures.push({
+              id: status.legacyId,
+              message: studyDefaultsError?.message || 'Erro desconhecido ao aplicar study defaults.',
+            });
+          } finally {
+            completed += 1;
+            setBatchProgress({ completed, total: targetIds.length + statusesToApplyStudyDefaults.length });
+          }
+        }
+      }
+
+      const refreshedStatusesAfterStudyDefaults = await fetchLegacyCifraMigrationStatuses(targetIds);
+      const statusesToPromote = targetIds
+        .map((legacyId) => refreshedStatusesAfterStudyDefaults[legacyId])
         .filter((status): status is LegacyCifraMigrationStatus => canPromoteVersion(status));
 
       if (statusesToPromote.length > 0) {
-        setBatchProgress({ completed, total: targetIds.length + statusesToPromote.length });
+        setBatchProgress({
+          completed,
+          total: targetIds.length + statusesToApplyStudyDefaults.length + statusesToPromote.length,
+        });
 
         for (const status of statusesToPromote) {
           try {
@@ -217,7 +259,10 @@ const AdminCifras: React.FC = () => {
             });
           } finally {
             completed += 1;
-            setBatchProgress({ completed, total: targetIds.length + statusesToPromote.length });
+            setBatchProgress({
+              completed,
+              total: targetIds.length + statusesToApplyStudyDefaults.length + statusesToPromote.length,
+            });
           }
         }
       }
@@ -230,14 +275,14 @@ const AdminCifras: React.FC = () => {
         setAlert({
           isOpen: true,
           title: 'Rollout concluído com pendências',
-          message: `${migratedCount} cifras foram migradas e ${promotedCount} versões foram levadas ao catálogo neste lote. ${failures.length} etapas falharam (${failedIds}${failures.length > 4 ? ', ...' : ''}).`,
+          message: `${migratedCount} cifras foram migradas, ${studyDefaultsCount} study defaults foram aplicados e ${promotedCount} versões foram levadas ao catálogo neste lote. ${failures.length} etapas falharam (${failedIds}${failures.length > 4 ? ', ...' : ''}).`,
           type: 'error',
         });
       } else {
         setAlert({
           isOpen: true,
           title: 'Rollout concluído',
-          message: `${migratedCount} cifras legadas foram migradas e ${promotedCount} versões foram publicadas no catálogo V2 neste lote.`,
+          message: `${migratedCount} cifras legadas foram migradas, ${studyDefaultsCount} study defaults foram aplicados e ${promotedCount} versões foram publicadas no catálogo V2 neste lote.`,
           type: 'success',
         });
       }
@@ -299,6 +344,52 @@ const AdminCifras: React.FC = () => {
     }
   };
 
+  const handleApplyStudyDefaults = async (status: LegacyCifraMigrationStatus) => {
+    if (!status.versionId) return;
+
+    if (status.sectionsCount <= 0) {
+      setAlert({
+        isOpen: true,
+        title: 'Versão sem seções',
+        message: 'Esta versão ainda não possui seções persistidas para configurar o modo estudo.',
+        type: 'error',
+      });
+      return;
+    }
+
+    if (status.hasStudyDefaults) {
+      setAlert({
+        isOpen: true,
+        title: 'Modo estudo já configurado',
+        message: `A cifra #${status.legacyId} já possui defaults editoriais de estudo.`,
+        type: 'info',
+      });
+      return;
+    }
+
+    try {
+      setApplyingStudyDefaultsVersionId(status.versionId);
+      await applyCifraVersionStudyDefaults(status.versionId);
+      await loadCifras();
+      setAlert({
+        isOpen: true,
+        title: 'Study defaults aplicados',
+        message: `A versão V2 da cifra #${status.legacyId} agora abre com a primeira seção definida para o modo estudo.`,
+        type: 'success',
+      });
+    } catch (studyDefaultsError: any) {
+      console.error('Erro ao aplicar study defaults automáticos:', studyDefaultsError);
+      setAlert({
+        isOpen: true,
+        title: 'Não foi possível configurar o modo estudo',
+        message: studyDefaultsError?.message || 'Erro inesperado ao aplicar study defaults.',
+        type: 'error',
+      });
+    } finally {
+      setApplyingStudyDefaultsVersionId(null);
+    }
+  };
+
   const handleBatchPromote = async () => {
     const targets = promoteBatch.filter((status) => status.versionId && !status.publicCatalogVisible && status.sectionsCount > 0);
     if (targets.length === 0) {
@@ -348,6 +439,58 @@ const AdminCifras: React.FC = () => {
     } finally {
       setIsBatchPromoting(false);
       setBatchPromoteProgress({ completed: 0, total: 0 });
+    }
+  };
+
+  const handleBatchApplyStudyDefaults = async () => {
+    const targets = studyDefaultsBatch.filter((status) => status.versionId && status.sectionsCount > 0 && !status.hasStudyDefaults);
+    if (targets.length === 0) {
+      return;
+    }
+
+    const failures: Array<{ id: number; message: string }> = [];
+    try {
+      setIsBatchApplyingStudyDefaults(true);
+      setBatchStudyDefaultsProgress({ completed: 0, total: targets.length });
+
+      let completed = 0;
+      for (const status of targets) {
+        try {
+          if (!status.versionId) {
+            throw new Error('Versão V2 ausente.');
+          }
+          await applyCifraVersionStudyDefaults(status.versionId);
+        } catch (studyDefaultsError: any) {
+          failures.push({
+            id: status.legacyId,
+            message: studyDefaultsError?.message || 'Erro desconhecido durante a aplicação dos study defaults.',
+          });
+        } finally {
+          completed += 1;
+          setBatchStudyDefaultsProgress({ completed, total: targets.length });
+        }
+      }
+
+      await loadCifras();
+      if (failures.length > 0) {
+        setLastBatchFailures((previous) => [...failures, ...previous].slice(0, 20));
+        setAlert({
+          isOpen: true,
+          title: 'Study defaults concluídos com pendências',
+          message: `${targets.length - failures.length} versões receberam defaults de estudo. ${failures.length} falharam.`,
+          type: 'error',
+        });
+      } else {
+        setAlert({
+          isOpen: true,
+          title: 'Study defaults aplicados em lote',
+          message: `${targets.length} versões receberam defaults editoriais de estudo.`,
+          type: 'success',
+        });
+      }
+    } finally {
+      setIsBatchApplyingStudyDefaults(false);
+      setBatchStudyDefaultsProgress({ completed: 0, total: 0 });
     }
   };
 
@@ -412,6 +555,19 @@ const AdminCifras: React.FC = () => {
                 ? `Levar ${promoteBatch.length} ao catálogo`
                 : 'Sem promoção pendente'}
           </button>
+          <button
+            type="button"
+            onClick={() => void handleBatchApplyStudyDefaults()}
+            disabled={isBatchApplyingStudyDefaults || studyDefaultsBatch.length === 0}
+            className="inline-flex items-center gap-2 px-5 py-3 bg-violet-500 hover:bg-violet-400 disabled:opacity-60 disabled:cursor-not-allowed text-white font-semibold rounded-xl transition-colors"
+          >
+            <Sparkles className="w-5 h-5" />
+            {isBatchApplyingStudyDefaults
+              ? `Study ${batchStudyDefaultsProgress.completed}/${batchStudyDefaultsProgress.total}`
+              : studyDefaultsBatch.length > 0
+                ? `Aplicar study em ${studyDefaultsBatch.length}`
+                : 'Sem study pendente'}
+          </button>
           <Link
             to="/admin/cifras-v2/new"
             className="inline-flex items-center gap-2 px-5 py-3 bg-primary-500 hover:bg-primary-600 text-black font-semibold rounded-xl transition-colors"
@@ -470,11 +626,35 @@ const AdminCifras: React.FC = () => {
         </div>
       )}
 
+      {isBatchApplyingStudyDefaults && (
+        <div className="mb-6 bg-violet-500/10 border border-violet-500/30 rounded-xl p-4">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <p className="text-violet-300 font-medium">Aplicando study defaults editoriais</p>
+              <p className="text-sm text-violet-100/80 mt-1">
+                {batchStudyDefaultsProgress.completed} de {batchStudyDefaultsProgress.total} versões processadas.
+              </p>
+            </div>
+            <p className="text-sm text-violet-200">
+              O modo estudo passa a abrir automaticamente pela primeira seção disponível.
+            </p>
+          </div>
+          <div className="mt-4 h-2 rounded-full bg-black/30 overflow-hidden">
+            <div
+              className="h-full bg-violet-400 transition-all"
+              style={{
+                width: `${batchStudyDefaultsProgress.total > 0 ? (batchStudyDefaultsProgress.completed / batchStudyDefaultsProgress.total) * 100 : 0}%`,
+              }}
+            />
+          </div>
+        </div>
+      )}
+
       {!isBatchMigrating && lastBatchFailures.length > 0 && (
         <div className="mb-6 bg-red-500/10 border border-red-500/30 rounded-xl p-4">
           <div className="flex items-start justify-between gap-4">
             <div>
-              <p className="text-red-300 font-medium">Falhas no último lote de migração</p>
+              <p className="text-red-300 font-medium">Falhas no último lote operacional</p>
               <p className="text-sm text-red-100/80 mt-1">
                 Revise os itens abaixo antes de executar o próximo lote.
               </p>
@@ -617,13 +797,13 @@ const AdminCifras: React.FC = () => {
       </div>
 
       <div className="flex flex-wrap gap-2 mb-6">
-        {[
-          { key: 'pending', label: 'Pendentes', count: totalPending },
-          { key: 'promotable', label: 'Prontas para catálogo', count: promotableCount },
-          { key: 'missing-sections', label: 'Sem seções', count: missingSectionsCount },
-          { key: 'missing-study', label: 'Sem study', count: missingStudyCount },
-          { key: 'catalog', label: 'No catálogo', count: catalogVisibleCount },
-        ].map((item) => {
+          {[
+            { key: 'pending', label: 'Pendentes', count: totalPending },
+            { key: 'promotable', label: 'Prontas para catálogo', count: promotableCount },
+            { key: 'missing-sections', label: 'Sem seções', count: missingSectionsCount },
+            { key: 'missing-study', label: 'Sem study', count: missingStudyCount },
+            { key: 'catalog', label: 'No catálogo', count: catalogVisibleCount },
+          ].map((item) => {
           const isActive = filterV2Status === item.key;
 
           return (
@@ -819,6 +999,17 @@ const AdminCifras: React.FC = () => {
                           >
                             <Rocket className="w-3.5 h-3.5" />
                             {promotingVersionId === migrationStatuses[cifra.id].versionId ? 'Enviando...' : 'Levar ao catálogo'}
+                          </button>
+                        )}
+                        {canApplyStudyDefaults(migrationStatuses[cifra.id]) && (
+                          <button
+                            type="button"
+                            onClick={() => void handleApplyStudyDefaults(migrationStatuses[cifra.id])}
+                            disabled={applyingStudyDefaultsVersionId === migrationStatuses[cifra.id].versionId}
+                            className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-violet-500/20 text-violet-300 hover:bg-violet-500/30 disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
+                          >
+                            <Sparkles className="w-3.5 h-3.5" />
+                            {applyingStudyDefaultsVersionId === migrationStatuses[cifra.id].versionId ? 'Aplicando...' : 'Aplicar study'}
                           </button>
                         )}
                       </div>

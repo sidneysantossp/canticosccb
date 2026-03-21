@@ -159,6 +159,36 @@ export async function setCifraVersionSearchable(versionId: string, isSearchable:
   return updateCifraVersion(versionId, { isSearchable });
 }
 
+export async function applyCifraVersionStudyDefaults(versionId: string) {
+  const [version, sections] = await Promise.all([
+    fetchCifraVersionById(versionId),
+    fetchCifraVersionSections(versionId),
+  ]);
+
+  if (!version) {
+    throw new Error('Versão V2 não encontrada.');
+  }
+
+  if (sections.length === 0) {
+    throw new Error('A versão não possui seções persistidas para configurar o modo estudo.');
+  }
+
+  const firstSection = [...sections].sort((left, right) => left.section_order - right.section_order)[0];
+  const defaultStudySectionOrder = version.default_study_section_order ?? firstSection?.section_order ?? 1;
+
+  const updated = await updateCifraVersion(versionId, {
+    defaultStudySectionOrder,
+    defaultStudySyncAudio: version.default_study_sync_audio,
+    defaultStudyLoopSection: version.default_study_loop_section,
+  });
+
+  if (!updated) {
+    throw new Error('Não foi possível salvar os study defaults automáticos.');
+  }
+
+  return updated;
+}
+
 export async function promoteCifraVersionToCatalog(versionId: string) {
   const version = await fetchCifraVersionById(versionId);
   if (!version) {
