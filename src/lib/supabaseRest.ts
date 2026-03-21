@@ -1,21 +1,23 @@
 import { supabase } from './supabase-auth';
 
-console.log('🔧 [supabaseRest] Module loading...');
-
 const SUPABASE_URL = (import.meta.env.VITE_SUPABASE_URL ?? '').replace(/\/+$/, '');
 const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY ?? '';
 
 export const isSupabaseConfigured = Boolean(SUPABASE_URL && SUPABASE_ANON_KEY);
+const isDebugEnabled = import.meta.env.DEV;
+const debugLog = (...args: unknown[]) => {
+  if (isDebugEnabled) {
+    console.log(...args);
+  }
+};
 
 // Simple in-memory cache with TTL
 const cache = new Map<string, { data: any; timestamp: number }>();
 const CACHE_TTL = 2 * 60 * 1000; // 2 minutes
 
-console.log('🔧 [supabaseRest] Module loaded successfully');
-
 // Debug: Log configuration status on load
 if (typeof window !== 'undefined') {
-  console.log('[supabaseRest] Config check:', {
+  debugLog('[supabaseRest] Config check:', {
     hasUrl: Boolean(SUPABASE_URL),
     hasKey: Boolean(SUPABASE_ANON_KEY),
     isConfigured: isSupabaseConfigured,
@@ -71,7 +73,7 @@ async function buildAuthHeaders() {
 
   // Se o token está expirado, tentar refresh via Supabase client (com timeout)
   if (accessToken !== SUPABASE_ANON_KEY && isTokenExpired(accessToken)) {
-    console.log('[supabaseRest] JWT expired, attempting refresh...');
+    debugLog('[supabaseRest] JWT expired, attempting refresh...');
     try {
       const refreshPromise = supabase.auth.refreshSession();
       const timeoutPromise = new Promise<{ data: null; error: { message: string } }>((resolve) =>
@@ -80,7 +82,7 @@ async function buildAuthHeaders() {
       const { data, error } = await Promise.race([refreshPromise, timeoutPromise]);
       if (!error && data?.session?.access_token) {
         accessToken = data.session.access_token;
-        console.log('[supabaseRest] JWT refreshed successfully');
+        debugLog('[supabaseRest] JWT refreshed successfully');
       } else {
         console.warn('[supabaseRest] JWT refresh failed:', error?.message);
       }
@@ -121,11 +123,11 @@ export async function supabaseFetch<T>(table: string, params: Record<string, str
   // Check cache first
   const cached = cache.get(cacheKey);
   if (cached && (now - cached.timestamp) < CACHE_TTL) {
-    console.log(`[supabaseFetch] Cache hit for ${table}, returning ${cached.data.length} cached records`);
+    debugLog(`[supabaseFetch] Cache hit for ${table}, returning ${cached.data.length} cached records`);
     return cached.data;
   }
 
-  console.log(`[supabaseFetch] Cache miss for ${table}, fetching:`, url.toString());
+  debugLog(`[supabaseFetch] Cache miss for ${table}, fetching:`, url.toString());
 
   try {
     const headers = buildHeaders();
@@ -135,7 +137,7 @@ export async function supabaseFetch<T>(table: string, params: Record<string, str
       headers,
     });
 
-    console.log(`[supabaseFetch] Response received for ${table}:`, response.status, response.statusText);
+    debugLog(`[supabaseFetch] Response received for ${table}:`, response.status, response.statusText);
 
     if (!response.ok) {
       const text = await response.text().catch(() => '');
@@ -143,10 +145,10 @@ export async function supabaseFetch<T>(table: string, params: Record<string, str
       throw new Error(`[supabaseRest] ${response.status} ${response.statusText} - ${text}`);
     }
 
-    console.log(`[supabaseFetch] Parsing JSON for ${table}...`);
+    debugLog(`[supabaseFetch] Parsing JSON for ${table}...`);
     const payload = (await response.json()) as T[];
     const result = Array.isArray(payload) ? payload : [];
-    console.log(`[supabaseFetch] ${table} returned ${result.length} records`);
+    debugLog(`[supabaseFetch] ${table} returned ${result.length} records`);
     
     // Cache the result
     cache.set(cacheKey, { data: result, timestamp: now });
@@ -166,7 +168,7 @@ export async function supabaseAuthFetch<T>(table: string, params: Record<string,
   }
 
   const url = buildUrl(table, params);
-  console.log(`[supabaseAuthFetch] Fetching ${table}:`, url.toString());
+  debugLog(`[supabaseAuthFetch] Fetching ${table}:`, url.toString());
 
   try {
     const headers = await buildAuthHeaders();
@@ -197,7 +199,7 @@ export async function supabaseInsert<T>(table: string, data: any): Promise<T | n
   }
 
   const url = `${SUPABASE_URL}/rest/v1/${table}`;
-  console.log(`[supabaseInsert] Inserting into ${table}:`, data);
+  debugLog(`[supabaseInsert] Inserting into ${table}:`, data);
 
   try {
     const authHeaders = await buildAuthHeaders();
@@ -214,7 +216,7 @@ export async function supabaseInsert<T>(table: string, data: any): Promise<T | n
     }
 
     const result = await response.json();
-    console.log(`[supabaseInsert] Response for ${table}:`, result);
+    debugLog(`[supabaseInsert] Response for ${table}:`, result);
     // RLS pode bloquear INSERT silenciosamente retornando 201 com array vazio
     if (Array.isArray(result) && result.length === 0) {
       console.error(`[supabaseInsert] Insert into ${table} returned empty array - likely blocked by RLS policy`);
@@ -234,7 +236,7 @@ export async function supabaseUpdate<T>(table: string, filters: Record<string, s
   }
 
   const url = buildUrl(table, filters);
-  console.log(`[supabaseUpdate] Updating ${table}:`, data);
+  debugLog(`[supabaseUpdate] Updating ${table}:`, data);
 
   try {
     const authHeaders = await buildAuthHeaders();
@@ -251,7 +253,7 @@ export async function supabaseUpdate<T>(table: string, filters: Record<string, s
     }
 
     const result = await response.json();
-    console.log(`[supabaseUpdate] ${table} result:`, result);
+    debugLog(`[supabaseUpdate] ${table} result:`, result);
     if (Array.isArray(result) && result.length === 0) {
       console.warn(`[supabaseUpdate] Update on ${table} returned empty array - possibly blocked by RLS or no matching rows`);
     }
@@ -269,7 +271,7 @@ export async function supabaseDelete(table: string, filters: Record<string, stri
   }
 
   const url = buildUrl(table, filters);
-  console.log(`[supabaseDelete] Deleting from ${table}`);
+  debugLog(`[supabaseDelete] Deleting from ${table}`);
 
   try {
     const authHeaders = await buildAuthHeaders();
@@ -303,7 +305,7 @@ export async function supabaseAuthUpdate<T>(table: string, filters: Record<strin
 
   const authHeaders = await buildAuthHeaders();
   const url = buildUrl(table, filters);
-  console.log(`[supabaseAuthUpdate] Updating ${table} with auth token:`, data);
+  debugLog(`[supabaseAuthUpdate] Updating ${table} with auth token:`, data);
 
   const response = await fetch(url.toString(), {
     method: 'PATCH',
@@ -318,7 +320,7 @@ export async function supabaseAuthUpdate<T>(table: string, filters: Record<strin
   }
 
   const result = await response.json();
-  console.log(`[supabaseAuthUpdate] Result:`, result);
+  debugLog(`[supabaseAuthUpdate] Result:`, result);
   return Array.isArray(result) ? result : [result];
 }
 
@@ -334,7 +336,7 @@ export async function supabaseAuthDelete<T>(table: string, filters: Record<strin
 
   const authHeaders = await buildAuthHeaders();
   const url = buildUrl(table, filters);
-  console.log(`[supabaseAuthDelete] Deleting from ${table} with auth token`);
+  debugLog(`[supabaseAuthDelete] Deleting from ${table} with auth token`);
 
   const response = await fetch(url.toString(), {
     method: 'DELETE',
@@ -348,7 +350,7 @@ export async function supabaseAuthDelete<T>(table: string, filters: Record<strin
   }
 
   const result = await response.json();
-  console.log(`[supabaseAuthDelete] Result:`, result);
+  debugLog(`[supabaseAuthDelete] Result:`, result);
   return Array.isArray(result) ? result : [result];
 }
 
@@ -364,7 +366,7 @@ export async function supabaseAuthInsert<T>(table: string, data: any): Promise<T
 
   const authHeaders = await buildAuthHeaders();
   const url = `${SUPABASE_URL}/rest/v1/${table}`;
-  console.log(`[supabaseAuthInsert] Inserting into ${table}:`, Array.isArray(data) ? `${data.length} rows` : '1 row');
+  debugLog(`[supabaseAuthInsert] Inserting into ${table}:`, Array.isArray(data) ? `${data.length} rows` : '1 row');
 
   const response = await fetch(url, {
     method: 'POST',
@@ -379,7 +381,7 @@ export async function supabaseAuthInsert<T>(table: string, data: any): Promise<T
   }
 
   const result = await response.json();
-  console.log(`[supabaseAuthInsert] Result:`, Array.isArray(result) ? `${result.length} rows` : result);
+  debugLog(`[supabaseAuthInsert] Result:`, Array.isArray(result) ? `${result.length} rows` : result);
   return Array.isArray(result) ? result : [result];
 }
 
@@ -390,7 +392,7 @@ export async function supabaseRPC<T>(functionName: string, params: any = {}): Pr
   }
 
   const url = `${SUPABASE_URL}/rest/v1/rpc/${functionName}`;
-  console.log(`[supabaseRPC] Calling ${functionName}:`, params);
+  debugLog(`[supabaseRPC] Calling ${functionName}:`, params);
 
   try {
     const response = await fetch(url, {
@@ -419,7 +421,7 @@ export async function supabaseGetSignedUrl(bucket: string, path: string, expires
   }
 
   const url = `${SUPABASE_URL}/storage/v1/object/sign/${bucket}/${path}`;
-  console.log(`[supabaseGetSignedUrl] Getting signed URL for ${bucket}/${path}`);
+  debugLog(`[supabaseGetSignedUrl] Getting signed URL for ${bucket}/${path}`);
 
   try {
     const response = await fetch(url, {
@@ -453,7 +455,7 @@ export async function supabaseUploadFile(bucket: string, path: string, file: Fil
   }
 
   const url = `${SUPABASE_URL}/storage/v1/object/${bucket}/${path}`;
-  console.log(`[supabaseUploadFile] Uploading to ${bucket}/${path} (size: ${file.size} bytes)`);
+  debugLog(`[supabaseUploadFile] Uploading to ${bucket}/${path} (size: ${file.size} bytes)`);
 
   try {
     const authHeaders = await buildAuthHeaders();
