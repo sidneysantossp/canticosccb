@@ -10,6 +10,7 @@ import {
   fetchLegacyCifraMigrationStatuses,
   migrateLegacyCifraById,
   promoteCifraVersionToCatalog,
+  rebuildCifraVersionSectionsFromStoredContent,
   type CifraV2RolloutStats,
   type LegacyCifraMigrationStatus,
 } from '@/lib/admin/cifrasV2AdminApi';
@@ -32,11 +33,14 @@ const AdminCifras: React.FC = () => {
   const [isBatchMigrating, setIsBatchMigrating] = useState(false);
   const [isBatchPromoting, setIsBatchPromoting] = useState(false);
   const [isBatchApplyingStudyDefaults, setIsBatchApplyingStudyDefaults] = useState(false);
+  const [isBatchRebuildingSections, setIsBatchRebuildingSections] = useState(false);
   const [promotingVersionId, setPromotingVersionId] = useState<string | null>(null);
   const [applyingStudyDefaultsVersionId, setApplyingStudyDefaultsVersionId] = useState<string | null>(null);
+  const [rebuildingSectionsVersionId, setRebuildingSectionsVersionId] = useState<string | null>(null);
   const [batchProgress, setBatchProgress] = useState({ completed: 0, total: 0 });
   const [batchPromoteProgress, setBatchPromoteProgress] = useState({ completed: 0, total: 0 });
   const [batchStudyDefaultsProgress, setBatchStudyDefaultsProgress] = useState({ completed: 0, total: 0 });
+  const [batchRebuildSectionsProgress, setBatchRebuildSectionsProgress] = useState({ completed: 0, total: 0 });
   const [lastBatchFailures, setLastBatchFailures] = useState<Array<{ id: number; message: string }>>([]);
   const [alert, setAlert] = useState<{ isOpen: boolean; title: string; message: string; type: 'success' | 'error' | 'info' }>({
     isOpen: false,
@@ -91,6 +95,8 @@ const AdminCifras: React.FC = () => {
 
   const isPromotableStatus = (status: LegacyCifraMigrationStatus | undefined) =>
     Boolean(status?.versionId) && !status?.publicCatalogVisible && (status?.sectionsCount ?? 0) > 0;
+  const canRebuildSections = (status: LegacyCifraMigrationStatus | undefined) =>
+    Boolean(status?.versionId) && (status?.sectionsCount ?? 0) <= 0;
   const canApplyStudyDefaults = (status: LegacyCifraMigrationStatus | undefined) =>
     Boolean(status?.versionId) && (status?.sectionsCount ?? 0) > 0 && !status?.hasStudyDefaults;
 
@@ -150,11 +156,15 @@ const AdminCifras: React.FC = () => {
   const promotableStatuses = filtered
     .map((cifra) => migrationStatuses[cifra.id])
     .filter((status): status is LegacyCifraMigrationStatus => canPromoteVersion(status));
+  const rebuildableStatuses = filtered
+    .map((cifra) => migrationStatuses[cifra.id])
+    .filter((status): status is LegacyCifraMigrationStatus => canRebuildSections(status));
   const studyDefaultableStatuses = filtered
     .map((cifra) => migrationStatuses[cifra.id])
     .filter((status): status is LegacyCifraMigrationStatus => canApplyStudyDefaults(status));
   const catalogVisibleCount = cifras.filter((cifra) => migrationStatuses[cifra.id]?.publicCatalogVisible).length;
   const promotableCount = cifras.filter((cifra) => isPromotableStatus(migrationStatuses[cifra.id])).length;
+  const rebuildableCount = cifras.filter((cifra) => canRebuildSections(migrationStatuses[cifra.id])).length;
   const studyDefaultableCount = cifras.filter((cifra) => canApplyStudyDefaults(migrationStatuses[cifra.id])).length;
   const missingSectionsCount = cifras.filter((cifra) => {
     const status = migrationStatuses[cifra.id];
@@ -165,6 +175,7 @@ const AdminCifras: React.FC = () => {
     return Boolean(status?.versionId) && !status?.hasStudyDefaults;
   }).length;
   const promoteBatch = promotableStatuses.slice(0, batchSize);
+  const rebuildSectionsBatch = rebuildableStatuses.slice(0, batchSize);
   const studyDefaultsBatch = studyDefaultableStatuses.slice(0, batchSize);
   const totalMigrated = cifras.filter((cifra) => migrationStatuses[cifra.id]).length;
   const totalPending = cifras.length - totalMigrated;
@@ -180,6 +191,7 @@ const AdminCifras: React.FC = () => {
     const failures: Array<{ id: number; message: string }> = [];
     let promotedCount = 0;
     let migratedCount = 0;
+    let rebuiltSectionsCount = 0;
     let studyDefaultsCount = 0;
 
     try {
@@ -208,12 +220,42 @@ const AdminCifras: React.FC = () => {
       }
 
       const refreshedStatuses = await fetchLegacyCifraMigrationStatuses(targetIds);
-      const statusesToApplyStudyDefaults = targetIds
+      const statusesToRebuildSections = targetIds
         .map((legacyId) => refreshedStatuses[legacyId])
+        .filter((status): status is LegacyCifraMigrationStatus => canRebuildSections(status));
+
+      if (statusesToRebuildSections.length > 0) {
+        setBatchProgress({ completed, total: targetIds.length + statusesToRebuildSections.length });
+
+        for (const status of statusesToRebuildSections) {
+          try {
+            if (!status.versionId) {
+              throw new Error('Versão V2 ausente para reconstruir seções.');
+            }
+            await rebuildCifraVersionSectionsFromStoredContent(status.versionId);
+            rebuiltSectionsCount += 1;
+          } catch (rebuildSectionsError: any) {
+            failures.push({
+              id: status.legacyId,
+              message: rebuildSectionsError?.message || 'Erro desconhecido ao reconstruir seções.',
+            });
+          } finally {
+            completed += 1;
+            setBatchProgress({ completed, total: targetIds.length + statusesToRebuildSections.length });
+          }
+        }
+      }
+
+      const refreshedStatusesAfterSections = await fetchLegacyCifraMigrationStatuses(targetIds);
+      const statusesToApplyStudyDefaults = targetIds
+        .map((legacyId) => refreshedStatusesAfterSections[legacyId])
         .filter((status): status is LegacyCifraMigrationStatus => canApplyStudyDefaults(status));
 
       if (statusesToApplyStudyDefaults.length > 0) {
-        setBatchProgress({ completed, total: targetIds.length + statusesToApplyStudyDefaults.length });
+        setBatchProgress({
+          completed,
+          total: targetIds.length + statusesToRebuildSections.length + statusesToApplyStudyDefaults.length,
+        });
 
         for (const status of statusesToApplyStudyDefaults) {
           try {
@@ -229,7 +271,10 @@ const AdminCifras: React.FC = () => {
             });
           } finally {
             completed += 1;
-            setBatchProgress({ completed, total: targetIds.length + statusesToApplyStudyDefaults.length });
+            setBatchProgress({
+              completed,
+              total: targetIds.length + statusesToRebuildSections.length + statusesToApplyStudyDefaults.length,
+            });
           }
         }
       }
@@ -242,7 +287,7 @@ const AdminCifras: React.FC = () => {
       if (statusesToPromote.length > 0) {
         setBatchProgress({
           completed,
-          total: targetIds.length + statusesToApplyStudyDefaults.length + statusesToPromote.length,
+          total: targetIds.length + statusesToRebuildSections.length + statusesToApplyStudyDefaults.length + statusesToPromote.length,
         });
 
         for (const status of statusesToPromote) {
@@ -261,7 +306,7 @@ const AdminCifras: React.FC = () => {
             completed += 1;
             setBatchProgress({
               completed,
-              total: targetIds.length + statusesToApplyStudyDefaults.length + statusesToPromote.length,
+              total: targetIds.length + statusesToRebuildSections.length + statusesToApplyStudyDefaults.length + statusesToPromote.length,
             });
           }
         }
@@ -275,14 +320,14 @@ const AdminCifras: React.FC = () => {
         setAlert({
           isOpen: true,
           title: 'Rollout concluído com pendências',
-          message: `${migratedCount} cifras foram migradas, ${studyDefaultsCount} study defaults foram aplicados e ${promotedCount} versões foram levadas ao catálogo neste lote. ${failures.length} etapas falharam (${failedIds}${failures.length > 4 ? ', ...' : ''}).`,
+          message: `${migratedCount} cifras foram migradas, ${rebuiltSectionsCount} tiveram seções reconstruídas, ${studyDefaultsCount} study defaults foram aplicados e ${promotedCount} versões foram levadas ao catálogo neste lote. ${failures.length} etapas falharam (${failedIds}${failures.length > 4 ? ', ...' : ''}).`,
           type: 'error',
         });
       } else {
         setAlert({
           isOpen: true,
           title: 'Rollout concluído',
-          message: `${migratedCount} cifras legadas foram migradas, ${studyDefaultsCount} study defaults foram aplicados e ${promotedCount} versões foram publicadas no catálogo V2 neste lote.`,
+          message: `${migratedCount} cifras legadas foram migradas, ${rebuiltSectionsCount} tiveram seções reconstruídas, ${studyDefaultsCount} study defaults foram aplicados e ${promotedCount} versões foram publicadas no catálogo V2 neste lote.`,
           type: 'success',
         });
       }
@@ -390,6 +435,42 @@ const AdminCifras: React.FC = () => {
     }
   };
 
+  const handleRebuildSections = async (status: LegacyCifraMigrationStatus) => {
+    if (!status.versionId) return;
+
+    if (status.sectionsCount > 0) {
+      setAlert({
+        isOpen: true,
+        title: 'Seções já disponíveis',
+        message: `A cifra #${status.legacyId} já possui seções persistidas no V2.`,
+        type: 'info',
+      });
+      return;
+    }
+
+    try {
+      setRebuildingSectionsVersionId(status.versionId);
+      await rebuildCifraVersionSectionsFromStoredContent(status.versionId);
+      await loadCifras();
+      setAlert({
+        isOpen: true,
+        title: 'Seções reconstruídas',
+        message: `A versão V2 da cifra #${status.legacyId} teve as seções reconstruídas a partir do conteúdo armazenado.`,
+        type: 'success',
+      });
+    } catch (rebuildSectionsError: any) {
+      console.error('Erro ao reconstruir seções da cifra V2:', rebuildSectionsError);
+      setAlert({
+        isOpen: true,
+        title: 'Não foi possível reconstruir as seções',
+        message: rebuildSectionsError?.message || 'Erro inesperado ao reconstruir as seções da versão V2.',
+        type: 'error',
+      });
+    } finally {
+      setRebuildingSectionsVersionId(null);
+    }
+  };
+
   const handleBatchPromote = async () => {
     const targets = promoteBatch.filter((status) => status.versionId && !status.publicCatalogVisible && status.sectionsCount > 0);
     if (targets.length === 0) {
@@ -494,6 +575,58 @@ const AdminCifras: React.FC = () => {
     }
   };
 
+  const handleBatchRebuildSections = async () => {
+    const targets = rebuildSectionsBatch.filter((status) => status.versionId && status.sectionsCount <= 0);
+    if (targets.length === 0) {
+      return;
+    }
+
+    const failures: Array<{ id: number; message: string }> = [];
+    try {
+      setIsBatchRebuildingSections(true);
+      setBatchRebuildSectionsProgress({ completed: 0, total: targets.length });
+
+      let completed = 0;
+      for (const status of targets) {
+        try {
+          if (!status.versionId) {
+            throw new Error('Versão V2 ausente.');
+          }
+          await rebuildCifraVersionSectionsFromStoredContent(status.versionId);
+        } catch (rebuildSectionsError: any) {
+          failures.push({
+            id: status.legacyId,
+            message: rebuildSectionsError?.message || 'Erro desconhecido durante a reconstrução de seções.',
+          });
+        } finally {
+          completed += 1;
+          setBatchRebuildSectionsProgress({ completed, total: targets.length });
+        }
+      }
+
+      await loadCifras();
+      if (failures.length > 0) {
+        setLastBatchFailures((previous) => [...failures, ...previous].slice(0, 20));
+        setAlert({
+          isOpen: true,
+          title: 'Reconstrução de seções com pendências',
+          message: `${targets.length - failures.length} versões receberam seções reconstruídas. ${failures.length} falharam.`,
+          type: 'error',
+        });
+      } else {
+        setAlert({
+          isOpen: true,
+          title: 'Seções reconstruídas em lote',
+          message: `${targets.length} versões receberam seções automaticamente.`,
+          type: 'success',
+        });
+      }
+    } finally {
+      setIsBatchRebuildingSections(false);
+      setBatchRebuildSectionsProgress({ completed: 0, total: 0 });
+    }
+  };
+
   return (
     <div className="max-w-7xl mx-auto py-8">
       {/* Header */}
@@ -554,6 +687,19 @@ const AdminCifras: React.FC = () => {
               : promoteBatch.length > 0
                 ? `Levar ${promoteBatch.length} ao catálogo`
                 : 'Sem promoção pendente'}
+          </button>
+          <button
+            type="button"
+            onClick={() => void handleBatchRebuildSections()}
+            disabled={isBatchRebuildingSections || rebuildSectionsBatch.length === 0}
+            className="inline-flex items-center gap-2 px-5 py-3 bg-amber-500 hover:bg-amber-400 disabled:opacity-60 disabled:cursor-not-allowed text-black font-semibold rounded-xl transition-colors"
+          >
+            <Wand2 className="w-5 h-5" />
+            {isBatchRebuildingSections
+              ? `Seções ${batchRebuildSectionsProgress.completed}/${batchRebuildSectionsProgress.total}`
+              : rebuildSectionsBatch.length > 0
+                ? `Gerar seções em ${rebuildSectionsBatch.length}`
+                : 'Sem seções pendentes'}
           </button>
           <button
             type="button"
@@ -644,6 +790,30 @@ const AdminCifras: React.FC = () => {
               className="h-full bg-violet-400 transition-all"
               style={{
                 width: `${batchStudyDefaultsProgress.total > 0 ? (batchStudyDefaultsProgress.completed / batchStudyDefaultsProgress.total) * 100 : 0}%`,
+              }}
+            />
+          </div>
+        </div>
+      )}
+
+      {isBatchRebuildingSections && (
+        <div className="mb-6 bg-amber-500/10 border border-amber-500/30 rounded-xl p-4">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <p className="text-amber-300 font-medium">Reconstruindo seções a partir do conteúdo armazenado</p>
+              <p className="text-sm text-amber-100/80 mt-1">
+                {batchRebuildSectionsProgress.completed} de {batchRebuildSectionsProgress.total} versões processadas.
+              </p>
+            </div>
+            <p className="text-sm text-amber-200">
+              O lote reaproveita `body_ast` e cai para `body_text` quando necessário.
+            </p>
+          </div>
+          <div className="mt-4 h-2 rounded-full bg-black/30 overflow-hidden">
+            <div
+              className="h-full bg-amber-400 transition-all"
+              style={{
+                width: `${batchRebuildSectionsProgress.total > 0 ? (batchRebuildSectionsProgress.completed / batchRebuildSectionsProgress.total) * 100 : 0}%`,
               }}
             />
           </div>
@@ -800,7 +970,7 @@ const AdminCifras: React.FC = () => {
           {[
             { key: 'pending', label: 'Pendentes', count: totalPending },
             { key: 'promotable', label: 'Prontas para catálogo', count: promotableCount },
-            { key: 'missing-sections', label: 'Sem seções', count: missingSectionsCount },
+            { key: 'missing-sections', label: 'Sem seções', count: rebuildableCount || missingSectionsCount },
             { key: 'missing-study', label: 'Sem study', count: missingStudyCount },
             { key: 'catalog', label: 'No catálogo', count: catalogVisibleCount },
           ].map((item) => {
@@ -999,6 +1169,17 @@ const AdminCifras: React.FC = () => {
                           >
                             <Rocket className="w-3.5 h-3.5" />
                             {promotingVersionId === migrationStatuses[cifra.id].versionId ? 'Enviando...' : 'Levar ao catálogo'}
+                          </button>
+                        )}
+                        {canRebuildSections(migrationStatuses[cifra.id]) && (
+                          <button
+                            type="button"
+                            onClick={() => void handleRebuildSections(migrationStatuses[cifra.id])}
+                            disabled={rebuildingSectionsVersionId === migrationStatuses[cifra.id].versionId}
+                            className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-amber-500/20 text-amber-300 hover:bg-amber-500/30 disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
+                          >
+                            <Wand2 className="w-3.5 h-3.5" />
+                            {rebuildingSectionsVersionId === migrationStatuses[cifra.id].versionId ? 'Gerando...' : 'Gerar seções'}
                           </button>
                         )}
                         {canApplyStudyDefaults(migrationStatuses[cifra.id]) && (

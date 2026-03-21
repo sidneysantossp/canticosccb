@@ -15,6 +15,7 @@ import {
   fetchCifraVersionChordOverrides as fetchCifraVersionChordOverridesInternal,
   type FetchCifraVersionChordOverridesOptions,
 } from '@/lib/cifras-v2/cifraVersionChordOverridesRepository';
+import type { CifraVersion } from '@/types/cifras-v2';
 
 export {
   createCifraChordShape,
@@ -71,6 +72,7 @@ export {
   type CifraVersionSectionDraft,
 } from '@/lib/cifras-v2/cifraPublicationService';
 export { parsePlainTextSectionLines, serializeSectionLines } from '@/lib/cifras-v2/legacyCifraParser';
+import { parseLegacyCifraContent } from '@/lib/cifras-v2/legacyCifraParser';
 
 export { createCifraSong, createCifraVersion, type FetchCifraVersionChordOverridesOptions };
 
@@ -187,6 +189,53 @@ export async function applyCifraVersionStudyDefaults(versionId: string) {
   }
 
   return updated;
+}
+
+function buildStoredVersionSections(version: CifraVersion): CifraVersionSectionDraft[] {
+  if (version.body_ast.sections.length > 0) {
+    return version.body_ast.sections.map((section) => ({
+      key: section.key,
+      label: section.label,
+      order: section.order,
+      cueStartSeconds: section.cueStartSeconds ?? null,
+      cueEndSeconds: section.cueEndSeconds ?? null,
+      loopStartSeconds: section.loopStartSeconds ?? null,
+      loopEndSeconds: section.loopEndSeconds ?? null,
+      lines: section.lines,
+    }));
+  }
+
+  if (version.body_text.trim()) {
+    return parseLegacyCifraContent(version.body_text);
+  }
+
+  return [];
+}
+
+export async function rebuildCifraVersionSectionsFromStoredContent(versionId: string) {
+  const version = await fetchCifraVersionById(versionId);
+  if (!version) {
+    throw new Error('Versão V2 não encontrada.');
+  }
+
+  const sections = buildStoredVersionSections(version);
+  if (sections.length === 0) {
+    throw new Error('A versão não possui conteúdo armazenado suficiente para reconstruir seções.');
+  }
+
+  if (version.status === 'published') {
+    return publishCifraVersion({
+      versionId,
+      sections,
+      publishedAt: version.published_at ?? new Date().toISOString(),
+    });
+  }
+
+  return saveCifraVersionDraft({
+    versionId,
+    sections,
+    status: version.status,
+  });
 }
 
 export async function promoteCifraVersionToCatalog(versionId: string) {
