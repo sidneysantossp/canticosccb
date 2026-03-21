@@ -28,6 +28,86 @@ export const useAudioPlayer = () => {
   const SETTINGS_STORAGE_KEY = 'user_settings_prefs_v1';
   const [prefs, setPrefs] = useState<{ autoplay: boolean; gaplessPlayback: boolean; crossfade: boolean } | null>(null);
 
+  const attemptPlayback = (audio: HTMLAudioElement) => {
+    console.log('▶️ Tentando reproduzir áudio...', {
+      src: audio.src,
+      readyState: audio.readyState,
+      networkState: audio.networkState,
+      error: audio.error
+    });
+
+    const playAttempt = () => {
+      audio.muted = false;
+      audio.volume = 1.0;
+
+      try {
+        audio.setAttribute('volume', '1.0');
+        audio.removeAttribute('muted');
+      } catch { }
+
+      console.log('🔊 Antes de play():', {
+        volume: audio.volume,
+        muted: audio.muted,
+        paused: audio.paused,
+        ended: audio.ended,
+        currentTime: audio.currentTime,
+        duration: audio.duration
+      });
+
+      const playPromise = audio.play();
+
+      if (playPromise !== undefined) {
+        playPromise.catch(error => {
+          console.error('❌ Erro ao reproduzir:', {
+            name: error.name,
+            message: error.message,
+            src: audio.src,
+            readyState: audio.readyState,
+            networkState: audio.networkState,
+            audioError: audio.error
+          });
+
+          if (error.name === 'NotAllowedError') {
+            console.warn('⚠️ Autoplay bloqueado - aguardando interação do usuário');
+            pause();
+          } else if (error.name === 'NotSupportedError') {
+            console.error('❌ Formato de áudio não suportado ou URL inválida');
+            console.error('URL problemática:', audio.src);
+            pause();
+          } else if (error.name === 'AbortError') {
+            console.warn('⚠️ Play interrompido - tentando novamente...');
+            setTimeout(() => {
+              if (audioRef.current && usePlayerStore.getState().isPlaying) {
+                audioRef.current.play().catch(() => { });
+              }
+            }, 100);
+          } else {
+            setTimeout(() => {
+              if (audioRef.current && usePlayerStore.getState().isPlaying) {
+                audioRef.current.play().catch(() => {
+                  console.warn('⚠️ Segunda tentativa falhou');
+                  pause();
+                });
+              }
+            }, 150);
+          }
+        });
+      }
+    };
+
+    if (audio.readyState < 2) {
+      const onCanPlay = () => {
+        audio.removeEventListener('canplay', onCanPlay);
+        if (usePlayerStore.getState().isPlaying) {
+          playAttempt();
+        }
+      };
+      audio.addEventListener('canplay', onCanPlay, { once: true });
+    } else {
+      playAttempt();
+    }
+  };
+
   useEffect(() => {
     try {
       const raw = typeof localStorage !== 'undefined' ? localStorage.getItem(SETTINGS_STORAGE_KEY) : null;
@@ -231,6 +311,10 @@ export const useAudioPlayer = () => {
           audio.volume = Math.max(0.1, volume);
           audio.load();
           console.log('🔊 Volume configurado:', { volume: audio.volume, muted: audio.muted });
+
+          if (usePlayerStore.getState().isPlaying) {
+            attemptPlayback(audio);
+          }
         } catch (e) {
           setIsLoading(false);
           console.warn('⚠️ Erro ao preparar áudio:', e);
@@ -253,92 +337,12 @@ export const useAudioPlayer = () => {
     if (!audio || !audio.src) return;
 
     if (isPlaying) {
-      console.log('▶️ Tentando reproduzir áudio...', {
-        src: audio.src,
-        readyState: audio.readyState,
-        networkState: audio.networkState,
-        error: audio.error
-      });
-
-      // Aguardar um tick para garantir que o src foi carregado
-      const playAttempt = () => {
-        // Garantir que não está muted antes de tocar
-        audio.muted = false;
-        audio.volume = 1.0; // Volume máximo no mobile
-
-        // iOS: forçar volume via setAttribute também
-        try {
-          audio.setAttribute('volume', '1.0');
-          audio.removeAttribute('muted');
-        } catch { }
-
-        console.log('🔊 Antes de play():', {
-          volume: audio.volume,
-          muted: audio.muted,
-          paused: audio.paused,
-          ended: audio.ended,
-          currentTime: audio.currentTime,
-          duration: audio.duration
-        });
-
-        const playPromise = audio.play();
-
-        if (playPromise !== undefined) {
-          playPromise.catch(error => {
-            console.error('❌ Erro ao reproduzir:', {
-              name: error.name,
-              message: error.message,
-              src: audio.src,
-              readyState: audio.readyState,
-              networkState: audio.networkState,
-              audioError: audio.error
-            });
-
-            if (error.name === 'NotAllowedError') {
-              console.warn('⚠️ Autoplay bloqueado - aguardando interação do usuário');
-              pause();
-            } else if (error.name === 'NotSupportedError') {
-              console.error('❌ Formato de áudio não suportado ou URL inválida');
-              console.error('URL problemática:', audio.src);
-              pause();
-            } else if (error.name === 'AbortError') {
-              console.warn('⚠️ Play interrompido - tentando novamente...');
-              setTimeout(() => {
-                if (audioRef.current && usePlayerStore.getState().isPlaying) {
-                  audioRef.current.play().catch(() => { });
-                }
-              }, 100);
-            } else {
-              setTimeout(() => {
-                if (audioRef.current && usePlayerStore.getState().isPlaying) {
-                  audioRef.current.play().catch(() => {
-                    console.warn('⚠️ Segunda tentativa falhou');
-                    pause();
-                  });
-                }
-              }, 150);
-            }
-          });
-        }
-      };
-
-      // Se readyState < 2, aguardar loadeddata
-      if (audio.readyState < 2) {
-        const onCanPlay = () => {
-          audio.removeEventListener('canplay', onCanPlay);
-          if (usePlayerStore.getState().isPlaying) {
-            playAttempt();
-          }
-        };
-        audio.addEventListener('canplay', onCanPlay, { once: true });
-      } else {
-        playAttempt();
-      }
+      attemptPlayback(audio);
     } else {
       console.log('⏸️ Pausando áudio...');
       audio.pause();
     }
-  }, [isPlaying, pause]);
+  }, [isPlaying, pause, currentTrack?.audioUrl]);
 
   // iOS: tentar retomar reprodução ao voltar para a aba (backgrounding pode pausar)
   useEffect(() => {

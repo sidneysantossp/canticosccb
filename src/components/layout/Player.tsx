@@ -54,26 +54,6 @@ const Player: React.FC<PlayerProps> = ({ isHidden = false }) => {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [showVolumeSlider]);
 
-  // Simular progresso do hino e auto-stop no final
-  React.useEffect(() => {
-    let interval: NodeJS.Timeout;
-
-    if (isPlaying && currentTime < duration) {
-      interval = setInterval(() => {
-        const newTime = currentTime + 1;
-
-        // Se chegou ao final
-        if (newTime >= duration) {
-          playNext(); // Chama função que trata repeat
-        } else {
-          setCurrentTime(newTime);
-        }
-      }, 1000);
-    }
-
-    return () => clearInterval(interval);
-  }, [isPlaying, currentTime, duration, playNext, setCurrentTime]);
-
   // Registrar play real apenas uma vez por faixa iniciada
   const lastReportedTrackIdRef = React.useRef<string | null>(null);
   React.useEffect(() => {

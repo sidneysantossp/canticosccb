@@ -264,26 +264,6 @@ export default function FullScreenPlayer({ isOpen, onClose }: FullScreenPlayerPr
     }
   }, [isOpen, isAuthenticated, currentTrack, user]);
 
-  // Simular progresso do hino
-  useEffect(() => {
-    let interval: NodeJS.Timeout;
-    
-    if (isPlaying && currentTime < duration) {
-      interval = setInterval(() => {
-        const newTime = currentTime + 1;
-        
-        // Se chegou ao final
-        if (newTime >= duration) {
-          playNext(); // Chama função que trata repeat
-        } else {
-          setCurrentTime(newTime);
-        }
-      }, 1000);
-    }
-    
-    return () => clearInterval(interval);
-  }, [isPlaying, currentTime, duration, playNext, setCurrentTime]);
-
   // Fechar menu quando clicar fora
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
