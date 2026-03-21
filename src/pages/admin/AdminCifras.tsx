@@ -22,7 +22,9 @@ const AdminCifras: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterInstrument, setFilterInstrument] = useState('');
   const [filterCategory, setFilterCategory] = useState('');
-  const [filterV2Status, setFilterV2Status] = useState<'all' | 'pending' | 'migrated'>('all');
+  const [filterV2Status, setFilterV2Status] = useState<
+    'all' | 'pending' | 'migrated' | 'catalog' | 'promotable' | 'missing-sections' | 'missing-study'
+  >('all');
   const [batchSize, setBatchSize] = useState<number>(25);
   const [rolloutStats, setRolloutStats] = useState<CifraV2RolloutStats | null>(null);
   const [showBatchConfirm, setShowBatchConfirm] = useState(false);
@@ -83,6 +85,9 @@ const AdminCifras: React.FC = () => {
     }
   };
 
+  const isPromotableStatus = (status: LegacyCifraMigrationStatus | undefined) =>
+    Boolean(status?.versionId) && !status?.publicCatalogVisible && (status?.sectionsCount ?? 0) > 0;
+
   const filtered = cifras.filter(c => {
     const matchSearch = !searchTerm ||
       c.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -93,7 +98,11 @@ const AdminCifras: React.FC = () => {
     const matchV2Status =
       filterV2Status === 'all' ||
       (filterV2Status === 'pending' && !migrationStatus) ||
-      (filterV2Status === 'migrated' && Boolean(migrationStatus));
+      (filterV2Status === 'migrated' && Boolean(migrationStatus)) ||
+      (filterV2Status === 'catalog' && Boolean(migrationStatus?.publicCatalogVisible)) ||
+      (filterV2Status === 'promotable' && isPromotableStatus(migrationStatus)) ||
+      (filterV2Status === 'missing-sections' && Boolean(migrationStatus?.versionId) && (migrationStatus?.sectionsCount ?? 0) <= 0) ||
+      (filterV2Status === 'missing-study' && Boolean(migrationStatus?.versionId) && !migrationStatus?.hasStudyDefaults);
     return matchSearch && matchInstrument && matchCategory && matchV2Status;
   });
 
@@ -128,14 +137,23 @@ const AdminCifras: React.FC = () => {
     return issues;
   };
 
-  const canPromoteVersion = (status: LegacyCifraMigrationStatus | undefined) =>
-    Boolean(status?.versionId) && !status?.publicCatalogVisible && (status?.sectionsCount ?? 0) > 0;
+  const canPromoteVersion = (status: LegacyCifraMigrationStatus | undefined) => isPromotableStatus(status);
 
   const hasActiveFilters = Boolean(searchTerm || filterInstrument || filterCategory || filterV2Status !== 'all');
   const pendingCifras = filtered.filter((cifra) => !migrationStatuses[cifra.id]);
   const promotableStatuses = filtered
     .map((cifra) => migrationStatuses[cifra.id])
     .filter((status): status is LegacyCifraMigrationStatus => canPromoteVersion(status));
+  const catalogVisibleCount = cifras.filter((cifra) => migrationStatuses[cifra.id]?.publicCatalogVisible).length;
+  const promotableCount = cifras.filter((cifra) => isPromotableStatus(migrationStatuses[cifra.id])).length;
+  const missingSectionsCount = cifras.filter((cifra) => {
+    const status = migrationStatuses[cifra.id];
+    return Boolean(status?.versionId) && (status?.sectionsCount ?? 0) <= 0;
+  }).length;
+  const missingStudyCount = cifras.filter((cifra) => {
+    const status = migrationStatuses[cifra.id];
+    return Boolean(status?.versionId) && !status?.hasStudyDefaults;
+  }).length;
   const promoteBatch = promotableStatuses.slice(0, batchSize);
   const totalMigrated = cifras.filter((cifra) => migrationStatuses[cifra.id]).length;
   const totalPending = cifras.length - totalMigrated;
@@ -585,13 +603,47 @@ const AdminCifras: React.FC = () => {
         </select>
         <select
           value={filterV2Status}
-          onChange={e => setFilterV2Status(e.target.value as 'all' | 'pending' | 'migrated')}
+          onChange={e => setFilterV2Status(e.target.value as 'all' | 'pending' | 'migrated' | 'catalog' | 'promotable' | 'missing-sections' | 'missing-study')}
           className="px-4 py-3 bg-gray-800 border border-gray-700 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-primary-500"
         >
           <option value="all">Todas as cifras</option>
           <option value="pending">Somente V2 pendentes</option>
           <option value="migrated">Somente V2 migradas</option>
+          <option value="promotable">Prontas para catálogo</option>
+          <option value="catalog">Já no catálogo V2</option>
+          <option value="missing-sections">V2 sem seções</option>
+          <option value="missing-study">V2 sem study defaults</option>
         </select>
+      </div>
+
+      <div className="flex flex-wrap gap-2 mb-6">
+        {[
+          { key: 'pending', label: 'Pendentes', count: totalPending },
+          { key: 'promotable', label: 'Prontas para catálogo', count: promotableCount },
+          { key: 'missing-sections', label: 'Sem seções', count: missingSectionsCount },
+          { key: 'missing-study', label: 'Sem study', count: missingStudyCount },
+          { key: 'catalog', label: 'No catálogo', count: catalogVisibleCount },
+        ].map((item) => {
+          const isActive = filterV2Status === item.key;
+
+          return (
+            <button
+              key={item.key}
+              type="button"
+              onClick={() => setFilterV2Status((current) => (current === item.key ? 'all' : item.key as typeof filterV2Status))}
+              className={`inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-sm transition-colors ${
+                isActive
+                  ? 'bg-primary-500 text-black font-semibold'
+                  : 'bg-gray-800 border border-gray-700 text-gray-300 hover:border-gray-500'
+              }`}
+            >
+              <span>{item.label}</span>
+              <span className={`rounded-full px-2 py-0.5 text-xs ${isActive ? 'bg-black/15' : 'bg-black/30 text-gray-200'}`}>
+                {item.count}
+              </span>
+            </button>
+          );
+        })}
       </div>
 
       {/* Stats */}
