@@ -666,15 +666,31 @@ export const compositoresApi = {
   },
 };
 
-let albumsTipoColumnSupported: boolean | null = null;
+type AlbumsTypeFieldMode = 'type' | 'tipo' | 'none';
 
-function isMissingAlbumsTipoColumnError(error: unknown): boolean {
+let albumsTypeFieldMode: AlbumsTypeFieldMode | null = null;
+
+function isMissingAlbumsTypeFieldError(error: unknown): boolean {
   const message = String((error as any)?.message || error || '').toLowerCase();
-  return message.includes('column albums.tipo does not exist') || message.includes('column "tipo" does not exist');
+  return (
+    message.includes('column albums.tipo does not exist') ||
+    message.includes('column "tipo" does not exist') ||
+    message.includes('column albums.type does not exist') ||
+    message.includes('column "type" does not exist')
+  );
+}
+
+function getAlbumsTypeFieldModes(): AlbumsTypeFieldMode[] {
+  const fallbackModes: AlbumsTypeFieldMode[] = ['type', 'tipo', 'none'];
+  if (!albumsTypeFieldMode) {
+    return fallbackModes;
+  }
+
+  return [albumsTypeFieldMode, ...fallbackModes.filter((mode) => mode !== albumsTypeFieldMode)];
 }
 
 function inferAlbumTipo(album: any): 'album' | 'coletanea' {
-  const explicitTipo = String(album?.tipo || '').trim().toLowerCase();
+  const explicitTipo = String(album?.tipo || album?.type || '').trim().toLowerCase();
   if (explicitTipo === 'coletanea') {
     return 'coletanea';
   }
@@ -713,11 +729,12 @@ export const albunsApi = {
       const pageSize = params?.limit || 12;
       const page = params?.page || 1;
 
-      const buildQuery = (withTipoColumn: boolean) => {
+      const buildQuery = (typeFieldMode: AlbumsTypeFieldMode) => {
+        const typeField = typeFieldMode === 'none' ? '' : `,${typeFieldMode}`;
         let query = supabase
           .from('albums')
           .select(
-            `id,title,artist,description,cover_url,total_tracks,release_date,composer_id,created_at,updated_at,is_published,active,featured,featured_order,genre${withTipoColumn ? ',tipo' : ''}`,
+            `id,title,artist,description,cover_url,total_tracks,release_date,composer_id,created_at,updated_at,is_published,active,featured,featured_order,genre${typeField}`,
             { count: 'exact' }
           )
           .order('created_at', { ascending: false });
@@ -728,29 +745,40 @@ export const albunsApi = {
         if (params?.compositor_id) {
           query = query.eq('composer_id', params.compositor_id);
         }
-        if (params?.tipo && withTipoColumn) {
-          query = query.eq('tipo', params.tipo);
+        if (params?.tipo && typeFieldMode !== 'none') {
+          query = query.eq(typeFieldMode, params.tipo);
         }
 
         return query;
       };
 
-      const shouldTryTipoColumn = albumsTipoColumnSupported !== false;
-      const runListQuery = async (withTipoColumn: boolean, withRange: boolean) => {
-        let query = buildQuery(withTipoColumn);
+      const runListQuery = async (typeFieldMode: AlbumsTypeFieldMode, withRange: boolean) => {
+        let query = buildQuery(typeFieldMode);
         if (withRange) {
           query = query.range((page - 1) * pageSize, page * pageSize - 1);
         }
         return query;
       };
 
-      let response = await runListQuery(shouldTryTipoColumn, true);
+      let response = null as Awaited<ReturnType<typeof runListQuery>> | null;
+      let usedTypeFieldMode: AlbumsTypeFieldMode = 'none';
 
-      if (response.error && shouldTryTipoColumn && isMissingAlbumsTipoColumnError(response.error)) {
-        albumsTipoColumnSupported = false;
-        response = await runListQuery(false, !params?.tipo);
-      } else if (!response.error && shouldTryTipoColumn) {
-        albumsTipoColumnSupported = true;
+      for (const typeFieldMode of getAlbumsTypeFieldModes()) {
+        const candidate = await runListQuery(typeFieldMode, typeFieldMode !== 'none' || !params?.tipo);
+        if (candidate.error && typeFieldMode !== 'none' && isMissingAlbumsTypeFieldError(candidate.error)) {
+          continue;
+        }
+
+        response = candidate;
+        usedTypeFieldMode = typeFieldMode;
+        albumsTypeFieldMode = typeFieldMode;
+        break;
+      }
+
+      if (!response) {
+        response = await runListQuery('none', !params?.tipo);
+        usedTypeFieldMode = 'none';
+        albumsTypeFieldMode = 'none';
       }
 
       const { data: rawRows, error, count } = response;
@@ -759,11 +787,12 @@ export const albunsApi = {
         return { data: { albuns: [], data: [], total: 0, pages: 0 }, error: error.message };
       }
 
-      const compatibleRows = applyAlbumTipoFilterLocally(rawRows || [], albumsTipoColumnSupported === false ? params?.tipo : undefined);
-      const total = albumsTipoColumnSupported === false && params?.tipo
+      const shouldFilterTipoLocally = usedTypeFieldMode === 'none';
+      const compatibleRows = applyAlbumTipoFilterLocally(rawRows || [], shouldFilterTipoLocally ? params?.tipo : undefined);
+      const total = shouldFilterTipoLocally && params?.tipo
         ? compatibleRows.length
         : (count ?? compatibleRows.length ?? 0);
-      const rows = albumsTipoColumnSupported === false && params?.tipo
+      const rows = shouldFilterTipoLocally && params?.tipo
         ? compatibleRows.slice((page - 1) * pageSize, page * pageSize)
         : compatibleRows;
 
@@ -810,26 +839,27 @@ export const albunsApi = {
         id: `eq.${id}`,
         limit: '1'
       };
-      const fetchAlbumById = (withTipoColumn: boolean) => supabaseFetch<any>('albums', {
+      const fetchAlbumById = (typeFieldMode: AlbumsTypeFieldMode) => supabaseFetch<any>('albums', {
         ...baseParams,
-        select: withTipoColumn
-          ? 'id,title,artist,description,cover_url,total_tracks,release_date,composer_id,is_published,active,created_at,updated_at,featured,featured_order,genre,tipo'
+        select: typeFieldMode !== 'none'
+          ? `id,title,artist,description,cover_url,total_tracks,release_date,composer_id,is_published,active,created_at,updated_at,featured,featured_order,genre,${typeFieldMode}`
           : 'id,title,artist,description,cover_url,total_tracks,release_date,composer_id,is_published,active,created_at,updated_at,featured,featured_order,genre',
       });
 
-      let rows;
-      try {
-        rows = await fetchAlbumById(albumsTipoColumnSupported !== false);
-        if (albumsTipoColumnSupported !== false) {
-          albumsTipoColumnSupported = true;
-        }
-      } catch (error: any) {
-        if (!isMissingAlbumsTipoColumnError(error) || albumsTipoColumnSupported === false) {
+      let rows = null as any[] | null;
+      for (const typeFieldMode of getAlbumsTypeFieldModes()) {
+        try {
+          rows = await fetchAlbumById(typeFieldMode);
+          albumsTypeFieldMode = typeFieldMode;
+          break;
+        } catch (error: any) {
+          if (typeFieldMode !== 'none' && isMissingAlbumsTypeFieldError(error)) {
+            continue;
+          }
           throw error;
         }
-        albumsTipoColumnSupported = false;
-        rows = await fetchAlbumById(false);
       }
+
       const album = rows?.[0] ? mapAlbumForCompatibility(rows[0]) : null;
       return { data: album, error: null };
     } catch (error: any) {
@@ -911,21 +941,26 @@ export const albunsApi = {
       if (data.featured_order !== undefined) insertData.featured_order = data.featured_order;
 
       console.log('📀 [albunsApi.create] Inserting:', insertData);
-      let result;
-      try {
-        result = await supabaseAuthInsert<any>('albums', {
-          ...insertData,
-          ...(albumsTipoColumnSupported !== false && data.tipo ? { tipo: data.tipo } : {}),
-        });
-        if (albumsTipoColumnSupported !== false) {
-          albumsTipoColumnSupported = true;
-        }
-      } catch (error: any) {
-        if (!isMissingAlbumsTipoColumnError(error) || albumsTipoColumnSupported === false) {
+      let result = null as any[] | null;
+      for (const typeFieldMode of getAlbumsTypeFieldModes()) {
+        try {
+          result = await supabaseAuthInsert<any>('albums', {
+            ...insertData,
+            ...(typeFieldMode !== 'none' && data.tipo ? { [typeFieldMode]: data.tipo } : {}),
+          });
+          albumsTypeFieldMode = typeFieldMode;
+          break;
+        } catch (error: any) {
+          if (typeFieldMode !== 'none' && isMissingAlbumsTypeFieldError(error)) {
+            continue;
+          }
           throw error;
         }
-        albumsTipoColumnSupported = false;
+      }
+
+      if (!result) {
         result = await supabaseAuthInsert<any>('albums', insertData);
+        albumsTypeFieldMode = 'none';
       }
 
       if (!result || result.length === 0) {
@@ -958,21 +993,26 @@ export const albunsApi = {
       if (data.featured_order !== undefined) updateData.featured_order = data.featured_order;
 
       console.log('📀 [albunsApi.update] ID:', id, 'Data:', updateData);
-      let result;
-      try {
-        result = await supabaseAuthUpdate<any>('albums', { id: `eq.${id}` }, {
-          ...updateData,
-          ...(albumsTipoColumnSupported !== false && data.tipo !== undefined ? { tipo: data.tipo } : {}),
-        });
-        if (albumsTipoColumnSupported !== false) {
-          albumsTipoColumnSupported = true;
-        }
-      } catch (error: any) {
-        if (!isMissingAlbumsTipoColumnError(error) || albumsTipoColumnSupported === false) {
+      let result = null as any[] | null;
+      for (const typeFieldMode of getAlbumsTypeFieldModes()) {
+        try {
+          result = await supabaseAuthUpdate<any>('albums', { id: `eq.${id}` }, {
+            ...updateData,
+            ...(typeFieldMode !== 'none' && data.tipo !== undefined ? { [typeFieldMode]: data.tipo } : {}),
+          });
+          albumsTypeFieldMode = typeFieldMode;
+          break;
+        } catch (error: any) {
+          if (typeFieldMode !== 'none' && isMissingAlbumsTypeFieldError(error)) {
+            continue;
+          }
           throw error;
         }
-        albumsTipoColumnSupported = false;
+      }
+
+      if (!result) {
         result = await supabaseAuthUpdate<any>('albums', { id: `eq.${id}` }, updateData);
+        albumsTypeFieldMode = 'none';
       }
       console.log('✅ [albunsApi.update] Result:', result);
       if (!result || result.length === 0) {
