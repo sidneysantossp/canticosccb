@@ -23,6 +23,7 @@ export const supabase = createSupabaseClient();
 // Cliente público sem sessão do usuário, para buscas e listagens abertas.
 export const publicSupabase = createSupabaseClient({
   auth: {
+    storageKey: 'canticosccb-public-auth',
     persistSession: false,
     autoRefreshToken: false,
     detectSessionInUrl: false,
