@@ -27,7 +27,6 @@ export const AboutPage = lazyWithChunkRecovery(() => import('./AboutPage'));
 export const CookiesPolicyPage = lazyWithChunkRecovery(() => import('./CookiesPolicyPage'));
 export const ContentClaimPage = lazyWithChunkRecovery(() => import('./ContentClaimPage'));
 export const LGPDPage = lazyWithChunkRecovery(() => import('./LGPDPage'));
-export const PremiumPage = lazyWithChunkRecovery(() => import('./PremiumPage'));
 export const InstrumentaisPage = lazyWithChunkRecovery(() => import('./InstrumentaisPage'));
 export const BibleHubPage = lazyWithChunkRecovery(() => import('./BibleHubPage'));
 export const BibliaNarradaPage = lazyWithChunkRecovery(() => import('./BibliaNarradaPage'));

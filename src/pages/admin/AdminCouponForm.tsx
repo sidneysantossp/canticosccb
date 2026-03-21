@@ -26,9 +26,9 @@ const DISCOUNT_TYPES = [
 ];
 
 const APPLIES_TO = [
-  { value: 'all', label: 'Todos os Planos' },
-  { value: 'premium', label: 'Apenas Premium' },
-  { value: 'specific_plan', label: 'Plano Específico' }
+  { value: 'all', label: 'Toda a Base' },
+  { value: 'premium', label: 'Usuários Cadastrados' },
+  { value: 'specific_plan', label: 'Segmento Específico' }
 ];
 
 const AdminCouponForm: React.FC = () => {
@@ -160,7 +160,7 @@ const AdminCouponForm: React.FC = () => {
             <h1 className="text-3xl font-bold text-white">
               {isEditing ? 'Editar Cupom' : 'Novo Cupom'}
             </h1>
-            <p className="text-gray-400 mt-1">Configure cupons de desconto para assinaturas</p>
+            <p className="text-gray-400 mt-1">Configure cupons e campanhas promocionais da plataforma</p>
           </div>
         </div>
 

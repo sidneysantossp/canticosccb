@@ -8,7 +8,7 @@ const AdminPromotions: React.FC = () => {
     {
       id: 1,
       title: 'Black Friday - 50% OFF',
-      description: '50% de desconto no plano Premium anual',
+      description: 'Campanha de destaque para cadastro gratuito e retomada de usuarios',
       startDate: '2024-11-20',
       endDate: '2024-11-30',
       discount: 50,
@@ -18,8 +18,8 @@ const AdminPromotions: React.FC = () => {
     },
     {
       id: 2,
-      title: 'Natal Premium',
-      description: '3 meses grátis na assinatura anual',
+      title: 'Natal de Cadastro',
+      description: 'Acao de engajamento para criar conta e liberar a escuta completa',
       startDate: '2024-12-01',
       endDate: '2024-12-25',
       discount: 25,

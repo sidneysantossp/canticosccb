@@ -29,7 +29,6 @@ export const ROUTES = {
   LIKED: '/liked',
   PROFILE: '/profile',
   SETTINGS: '/settings',
-  PREMIUM: '/premium',
   LOGIN: '/login',
   REGISTER: '/register',
   ONBOARDING: '/onboarding',

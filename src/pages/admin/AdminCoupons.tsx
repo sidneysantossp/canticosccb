@@ -57,9 +57,9 @@ const AdminCoupons: React.FC = () => {
   ];
 
   const appliesTo = [
-    { value: 'all', label: 'Todos os Planos' },
-    { value: 'premium', label: 'Apenas Premium' },
-    { value: 'specific_plan', label: 'Plano Específico' }
+    { value: 'all', label: 'Toda a Base' },
+    { value: 'premium', label: 'Usuários Cadastrados' },
+    { value: 'specific_plan', label: 'Segmento Específico' }
   ];
 
   useEffect(() => {

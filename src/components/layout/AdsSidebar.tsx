@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Crown, Zap, TrendingUp, Gift, X } from 'lucide-react';
+import { Crown, Zap, TrendingUp } from 'lucide-react';
 
 interface AdsSidebarProps {
   type?: 'user' | 'composer';
@@ -35,14 +35,14 @@ const AdsSidebar: React.FC<AdsSidebarProps> = ({ type = 'user' }) => {
     },
     {
       id: 2,
-      title: 'Compositor Premium',
-      description: 'Ferramentas avançadas para compositores profissionais',
+      title: 'Catalogo Editorial',
+      description: 'Organize seus hinos, revise metadados e acompanhe a publicacao do seu repertorio.',
       icon: Crown,
       bgColor: 'from-yellow-900/40 to-yellow-600/20',
       borderColor: 'border-yellow-500/20',
       iconColor: 'text-yellow-400',
-      cta: 'Fazer Upgrade',
-      link: '/premium'
+      cta: 'Abrir Catalogo',
+      link: '/composer/songs'
     },
     {
       id: 3,
@@ -64,7 +64,7 @@ const AdsSidebar: React.FC<AdsSidebarProps> = ({ type = 'user' }) => {
       {/* Header */}
       <div className="mb-6">
         <h3 className="text-white font-bold text-lg mb-1">Recomendado para você</h3>
-        <p className="text-gray-400 text-sm">Aproveite nossos recursos premium</p>
+        <p className="text-gray-400 text-sm">Aproveite melhor os recursos da plataforma</p>
       </div>
 
       {/* Ads */}

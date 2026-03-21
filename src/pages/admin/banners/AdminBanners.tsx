@@ -17,9 +17,9 @@ const AdminBanners: React.FC = () => {
     },
     {
       id: 2,
-      title: 'Promoção Premium',
+      title: 'Cadastro Gratuito',
       image: 'https://picsum.photos/seed/banner2/1200/400',
-      link: '/premium',
+      link: '/cadastro',
       position: 'home-hero',
       active: true,
       clicks: 567,

@@ -47,8 +47,8 @@ const AdminCampaigns: React.FC = () => {
 
   const targetAudiences = [
     { value: 'all', label: 'Todos os Usuários' },
-    { value: 'premium', label: 'Assinantes Premium' },
-    { value: 'free', label: 'Usuários Gratuitos' },
+    { value: 'premium', label: 'Usuários Cadastrados' },
+    { value: 'free', label: 'Visitantes sem Cadastro' },
     { value: 'inactive', label: 'Usuários Inativos' },
     { value: 'new', label: 'Novos Usuários' },
     { value: 'custom', label: 'Personalizado' }

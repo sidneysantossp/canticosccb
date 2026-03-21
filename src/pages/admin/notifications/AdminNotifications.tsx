@@ -13,7 +13,7 @@ const AdminNotifications: React.FC = () => {
 
   const recentNotifications = [
     { id: 1, title: 'Novo hino disponível', sent: '2024-01-22 10:30', target: 'all', recipients: 24547 },
-    { id: 2, title: 'Promoção Premium', sent: '2024-01-21 15:00', target: 'free', recipients: 12340 },
+    { id: 2, title: 'Cadastre-se para continuar ouvindo', sent: '2024-01-21 15:00', target: 'free', recipients: 12340 },
     { id: 3, title: 'Manutenção programada', sent: '2024-01-20 09:00', target: 'all', recipients: 24547 }
   ];
 
@@ -59,8 +59,8 @@ const AdminNotifications: React.FC = () => {
                 className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg text-white focus:outline-none focus:border-red-600"
               >
                 <option value="all">Todos os usuários</option>
-                <option value="free">Apenas Free</option>
-                <option value="premium">Apenas Premium</option>
+                <option value="free">Visitantes sem cadastro</option>
+                <option value="premium">Usuários cadastrados</option>
                 <option value="composers">Compositores</option>
               </select>
             </div>

@@ -64,7 +64,6 @@ export const APP_CONFIG = {
 
 // Feature Flags
 export const FEATURES = {
-  enablePremium: import.meta.env.VITE_ENABLE_PREMIUM === 'true',
   enableSocial: import.meta.env.VITE_ENABLE_SOCIAL === 'true',
   enableOffline: import.meta.env.VITE_ENABLE_OFFLINE === 'true',
 } as const;

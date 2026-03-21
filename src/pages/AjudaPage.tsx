@@ -16,7 +16,7 @@ const AjudaPage: React.FC = () => {
     { q: 'Como publicar minhas composições?', a: 'Cadastre-se como compositor através da página "Sou Compositor" e, após aprovação, acesse o painel do compositor para enviar seus hinos.' },
     { q: 'A plataforma é gratuita?', a: 'Sim! A plataforma é gratuita para ouvintes. Compositores também podem publicar gratuitamente.' },
     { q: 'Como reportar conteúdo inadequado?', a: 'Utilize a página de Reivindicação de Conteúdo ou entre em contato conosco pelo formulário de contato.' },
-    { q: 'Como funciona o plano Premium?', a: 'O plano Premium oferece benefícios como downloads offline, qualidade superior de áudio e experiência sem interrupções.' },
+    { q: 'Preciso pagar para continuar ouvindo?', a: 'Não. A plataforma não opera com assinatura premium. Depois de ouvir o primeiro hino como visitante, basta fazer seu cadastro gratuito para continuar ouvindo.' },
   ];
 
   return (

@@ -8,7 +8,7 @@ const AdminSEO: React.FC = () => {
     { id: 'home', name: 'Home', path: '/' },
     { id: 'library', name: 'Biblioteca', path: '/library' },
     { id: 'search', name: 'Busca', path: '/search' },
-    { id: 'premium', name: 'Premium', path: '/premium' }
+    { id: 'register', name: 'Cadastro', path: '/cadastro' }
   ];
 
   return (

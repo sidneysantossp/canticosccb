@@ -169,8 +169,8 @@ const AdminUserForm: React.FC = () => {
                 onChange={(e) => setFormData({ ...formData, plan: e.target.value })}
                 className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg text-white focus:outline-none focus:border-red-600"
               >
-                <option value="free">Free</option>
-                <option value="premium">Premium</option>
+                <option value="free">Visitante</option>
+                <option value="premium">Cadastrado</option>
               </select>
             </div>
 

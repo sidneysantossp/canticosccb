@@ -7,8 +7,8 @@ const AdminCampaigns: React.FC = () => {
   const campaigns = [
     {
       id: 1,
-      name: 'Lançamento Premium',
-      description: 'Campanha de lançamento do plano premium',
+      name: 'Cadastro de Visitantes',
+      description: 'Campanha para converter ouvintes visitantes em usuarios cadastrados',
       startDate: '2024-01-01',
       endDate: '2024-01-31',
       budget: 5000,
@@ -20,7 +20,7 @@ const AdminCampaigns: React.FC = () => {
     {
       id: 2,
       name: 'Black Friday',
-      description: 'Campanha especial de Black Friday',
+      description: 'Campanha especial de retomada e cadastro de base',
       startDate: '2024-11-20',
       endDate: '2024-11-30',
       budget: 10000,

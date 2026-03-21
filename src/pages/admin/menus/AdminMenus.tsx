@@ -6,7 +6,7 @@ const AdminMenus: React.FC = () => {
     { id: 1, label: 'Home', path: '/', order: 1, visible: true },
     { id: 2, label: 'Biblioteca', path: '/library', order: 2, visible: true },
     { id: 3, label: 'Buscar', path: '/search', order: 3, visible: true },
-    { id: 4, label: 'Premium', path: '/premium', order: 4, visible: true },
+    { id: 4, label: 'Cadastro', path: '/cadastro', order: 4, visible: true },
     { id: 5, label: 'Sobre', path: '/about', order: 5, visible: true }
   ];
 
