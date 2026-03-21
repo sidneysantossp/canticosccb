@@ -88,7 +88,17 @@ export const useAudioPlayer = () => {
 
       const onError = (e: Event) => {
         setIsLoading(false);
-        console.warn('⚠️ Erro ao carregar áudio:', e);
+        const src = audio.currentSrc || audio.src || '';
+        if (!src) {
+          return;
+        }
+
+        console.warn('⚠️ Erro ao carregar áudio:', {
+          src,
+          code: audio.error?.code,
+          message: audio.error?.message,
+          event: e.type,
+        });
       };
 
       const onPlaying = () => {
@@ -155,8 +165,6 @@ export const useAudioPlayer = () => {
       listenersAttachedRef.current = true;
 
       return () => {
-        audio.pause();
-        audio.src = '';
         audio.removeEventListener('loadeddata', onLoadedData);
         audio.removeEventListener('loadedmetadata', onLoadedMetadata);
         audio.removeEventListener('error', onError);
@@ -164,6 +172,9 @@ export const useAudioPlayer = () => {
         audio.removeEventListener('playing', onPlaying);
         audio.removeEventListener('ended', onEnded);
         listenersAttachedRef.current = false;
+        audio.pause();
+        audio.removeAttribute('src');
+        audio.load();
       };
     }
   }, [setCurrentTime, user]);
