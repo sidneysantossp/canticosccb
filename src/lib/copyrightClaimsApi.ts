@@ -93,9 +93,10 @@ export interface LoadCopyrightClaimsOptions {
 
 const CLAIMS_TABLE = 'copyright_claims';
 const MESSAGES_TABLE = 'copyright_claim_messages';
-const ATTACHMENTS_TABLE = 'copyright_claim_attachments';
+const ATTACHMENTS_TABLE_CANDIDATES = ['copyright_chat_attachments', 'copyright_claim_attachments'] as const;
 const STORAGE_BUCKET = 'documents';
 const SYSTEM_SENDER_NAME = 'Equipe Cânticos CCB';
+let resolvedAttachmentsTable: string | null = null;
 
 function sanitizeFileName(fileName: string) {
   return fileName
@@ -174,6 +175,91 @@ function mapClaim(row: any, messagesByClaimId: Map<string, ChatMessage[]>): Copy
   };
 }
 
+function isMissingAttachmentsTableError(error: any) {
+  const message = String(error?.message || '');
+  const code = String(error?.code || '');
+  return code === 'PGRST205' || code === '42P01' || /Could not find the table|does not exist/i.test(message);
+}
+
+async function listClaimAttachments(messageIds: string[]) {
+  if (messageIds.length === 0) return [];
+
+  const candidateTables = resolvedAttachmentsTable
+    ? [resolvedAttachmentsTable, ...ATTACHMENTS_TABLE_CANDIDATES.filter((table) => table !== resolvedAttachmentsTable)]
+    : [...ATTACHMENTS_TABLE_CANDIDATES];
+
+  for (const table of candidateTables) {
+    const { data, error } = await supabase
+      .from(table)
+      .select('*')
+      .in('message_id', messageIds)
+      .order('created_at', { ascending: true });
+
+    if (!error) {
+      resolvedAttachmentsTable = table;
+      return data || [];
+    }
+
+    if (isMissingAttachmentsTableError(error)) {
+      continue;
+    }
+
+    throw error;
+  }
+
+  return [];
+}
+
+async function resolveWritableAttachmentsTable() {
+  if (resolvedAttachmentsTable) return resolvedAttachmentsTable;
+
+  for (const table of ATTACHMENTS_TABLE_CANDIDATES) {
+    const { error } = await supabase
+      .from(table)
+      .select('id')
+      .limit(1);
+
+    if (!error) {
+      resolvedAttachmentsTable = table;
+      return table;
+    }
+
+    if (isMissingAttachmentsTableError(error)) {
+      continue;
+    }
+
+    throw error;
+  }
+
+  throw new Error('Tabela de anexos de direitos autorais não encontrada no banco.');
+}
+
+async function insertClaimAttachments(rows: Record<string, any>[]) {
+  const attachmentsTable = await resolveWritableAttachmentsTable();
+  const { error } = await supabase
+    .from(attachmentsTable)
+    .insert(rows);
+
+  if (!error) {
+    return;
+  }
+
+  if (String(error?.code || '') === '42703' && /claim_id/i.test(String(error?.message || ''))) {
+    const fallbackRows = rows.map(({ claim_id, ...rest }) => rest);
+    const { error: fallbackError } = await supabase
+      .from(attachmentsTable)
+      .insert(fallbackRows);
+
+    if (!fallbackError) {
+      return;
+    }
+
+    throw fallbackError;
+  }
+
+  throw error;
+}
+
 async function requireAuthenticatedUserId() {
   const { data, error } = await supabase.auth.getUser();
   if (error || !data.user) {
@@ -186,27 +272,19 @@ async function hydrateClaims(rows: any[]): Promise<CopyrightClaim[]> {
   if (rows.length === 0) return [];
 
   const claimIds = rows.map((row) => String(row.id));
-
-  const [{ data: messageRows, error: messagesError }, { data: attachmentRows, error: attachmentsError }] = await Promise.all([
-    supabase
-      .from(MESSAGES_TABLE)
-      .select('*')
-      .in('claim_id', claimIds)
-      .order('created_at', { ascending: true }),
-    supabase
-      .from(ATTACHMENTS_TABLE)
-      .select('*')
-      .in('claim_id', claimIds)
-      .order('created_at', { ascending: true }),
-  ]);
+  const { data: messageRows, error: messagesError } = await supabase
+    .from(MESSAGES_TABLE)
+    .select('*')
+    .in('claim_id', claimIds)
+    .order('created_at', { ascending: true });
 
   if (messagesError) {
     throw messagesError;
   }
 
-  if (attachmentsError) {
-    throw attachmentsError;
-  }
+  const attachmentRows = await listClaimAttachments(
+    (messageRows || []).map((row) => String(row.id))
+  );
 
   const attachmentsByMessageId = new Map<string, ClaimAttachment[]>();
   for (const row of attachmentRows || []) {
@@ -408,13 +486,7 @@ export async function sendCopyrightClaimMessage(claimId: string, input: SendCopy
       updated_at: now,
     }));
 
-    const { error: attachmentsError } = await supabase
-      .from(ATTACHMENTS_TABLE)
-      .insert(rows);
-
-    if (attachmentsError) {
-      throw attachmentsError;
-    }
+    await insertClaimAttachments(rows);
   }
 
   const unreadFlags = input.senderRole === 'admin'

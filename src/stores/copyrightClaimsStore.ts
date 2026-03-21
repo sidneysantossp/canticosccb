@@ -41,7 +41,7 @@ interface CopyrightClaimsState {
 function toFriendlyError(error: unknown) {
   const message = error instanceof Error ? error.message : 'Erro ao processar reivindicações';
   if (
-    /copyright_claims|copyright_claim_messages|copyright_claim_attachments/i.test(message) &&
+    /copyright_claims|copyright_claim_messages|copyright_claim_attachments|copyright_chat_attachments/i.test(message) &&
     /(does not exist|Could not find the table|42P01)/i.test(message)
   ) {
     return 'O backend de direitos autorais ainda não foi criado no banco. Execute a migration CREATE_COPYRIGHT_CLAIMS_MODULE.sql no Supabase.';

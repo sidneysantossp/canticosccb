@@ -84,7 +84,7 @@ export const getTopSongs = async (limit = 5) => {
   try {
     const { data } = await supabase
       .from('hinos')
-      .select('id, titulo, compositor_nome, cover_url, capa_url, plays_count, plays, views_count')
+      .select('id, titulo, compositor_nome, cover_url, plays_count, plays, views_count')
       .order('plays_count', { ascending: false, nullsFirst: false })
       .order('plays', { ascending: false, nullsFirst: false })
       .limit(limit);
@@ -96,7 +96,7 @@ export const getTopSongs = async (limit = 5) => {
       songs: {
         title: song.titulo,
         composer_name: (song as any).compositor_nome,
-        cover_url: (song as any).cover_url || (song as any).capa_url
+        cover_url: (song as any).cover_url || ''
       }
     }));
   } catch (e) {

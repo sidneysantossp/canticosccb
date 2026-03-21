@@ -26,7 +26,7 @@ const mapHinoToSong = (hino: any): Song => ({
   artist: hino.artista || hino.artist || 'CCB',
   album: hino.album,
   genre: hino.categoria || hino.genre || 'Hinos',
-  cover_url: hino.capa_url || hino.cover_url || '',
+  cover_url: hino.cover_url || hino.capa_url || '',
   audio_url: hino.audio_url || '',
   duration: hino.duracao || hino.duration || '0:00',
   status: hino.status || 'draft',
@@ -126,7 +126,7 @@ export const createSong = async (data: Partial<Song>): Promise<{ success: boolea
       artista: data.artist || 'CCB',
       album: data.album,
       categoria: data.genre || 'Hinos',
-      capa_url: data.cover_url || '',
+      cover_url: data.cover_url || '',
       audio_url: data.audio_url || '',
       duracao: data.duration || '0:00',
       status: data.status || 'draft',
@@ -155,7 +155,7 @@ export const updateSong = async (id: string, data: Partial<Song>): Promise<{ suc
     if (data.artist !== undefined) updateData.artista = data.artist;
     if (data.album !== undefined) updateData.album = data.album;
     if (data.genre !== undefined) updateData.categoria = data.genre;
-    if (data.cover_url !== undefined) updateData.capa_url = data.cover_url;
+    if (data.cover_url !== undefined) updateData.cover_url = data.cover_url;
     if (data.audio_url !== undefined) updateData.audio_url = data.audio_url;
     if (data.duration !== undefined) updateData.duracao = data.duration;
     if (data.status !== undefined) updateData.status = data.status;

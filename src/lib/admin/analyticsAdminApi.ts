@@ -18,7 +18,7 @@ const toNumber = (value: unknown) => {
 export const getTopSongs = async (limit = 10) => {
   const { data, error } = await supabase
     .from('hinos')
-    .select('id, titulo, compositor_nome, cover_url, capa_url, plays_count, plays, views_count, likes_count, likes')
+    .select('id, titulo, compositor_nome, cover_url, plays_count, plays, views_count, likes_count, likes')
     .order('plays_count', { ascending: false, nullsFirst: false })
     .order('plays', { ascending: false, nullsFirst: false })
     .limit(limit);
@@ -30,7 +30,7 @@ export const getTopSongs = async (limit = 10) => {
       id: String(row.id),
       title: row.titulo || '',
       composer_name: row.compositor_nome || 'CCB',
-      cover_url: row.cover_url || row.capa_url || '',
+      cover_url: row.cover_url || '',
       plays_count: toNumber(row.plays_count || row.plays || row.views_count),
       likes_count: toNumber(row.likes_count || row.likes),
     }))
