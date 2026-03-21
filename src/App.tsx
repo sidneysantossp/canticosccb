@@ -608,6 +608,8 @@ const AppContent: React.FC = () => {
 
           {/* Archive Import */}
           <Route path="admin/archive-import" element={<ProtectedRoute requireAdmin><AdminArchiveImport /></ProtectedRoute>} />
+          <Route path="admin/importar-acervo" element={<ProtectedRoute requireAdmin><AdminArchiveImport /></ProtectedRoute>} />
+          <Route path="admin/acervo/importar" element={<ProtectedRoute requireAdmin><AdminArchiveImport /></ProtectedRoute>} />
 
           {/* 404 - Catch All */}
           <Route path="*" element={<NotFoundPage />} />
