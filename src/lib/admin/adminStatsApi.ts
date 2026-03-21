@@ -146,41 +146,14 @@ export const getUserGrowth = async (months: number = 6) => {
 };
 
 export const getRevenueStats = async () => {
-  try {
-    const { data, error } = await supabase
-      .from('users')
-      .select('id,plan,created_at')
-      .neq('plan', 'free');
-
-    if (error) throw error;
-    const premiumUsers = data || [];
-
-    // Calcular MRR (Monthly Recurring Revenue)
-    const planPrices: Record<string, number> = {
-      'basic': 9.90,
-      'premium': 19.90,
-      'pro': 29.90
-    };
-
-    const mrr = premiumUsers.reduce((sum, user) => {
-      return sum + (planPrices[user.plan] || 0);
-    }, 0);
-
-    return {
-      mrr,
-      totalRevenue: mrr * 12, // ARR (Annual Recurring Revenue)
-      premiumUsers: premiumUsers.length,
-      conversionRate: 0 // Calcular depois com total de usuários
-    };
-  } catch (error) {
-    console.error('❌ [getRevenueStats] Error:', error);
-    return {
-      mrr: 0,
-      totalRevenue: 0,
-      premiumUsers: 0,
-      conversionRate: 0
-    };
-  }
+  // A plataforma não opera mais com assinatura paga. Mantemos o contrato
+  // da função por compatibilidade com dashboards antigos, sempre zerado.
+  return {
+    mrr: 0,
+    totalRevenue: 0,
+    premiumUsers: 0,
+    conversionRate: 0
+  };
 };
 
 export const getRecentActivity = async (limit = 10) => {

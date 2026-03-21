@@ -33,7 +33,7 @@ const SubscriptionPage: React.FC = () => {
             <Music className="w-6 h-6" />
           </div>
           <div>
-            <h2 className="text-white font-semibold text-lg">Sem assinatura premium</h2>
+            <h2 className="text-white font-semibold text-lg">Sem assinatura paga</h2>
             <p className="text-text-muted mt-2">
               A plataforma opera com cadastro gratuito. Basta criar sua conta para continuar ouvindo hinos sem bloqueio
               de continuidade.

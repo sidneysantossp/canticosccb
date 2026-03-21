@@ -33,7 +33,7 @@ const AboutPage: React.FC = () => {
     { year: '2020', title: 'Fundação', description: 'Início do projeto com o objetivo de digitalizar os hinos' },
     { year: '2021', title: 'Lançamento', description: 'Primeira versão da plataforma com 500 hinos' },
     { year: '2022', title: 'Expansão', description: 'Alcançamos 1 milhão de usuários' },
-    { year: '2023', title: 'Inovação', description: 'Lançamento do app mobile e recursos premium' },
+    { year: '2023', title: 'Inovação', description: 'Lançamento do app mobile e dos recursos de cadastro e estudo' },
     { year: '2024', title: 'Presente', description: 'Mais de 2.5 milhões de usuários em 50 países' }
   ];
 
