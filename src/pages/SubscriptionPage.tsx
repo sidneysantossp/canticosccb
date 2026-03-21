@@ -1,11 +1,11 @@
 import React from 'react';
 import { Link, Navigate, useNavigate } from 'react-router-dom';
 import { ArrowLeft, LogIn, UserPlus, Music } from 'lucide-react';
-import { useAuthStore } from '@/stores/authStore';
+import { useAuth } from '@/contexts/AuthContext';
 
 const SubscriptionPage: React.FC = () => {
   const navigate = useNavigate();
-  const { user } = useAuthStore();
+  const { user } = useAuth();
 
   if (user) {
     return <Navigate to="/profile" replace />;

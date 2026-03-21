@@ -1554,10 +1554,10 @@ function handleStaticPage(path: string): PageMeta | null {
       body: '<p>Leia os termos de uso da plataforma Cânticos CCB.</p>',
     },
     '/premium': {
-      title: 'Premium — Plano Premium | Cânticos CCB',
-      desc: 'Conheça o plano premium do Cânticos CCB com recursos exclusivos.',
-      h1: 'Cânticos CCB Premium',
-      body: '<p>Conheça os benefícios do plano premium do Cânticos CCB.</p>',
+      title: 'Continue Ouvindo com Cadastro Gratuito | Cânticos CCB',
+      desc: 'Crie sua conta gratuita no Cânticos CCB para continuar ouvindo todo o acervo sem interrupcao.',
+      h1: 'Continue ouvindo com cadastro gratuito',
+      body: '<p>Crie sua conta gratuita para continuar ouvindo hinos, albuns e playlists sem interrupcao.</p>',
     },
     '/categorias': {
       title: 'Categorias de Hinos CCB | Explore Hinos por Tema | Cânticos CCB',
