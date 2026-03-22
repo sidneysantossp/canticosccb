@@ -82,7 +82,6 @@ const ComposerEditAlbum: React.FC = () => {
       try {
         if (!activeComposerId) return;
         const response = await hinosApi.list({ limit: 1000 });
-        console.log('🎵 [EditAlbum] Resposta hinosApi.list:', response);
         const raw: any = response as any;
         const list = Array.isArray(raw?.data?.hinos)
           ? raw.data.hinos
@@ -95,8 +94,6 @@ const ComposerEditAlbum: React.FC = () => {
           : [];
 
         const filtered = list.filter((h: any) => String(h.compositor_id) === String(activeComposerId));
-
-        console.log('🎵 [EditAlbum] Hinos disponíveis extraídos (filtrados):', filtered.length);
         setAvailableSongs(
           filtered.map((hino: any) => ({
             id: String(hino.id),
@@ -146,7 +143,6 @@ const ComposerEditAlbum: React.FC = () => {
         // Carregar hinos do álbum
         try {
           const hinosResponse = await albunsApi.listHinos(id);
-          console.log('🎵 [EditAlbum] Resposta albunsApi.listHinos:', hinosResponse);
           const rawH: any = hinosResponse as any;
           const albumHinos = Array.isArray(rawH?.data?.hinos)
             ? rawH.data.hinos
@@ -162,7 +158,6 @@ const ComposerEditAlbum: React.FC = () => {
             duration: hino.duracao || hino.duration || '0:00',
           }));
 
-          console.log('🎵 [EditAlbum] Hinos do álbum extraídos:', songs.length);
           setAlbumSongs(songs);
           setFormData(prev => ({ ...prev, songs }));
         } catch (err) {
@@ -290,7 +285,6 @@ const ComposerEditAlbum: React.FC = () => {
       if (formData.coverImage) {
         try {
           const up = await uploadApi.cover(formData.coverImage);
-          console.log('📤 [EditAlbum] Upload cover result:', up);
           if (up.data?.url) {
             coverUrl = up.data.url;
           }
@@ -309,9 +303,7 @@ const ComposerEditAlbum: React.FC = () => {
         cover_url: coverUrl || null,
         compositor_id: activeComposerId ?? null,
       };
-      console.log('📝 [EditAlbum] Update payload:', payload);
       const upRes = await albunsApi.update(id, payload);
-      console.log('📝 [EditAlbum] Update album response:', upRes);
       if (upRes.error) throw new Error(upRes.error);
       setUploadProgress(60);
 
@@ -320,17 +312,14 @@ const ComposerEditAlbum: React.FC = () => {
       const targetIds = formData.songs.map(s => s.id);
       const toAdd = targetIds.filter(h => !currentIds.includes(h));
       const toRemove = currentIds.filter(h => !targetIds.includes(h));
-      console.log('🔁 [EditAlbum] Sync hinos', { currentIds, targetIds, toAdd, toRemove });
 
       if (toAdd.length > 0) {
         const addRes = await albunsApi.addHinos(id, toAdd);
-        console.log('➕ [EditAlbum] addHinos result:', addRes);
         if (addRes.error) throw new Error(addRes.error);
       }
 
       for (const hid of toRemove) {
         const rem = await albunsApi.removeHino(id, hid);
-        console.log('➖ [EditAlbum] removeHino result:', hid, rem);
         if (rem.error) throw new Error(rem.error);
       }
       setUploadProgress(80);
@@ -338,7 +327,6 @@ const ComposerEditAlbum: React.FC = () => {
       // 4) Atualizar ordem
       const ordem = formData.songs.map((s, idx) => ({ hino_id: s.id, ordem: idx + 1 }));
       const ordRes = await albunsApi.updateOrdem(id, ordem);
-      console.log('↕ [EditAlbum] updateOrdem result:', ordRes);
       if (ordRes.error) throw new Error(ordRes.error);
       setUploadProgress(100);
 
@@ -358,18 +346,6 @@ const ComposerEditAlbum: React.FC = () => {
   const isFormValid = Boolean(formData.title && formData.title.trim())
     && hasCover
     && formData.songs.length > 0;
-
-  useEffect(() => {
-    console.log('✅ [EditAlbum] Valid check', {
-      title: formData.title,
-      hasCoverFile: !!formData.coverImage,
-      coverImageUrl: formData.coverImageUrl,
-      imagePreviewUrl,
-      hasCover,
-      songsCount: formData.songs.length,
-      isFormValid,
-    });
-  }, [formData, isFormValid]);
 
   if (isLoading) {
     return (

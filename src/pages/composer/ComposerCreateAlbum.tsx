@@ -78,8 +78,6 @@ const ComposerCreateAlbum: React.FC = () => {
     const load = async () => {
       if (!user?.id) return;
       try {
-        console.log('🎵 [CreateAlbum] Buscando hinos do compositor:', { composerId, composerName: composer?.nome_artistico || composer?.nome || '' });
-
         // 2. Buscar todos os hinos e filtrar pelo compositor_id OU compositor_nome
         const res = await hinosApi.list({ limit: 1000 });
         const raw: any = res.data;
@@ -90,8 +88,6 @@ const ComposerCreateAlbum: React.FC = () => {
         const mine = composerId
           ? (arr || []).filter((h: any) => h.compositor_id && String(h.compositor_id) === String(composerId))
           : [];
-
-        console.log('🎵 [CreateAlbum] Hinos encontrados:', mine.length, 'de', arr.length, 'total');
 
         const mapped = mine.map((h: any) => ({ id: String(h.id), title: h.titulo || h.title || 'Sem título', duration: h.duracao || '-' }));
         setAvailableSongs(mapped);
@@ -223,7 +219,6 @@ const ComposerCreateAlbum: React.FC = () => {
       let coverUrl = '';
       if (formData.coverImage) {
         setUploadProgress(30);
-        console.log('📀 [CreateAlbum] Uploading cover via Supabase client...');
         try {
           const file = formData.coverImage;
           const ext = file.name.split('.').pop() || 'jpg';
@@ -240,7 +235,6 @@ const ComposerCreateAlbum: React.FC = () => {
 
           const { data: pubData } = supabase.storage.from('images').getPublicUrl(path);
           coverUrl = pubData?.publicUrl || '';
-          console.log('📀 [CreateAlbum] Cover uploaded:', coverUrl);
         } catch (uploadErr: any) {
           console.error('📀 [CreateAlbum] Upload failed:', uploadErr);
           throw new Error('Falha no upload da capa: ' + (uploadErr?.message || uploadErr));
@@ -324,24 +318,18 @@ const ComposerCreateAlbum: React.FC = () => {
       // Navegar direto para edição do álbum recém-criado, se possível
       try {
         const createdAny: any = response as any;
-        console.log('🎯 Response completa:', createdAny);
-        
+
         // A API retorna { data: { id: 12, titulo: "...", ... } }
         const createdData: any = createdAny?.data?.data || createdAny?.data || createdAny;
         const createdId = createdData?.id ?? createdData?.album_id;
-        
-        console.log('🎯 ID extraído:', createdId);
-        
+
         if (createdId) {
-          console.log('✅ Álbum criado com sucesso, ID:', createdId);
           setIsUploading(false);
           // Navegar para listagem
           navigate('/composer/albums', { replace: true });
           // Atualizar em seguida
           setTimeout(() => window.location.reload(), 150);
           return;
-        } else {
-          console.log('⚠️ ID não encontrado, usando modal de sucesso');
         }
       } catch (e) {
         console.error('❌ Erro ao extrair ID:', e);

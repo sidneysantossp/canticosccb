@@ -276,11 +276,7 @@ const ComposerUploadSong: React.FC = () => {
 
       if (composerId) hinoData.compositor_id = composerId;
 
-      console.log('📀 [UploadSong] compositorId:', composerId, '| compositorNome:', compositorNome);
-      console.log('📀 [UploadSong] hinoData:', hinoData);
-
       const result = await hinosApi.create(hinoData);
-      console.log('📀 [UploadSong] create result:', result);
 
       if (result.error) throw new Error(result.error);
       if (!result.data) throw new Error('Falha ao salvar hino no banco de dados. Tente novamente.');

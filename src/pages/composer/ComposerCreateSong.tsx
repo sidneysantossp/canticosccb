@@ -127,7 +127,6 @@ const ComposerCreateSong: React.FC = () => {
           .eq('composer_id', resolvedComposerId)
           .order('created_at', { ascending: false })
           .limit(1000);
-        console.log('📀 [LoadAlbums] loaded:', albumRows?.length || 0);
         setAlbums(albumRows || []);
       }
 
@@ -144,7 +143,6 @@ const ComposerCreateSong: React.FC = () => {
         setCategories([]);
       } else {
         loadedCategories = catRows || [];
-        console.log('📀 [LoadCategories] loaded:', loadedCategories.length);
         setCategories(loadedCategories);
       }
       // Se for edição, carregar dados do hino
@@ -152,8 +150,6 @@ const ComposerCreateSong: React.FC = () => {
         try {
           const songRes = await hinosApi.get(id);
           const song: any = (songRes as any)?.data || songRes;
-          console.log('📀 [EditSong] Dados do hino carregados:', song);
-          console.log('📀 [EditSong] song.categoria:', JSON.stringify(song?.categoria), '| song.categorias:', JSON.stringify(song?.categorias));
           if (song && song.id) {
             // 1) Buscar álbum do hino via tabela album_hinos
             let hinoAlbumId = '';
@@ -183,9 +179,6 @@ const ComposerCreateSong: React.FC = () => {
             }
 
             // 3) Preencher formulário com todos os dados
-            console.log('📀 [EditSong] hinoAlbumId:', hinoAlbumId, '| hinoCategoryId:', hinoCategoryId);
-            console.log('📀 [EditSong] categoriaNome:', categoriaNome, '| loadedCategories:', loadedCategories.map(c => ({ id: c.id, nome: c.nome })));
-            console.log('📀 [EditSong] albums loaded:', albums.length, '| categories loaded:', loadedCategories.length);
             setFormData(prev => ({
               ...prev,
               title: song.titulo || '',
@@ -300,7 +293,6 @@ const ComposerCreateSong: React.FC = () => {
       const categoriaNome = formData.category_id
         ? categories.find(c => String(c.id) === String(formData.category_id))?.nome
         : undefined;
-      console.log('📀 [handleSubmit] category_id:', formData.category_id, '| categoriaNome:', categoriaNome, '| album_id:', formData.album_id);
 
       // 3) Compositor (usar nome do usuário logado)
       const compositorNome = composer?.nome_artistico || composer?.nome || (user as any)?.nome || (user as any)?.name || undefined;
@@ -340,9 +332,7 @@ const ComposerCreateSong: React.FC = () => {
       if (myComposerId) songData.compositor_id = myComposerId;
 
       if (isEditMode && id) {
-        console.log('📀 [handleSubmit] Updating hino id:', id, 'payload:', songData);
         const updateResult = await hinosApi.update(id, songData);
-        console.log('📀 [handleSubmit] hinosApi.update result:', updateResult);
         if (updateResult.error) {
           throw new Error(updateResult.error);
         }
@@ -381,7 +371,6 @@ const ComposerCreateSong: React.FC = () => {
         }, 1800);
       } else {
         const createResult = await hinosApi.create(songData);
-        console.log('📀 [CreateSong] create result:', createResult);
         if (createResult.error) throw new Error(createResult.error);
         if (!createResult.data) throw new Error('Falha ao salvar hino no banco. Verifique as políticas RLS da tabela hinos.');
 
