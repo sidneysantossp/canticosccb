@@ -191,7 +191,6 @@ export const usePlayerStore = create<PlayerStore>((set, get) => ({
     
     // Se tem callback personalizado (para álbuns), usa ele
     if (onTrackEnd) {
-      console.log('PlayerStore: Executando callback personalizado de fim de faixa');
       onTrackEnd();
       return;
     }

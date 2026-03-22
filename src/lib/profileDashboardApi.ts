@@ -95,12 +95,6 @@ export async function getProfileDashboardData(userId: string, _isComposer: boole
     const playlists = playlistsDataResult.data as any[] | null;
     const followedRaw = followsResult.data as any[] | null;
 
-    console.log('📊 ProfileDashboard - Stats carregadas:', {
-      userId,
-      playlistsCount,
-      favoritesCount
-    });
-
     return {
       stats: {
         playlistsCount,

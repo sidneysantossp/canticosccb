@@ -122,8 +122,6 @@ export default function CompositoresPage() {
           );
         } */
 
-        console.log('✅ Compositores após filtro (período desabilitado):', convertedComposers.length);
-
         // Ordenar por seguidores (ranking)
         convertedComposers.sort((a, b) => b.followers - a.followers);
 

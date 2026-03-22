@@ -190,8 +190,6 @@ export async function login(email: string, senha: string): Promise<LoginResponse
  */
 export async function register(data: { nome: string; email: string; senha: string }): Promise<{ success: boolean; usuario: Usuario }> {
   try {
-    console.log('🔵 Iniciando registro para:', data.email);
-    
     // 1. Criar usuário no Supabase Auth
     const { data: authData, error: authError } = await supabase.auth.signUp({
       email: data.email,
@@ -222,16 +220,12 @@ export async function register(data: { nome: string; email: string; senha: strin
       throw new Error('Erro ao criar usuário');
     }
 
-    console.log('✅ Usuário criado no Supabase Auth:', authData.user.id);
-
     // 2. Criar/atualizar registro na tabela users
     let user = null;
     let userError = null;
     
     for (let attempt = 1; attempt <= 3; attempt++) {
       try {
-        console.log(`🔄 Tentativa ${attempt} de criar perfil na tabela users...`);
-        
         const result = await supabase
           .from('users')
           .upsert({
@@ -252,11 +246,8 @@ export async function register(data: { nome: string; email: string; senha: strin
         userError = result.error;
         
         if (!userError && user) {
-          console.log(`✅ Perfil criado na tentativa ${attempt}`);
           break;
         }
-        
-        console.log(`⚠️ Tentativa ${attempt} - erro:`, result.error?.message);
       } catch (e: any) {
         console.error(`❌ Tentativa ${attempt} falhou:`, e.message);
         if (attempt < 3) {
@@ -267,7 +258,6 @@ export async function register(data: { nome: string; email: string; senha: strin
 
     // Se falhou ao criar, tentar buscar (pode já existir)
     if (!user) {
-      console.log('🔄 Tentando buscar usuário existente...');
       const { data: existingUser } = await supabase
         .from('users')
         .select('*')
@@ -276,7 +266,6 @@ export async function register(data: { nome: string; email: string; senha: strin
       
       if (existingUser) {
         user = existingUser;
-        console.log('✅ Usuário já existia:', user.email);
       }
     }
 
@@ -295,7 +284,6 @@ export async function register(data: { nome: string; email: string; senha: strin
     }
 
     const usuario = mapUserForCompatibility(user);
-    console.log('✅ Registro concluído:', usuario.email);
 
     // Só persiste no cliente quando existe sessão ativa.
     if (authData.session) {

@@ -20,8 +20,6 @@ export async function getUserFavorites(userId: string | number): Promise<string[
 
 export async function addFavorite(userId: string | number, hymnId: string | number): Promise<boolean> {
   try {
-    console.log('💚 addFavorite - Tentando adicionar:', { userId, hymnId });
-    
     const { data, error } = await supabase
       .from('favorites')
       .insert({
@@ -35,7 +33,7 @@ export async function addFavorite(userId: string | number, hymnId: string | numb
       return false;
     }
 
-    console.log('✅ Favorito adicionado com sucesso:', data);
+    void data;
     return true;
   } catch (err) {
     console.error('❌ Exceção ao adicionar favorito:', err);

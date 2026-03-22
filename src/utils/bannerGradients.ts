@@ -25,7 +25,6 @@ export const saveBannerGradient = (bannerId: string, gradient: string) => {
     });
     
     localStorage.setItem(GRADIENT_STORAGE_KEY, JSON.stringify(filtered));
-    console.log('✅ Gradiente salvo no localStorage:', { bannerId, gradient });
   } catch (error) {
     console.error('❌ Erro ao salvar gradiente:', error);
   }
@@ -74,7 +73,6 @@ export const removeBannerGradient = (bannerId: string) => {
     const filtered = gradients.filter(g => g.bannerId !== bannerId);
     
     localStorage.setItem(GRADIENT_STORAGE_KEY, JSON.stringify(filtered));
-    console.log('✅ Gradiente removido:', bannerId);
   } catch (error) {
     console.error('❌ Erro ao remover gradiente:', error);
   }

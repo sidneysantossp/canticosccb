@@ -121,7 +121,6 @@ export const useYoutubePlayer = () => {
     if (!youtubeSource) {
       // Não é YouTube: limpar tudo
       if (playerRef.current) {
-        console.log('[YT-Player] Destruindo player (faixa sem YouTube)');
         try { playerRef.current.destroy(); } catch {}
         playerRef.current = null;
       }
@@ -132,17 +131,13 @@ export const useYoutubePlayer = () => {
 
     // Mesmo vídeo já carregado: não recriar
     if (currentVideoIdRef.current === youtubeSource && playerRef.current) {
-      console.log('[YT-Player] Mesmo vídeo, reutilizando player');
       return;
     }
-
-    console.log('[YT-Player] Iniciando player para videoId:', youtubeSource);
     currentVideoIdRef.current = youtubeSource;
 
     const initPlayer = async () => {
       try {
         await loadYouTubeAPI();
-        console.log('[YT-Player] YouTube API carregada');
       } catch (err) {
         console.error('[YT-Player] Erro ao carregar YouTube API:', err);
         return;
@@ -158,8 +153,6 @@ export const useYoutubePlayer = () => {
       recreatePlayerDiv();
 
       const vol = usePlayerStore.getState().volume;
-
-      console.log('[YT-Player] Criando YT.Player...');
       try {
         playerRef.current = new window.YT.Player(YT_PLAYER_ID, {
           height: '1',
@@ -178,7 +171,6 @@ export const useYoutubePlayer = () => {
           },
           events: {
             onReady: (event: any) => {
-              console.log('[YT-Player] Player pronto!');
               const p = event.target;
 
               const dur = p.getDuration();
@@ -189,7 +181,6 @@ export const useYoutubePlayer = () => {
               p.setVolume(vol * 100);
 
               if (usePlayerStore.getState().isPlaying) {
-                console.log('[YT-Player] Iniciando reprodução...');
                 p.playVideo();
               }
 
@@ -201,7 +192,7 @@ export const useYoutubePlayer = () => {
                 [-1]: 'UNSTARTED', 0: 'ENDED', 1: 'PLAYING',
                 2: 'PAUSED', 3: 'BUFFERING', 5: 'CUED'
               };
-              console.log('[YT-Player] Estado:', stateNames[state] || state);
+              void stateNames;
 
               if (state === 0) {
                 clearTrackingInterval();
@@ -276,7 +267,6 @@ export const useYoutubePlayer = () => {
       try {
         const ytTime = playerRef.current.getCurrentTime();
         if (typeof ytTime === 'number' && Math.abs(ytTime - newTime) > 2) {
-          console.log('[YT-Player] Seek manual para:', newTime);
           playerRef.current.seekTo(newTime, true);
         }
       } catch {}

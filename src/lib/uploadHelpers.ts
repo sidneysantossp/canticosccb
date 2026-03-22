@@ -7,17 +7,12 @@ import { supabaseUpdate } from './supabaseRest';
  */
 export async function uploadUserAvatar(userId: number | string, file: File): Promise<string> {
   try {
-    console.log('📸 uploadUserAvatar - Starting upload:', { userId, fileName: file.name });
-    
     // 1. Fazer upload do arquivo (retorna URL pública completa)
     const avatarUrl = await uploadAvatar(file);
-    console.log('📸 Avatar URL:', avatarUrl);
-    
+
     // 2. Atualizar avatar_url no banco de dados via Supabase
-    console.log('💾 Updating user avatar_url in database...');
     try {
       await supabaseUpdate('users', { id: `eq.${userId}` }, { avatar_url: avatarUrl });
-      console.log('✅ Database updated successfully');
     } catch (e) {
       console.warn('⚠️ Database update failed:', e);
     }
@@ -28,7 +23,6 @@ export async function uploadUserAvatar(userId: number | string, file: File): Pro
       if (current && String(current.id) === String(userId)) {
         const updated = { ...current, avatar_url: avatarUrl } as any;
         localStorage.setItem('user', JSON.stringify(updated));
-        console.log('💾 LocalStorage user atualizado com novo avatar_url');
       }
     } catch (e) {
       console.warn('⚠️ Falha ao atualizar localStorage user:', e);
@@ -46,16 +40,11 @@ export async function uploadUserAvatar(userId: number | string, file: File): Pro
  */
 export async function uploadComposerBanner(composerId: string | number, file: File): Promise<string> {
   try {
-    console.log('🖼️ uploadComposerBanner - Starting upload:', { composerId, fileName: file.name });
-
     // 1. Fazer upload do arquivo (retorna URL pública completa)
     const bannerUrl = await uploadCover(file, 'covers');
-    console.log('🖼️ Banner URL:', bannerUrl);
 
     // 3. Atualizar no banco via Supabase
-    console.log('💾 Updating composer banner_url in database...');
     await supabaseUpdate('composers', { id: `eq.${composerId}` }, { banner_url: bannerUrl });
-    console.log('✅ Database updated successfully');
     return bannerUrl;
   } catch (error: any) {
     console.error('❌ uploadComposerBanner error:', error);
@@ -68,16 +57,11 @@ export async function uploadComposerBanner(composerId: string | number, file: Fi
  */
 export async function uploadComposerAvatar(composerId: string | number, file: File): Promise<string> {
   try {
-    console.log('📸 uploadComposerAvatar - Starting upload:', { composerId, fileName: file.name });
-    
     // 1. Fazer upload do arquivo (retorna URL pública completa)
     const avatarUrl = await uploadAvatar(file);
-    console.log('📸 Avatar URL:', avatarUrl);
-    
+
     // 3. Atualizar no banco via Supabase (ambos os campos para consistência)
-    console.log('💾 Updating composer avatar_url in database...');
     await supabaseUpdate('composers', { id: `eq.${composerId}` }, { photo_url: avatarUrl, avatar_url: avatarUrl });
-    console.log('✅ Database updated successfully');
     return avatarUrl;
   } catch (error: any) {
     console.error('❌ uploadComposerAvatar error:', error);
