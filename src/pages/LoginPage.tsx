@@ -24,8 +24,6 @@ const LoginPage: React.FC = () => {
   // Redirecionar quando o perfil carregar após login
   useEffect(() => {
     if (profile) {
-      console.log('✅ LoginPage - Profile loaded, redirecting...', profile);
-
       // Fechar menu mobile se estiver aberto
       closeMenu();
 
@@ -62,9 +60,7 @@ const LoginPage: React.FC = () => {
     setIsLoading(true);
 
     try {
-      console.log('🔑 LoginPage - Chamando signIn...');
       await signIn(email, password);
-      console.log('✅ LoginPage - Login bem-sucedido!');
     } catch (err: any) {
       console.error('❌ Login error:', err?.message || err);
       const msg = String(err?.message || '');

@@ -201,8 +201,6 @@ const AlbumDetailPage: React.FC = () => {
       // Adicionar faixas seguintes à fila
       const remainingTracks = album.tracks.slice(trackIndex + 1);
       remainingTracks.forEach(t => addToQueue(t));
-
-      console.log(`🎵 Tocando faixa ${trackIndex + 1}/${album.tracks.length} - ${remainingTracks.length} faixas na fila`);
     }
 
     play(track);
@@ -235,8 +233,6 @@ const AlbumDetailPage: React.FC = () => {
 
     // Abrir fullscreen com tema de álbum
     openFullScreen('album');
-
-    console.log(`🎵 Reproduzindo álbum completo: ${album.tracks.length} faixas na fila`);
   };
 
   const handleToggleFavorite = (trackId: string) => {
@@ -356,8 +352,6 @@ const AlbumDetailPage: React.FC = () => {
       setShowMenu(false);
       return;
     }
-
-    console.log('Abrindo modal de adicionar à playlist para álbum:', album.title);
     setShowMenu(false);
     setShowPlaylistModal(true);
   };

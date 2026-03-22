@@ -323,9 +323,6 @@ async function getHomePageDataFromSupabase(): Promise<HomePageData> {
     is_active: 'eq.true',
     order: 'position.asc',
     limit: '6',
-  }).then(rows => {
-    console.log('🎬 [homeApi] Banners retornados do Supabase:', rows.length, rows);
-    return rows;
   });
   const composerRows = supabaseFetch<SupabaseComposerRow>('composers', {
     select: 'id,name,artistic_name,bio,biography,verified,status,avatar_url,photo_url,slug,category,is_featured,is_trending,followers_count',

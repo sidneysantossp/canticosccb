@@ -106,7 +106,6 @@ export default function ComposerPublicProfilePage() {
 
     try {
       setIsLoading(true);
-      console.log('🎵 Carregando perfil do compositor:', composerId);
 
       const composerRows = await supabaseFetch<any>('composers', {
         id: `eq.${composerId}`,
@@ -165,11 +164,9 @@ export default function ComposerPublicProfilePage() {
         setSongs(mapped);
         setPublishedSongsCount(mapped.length);
       } catch (e) {
-        console.warn('Não foi possível carregar hinos do compositor');
         setSongs([]);
         setPublishedSongsCount(0);
       }
-      console.log('✅ Compositor carregado:', mappedComposer);
     } catch (error) {
       console.error('❌ Erro ao carregar compositor:', error);
       setComposer(null);
@@ -223,7 +220,6 @@ export default function ComposerPublicProfilePage() {
         if (success) {
           setIsFollowing(false);
           setFollowersCount((prev) => Math.max(0, (prev || 0) - 1));
-          console.log('✅ Deixou de seguir compositor');
         }
       } else {
         const result = await supabaseInsert<any>('user_follows', {
@@ -234,7 +230,6 @@ export default function ComposerPublicProfilePage() {
         if (result) {
           setIsFollowing(true);
           setFollowersCount((prev) => (prev || 0) + 1);
-          console.log('✅ Seguindo compositor');
 
           // Criar notificação para o compositor
           try {
@@ -282,9 +277,10 @@ export default function ComposerPublicProfilePage() {
           text: shareText,
           url: shareUrl,
         });
-        console.log('✅ Compartilhado com sucesso');
       } catch (error) {
-        console.log('Compartilhamento cancelado');
+        if ((error as Error)?.name !== 'AbortError') {
+          console.error('❌ Erro ao compartilhar:', error);
+        }
       }
     } else {
       // Fallback: copiar URL
@@ -502,8 +498,6 @@ export default function ComposerPublicProfilePage() {
       createdAt: song.created_at,
       youtubeSource: ytSrc,
     } as any);
-
-    console.log('🎵 Tocando:', song.title, 'Audio URL:', audioUrl);
     openFullScreen();
   };
 

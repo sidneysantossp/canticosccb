@@ -113,7 +113,6 @@ const AuthCallbackPage: React.FC = () => {
 
         // If this is an email verification callback, go to onboarding
         if (isEmailVerification || session) {
-          console.log('✅ Email verificado com sucesso!');
           const destination = session?.user
             ? await resolvePostAuthDestination(session.user)
             : '/onboarding';
@@ -126,7 +125,6 @@ const AuthCallbackPage: React.FC = () => {
         const result = await handleOAuthCallback();
         
         if (result.success) {
-          console.log('✅ OAuth callback processado com sucesso:', result.usuario);
           await new Promise(resolve => setTimeout(resolve, 500));
           
           if (result.usuario.tipo === 'compositor') {

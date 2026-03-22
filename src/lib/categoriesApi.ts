@@ -31,7 +31,6 @@ export const getAll = async (params?: { search?: string; page?: number; limit?: 
   }
 
   try {
-    console.log('🔍 [categoriesApi] Fetching categories from Supabase...');
     const filters: Record<string, string> = {
       select: 'id,nome,slug,descricao,imagem_url,ativo',
       order: 'nome.asc',
@@ -41,12 +40,7 @@ export const getAll = async (params?: { search?: string; page?: number; limit?: 
     if (params?.search) filters['nome'] = `ilike.%${params.search}%`;
     
     const rows = await supabaseFetch<any>('categorias', filters);
-    
-    console.log(`✅ [categoriesApi] Supabase returned ${rows.length} categories`);
-    
-    const mapped = rows.map(mapCategory);
-    console.log('📋 [categoriesApi] Categories:', mapped.map(c => c.name).join(', '));
-    return mapped;
+    return rows.map(mapCategory);
   } catch (error) {
     console.error('❌ [categoriesApi] Supabase error:', error);
     return [];

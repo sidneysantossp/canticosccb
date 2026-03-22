@@ -205,13 +205,9 @@ const Header: React.FC = () => {
   };
 
   const handleLogout = async () => {
-    console.log('🚪 Logout - Starting logout process...');
-    
     try {
       setShowUserMenu(false);
-      
-      console.log('🚪 Logout - Calling signOut...');
-      
+
       // Timeout reduzido para 1 segundo
       const logoutPromise = signOut();
       const timeoutPromise = new Promise((_, reject) => 
@@ -219,9 +215,7 @@ const Header: React.FC = () => {
       );
       
       await Promise.race([logoutPromise, timeoutPromise]);
-      
-      console.log('✅ Logout - Success! Redirecting...');
-      
+
       clearAuthStorage();
       sessionStorage.clear();
       
@@ -231,7 +225,6 @@ const Header: React.FC = () => {
       console.error('❌ Logout - Error:', error);
       
       // Mesmo com erro, forçar logout local
-      console.log('🔄 Logout - Forcing local logout...');
       clearAuthStorage();
       sessionStorage.clear();
       window.location.href = '/login';

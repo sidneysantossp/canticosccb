@@ -224,25 +224,6 @@ export default function FullScreenPlayer({ isOpen, onClose }: FullScreenPlayerPr
 
   const isLiked = currentTrack ? isFavorite(parseInt(currentTrack.id)) : false;
 
-  // Debug: Monitorar favoritos
-  useEffect(() => {
-    if (currentTrack) {
-      console.log('💚 Estado de Favoritos:');
-      console.log('  - currentTrack.id:', currentTrack.id);
-      console.log('  - isLiked:', isLiked);
-      console.log('  - user:', user?.id);
-    }
-  }, [currentTrack?.id, isLiked, user?.id]);
-
-  // Debug: Monitorar estado de autenticação
-  useEffect(() => {
-    console.log('🔐 Estado de Autenticação (AuthContext):');
-    console.log('  - isAuthenticated:', isAuthenticated);
-    console.log('  - user:', user);
-    console.log('  - profile:', profile);
-    console.log('  - user.role:', profile?.is_admin ? 'admin' : (profile?.is_composer ? 'composer' : 'user'));
-  }, [isAuthenticated, user, profile]);
-
   // Verificar se deve abrir formulário automaticamente (via URL)
   useEffect(() => {
     if (!isOpen || !isAuthenticated || !currentTrack) return;
@@ -330,7 +311,9 @@ export default function FullScreenPlayer({ isOpen, onClose }: FullScreenPlayerPr
           url: window.location.href
         });
       } catch (err) {
-        console.log('Erro ao compartilhar:', err);
+        if ((err as Error)?.name !== 'AbortError') {
+          console.error('Erro ao compartilhar:', err);
+        }
       }
     } else {
       setShowShareMenu(true);
@@ -453,15 +436,8 @@ export default function FullScreenPlayer({ isOpen, onClose }: FullScreenPlayerPr
   };
 
   const handleDownload = () => {
-    console.log('🔽 Tentativa de download:', {
-      isAuthenticated,
-      user: !!user,
-      downloadEnabled: (currentTrack as any)?.allow_download
-    });
-
     // Verificar se usuário está logado
     if (!isAuthenticated || !user) {
-      console.log('❌ Usuário não autenticado - mostrando modal de login');
       setShowDownloadLoginAlert(true);
       setShowMenu(false);
       return;
@@ -473,14 +449,12 @@ export default function FullScreenPlayer({ isOpen, onClose }: FullScreenPlayerPr
       : false;
 
     if (!downloadEnabled) {
-      console.log('❌ Download não permitido para este hino');
       setShowDownloadNotAvailableAlert(true);
       setShowMenu(false);
       return;
     }
 
     // Download permitido - realizar download
-    console.log('✅ Download permitido - iniciando...');
     const link = document.createElement('a');
     link.href = currentTrack.audioUrl || '#';
     link.download = `${currentTrack.title} - ${currentTrack.artist}.mp3`;
@@ -537,15 +511,8 @@ export default function FullScreenPlayer({ isOpen, onClose }: FullScreenPlayerPr
   };
 
   const handleCopyrightClaim = () => {
-    console.log('=== VERIFICAÇÃO DE AUTH ===');
-    console.log('isAuthenticated:', isAuthenticated);
-    console.log('user:', user);
-    console.log('profile:', profile);
-    
     // Verificar se usuário está logado
     if (!isAuthenticated || !user || !profile) {
-      console.log('❌ Usuário não autenticado - mostrando modal de login');
-      
       // Salvar contexto em sessionStorage para reabrir após login
       sessionStorage.setItem('pendingCopyrightClaim', JSON.stringify({
         songId: currentTrack.id,
@@ -561,17 +528,13 @@ export default function FullScreenPlayer({ isOpen, onClose }: FullScreenPlayerPr
     }
     
     // Usuário está logado - verificar role
-    console.log('✅ Usuário logado! Verificando role...');
     const isComposer = profile.is_composer || false;
     const isAdmin = profile.is_admin || false;
-    console.log('Role do usuário - Compositor:', isComposer, '| Admin:', isAdmin);
     
     if (isComposer || isAdmin) {
-      console.log('✅ Usuário é compositor/admin - abrindo formulário');
       setShowMenu(false);
       setShowCopyrightClaim(true);
     } else {
-      console.log('⚠️ Usuário comum - mostrando alerta informativo');
       setShowNonComposerAlert(true);
     }
   };
@@ -663,7 +626,6 @@ export default function FullScreenPlayer({ isOpen, onClose }: FullScreenPlayerPr
     if (isAuthenticated && user && profile) {
       const pendingClaim = sessionStorage.getItem('pendingCopyrightClaim');
       if (pendingClaim) {
-        console.log('✅ Login detectado - abrindo modal de copyright claim pendente');
         sessionStorage.removeItem('pendingCopyrightClaim');
         setShowLoginModal(false);
         

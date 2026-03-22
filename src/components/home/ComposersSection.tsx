@@ -5,8 +5,7 @@ import { buildCompositorUrl } from '@/utils/slugUrl';
 import { buildAvatarUrl } from '@/lib/media-helper';
 import { ComposerCardSkeleton } from '@/components/ui/SkeletonLoader';
 import { useCachedData } from '@/hooks/usePreloadData';
-import { apiFetch } from '@/lib/api-helper';
-import { isSupabaseConfigured, supabaseFetch } from '@/lib/supabaseRest';
+import { supabaseFetch } from '@/lib/supabaseRest';
 
 interface Compositor {
   id: string;
@@ -82,7 +81,6 @@ const ComposersSection: React.FC = () => {
     const checkScreenSize = () => {
       const width = window.innerWidth;
       const isDesktopSize = width >= 1024;
-      console.log('ðŸ–¥ï¸ Largura detectada:', width, 'px - Desktop:', isDesktopSize);
       setIsDesktop(isDesktopSize);
     };
     
@@ -111,12 +109,10 @@ const ComposersSection: React.FC = () => {
   const loadComposersFromDatabase = async () => {
     try {
       setIsLoading(true);
-      console.log('ðŸŽµ ComposersSection - Carregando do banco...');
       
       // 1) Mostrar cache imediatamente (se existir)
       const cachedComposers = useCachedData('featuredComposers') as Composer[] | undefined;
       if (cachedComposers && cachedComposers.length > 0) {
-        console.log('âœ… Usando compositores do cache (placeholder):', cachedComposers.length);
         setComposers(cachedComposers);
       }
 
@@ -159,10 +155,7 @@ const ComposersSection: React.FC = () => {
             (comp as any).followers = count;
             (comp as any).followers_count = count;
           }
-          console.log('👥 [ComposersSection] Followers counts:', followCounts);
-        } catch (followErr) {
-          console.warn('⚠️ [ComposersSection] Erro ao buscar seguidores:', followErr);
-        }
+        } catch {}
 
         const cacheCount = cachedComposers?.length || 0;
         const freshCount = fresh.length;
@@ -174,20 +167,7 @@ const ComposersSection: React.FC = () => {
           setComposers(fresh as Composer[]);
         }
       } else {
-        // Fallback: dados de demonstração quando Supabase não está disponível
-        if (!isSupabaseConfigured) {
-          const fallbackComposers: Composer[] = [
-            { id: 'demo-1', name: 'João de Deus', description: 'Compositor da CCB', image: 'https://ui-avatars.com/api/?name=Jo%C3%A3o+de+Deus&size=400&background=1a1a1a&color=00D1FF', totalHinos: 12, popularHino: 'Hino de Adoração', followers: 1500, isTrending: true },
-            { id: 'demo-2', name: 'Maria José', description: 'Compositora da CCB', image: 'https://ui-avatars.com/api/?name=Maria+Jos%C3%A9&size=400&background=1a1a1a&color=00D1FF', totalHinos: 8, popularHino: 'Hino de Louvor', followers: 980, isTrending: false },
-            { id: 'demo-3', name: 'Carlos Silva', description: 'Compositor da CCB', image: 'https://ui-avatars.com/api/?name=Carlos+Silva&size=400&background=1a1a1a&color=00D1FF', totalHinos: 15, popularHino: 'Hino de Comunhão', followers: 2100, isTrending: true },
-            { id: 'demo-4', name: 'Ana Santos', description: 'Compositora da CCB', image: 'https://ui-avatars.com/api/?name=Ana+Santos&size=400&background=1a1a1a&color=00D1FF', totalHinos: 6, popularHino: 'Hino Especial', followers: 750, isTrending: false },
-            { id: 'demo-5', name: 'Pedro Costa', description: 'Compositor da CCB', image: 'https://ui-avatars.com/api/?name=Pedro+Costa&size=400&background=1a1a1a&color=00D1FF', totalHinos: 10, popularHino: 'Hino de Evangelização', followers: 1200, isTrending: true },
-            { id: 'demo-6', name: 'Ruth Oliveira', description: 'Compositora da CCB', image: 'https://ui-avatars.com/api/?name=Ruth+Oliveira&size=400&background=1a1a1a&color=00D1FF', totalHinos: 9, popularHino: 'Hino de Fé', followers: 890, isTrending: false },
-          ];
-          setComposers(fallbackComposers);
-        } else {
-          setComposers([]);
-        }
+        setComposers([]);
       }
       
     } catch (error) {
@@ -215,13 +195,6 @@ const ComposersSection: React.FC = () => {
       verified: Boolean((c as any).verificado === 1),
     };
   });
-
-  console.log('ðŸŽµ [ComposersSection] RENDERIZANDO SEÃ‡ÃƒO DE COMPOSITORES');
-  console.log('ðŸŽµ [ComposersSection] Compositores originais:', composers.length);
-  console.log('ðŸŽµ [ComposersSection] DisplayComposers:', displayComposers.length);
-  console.log('ðŸŽµ [ComposersSection] IDs:', displayComposers.map(c => `${c.id}:${c.name}`).join(', '));
-  console.log('ðŸŽµ [ComposersSection] Largura da tela:', window.innerWidth + 'px');
-  console.log('ðŸŽµ [ComposersSection] Ã‰ Desktop?', isDesktop);
 
   // Format followers count
   const formatFollowers = (count: number): string => {
@@ -339,9 +312,6 @@ const ComposersSection: React.FC = () => {
       </section>
     );
   }
-
-  console.log('ðŸŽµ Renderizando compositores:', displayComposers.length, displayComposers.map(c => c.name));
-
   return (
     <section className="mb-12">
       <div className="flex items-center justify-between mb-6">
@@ -603,8 +573,6 @@ const ComposersSection: React.FC = () => {
 };
 
 export default ComposersSection;
-
-
 
 
 
