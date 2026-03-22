@@ -39,11 +39,9 @@ const AdminUsers: React.FC = () => {
   // Setup Realtime updates
   useRealtimeUsers({
     onUsersChange: (updatedUsers) => {
-      console.log('🔄 Users updated via Realtime:', updatedUsers.length);
       setUsers(updatedUsers);
     },
     onStatsChange: (updatedStats) => {
-      console.log('🔄 Stats updated via Realtime:', updatedStats);
       setStats(updatedStats);
     },
   });

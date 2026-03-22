@@ -46,11 +46,9 @@ const ComposerAlbums: React.FC = () => {
   // Carregar álbuns do banco de dados
   useEffect(() => {
     const loadAlbums = async () => {
-      console.log('🔄 Carregando álbuns...');
       try {
         setLoading(true);
         const resolvedComposerId = composerId;
-        console.log('🎵 Compositor resolvido:', { compositorId: resolvedComposerId });
 
         // 2. Buscar álbuns (filtrar server-side se possível)
         const response = await albunsApi.list({ page: 1, limit: 1000, compositor_id: resolvedComposerId ? String(resolvedComposerId) : undefined } as any);
@@ -65,15 +63,11 @@ const ComposerAlbums: React.FC = () => {
           albumsData = raw.data;
         }
 
-        console.log('📀 Total álbuns no banco:', albumsData.length);
-
         // 3. Filtrar APENAS álbuns do compositor logado (sem fallbacks agressivos)
         let myAlbums: any[] = [];
         if (resolvedComposerId != null) {
           myAlbums = albumsData.filter((album: any) => String(album.composer_id) === String(resolvedComposerId));
         }
-
-        console.log('👤 Meus álbuns (compositor_id=' + resolvedComposerId + '):', myAlbums.length);
 
         // 4. Normalizar dados para o formato esperado pela UI
         const normalizedAlbums = myAlbums.map(album => ({
@@ -96,11 +90,6 @@ const ComposerAlbums: React.FC = () => {
     };
     loadAlbums();
   }, [composerId, loadingComposer, user?.id]);
-
-  // Debug: Verificar se o componente está renderizando os dados
-  useEffect(() => {
-    console.log('🎯 Estado atual dos álbuns:', albums.length, albums);
-  }, [albums]);
   
   // Mock data (removido)
   const albumsMock = [

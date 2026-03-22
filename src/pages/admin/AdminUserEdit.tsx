@@ -27,7 +27,6 @@ const AdminUserEdit: React.FC = () => {
   useEffect(() => {
     if (id) {
       const decodedId = decodeURIComponent(id);
-      console.log('Loading user with ID:', decodedId);
       loadUser(decodedId);
     }
   }, [id]);
@@ -36,18 +35,14 @@ const AdminUserEdit: React.FC = () => {
     try {
       setIsLoading(true);
       setLoadError(null);
-      console.log('🔍 [AdminUserEdit] Fetching user:', userId);
       const response = await usuariosApi.get(userId);
-      console.log('📦 [AdminUserEdit] User fetched response:', response);
       
       if (response.error) {
-        console.error('❌ [AdminUserEdit] Error in response:', response.error);
         throw new Error(response.error);
       }
       
       if (response.data) {
         const user = response.data;
-        console.log('✅ [AdminUserEdit] User data:', user);
         
         const newFormData = {
           nome: user.nome || '',
@@ -56,10 +51,8 @@ const AdminUserEdit: React.FC = () => {
           tipo: (user.tipo as 'usuario' | 'compositor' | 'admin') || 'usuario',
           ativo: user.ativo === 1,
         };
-        console.log('📝 [AdminUserEdit] Setting form data:', newFormData);
         setFormData(newFormData);
       } else {
-        console.warn('⚠️ [AdminUserEdit] No data in response');
         const msg = 'Usuário não encontrado';
         setLoadError(msg);
         setTimeout(() => navigate('/admin/users'), 2000);
@@ -107,14 +100,12 @@ const AdminUserEdit: React.FC = () => {
         ativo: formData.ativo ? 1 : 0,
       };
 
-      console.log('Updating user with:', updates);
       const response = await usuariosApi.update(id!, updates);
       
       if (response.error) {
         throw new Error(response.error);
       }
       
-      console.log('User updated successfully');
       navigate('/admin/users');
     } catch (error) {
       console.error('Error saving user:', error);
@@ -147,8 +138,7 @@ const AdminUserEdit: React.FC = () => {
 
     try {
       setIsUploading(true);
-      
-      const fileExt = file.name.split('.').pop();
+
       // Upload usando API PHP
       const uploadResponse = await uploadApi.avatar(file);
       
@@ -157,7 +147,6 @@ const AdminUserEdit: React.FC = () => {
       }
 
       const { url } = uploadResponse.data;
-      console.log('Upload successful! URL:', url);
       
       // Atualizar o estado com a nova URL
       setFormData(prev => ({ 
@@ -168,7 +157,6 @@ const AdminUserEdit: React.FC = () => {
       // Persistir imediatamente no banco
       try {
         if (id) {
-          console.log('Persisting avatar_url immediately for user:', id, url);
           await usuariosApi.update(id!, { avatar_url: url });
         }
       } catch (persistErr) {

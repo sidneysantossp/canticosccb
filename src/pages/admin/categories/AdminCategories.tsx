@@ -73,7 +73,6 @@ const AdminCategories: React.FC = () => {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('Criando categoria:', formData);
     setShowCreateModal(false);
   };
 

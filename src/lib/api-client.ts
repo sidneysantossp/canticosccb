@@ -167,9 +167,7 @@ export const hinosApi = {
       if (data.youtube_source) hinoData.youtube_source = data.youtube_source;
       if (data.participacao_especial) hinoData.participacao_especial = data.participacao_especial;
       
-      console.log('📀 [hinosApi.create] Inserting:', hinoData);
       const result = await supabaseInsert('hinos', hinoData);
-      console.log('📀 [hinosApi.create] Result:', result);
       
       if (result && (result as any).id && data.categorias && data.categorias.length > 0) {
         // Inserir relacionamentos com categorias
@@ -227,15 +225,12 @@ export const hinosApi = {
         updateData.participacao_especial = String(data.participacao_especial || '').trim() || null;
       }
       
-      console.log('📀 [hinosApi.update] Updating hino', id, 'with:', updateData);
       const result = await supabaseUpdate<any>('hinos', { id: `eq.${id}` }, updateData);
 
       if (!Array.isArray(result) || result.length === 0) {
         throw new Error('Nenhum registro foi atualizado. Verifique permissões ou se o hino ainda existe.');
       }
 
-      console.log('📀 [hinosApi.update] Success:', result);
-      
       // Atualizar categorias se fornecidas
       if (data.categorias && Array.isArray(data.categorias)) {
         // Remover relacionamentos antigos
@@ -279,8 +274,6 @@ export const compositoresApi = {
   list: async (params?: { search?: string; status?: string; page?: number; limit?: number }) => {
 
     try {
-      console.log('🔍 [compositoresApi.list] Fetching composers with params:', params);
-
       const limit = params?.limit || 20;
       const page = params?.page || 1;
 
@@ -325,8 +318,6 @@ export const compositoresApi = {
         ativo: r.status !== 'inactive',
         usuario_id: r.user_id,
       }));
-
-      console.log(`✅ [compositoresApi.list] Found ${mapped.length} composers (total: ${total})`);
 
       return {
         data: {
@@ -404,7 +395,6 @@ export const compositoresApi = {
 
       // 2. Fallback: buscar por email e auto-vincular user_id
       if (userEmail) {
-        console.log('🔍 [getByUsuarioId] Não encontrado por user_id, tentando por email:', userEmail);
         const byEmail = await supabaseFetch<any>('composers', {
           email: `eq.${userEmail}`,
           select: '*',
@@ -414,9 +404,7 @@ export const compositoresApi = {
           const r = byEmail[0];
           // Auto-vincular user_id para não precisar de fallback novamente
           try {
-
             await supabaseUpdate('composers', { id: `eq.${r.id}` }, { user_id: userId });
-            console.log('✅ [getByUsuarioId] Auto-vinculado user_id ao compositor:', r.id);
           } catch (linkErr) {
             console.warn('⚠️ [getByUsuarioId] Falha ao vincular user_id:', linkErr);
           }
@@ -479,9 +467,7 @@ export const compositoresApi = {
         avatar_url: data.avatar_url || null,
         email: data.email || null,
       };
-      console.log('🔍 [compositoresApi.create] Creating composer:', composerData);
       await supabaseInsert('composers', composerData);
-      console.log('✅ [compositoresApi.create] Composer created successfully');
       return { success: true, error: null };
     } catch (error: any) {
       console.error('❌ [compositoresApi.create] Error:', error);
@@ -532,9 +518,7 @@ export const compositoresApi = {
         if (data[field] !== undefined) updateData[field] = data[field];
       }
 
-      console.log('🔍 [compositoresApi.update] Updating composer ID:', id, 'with data:', updateData);
       await supabaseUpdate('composers', { id: `eq.${id}` }, updateData);
-      console.log('✅ [compositoresApi.update] Composer updated successfully');
       return { success: true, error: null };
     } catch (error: any) {
       console.error('❌ [compositoresApi.update] Error:', error);
@@ -544,8 +528,6 @@ export const compositoresApi = {
   delete: async (id: string | number) => {
 
     try {
-      console.log('🔍 [compositoresApi.delete] Soft-deleting composer ID:', id);
-
       // 1. Buscar dados do compositor antes de desativar
       let composerEmail: string | null = null;
       let composerName: string | null = null;
@@ -557,7 +539,6 @@ export const compositoresApi = {
         });
         composerEmail = rows?.[0]?.email || null;
         composerName = rows?.[0]?.name || rows?.[0]?.artistic_name || null;
-        console.log('📧 [compositoresApi.delete] Composer:', composerName, composerEmail);
       } catch (e) {
         console.warn('⚠️ [compositoresApi.delete] Could not fetch composer data:', e);
       }
@@ -568,15 +549,12 @@ export const compositoresApi = {
         verified: false,
         updated_at: new Date().toISOString(),
       });
-      console.log('✅ [compositoresApi.delete] Composer marked as deleted');
-
       // 3. Desativar todos os hinos do compositor
       try {
         await supabaseUpdate('hinos', { compositor_id: `eq.${id}` }, {
           ativo: false,
           updated_at: new Date().toISOString(),
         });
-        console.log('✅ [compositoresApi.delete] Composer hinos deactivated');
       } catch (e) {
         console.warn('⚠️ [compositoresApi.delete] Could not deactivate hinos:', e);
       }
@@ -587,7 +565,6 @@ export const compositoresApi = {
           is_published: false,
           updated_at: new Date().toISOString(),
         });
-        console.log('✅ [compositoresApi.delete] Composer albums deactivated');
       } catch (e) {
         console.warn('⚠️ [compositoresApi.delete] Could not deactivate albums:', e);
       }
@@ -599,7 +576,7 @@ export const compositoresApi = {
             p_email: composerEmail,
           });
           if (!rpcError && rpcResult?.success) {
-            console.log('✅ [compositoresApi.delete] User deactivated via RPC');
+            // no-op
           } else {
             console.warn('⚠️ [compositoresApi.delete] RPC failed, trying direct update');
             const { error: updateError } = await supabase
@@ -608,8 +585,6 @@ export const compositoresApi = {
               .eq('email', composerEmail);
             if (updateError) {
               console.warn('⚠️ [compositoresApi.delete] Direct update also failed:', updateError.message);
-            } else {
-              console.log('✅ [compositoresApi.delete] User deactivated via direct update');
             }
           }
         } catch (e) {
@@ -628,7 +603,6 @@ export const compositoresApi = {
 
     try {
       const newStatus = active ? 'approved' : 'inactive';
-      console.log(`🔄 [compositoresApi.toggleActive] Setting composer ${id} to ${newStatus}`);
       
       await supabaseUpdate('composers', { id: `eq.${id}` }, {
         status: newStatus,
@@ -641,7 +615,6 @@ export const compositoresApi = {
           ativo: active,
           updated_at: new Date().toISOString(),
         });
-        console.log(`✅ [compositoresApi.toggleActive] Hinos ${active ? 'activated' : 'deactivated'}`);
       } catch (e) {
         console.warn('⚠️ [compositoresApi.toggleActive] Could not toggle hinos:', e);
       }
@@ -652,12 +625,9 @@ export const compositoresApi = {
           is_published: active,
           updated_at: new Date().toISOString(),
         });
-        console.log(`✅ [compositoresApi.toggleActive] Albums ${active ? 'activated' : 'deactivated'}`);
       } catch (e) {
         console.warn('⚠️ [compositoresApi.toggleActive] Could not toggle albums:', e);
       }
-
-      console.log('✅ [compositoresApi.toggleActive] Done');
       return { success: true, error: null };
     } catch (error: any) {
       console.error('❌ [compositoresApi.toggleActive] Error:', error);
@@ -940,7 +910,6 @@ export const albunsApi = {
       if (data.featured !== undefined) insertData.featured = data.featured;
       if (data.featured_order !== undefined) insertData.featured_order = data.featured_order;
 
-      console.log('📀 [albunsApi.create] Inserting:', insertData);
       let result = null as any[] | null;
       for (const typeFieldMode of getAlbumsTypeFieldModes()) {
         try {
@@ -967,7 +936,6 @@ export const albunsApi = {
         console.error('❌ [albunsApi.create] Insert returned empty - possibly blocked by RLS');
         return { data: null, error: 'Falha ao criar álbum. Verifique suas permissões.' };
       }
-      console.log('✅ [albunsApi.create] Result:', result[0]);
       return { data: mapAlbumForCompatibility(result[0]), error: null };
     } catch (error: any) {
       console.error('❌ [albunsApi.create] Error:', error);
@@ -992,7 +960,6 @@ export const albunsApi = {
       if (data.featured !== undefined) updateData.featured = data.featured;
       if (data.featured_order !== undefined) updateData.featured_order = data.featured_order;
 
-      console.log('📀 [albunsApi.update] ID:', id, 'Data:', updateData);
       let result = null as any[] | null;
       for (const typeFieldMode of getAlbumsTypeFieldModes()) {
         try {
@@ -1014,7 +981,6 @@ export const albunsApi = {
         result = await supabaseAuthUpdate<any>('albums', { id: `eq.${id}` }, updateData);
         albumsTypeFieldMode = 'none';
       }
-      console.log('✅ [albunsApi.update] Result:', result);
       if (!result || result.length === 0) {
         console.warn('⚠️ [albunsApi.update] Nenhuma linha atualizada - verifique RLS policies ou se o ID existe');
         return { data: null, error: 'Nenhuma linha atualizada. Verifique se o álbum existe e se você tem permissão.' };
@@ -1043,7 +1009,6 @@ export const albunsApi = {
         console.warn('⚠️ [albunsApi.addHinos] Erro ao limpar hinos existentes:', e);
       }
 
-      console.log(`📀 [albunsApi.addHinos] Adicionando ${hinoIds.length} hinos ao álbum ${albumId}`);
       const rows = hinoIds.map((hinoId, i) => ({
         album_id: albumId,
         hino_id: hinoId,
@@ -1051,7 +1016,6 @@ export const albunsApi = {
         track_number: i + 1,
       }));
       await supabaseAuthInsert('album_hinos', rows);
-      console.log('✅ [albunsApi.addHinos] Hinos salvos com sucesso');
       return { data: true, error: null };
     } catch (error: any) {
       console.error('❌ [albunsApi.addHinos] Error:', error);
@@ -1169,9 +1133,6 @@ export const categoriasApi = {
   update: async (id: number | string, data: any) => {
 
     try {
-      console.log('🔄 [categoriasApi.update] ID:', id);
-      console.log('📥 [categoriasApi.update] Data recebida:', data);
-      
       const payload: any = {};
       if (data?.nome !== undefined) payload.nome = data.nome;
       if (data?.slug !== undefined) payload.slug = data.slug;
@@ -1182,12 +1143,7 @@ export const categoriasApi = {
       if (data?.meta_title !== undefined) payload.meta_title = data.meta_title;
       if (data?.meta_description !== undefined) payload.meta_description = data.meta_description;
 
-      console.log('📦 [categoriasApi.update] Payload montado:', payload);
-
       const results = await supabaseUpdate<any>('categorias', { id: `eq.${id}` }, payload);
-      
-      console.log('✅ [categoriasApi.update] Resultado:', results);
-      
       return { data: results.length > 0 ? results[0] : null, error: null };
     } catch (error: any) {
       console.error('❌ [categoriasApi.update] Erro:', error);
@@ -1266,7 +1222,6 @@ export const usuariosApi = {
   get: async (id: string | number) => {
 
     try {
-      console.log('🔍 [usuariosApi.get] Fetching user ID:', id);
       const rows = await supabaseFetch<any>('users', {
         id: `eq.${id}`,
         select: '*',
@@ -1324,17 +1279,11 @@ export const usuariosApi = {
     }
   },
   delete: async (id: string | number) => {
-
-
     try {
-      console.log('🗑️ [usuariosApi.delete] Target user ID:', id);
-
       // Verificar sessão Supabase (pode ser null se login foi via fallback)
       const { data: sessionData } = await supabase.auth.getSession();
       const session = sessionData?.session;
       const localUser = getCurrentUser();
-      console.log('🔑 [usuariosApi.delete] Session:', session?.user?.email || 'SEM SESSÃO JWT');
-      console.log('🔑 [usuariosApi.delete] LocalUser:', localUser?.email || 'SEM LOCAL USER');
 
       if (!session && !localUser) {
         throw new Error('Você não está autenticado. Faça login novamente.');
@@ -1351,9 +1300,7 @@ export const usuariosApi = {
           const { data: rpcData, error: rpcError } = await supabase.rpc('admin_delete_user', {
             p_target_user_id: id,
           });
-          console.log('📡 [RPC] data:', JSON.stringify(rpcData), 'error:', JSON.stringify(rpcError));
           if (!rpcError && rpcData?.success) {
-            console.log('✅ Deleted via RPC');
             return { success: true, error: null };
           }
           if (!rpcError && rpcData && !rpcData.success) {
@@ -1373,9 +1320,7 @@ export const usuariosApi = {
             is_blocked: true,
             status: 'inactive',
           });
-          console.log('📡 [AuthREST] result:', result);
           if (result && result.length > 0) {
-            console.log('✅ Soft deleted via authenticated REST');
             return { success: true, error: null };
           }
           console.warn('⚠️ Auth REST: 0 rows affected');
@@ -1392,10 +1337,7 @@ export const usuariosApi = {
           .eq('id', id)
           .select('id');
 
-        console.log('📡 [Supabase JS] data:', updateData, 'error:', updateError);
-
         if (!updateError && updateData && updateData.length > 0) {
-          console.log('✅ Soft deleted via Supabase JS');
           return { success: true, error: null };
         }
       }
@@ -1403,13 +1345,11 @@ export const usuariosApi = {
       // Estratégia 4: RPC noauth (funciona SEM JWT - usa email do admin como verificação)
       {
         const adminEmail = localUser?.email || session?.user?.email;
-        console.log('📡 [RPC noauth] Tentando com email:', adminEmail, 'userId:', id);
         if (adminEmail) {
           try {
             const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
             const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
             const rpcUrl = `${SUPABASE_URL}/rest/v1/rpc/admin_delete_user_noauth`;
-            console.log('📡 [RPC noauth] URL:', rpcUrl);
             const rpcResponse = await fetch(rpcUrl, {
               method: 'POST',
               headers: {
@@ -1423,11 +1363,9 @@ export const usuariosApi = {
               }),
             });
             const rawText = await rpcResponse.text();
-            console.log('📡 [RPC noauth] HTTP status:', rpcResponse.status, 'raw:', rawText);
             let rpcResult: any;
             try { rpcResult = JSON.parse(rawText); } catch { rpcResult = rawText; }
             if (typeof rpcResult === 'object' && rpcResult?.success) {
-              console.log('✅ Deleted via RPC noauth (sem JWT)');
               return { success: true, error: null };
             }
             if (typeof rpcResult === 'object' && rpcResult?.error) {
@@ -1452,9 +1390,7 @@ export const usuariosApi = {
           is_blocked: true,
           status: 'inactive',
         });
-        console.log('📡 [REST anon] result:', result);
         if (result && result.length > 0) {
-          console.log('✅ Soft deleted via REST anon');
           return { success: true, error: null };
         }
       } catch (anonEx: any) {

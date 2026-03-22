@@ -172,18 +172,10 @@ const AdminCategoryForm: React.FC = () => {
 
       // Só enviar slug se mudou (evita erro de unique constraint)
       const newSlug = formData.slug.trim();
-      console.log('🔍 Verificando slug:', { originalSlug, newSlug, isEditing, slugMudou: newSlug !== originalSlug });
       
       if (!isEditing || newSlug !== originalSlug) {
         categoryData.slug = newSlug;
-        console.log('✅ Slug será enviado no update');
-      } else {
-        console.log('⏭️ Slug não mudou, não será enviado');
       }
-
-      console.log('📝 Dados do formulário:', formData);
-      console.log('📦 Dados a serem salvos:', categoryData);
-      console.log('🔄 Modo:', isEditing ? 'Editar' : 'Criar', 'ID:', id);
 
       let response;
       if (isEditing && id) {
@@ -191,8 +183,6 @@ const AdminCategoryForm: React.FC = () => {
       } else {
         response = await categoriasApi.create(categoryData);
       }
-
-      console.log('✅ Resposta da API:', response);
 
       if (response.error) {
         throw new Error(response.error);
