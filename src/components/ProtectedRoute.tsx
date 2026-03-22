@@ -15,27 +15,13 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
 }) => {
   const { user, loading, isAdmin, isComposer } = useAuth();
 
-  // Debug logs
-  React.useEffect(() => {
-    console.log('🔐 ProtectedRoute state:', { 
-      hasUser: !!user, 
-      loading, 
-      isAdmin, 
-      isComposer,
-      requireAdmin,
-      requireComposer
-    });
-  }, [user, loading, isAdmin, isComposer]);
-
   // Enquanto carrega, não renderiza spinner nem conteúdo
   if (loading) {
-    console.log('⏳ ProtectedRoute: Aguardando auth...');
     return null;
   }
 
   // Se não estiver logado, redirecionar para login
   if (!user) {
-    console.warn('❌ ProtectedRoute: Sem usuário, redirecionando para /login');
     return <Navigate to="/login" replace />;
   }
 

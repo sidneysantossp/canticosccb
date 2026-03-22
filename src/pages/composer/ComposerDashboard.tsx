@@ -19,7 +19,6 @@ import {
 import { useAuth } from '@/contexts/AuthContext';
 import { getComposerOverviewByComposerId, getTopSongsByComposerId } from '@/lib/composerStatsApi';
 import { getComposerRecentActivityByComposerId } from '@/lib/composerCatalogApi';
-import useNotificationsStore, { createFollowNotification } from '@/stores/notificationsStore';
 import { useActiveComposer } from '@/hooks/useActiveComposer';
 
 // Mock types
@@ -123,7 +122,7 @@ const fetchRecentActivities = async (params: { composerId?: string | number; usu
 };
 
 const ComposerDashboard: React.FC = () => {
-  const { user, profile } = useAuth();
+  const { user } = useAuth();
   const { composerId, loading: loadingComposer } = useActiveComposer();
   const [followToast, setFollowToast] = useState<{ visible: boolean; name: string }>(() => ({ visible: false, name: '' }));
   const [timeRange, setTimeRange] = useState<'7d' | '30d' | '90d' | '1y'>('30d');
@@ -134,13 +133,9 @@ const ComposerDashboard: React.FC = () => {
   const [topCountries, setTopCountries] = useState<Array<{country: string; plays: number}>>([]);
 
   useEffect(() => {
-    console.log('🎯 ComposerDashboard - User:', user?.id);
-    console.log('🎯 ComposerDashboard - Profile:', profile);
-    
     if (user?.id && composerId && !loadingComposer) {
       loadDashboardData();
     } else if (!loadingComposer) {
-      console.warn('⚠️ No user ID found!');
       setIsLoading(false); // Stop loading if no user
     }
   }, [composerId, loadingComposer, timeRange, user?.id]);
@@ -195,7 +190,7 @@ const ComposerDashboard: React.FC = () => {
           }
         )
         .subscribe((status) => {
-          console.log('Realtime channel status:', status);
+          void status;
         });
     };
 
@@ -209,25 +204,18 @@ const ComposerDashboard: React.FC = () => {
   const loadDashboardData = async () => {
     try {
       const usuarioId = user!.id;
-      console.log('📊 Loading dashboard data for composer:', composerId, 'usuario:', usuarioId);
       setIsLoading(true);
       
       // Carregar stats primeiro
-      console.log('1️⃣ Loading stats...');
       const statsData = await fetchOverview({ composerId: composerId ?? undefined, usuarioId, period: timeRange });
-      console.log('✅ Stats loaded:', statsData);
       setStats(statsData);
       
       // Carregar songs
-      console.log('2️⃣ Loading songs...');
       const songsData = await fetchHighlights({ composerId: composerId ?? undefined, usuarioId, limit: 4 });
-      console.log('✅ Songs loaded:', songsData);
       setTopSongs(songsData);
       
       // Carregar activities
-      console.log('3️⃣ Loading activities...');
       const activitiesData = await fetchRecentActivities({ composerId: composerId ?? undefined, usuarioId });
-      console.log('✅ Activities loaded:', activitiesData);
       setActivities(activitiesData);
       
       // Países: por ora sem endpoint real, mantém vazio

@@ -103,12 +103,9 @@ const ComposerProfile: React.FC = () => {
             : await compositoresApi.getByUsuarioId(user.id, (user as any)?.email);
           const d = (resp as any)?.data ?? resp;
           if (d?.id) cd = d;
-        } catch (e) {
-          console.warn('ComposerProfile - getByUsuarioId falhou:', e);
-        }
+        } catch {}
 
         if (cd) {
-          try { console.log('ComposerProfile - Dados do compositor resolvidos:', cd); } catch {}
           const toStr = (v: any) => (v === null || v === undefined ? '' : String(v));
           setComposerId(String(cd.id));
           // Derivar preferências individuais do compositor (se existirem)
@@ -160,7 +157,6 @@ const ComposerProfile: React.FC = () => {
           });
         } else {
           // Se timeout ou não encontrou dados, usar dados básicos do profile
-          console.log('ComposerProfile - Timeout ou sem dados, usando dados básicos');
           setFormData({
             name: (profile as any)?.nome || '',
             artisticName: (profile as any)?.nome || '',
@@ -400,7 +396,6 @@ const ComposerProfile: React.FC = () => {
       }
 
       // Atualizar no banco
-      console.log('💾 [handleSave] Saving profile for composerId:', composerId);
       const profileResult = await compositoresApi.update(composerId, {
         nome: formData.name,
         nome_artistico: formData.artisticName,
@@ -420,7 +415,6 @@ const ComposerProfile: React.FC = () => {
         cidade: formData.cidade,
         estado: formData.estado,
       } as any);
-      console.log('💾 [handleSave] Profile update result:', profileResult);
 
       if (profileResult && !profileResult.success) {
         throw new Error(profileResult.error || 'Erro ao salvar perfil no banco');
@@ -434,7 +428,6 @@ const ComposerProfile: React.FC = () => {
         notif_push_new_followers: formData.notifications.pushNewFollowers ? 1 : 0,
         notif_push_milestones: formData.notifications.pushMilestones ? 1 : 0,
       } as any);
-      console.log('💾 [handleSave] Notifications update result:', notifResult);
 
       setMessage({ type: 'success', text: 'Perfil atualizado com sucesso!' });
       

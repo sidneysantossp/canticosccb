@@ -50,21 +50,14 @@ const EditProfilePage: React.FC = () => {
   // Carregar dados reais do compositor
   useEffect(() => {
     const loadComposerData = async () => {
-      console.log('EditProfilePage - Loading data...', {
-        userId: user?.id,
-        isComposer: profile?.is_composer
-      });
-
       // Timeout de segurança
       const timeoutId = setTimeout(() => {
-        console.log('EditProfilePage - Timeout reached, stopping load');
         setIsLoadingData(false);
       }, 10000); // 10 segundos
 
       try {
         // Se não tiver user, usar dados básicos
         if (!user?.id) {
-          console.log('EditProfilePage - No user ID, using basic data');
           setFormData({
             name: '',
             email: '',
@@ -83,7 +76,6 @@ const EditProfilePage: React.FC = () => {
 
         // Se não for compositor, usar dados básicos do user
         if (!profile?.is_composer) {
-          console.log('EditProfilePage - Not a composer, using user data');
           setFormData({
             name: (profile as any)?.nome || '',
             email: user.email || '',
@@ -101,7 +93,6 @@ const EditProfilePage: React.FC = () => {
         }
 
         // Preencher com dados locais (sem buscar compositor)
-        console.log('EditProfilePage - Using local profile data');
         setFormData({
           name: (profile as any)?.nome || (user as any)?.nome || '',
           email: user.email || '',
@@ -145,16 +136,12 @@ const EditProfilePage: React.FC = () => {
   useEffect(() => {
     const loadUser = async () => {
       if (!user?.id) {
-        console.log('❌ EditProfilePage - loadUser: No user ID');
         return;
       }
-      console.log('📋 EditProfilePage - loadUser: Fetching user', user.id);
       try {
         const res = await usuariosApi.get(Number(user.id));
-        console.log('📋 EditProfilePage - loadUser: API response', res);
 
         const u = (res as any)?.data as { nome?: string; email?: string; avatar_url?: string; telefone?: string; localizacao?: string; data_nascimento?: string; biografia?: string; notificacoes_email?: number; reproducao_automatica?: number; perfil_publico?: number } | undefined;
-        console.log('📋 EditProfilePage - loadUser: Extracted data', u);
 
         if (u) {
           const newFormData = {
@@ -165,7 +152,6 @@ const EditProfilePage: React.FC = () => {
             birthDate: u.data_nascimento || '',
             bio: u.biografia || '',
           };
-          console.log('📋 EditProfilePage - loadUser: Setting form data', newFormData);
 
           setFormData(prev => ({
             ...prev,
@@ -180,8 +166,6 @@ const EditProfilePage: React.FC = () => {
           });
 
           if (u.avatar_url) setAvatarPreviewUrl(u.avatar_url);
-        } else {
-          console.warn('⚠️ EditProfilePage - loadUser: No data in response');
         }
       } catch (e) {
         console.error('❌ EditProfilePage - loadUser: Error', e);
@@ -192,7 +176,6 @@ const EditProfilePage: React.FC = () => {
         }));
       } finally {
         setIsLoadingData(false);
-        console.log('✅ EditProfilePage - loadUser: Complete');
       }
     };
     loadUser();
@@ -222,7 +205,6 @@ const EditProfilePage: React.FC = () => {
     }
 
     const newValue = !preferences[key];
-    console.log(`🔄 handlePreferenceChange: ${key} -> ${newValue}`);
     setPreferences(prev => ({ ...prev, [key]: newValue }));
 
     try {
@@ -236,22 +218,11 @@ const EditProfilePage: React.FC = () => {
       const backendField = fieldMap[key];
       const payload = { [backendField]: newValue ? 1 : 0 };
 
-      console.log(`📤 Enviando para API:`, {
-        userId: user.id,
-        field: backendField,
-        value: newValue ? 1 : 0,
-        payload
-      });
-
       const result = await usuariosApi.update(Number(user.id), payload as any);
-
-      console.log(`📥 Resposta da API:`, result);
 
       if ((result as any)?.error) {
         throw new Error((result as any).error);
       }
-
-      console.log(`✅ Preferência ${key} (${backendField}) salva: ${newValue}`);
     } catch (error: any) {
       console.error(`❌ Erro ao salvar preferência ${key}:`, error);
       console.error('Detalhes do erro:', {
@@ -361,17 +332,8 @@ const EditProfilePage: React.FC = () => {
   };
 
   const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    console.log('📸 handleAvatarUpload triggered');
-
     const file = e.target.files?.[0];
-    console.log('📸 File selected:', file ? {
-      name: file.name,
-      size: file.size,
-      type: file.type
-    } : 'No file');
-
     if (!file) {
-      console.warn('⚠️ No file selected');
       return;
     }
 
@@ -385,15 +347,8 @@ const EditProfilePage: React.FC = () => {
       setIsUploadingAvatar(true);
       setMessage({ type: '', text: '' });
 
-      console.log('📸 Starting upload...', {
-        userId: user.id,
-        isComposer: profile?.is_composer,
-        composerId
-      });
-
       // Upload de avatar do usuário
       const avatarUrl = await uploadUserAvatar(user.id, file);
-      console.log('✅ Avatar uploaded:', avatarUrl);
       setMessage({ type: 'success', text: 'Foto de perfil atualizada com sucesso!' });
       // Mostrar preview imediato sem recarregar
       try {
@@ -517,7 +472,6 @@ const EditProfilePage: React.FC = () => {
                     onChange={handleAvatarUpload}
                     onClick={(e) => {
                       // Garantir que o input está limpo antes de abrir
-                      console.log('📸 Input clicked');
                       (e.target as HTMLInputElement).value = '';
                     }}
                     className="hidden"

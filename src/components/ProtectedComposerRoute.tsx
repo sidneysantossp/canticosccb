@@ -44,13 +44,10 @@ export const ProtectedComposerRoute: React.FC<ProtectedComposerRouteProps> = ({ 
 
       if (compositor) {
         setHasComposerProfile(true);
-        console.log('🔍 Compositor encontrado:', compositor);
         const verified = compositor.verificado === true || compositor.verificado === 1 || compositor.verified === true;
-        console.log('✅ Status verificado (normalizado):', verified, '| verificado:', compositor.verificado, '| status:', compositor.status);
         setIsVerified(verified);
       } else {
         setHasComposerProfile(false);
-        console.log('❌ Compositor não encontrado para usuario_id:', user.id);
         setIsVerified(false);
       }
     } catch (error) {

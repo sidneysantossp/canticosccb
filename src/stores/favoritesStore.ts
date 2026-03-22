@@ -35,8 +35,6 @@ const useFavoritesStore = create<FavoritesState>()(
       error: null,
 
       addFavorite: (hino, userId) => {
-        console.log('💚 favoritesStore.addFavorite chamado:', { hino, userId });
-
         const now = new Date().toISOString();
         const newFavorite: FavoriteHino = {
           ...hino,
@@ -49,16 +47,13 @@ const useFavoritesStore = create<FavoritesState>()(
           error: null
         }));
 
-        console.log('✅ Favorito adicionado ao estado local');
-
         if (userId) {
           const uid = Number(userId) || 0;
-          console.log('🔄 Tentando salvar no Supabase:', { uid, hinoId: hino.id });
           if (uid) {
             apiAddFavorite(uid, hino.id)
               .then(success => {
                 if (success) {
-                  console.log('✅ Favorito salvo no Supabase com sucesso!');
+                  return;
                 } else {
                   console.error('❌ Falha ao salvar favorito no Supabase');
                 }
@@ -67,8 +62,6 @@ const useFavoritesStore = create<FavoritesState>()(
                 console.error('❌ Erro ao salvar favorito no Supabase:', err);
               });
           }
-        } else {
-          console.warn('⚠️ userId não fornecido - favorito não será salvo no Supabase');
         }
       },
 
@@ -88,19 +81,16 @@ const useFavoritesStore = create<FavoritesState>()(
       },
 
       loadFavorites: async (userId?: string | number) => {
-        console.log('🔄 loadFavorites chamado com userId:', userId);
         set({ isLoading: true, error: null });
         
         try {
           if (!userId) {
-            console.log('⚠️ userId não fornecido, abortando carregamento');
             set({ isLoading: false, favorites: [] });
             return;
           }
 
           const uid = String(userId);
-          console.log('🔍 Buscando favoritos no Supabase para usuário:', uid);
-          
+
           // Buscar favoritos com join na tabela hinos
           const { data, error } = await supabase
             .from('favorites')
@@ -112,8 +102,6 @@ const useFavoritesStore = create<FavoritesState>()(
             `)
             .eq('user_id', uid)
             .order('created_at', { ascending: false });
-
-          console.log('📊 Resultado da consulta favorites:', { count: data?.length, error });
 
           if (error) {
             console.error('❌ Erro na consulta favorites:', error);
@@ -144,7 +132,6 @@ const useFavoritesStore = create<FavoritesState>()(
           }
 
           const items = data || [];
-          console.log('📝 Itens retornados:', items.length);
 
           const mapped = items.map((it: any) => {
             const hino = it.hinos;
@@ -160,7 +147,6 @@ const useFavoritesStore = create<FavoritesState>()(
             };
           });
 
-          console.log('✅ Favoritos carregados com sucesso:', mapped.length);
           set({ favorites: mapped, isLoading: false });
         } catch (error: any) {
           console.error('❌ Erro completo em loadFavorites:', error);

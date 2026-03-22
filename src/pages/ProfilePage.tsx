@@ -51,16 +51,6 @@ const ProfilePage: React.FC = () => {
   const avatarInputRef = useRef<HTMLInputElement>(null);
   const [avatarTempUrl, setAvatarTempUrl] = useState<string | null>(null);
 
-  // Debug: Log profile changes
-  useEffect(() => {
-    console.log('👤 ProfilePage - Profile updated:', {
-      hasProfile: !!profile,
-      avatarUrl: profile?.avatar_url,
-      name: (profile as any)?.nome,
-      isComposer: profile?.is_composer
-    });
-  }, [profile]);
-
   // Carregar todos os dados do usuário
   useEffect(() => {
     const loadData = async () => {
@@ -68,11 +58,6 @@ const ProfilePage: React.FC = () => {
         setIsLoading(false);
         return;
       }
-
-      console.log('ProfilePage - Loading data (agregado)...', {
-        userId: user?.id,
-        isComposer: profile?.is_composer
-      });
 
       try {
         const data = await getProfileDashboardData(String(user.id), !!profile?.is_composer);
@@ -106,7 +91,6 @@ const ProfilePage: React.FC = () => {
         ...prev,
         favoritesCount: favorites.length
       }));
-      console.log('💚 Contagem de favoritos atualizada:', favorites.length);
     }
   }, [favorites]);
 
@@ -117,7 +101,6 @@ const ProfilePage: React.FC = () => {
         ...prev,
         playlistsCount: playlists.length
       }));
-      console.log('🎵 Contagem de playlists atualizada:', playlists.length);
     }
   }, [playlists]);
 
@@ -137,8 +120,6 @@ const ProfilePage: React.FC = () => {
 
   // Função para upload de avatar
   const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    console.log('📸 ProfilePage - handleAvatarUpload triggered');
-
     // Para compositores, redirecionar para a página de perfil do compositor
     if (profile?.is_composer) {
       navigate('/composer/profile');
@@ -146,14 +127,7 @@ const ProfilePage: React.FC = () => {
     }
 
     const file = e.target.files?.[0];
-    console.log('📸 File selected:', file ? {
-      name: file.name,
-      size: file.size,
-      type: file.type
-    } : 'No file');
-
     if (!file) {
-      console.warn('⚠️ No file selected');
       return;
     }
 
@@ -164,11 +138,7 @@ const ProfilePage: React.FC = () => {
 
     try {
       setIsUploadingAvatar(true);
-      console.log('📸 Starting upload for user:', user.id);
-
       const avatarUrl = await uploadUserAvatar(user.id, file);
-
-      console.log('✅ Avatar uploaded successfully:', avatarUrl);
       // Atualizar UI imediatamente sem refresh completo e sem quebrar query string
       if (avatarUrl) {
         try {
@@ -240,7 +210,6 @@ const ProfilePage: React.FC = () => {
                     if (avatarTempUrl) setAvatarTempUrl(null);
                     e.currentTarget.style.display = 'none';
                   }}
-                  onLoad={() => console.log('✅ Avatar loaded successfully')}
                 />
               ) : (
                 <User className="w-16 h-16 text-white/80" />
@@ -273,7 +242,6 @@ const ProfilePage: React.FC = () => {
               capture="environment"
               onChange={handleAvatarUpload}
               onClick={(e) => {
-                console.log('📸 Input clicked');
                 (e.target as HTMLInputElement).value = '';
               }}
               className="hidden"
