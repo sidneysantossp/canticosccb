@@ -21,7 +21,7 @@ export async function uploadFile(
 ): Promise<string> {
   try {
     const sizeMB = (file.size / (1024 * 1024)).toFixed(2);
-    console.log(`📤 Iniciando upload Supabase (REST API): ${file.name} (${sizeMB} MB) tipo: ${type}`);
+    void sizeMB;
 
     // Limites de tamanho por tipo
     const maxSizes: Record<string, number> = {
@@ -48,19 +48,13 @@ export async function uploadFile(
     // Pegar token via getSession com timeout de 3s
     let accessToken = SUPABASE_ANON_KEY;
     try {
-      console.log('🔑 Obtendo sessão...');
       const sessionPromise = supabase.auth.getSession();
       const timeoutPromise = new Promise<null>((resolve) => setTimeout(() => resolve(null), 3000));
       const result = await Promise.race([sessionPromise, timeoutPromise]);
       if (result && (result as any)?.data?.session?.access_token) {
         accessToken = (result as any).data.session.access_token;
-        console.log('✅ Token de autenticação encontrado');
-      } else {
-        console.warn('⚠️ Sem sessão ativa ou timeout, usando anon key');
       }
-    } catch (e) {
-      console.warn('⚠️ Erro ao obter sessão, usando anon key');
-    }
+    } catch {}
     
     // Gerar nome único para o arquivo
     const timestamp = Date.now();
@@ -73,7 +67,6 @@ export async function uploadFile(
     
     // Upload via REST API com timeout
     const uploadUrl = `${SUPABASE_URL}/storage/v1/object/${bucket}/${path}`;
-    console.log('🌐 Upload URL:', uploadUrl);
     
     const doUpload = async (token: string): Promise<Response> => {
       const controller = new AbortController();
@@ -99,7 +92,6 @@ export async function uploadFile(
     };
 
     try {
-      console.log('📤 Enviando arquivo...');
       let response = await doUpload(accessToken);
       
       // Se falhar com token do usuário, tentar com anon key
@@ -113,13 +105,9 @@ export async function uploadFile(
         console.error('❌ Erro no upload (HTTP):', response.status, errorText);
         throw new Error(`Upload falhou: ${response.status} - ${errorText}`);
       }
-      
-      console.log('✅ Upload HTTP concluído:', response.status);
-      
+
       // Obter URL pública
       const publicUrl = `${SUPABASE_URL}/storage/v1/object/public/${bucket}/${path}`;
-      console.log('✅ URL pública gerada:', publicUrl);
-      
       return publicUrl;
     } catch (fetchError: any) {
       if (fetchError.name === 'AbortError') {

@@ -24,22 +24,14 @@ export const ComposerPageWrapper: React.FC<ComposerPageWrapperProps> = ({
     if (loading || loadingComposer) return;
 
     if (!user) {
-      console.warn('⚠️ ComposerPageWrapper: No user found, redirecting to login');
       navigate('/login');
       return;
     }
 
     if (requireComposer && !profile?.is_composer && !composerId) {
-      console.warn('⚠️ ComposerPageWrapper: User has no active composer context');
       navigate(managingComposerId ? '/manage-composers' : '/');
       return;
     }
-
-    console.log('✅ ComposerPageWrapper: User authenticated', {
-      userId: user.id,
-      isComposer: profile?.is_composer,
-      composerId,
-    });
   }, [user, profile, loading, loadingComposer, composerId, navigate, requireComposer, managingComposerId]);
 
   // Loading state

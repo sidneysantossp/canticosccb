@@ -26,19 +26,14 @@ export const useAutoplayVideo = (isActive: boolean = true, src?: string) => {
         
         // Tentar reproduzir
         await video.play();
-        console.log('Vídeo iniciado automaticamente');
-      } catch (error) {
-        console.log('Autoplay bloqueado pelo navegador:', error);
-        
+      } catch {
         // Fallback: tentar novamente após interação do usuário
         const handleUserInteraction = async () => {
           try {
             await video.play();
             document.removeEventListener('click', handleUserInteraction);
             document.removeEventListener('touchstart', handleUserInteraction);
-          } catch (e) {
-            console.log('Falha ao reproduzir após interação:', e);
-          }
+          } catch {}
         };
 
         document.addEventListener('click', handleUserInteraction, { once: true });

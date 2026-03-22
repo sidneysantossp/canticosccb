@@ -18,7 +18,6 @@ const OnboardingPage: React.FC = () => {
   }, []);
 
   const handleContinue = () => {
-    console.log('🎵 Navegando para /profile, usuário:', user);
     navigate('/profile', { replace: true });
   };
 

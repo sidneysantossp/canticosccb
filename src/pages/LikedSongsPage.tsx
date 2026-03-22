@@ -18,17 +18,9 @@ const LikedSongsPage: React.FC = () => {
 
   // Load favorites on component mount
   useEffect(() => {
-    console.log('🎵 LikedSongsPage - useEffect disparado');
-    console.log('👤 User atual:', user);
-    
     const uid = user?.id;
-    console.log('🆔 UID extraído:', uid);
-    
     if (uid) {
-      console.log('📥 Carregando favoritos para usuário:', uid);
       loadFavorites(uid);
-    } else {
-      console.log('⚠️ Nenhum usuário logado, não carregar favoritos');
     }
     
     updateFavoritesDaysAgo();
