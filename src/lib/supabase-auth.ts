@@ -3,6 +3,7 @@
  * Usa a tabela "users" que sincroniza com auth.users
  */
 import { createClient } from '@supabase/supabase-js';
+import { DEFAULT_SITE_URL, normalizeSiteUrl } from '@/utils/siteUrl';
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || '';
 const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
@@ -63,6 +64,30 @@ export interface LoginResponse {
 const USER_STORAGE_KEY = 'user';
 const AUTH_TOKEN_STORAGE_KEY = 'auth_token';
 const AUTH_FALLBACK_STORAGE_KEY = 'auth_fallback';
+const ENABLE_GOOGLE_AUTH = String(import.meta.env.VITE_ENABLE_GOOGLE_AUTH || '').trim().toLowerCase() === 'true';
+
+function normalizeEmail(email?: string | null): string {
+  return String(email || '').trim().toLowerCase();
+}
+
+function getConfiguredAdminEmailSet(): Set<string> {
+  const raw = import.meta.env.VITE_ADMIN_EMAILS || '';
+  return new Set(
+    raw
+      .split(',')
+      .map((item) => normalizeEmail(item))
+      .filter(Boolean)
+  );
+}
+
+export function isConfiguredAdminEmail(email?: string | null): boolean {
+  if (!email) return false;
+  return getConfiguredAdminEmailSet().has(normalizeEmail(email));
+}
+
+export function isGoogleAuthEnabled(): boolean {
+  return ENABLE_GOOGLE_AUTH;
+}
 
 export function cacheCurrentUser(usuario: Usuario | null): void {
   if (typeof localStorage === 'undefined') return;
@@ -83,13 +108,30 @@ export function clearAuthStorage(): void {
   localStorage.removeItem(AUTH_FALLBACK_STORAGE_KEY);
 }
 
+function getAuthRedirectBase(): string {
+  const envUrl = String(import.meta.env.VITE_APP_URL || '').trim();
+  if (envUrl) {
+    return normalizeSiteUrl(envUrl, DEFAULT_SITE_URL);
+  }
+
+  if (typeof window !== 'undefined' && window.location?.origin) {
+    return normalizeSiteUrl(window.location.origin, DEFAULT_SITE_URL);
+  }
+
+  return DEFAULT_SITE_URL;
+}
+
 // Função helper para mapear campos para compatibilidade
 function mapUserForCompatibility(user: any): Usuario {
+  const isAdmin = user.is_admin === true || user.tipo === 'admin' || isConfiguredAdminEmail(user.email);
+  const isComposer = user.is_composer === true || user.tipo === 'compositor';
   return {
     ...user,
+    is_admin: isAdmin,
+    is_composer: isComposer,
     nome: user.name,
     plano: user.plan || 'free',
-    tipo: user.is_admin ? 'admin' : user.is_composer ? 'compositor' : 'usuario',
+    tipo: isAdmin ? 'admin' : isComposer ? 'compositor' : 'usuario',
     ativo: user.status !== 'inactive' && !user.is_blocked,
   };
 }
@@ -198,7 +240,7 @@ export async function register(data: { nome: string; email: string; senha: strin
         data: {
           name: data.nome,
         },
-        emailRedirectTo: `${import.meta.env.VITE_APP_URL || window.location.origin}/auth/callback?type=email_verification`,
+        emailRedirectTo: `${getAuthRedirectBase()}/auth/callback?type=email_verification`,
       },
     });
 
@@ -308,9 +350,7 @@ export async function register(data: { nome: string; email: string; senha: strin
  * Disparar email de recuperação de senha
  */
 export async function requestPasswordReset(email: string): Promise<void> {
-  const redirectBase =
-    import.meta.env.VITE_APP_URL ||
-    (typeof window !== 'undefined' ? window.location.origin : '');
+  const redirectBase = getAuthRedirectBase();
 
   const { error } = await supabase.auth.resetPasswordForEmail(email, {
     redirectTo: `${redirectBase}/auth/callback?type=recovery`,
@@ -358,6 +398,10 @@ export async function googleLogin(idToken: string): Promise<void> {
  * Login com Google usando OAuth do Supabase (Redirect)
  */
 export async function googleOAuthLogin(): Promise<void> {
+  if (!isGoogleAuthEnabled()) {
+    throw new Error('Login com Google temporariamente indisponível.');
+  }
+
   try {
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
@@ -505,7 +549,7 @@ export async function updateUserProfile(userId: string, data: Partial<Usuario>):
  */
 export function isAdmin(): boolean {
   const user = getCurrentUser();
-  return user?.is_admin === true || user?.tipo === 'admin';
+  return user?.is_admin === true || user?.tipo === 'admin' || isConfiguredAdminEmail(user?.email);
 }
 
 export function isCompositor(): boolean {

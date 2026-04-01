@@ -1,6 +1,7 @@
 // Logos Management — Supabase REST + Storage
 import { supabase } from '@/lib/supabase-auth';
 import { supabaseFetch, supabaseUpdate, supabaseInsert } from '@/lib/supabaseRest';
+import { normalizeAssetUrl } from '@/utils/siteUrl';
 
 export type LogoType = 'favicon' | 'primary' | 'secondary' | 'social';
 
@@ -27,7 +28,7 @@ const mapRow = (r: any): Logo => ({
   id: String(r.id),
   type: r.type as LogoType,
   name: r.name || '',
-  url: r.url || '',
+  url: normalizeAssetUrl(r.url || ''),
   width: r.width || 0,
   height: r.height || 0,
   file_size: r.file_size || 0,
@@ -116,7 +117,7 @@ export const uploadLogoImage = async (file: File, logoType: LogoType): Promise<s
     throw new Error(`Upload falhou: ${response.status} - ${errText}`);
   }
 
-  return `${SUPABASE_URL}/storage/v1/object/public/logos/${path}`;
+  return normalizeAssetUrl(`${SUPABASE_URL}/storage/v1/object/public/logos/${path}`);
 };
 
 export const getImageDimensions = (file: File): Promise<{ width: number; height: number }> => {
