@@ -1,11 +1,11 @@
 # robots.txt - Cânticos CCB
-# https://canticosccb.com.br/robots.txt
+# https://www.canticosccb.com.br/robots.txt
 
 User-agent: *
 Allow: /
 
 # Sitemap
-Sitemap: https://canticosccb.com.br/sitemap.xml
+Sitemap: https://www.canticosccb.com.br/sitemap.xml
 
 # Disallow private/auth areas
 Disallow: /admin

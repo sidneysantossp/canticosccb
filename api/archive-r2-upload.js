@@ -17,8 +17,6 @@ const R2_ACCESS_KEY_ID = process.env.R2_ACCESS_KEY_ID || '';
 const R2_SECRET_ACCESS_KEY = process.env.R2_SECRET_ACCESS_KEY || '';
 const R2_BUCKET = process.env.R2_BUCKET || 'canticos-media';
 const R2_PUBLIC_URL = (process.env.R2_PUBLIC_URL || process.env.VITE_MEDIA_PUBLIC_BASE_URL || 'https://media.canticosccb.com.br').replace(/\/+$/, '');
-const SUPABASE_URL = (process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || '').replace(/\/+$/, '');
-const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY || '';
 
 let r2Client;
 
@@ -80,25 +78,43 @@ async function readJsonBody(req) {
   return JSON.parse(raw);
 }
 
+function decodeJwtPayload(accessToken) {
+  const token = sanitizeBearerToken(accessToken);
+  const parts = token.split('.');
+  if (parts.length !== 3) return null;
+
+  try {
+    const payload = parts[1]
+      .replace(/-/g, '+')
+      .replace(/_/g, '/')
+      .padEnd(Math.ceil(parts[1].length / 4) * 4, '=');
+
+    return JSON.parse(Buffer.from(payload, 'base64').toString('utf8'));
+  } catch {
+    return null;
+  }
+}
+
 async function validateAccessToken(accessToken) {
   if (!accessToken) return null;
-  if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
-    throw new Error('Configuração de autenticação ausente no servidor');
-  }
 
-  const response = await fetch(`${SUPABASE_URL}/auth/v1/user`, {
-    method: 'GET',
-    headers: {
-      Authorization: `Bearer ${accessToken}`,
-      apikey: SUPABASE_ANON_KEY,
-    },
-  });
-
-  if (!response.ok) {
+  const payload = decodeJwtPayload(accessToken);
+  if (!payload?.sub || typeof payload.sub !== 'string') {
     return null;
   }
 
-  return response.json();
+  if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(payload.sub)) {
+    return null;
+  }
+
+  if (payload.exp && Number(payload.exp) * 1000 <= Date.now() + 30000) {
+    return null;
+  }
+
+  return {
+    id: payload.sub,
+    email: typeof payload.email === 'string' ? payload.email : '',
+  };
 }
 
 function assertArchiveUrl(url) {

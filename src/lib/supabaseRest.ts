@@ -1,7 +1,8 @@
 import { supabase } from './supabase-auth';
+import { getEmergencyRowsForTable, isSupabaseQuotaRestrictionErrorMessage } from './emergencyCatalog';
 
-const SUPABASE_URL = (import.meta.env.VITE_SUPABASE_URL ?? '').replace(/\/+$/, '');
-const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY ?? '';
+const SUPABASE_URL = (import.meta.env.VITE_SUPABASE_URL ?? '').replace(/\/+$/, '').trim();
+const SUPABASE_ANON_KEY = String(import.meta.env.VITE_SUPABASE_ANON_KEY ?? '').trim();
 
 export const isSupabaseConfigured = Boolean(SUPABASE_URL && SUPABASE_ANON_KEY);
 const isDebugEnabled = import.meta.env.DEV;
@@ -27,11 +28,19 @@ if (typeof window !== 'undefined') {
 
 function buildHeaders() {
   // Anon key para leituras públicas
+  const anonKey = sanitizeBearerToken(SUPABASE_ANON_KEY);
   return {
-    apikey: SUPABASE_ANON_KEY,
-    Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+    apikey: anonKey,
+    Authorization: `Bearer ${anonKey}`,
     'Content-Type': 'application/json',
   };
+}
+
+function sanitizeBearerToken(value: string): string {
+  return String(value || '')
+    .trim()
+    .replace(/^Bearer\s+/i, '')
+    .replace(/[^A-Za-z0-9._-]/g, '');
 }
 
 function getStoredToken(): string {
@@ -43,7 +52,7 @@ function getStoredToken(): string {
         const raw = localStorage.getItem(key);
         if (raw) {
           const parsed = JSON.parse(raw);
-          const token = parsed?.access_token || parsed?.currentSession?.access_token;
+          const token = sanitizeBearerToken(parsed?.access_token || parsed?.currentSession?.access_token || '');
           if (token) return token;
         }
         break;
@@ -52,7 +61,7 @@ function getStoredToken(): string {
   } catch (e) {
     // fallback
   }
-  return SUPABASE_ANON_KEY;
+  return sanitizeBearerToken(SUPABASE_ANON_KEY);
 }
 
 function isTokenExpired(token: string): boolean {
@@ -69,10 +78,11 @@ function isTokenExpired(token: string): boolean {
 }
 
 async function buildAuthHeaders() {
-  let accessToken = getStoredToken();
+  let accessToken = sanitizeBearerToken(getStoredToken());
+  const anonKey = sanitizeBearerToken(SUPABASE_ANON_KEY);
 
   // Se o token está expirado, tentar refresh via Supabase client (com timeout)
-  if (accessToken !== SUPABASE_ANON_KEY && isTokenExpired(accessToken)) {
+  if (accessToken !== anonKey && isTokenExpired(accessToken)) {
     debugLog('[supabaseRest] JWT expired, attempting refresh...');
     try {
       const refreshPromise = supabase.auth.refreshSession();
@@ -81,7 +91,7 @@ async function buildAuthHeaders() {
       );
       const { data, error } = await Promise.race([refreshPromise, timeoutPromise]);
       if (!error && data?.session?.access_token) {
-        accessToken = data.session.access_token;
+        accessToken = sanitizeBearerToken(data.session.access_token);
         debugLog('[supabaseRest] JWT refreshed successfully');
       } else {
         console.warn('[supabaseRest] JWT refresh failed:', error?.message);
@@ -92,8 +102,8 @@ async function buildAuthHeaders() {
   }
 
   return {
-    apikey: SUPABASE_ANON_KEY,
-    Authorization: `Bearer ${accessToken}`,
+    apikey: anonKey,
+    Authorization: `Bearer ${accessToken || anonKey}`,
     'Content-Type': 'application/json',
   };
 }
@@ -142,6 +152,12 @@ export async function supabaseFetch<T>(table: string, params: Record<string, str
     if (!response.ok) {
       const text = await response.text().catch(() => '');
       console.error(`[supabaseFetch] Error ${response.status} for ${table}:`, text);
+      if (isSupabaseQuotaRestrictionErrorMessage(`${response.status} ${response.statusText} ${text}`)) {
+        console.warn(`[supabaseFetch] Falling back to emergency catalog for ${table}`);
+        const fallbackRows = await getEmergencyRowsForTable(table, params);
+        cache.set(cacheKey, { data: fallbackRows, timestamp: now });
+        return fallbackRows as T[];
+      }
       throw new Error(`[supabaseRest] ${response.status} ${response.statusText} - ${text}`);
     }
 
@@ -157,6 +173,12 @@ export async function supabaseFetch<T>(table: string, params: Record<string, str
   } catch (error) {
     const msg = error instanceof Error ? error.message : String(error);
     console.error(`[supabaseFetch] Exception for ${table}:`, msg);
+    if (isSupabaseQuotaRestrictionErrorMessage(msg)) {
+      console.warn(`[supabaseFetch] Exception fallback to emergency catalog for ${table}`);
+      const fallbackRows = await getEmergencyRowsForTable(table, params);
+      cache.set(cacheKey, { data: fallbackRows, timestamp: now });
+      return fallbackRows as T[];
+    }
     throw error;
   }
 }
