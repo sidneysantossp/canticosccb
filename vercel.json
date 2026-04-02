@@ -51,7 +51,7 @@
       "destination": "/api/ssr?path=/:path"
     },
     {
-      "source": "/((?!.*\\.(?:png|jpg|jpeg|gif|svg|ico|css|js|woff|woff2|ttf|eot|pdf|zip|mp3|mp4|webm|ogg)$).*)",
+      "source": "/((?!api(?:/|$))(?!.*\\.(?:png|jpg|jpeg|gif|svg|ico|css|js|woff|woff2|ttf|eot|pdf|zip|mp3|mp4|webm|ogg)$).*)",
       "destination": "/index.html"
     }
   ],

@@ -18,6 +18,8 @@
     "clean:all": "rimraf node_modules/.vite dist node_modules && npm install"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.1022.0",
+    "@aws-sdk/s3-request-presigner": "^3.1022.0",
     "@headlessui/react": "^1.7.17",
     "@supabase/supabase-js": "^2.90.1",
     "@tanstack/react-query": "^4.29.0",
