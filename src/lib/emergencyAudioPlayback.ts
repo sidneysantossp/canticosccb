@@ -8,6 +8,8 @@ interface EmergencyAudioEntry {
   compressedSize: number;
   uncompressedSize: number;
   relativeOffsetOfLocalHeader: number;
+  dataStart?: number;
+  dataEnd?: number;
 }
 
 interface EmergencyAudioSegmentIndex {
@@ -207,6 +209,19 @@ async function resolveEntryDataRange(
   const cached = resolvedRangeCache.get(cacheKey);
   if (cached) {
     return cached;
+  }
+
+  if (
+    Number.isFinite(entry.dataStart)
+    && Number.isFinite(entry.dataEnd)
+    && (entry.dataEnd as number) > (entry.dataStart as number)
+  ) {
+    const resolvedRange = {
+      dataStart: entry.dataStart as number,
+      dataEnd: entry.dataEnd as number,
+    };
+    resolvedRangeCache.set(cacheKey, resolvedRange);
+    return resolvedRange;
   }
 
   const localHeader = await fetchArchiveRangeViaProxy(

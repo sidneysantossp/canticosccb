@@ -181,6 +181,8 @@ interface ArchiveZipEntry {
   uncompressedSize: number;
   relativeOffsetOfLocalHeader: number;
   generalPurposeBitFlag: number;
+  dataStart?: number;
+  dataEnd?: number;
 }
 
 async function fetchArchiveRange(snapshotUrl: string, start: number, endExclusive: number): Promise<Buffer> {
@@ -188,14 +190,12 @@ async function fetchArchiveRange(snapshotUrl: string, start: number, endExclusiv
     return Buffer.alloc(0);
   }
 
-  const proxyUrl =
-    `https://www.canticosccb.com.br/api/archive-proxy?url=${encodeURIComponent(snapshotUrl)}`;
-
-  const response = await fetch(proxyUrl, {
+  const response = await fetch(snapshotUrl, {
     headers: {
       'User-Agent': 'CanticosCCB/1.0 (emergency-audio)',
       Range: `bytes=${start}-${endExclusive - 1}`,
     },
+    redirect: 'follow',
   });
 
   if (!(response.ok || response.status === 206)) {
@@ -210,14 +210,12 @@ async function fetchArchiveRangeResponse(snapshotUrl: string, start: number, end
     throw new Error('Faixa inválida solicitada ao acervo.');
   }
 
-  const proxyUrl =
-    `https://www.canticosccb.com.br/api/archive-proxy?url=${encodeURIComponent(snapshotUrl)}`;
-
-  const response = await fetch(proxyUrl, {
+  const response = await fetch(snapshotUrl, {
     headers: {
       'User-Agent': 'CanticosCCB/1.0 (emergency-audio)',
       Range: `bytes=${start}-${endExclusive - 1}`,
     },
+    redirect: 'follow',
   });
 
   if (!(response.ok || response.status === 206) || !response.body) {
@@ -343,6 +341,17 @@ async function readEntryBuffer(snapshotUrl: string, entry: ArchiveZipEntry): Pro
 }
 
 async function resolveEntryDataRange(snapshotUrl: string, entry: ArchiveZipEntry): Promise<{ dataStart: number; dataEnd: number }> {
+  if (
+    Number.isFinite(entry.dataStart)
+    && Number.isFinite(entry.dataEnd)
+    && (entry.dataEnd as number) > (entry.dataStart as number)
+  ) {
+    return {
+      dataStart: entry.dataStart as number,
+      dataEnd: entry.dataEnd as number,
+    };
+  }
+
   const localHeader = await fetchArchiveRange(
     snapshotUrl,
     entry.relativeOffsetOfLocalHeader,
