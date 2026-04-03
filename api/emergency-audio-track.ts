@@ -188,12 +188,14 @@ async function fetchArchiveRange(snapshotUrl: string, start: number, endExclusiv
     return Buffer.alloc(0);
   }
 
-  const response = await fetch(snapshotUrl, {
+  const proxyUrl =
+    `https://www.canticosccb.com.br/api/archive-proxy?url=${encodeURIComponent(snapshotUrl)}`;
+
+  const response = await fetch(proxyUrl, {
     headers: {
       'User-Agent': 'CanticosCCB/1.0 (emergency-audio)',
       Range: `bytes=${start}-${endExclusive - 1}`,
     },
-    redirect: 'follow',
   });
 
   if (!(response.ok || response.status === 206)) {
@@ -208,12 +210,14 @@ async function fetchArchiveRangeResponse(snapshotUrl: string, start: number, end
     throw new Error('Faixa inválida solicitada ao acervo.');
   }
 
-  const response = await fetch(snapshotUrl, {
+  const proxyUrl =
+    `https://www.canticosccb.com.br/api/archive-proxy?url=${encodeURIComponent(snapshotUrl)}`;
+
+  const response = await fetch(proxyUrl, {
     headers: {
       'User-Agent': 'CanticosCCB/1.0 (emergency-audio)',
       Range: `bytes=${start}-${endExclusive - 1}`,
     },
-    redirect: 'follow',
   });
 
   if (!(response.ok || response.status === 206) || !response.body) {
