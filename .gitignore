@@ -72,6 +72,8 @@ Thumbs.db
 /api/*
 !/api/ssr.ts
 !/api/archive-proxy.ts
+!/api/_emergencyAudioArchives.js
+!/api/_emergencyAudioIndex.js
 vendor/
 media/
 media_protegida/
