@@ -1,7 +1,8 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { TrendingUp, Play, Pause, Heart, MoreHorizontal, Music } from 'lucide-react';
+import { TrendingUp, Play, Pause, Heart, Music } from 'lucide-react';
 import { buildHinoUrl } from '@/utils/slugUrl';
+import { hasPlayableTrackSource } from '@/lib/playerFeedback';
 
 export type TrendItem = {
   id: string;
@@ -29,9 +30,10 @@ const TrendsSection: React.FC<Props> = ({
   isPlaying,
   onTogglePlay,
   isFavorited,
-  onToggleFavorite
+  onToggleFavorite,
 }) => {
   if (!items || items.length === 0) return null;
+
   return (
     <section className="px-6">
       <div className="flex items-center justify-between mb-6">
@@ -40,7 +42,9 @@ const TrendsSection: React.FC<Props> = ({
             <span>
               {title === 'Recém publicados' ? (
                 <>
-                  Recém<br />publicados
+                  Recém
+                  <br />
+                  publicados
                 </>
               ) : title}
             </span>
@@ -53,80 +57,86 @@ const TrendsSection: React.FC<Props> = ({
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-        {items.slice(0, 9).map((hino, index) => (
-          <div
-            key={hino.id}
-            className="group bg-background-secondary hover:bg-background-tertiary p-2.5 sm:p-3 rounded-lg transition-all duration-300 hover:scale-[1.02]"
-          >
-            <div className="flex gap-3">
-              {/* Cover Image */}
-              <div className="relative flex-shrink-0">
-                {hino.coverUrl && hino.coverUrl.trim() !== '' ? (
-                  <img
-                    src={hino.coverUrl}
-                    alt={hino.title}
-                    className="w-12 h-12 sm:w-14 sm:h-14 rounded object-cover"
-                    loading="lazy"
-                  />
-                ) : (
-                  <div className="w-12 h-12 sm:w-14 sm:h-14 rounded bg-background-tertiary flex items-center justify-center">
-                    <Music className="w-5 h-5 sm:w-6 sm:h-6 text-gray-500" />
-                  </div>
-                )}
-                <button
-                  onClick={() => onTogglePlay(hino)}
-                  className="absolute inset-0 bg-black/60 rounded flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
-                  aria-label={`Reproduzir ${hino.title}`}
-                >
-                  {currentTrackId === hino.id && isPlaying ? (
-                    <Pause className="w-5 h-5 sm:w-6 sm:h-6 text-white fill-current" />
+        {items.slice(0, 9).map((hino) => {
+          const canPlay = hasPlayableTrackSource({
+            number: (hino as any).number,
+            title: hino.title,
+            artist: hino.artist,
+            audioUrl: (hino as any).audioUrl,
+            youtubeSource: (hino as any).youtubeSource,
+          });
+
+          return (
+            <div
+              key={hino.id}
+              className="group bg-background-secondary hover:bg-background-tertiary p-2.5 sm:p-3 rounded-lg transition-all duration-300 hover:scale-[1.02]"
+            >
+              <div className="flex gap-3">
+                <div className="relative flex-shrink-0">
+                  {hino.coverUrl && hino.coverUrl.trim() !== '' ? (
+                    <img
+                      src={hino.coverUrl}
+                      alt={hino.title}
+                      className="w-12 h-12 sm:w-14 sm:h-14 rounded object-cover"
+                      loading="lazy"
+                    />
                   ) : (
-                    <Play className="w-5 h-5 sm:w-6 sm:h-6 text-white fill-current" />
+                    <div className="w-12 h-12 sm:w-14 sm:h-14 rounded bg-background-tertiary flex items-center justify-center">
+                      <Music className="w-5 h-5 sm:w-6 sm:h-6 text-gray-500" />
+                    </div>
                   )}
-                </button>
-              </div>
+                  {canPlay ? (
+                    <button
+                      onClick={() => onTogglePlay(hino)}
+                      className="absolute inset-0 bg-black/60 rounded flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                      aria-label={`Reproduzir ${hino.title}`}
+                    >
+                      {currentTrackId === hino.id && isPlaying ? (
+                        <Pause className="w-5 h-5 sm:w-6 sm:h-6 text-white fill-current" />
+                      ) : (
+                        <Play className="w-5 h-5 sm:w-6 sm:h-6 text-white fill-current" />
+                      )}
+                    </button>
+                  ) : null}
+                </div>
 
-              {/* Track Info - Title, Duration and Favorite */}
-              <div className="flex-1 min-w-0">
-                <Link to={buildHinoUrl(hino.id, hino.title)}>
-                  <h3 className="font-semibold text-white group-hover:text-primary-400 transition-colors leading-tight cursor-pointer text-sm sm:text-base">
-                    {hino.title}
-                  </h3>
-                </Link>
-                
-                {/* Author and Category - Below Title */}
-                <p className="text-xs sm:text-sm text-gray-400 leading-tight mt-0.5 truncate">
-                  {hino.artist} • {hino.category}
-                </p>
-                
-                {/* Duration and Favorite - Below Author/Category */}
-                <div className="flex items-center justify-between mt-1">
-                  {/* Duration */}
-                  <span className="text-xs sm:text-sm text-gray-400">
-                    {hino.duration}
-                  </span>
+                <div className="flex-1 min-w-0">
+                  <Link to={buildHinoUrl(hino.id, hino.title)}>
+                    <h3 className="font-semibold text-white group-hover:text-primary-400 transition-colors leading-tight cursor-pointer text-sm sm:text-base">
+                      {hino.title}
+                    </h3>
+                  </Link>
 
-                  {/* Favorite icon */}
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onToggleFavorite(hino.id);
-                    }}
-                    className={`p-1.5 sm:p-2 rounded-full transition-all duration-300 ${
-                      isFavorited(hino.id)
-                        ? 'text-red-500 hover:bg-red-500/10 scale-110'
-                        : 'text-gray-400 hover:text-red-400 hover:bg-background-primary'
-                    }`}
-                    aria-label={isFavorited(hino.id) ? 'Remover dos favoritos' : 'Adicionar aos favoritos'}
-                    title={isFavorited(hino.id) ? 'Remover dos favoritos' : 'Adicionar aos favoritos'}
-                  >
-                    <Heart className={`w-3 h-3 sm:w-4 sm:h-4 transition-transform ${isFavorited(hino.id) ? 'fill-current' : ''}`} />
-                  </button>
+                  <p className="text-xs sm:text-sm text-gray-400 leading-tight mt-0.5 truncate">
+                    {hino.artist} • {hino.category}
+                  </p>
+
+                  <div className="flex items-center justify-between mt-1">
+                    <span className="text-xs sm:text-sm text-gray-400">
+                      {hino.duration}
+                    </span>
+
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onToggleFavorite(hino.id);
+                      }}
+                      className={`p-1.5 sm:p-2 rounded-full transition-all duration-300 ${
+                        isFavorited(hino.id)
+                          ? 'text-red-500 hover:bg-red-500/10 scale-110'
+                          : 'text-gray-400 hover:text-red-400 hover:bg-background-primary'
+                      }`}
+                      aria-label={isFavorited(hino.id) ? 'Remover dos favoritos' : 'Adicionar aos favoritos'}
+                      title={isFavorited(hino.id) ? 'Remover dos favoritos' : 'Adicionar aos favoritos'}
+                    >
+                      <Heart className={`w-3 h-3 sm:w-4 sm:h-4 transition-transform ${isFavorited(hino.id) ? 'fill-current' : ''}`} />
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
     </section>
   );

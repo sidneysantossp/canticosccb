@@ -1,6 +1,8 @@
 import { create } from 'zustand';
 import { PlayerState, Hino } from '@/types';
 import { useFreePlayGateStore } from '@/stores/freePlayGateStore';
+import { emitPlayerUnavailable, hasPlayableTrackSource } from '@/lib/playerFeedback';
+import { resolveEmergencyArchiveTrack } from '@/lib/emergencyAudioResolver';
 
 // Helper: check if user is logged in (reads from localStorage where AuthContext persists)
 function isUserLoggedIn(): boolean {
@@ -29,7 +31,7 @@ interface PlaybackContext {
 
 interface PlayerStore extends PlayerState {
   playbackContext: PlaybackContext | null;
-  play: (track: Hino) => void;
+  play: (track: Hino) => boolean;
   pause: () => void;
   resume: () => void;
   next: () => void;
@@ -65,26 +67,44 @@ export const usePlayerStore = create<PlayerStore>((set, get) => ({
 
   // Actions
   play: (track: Hino) => {
-    // Free play gate: block anonymous users after 1 free play
-    if (!isUserLoggedIn()) {
-      const gate = useFreePlayGateStore.getState();
-      if (!gate.canPlay()) {
-        // Limit reached – show gate modal instead of playing
-        gate.showGate(track);
-        return;
+    const commitPlayback = (resolvedTrack: Hino) => {
+      if (!hasPlayableTrackSource(resolvedTrack)) {
+        emitPlayerUnavailable(resolvedTrack);
+        return false;
       }
-      // Record this free play
-      gate.recordPlay(track.id);
+
+      if (!isUserLoggedIn()) {
+        const gate = useFreePlayGateStore.getState();
+        if (!gate.canPlay()) {
+          gate.showGate(resolvedTrack);
+          return false;
+        }
+        gate.recordPlay(resolvedTrack.id);
+      }
+
+      const { history } = get();
+      set({
+        currentTrack: resolvedTrack,
+        isPlaying: true,
+        currentTime: 0,
+        duration: 0,
+        history: [resolvedTrack, ...history.slice(0, 49)]
+      });
+
+      return true;
+    };
+
+    if (hasPlayableTrackSource(track)) {
+      return commitPlayback(track);
     }
 
-    const { history } = get();
-    set({
-      currentTrack: track,
-      isPlaying: true,
-      currentTime: 0,
-      duration: 0,
-      history: [track, ...history.slice(0, 49)] // Keep last 50 tracks
-    });
+    const emergencyTrack = resolveEmergencyArchiveTrack(track);
+    if (!emergencyTrack) {
+      emitPlayerUnavailable(track);
+      return false;
+    }
+
+    return commitPlayback(emergencyTrack);
   },
 
   pause: () => {
@@ -92,13 +112,29 @@ export const usePlayerStore = create<PlayerStore>((set, get) => ({
   },
 
   resume: () => {
+    const { currentTrack } = get();
+    if (!hasPlayableTrackSource(currentTrack)) {
+      emitPlayerUnavailable(currentTrack);
+      set({ isPlaying: false });
+      return;
+    }
     set({ isPlaying: true });
   },
 
   next: () => {
     const { queue } = get();
     if (queue.length > 0) {
-      const nextTrack = queue[0];
+      const nextTrack = queue.find(hasPlayableTrackSource);
+      if (!nextTrack) {
+        emitPlayerUnavailable(queue[0]);
+        set({
+          queue: [],
+          isPlaying: false,
+          currentTime: 0,
+        });
+        return;
+      }
+      const nextTrackIndex = queue.findIndex(track => track.id === nextTrack.id);
       // Gate check for anonymous users
       if (!isUserLoggedIn()) {
         const gate = useFreePlayGateStore.getState();
@@ -108,7 +144,7 @@ export const usePlayerStore = create<PlayerStore>((set, get) => ({
         }
         gate.recordPlay(nextTrack.id);
       }
-      const newQueue = queue.slice(1);
+      const newQueue = queue.slice(nextTrackIndex + 1);
       set({
         currentTrack: nextTrack,
         queue: newQueue,
@@ -197,7 +233,17 @@ export const usePlayerStore = create<PlayerStore>((set, get) => ({
     
     if (queue.length > 0) {
       // Se tem fila, toca próxima da fila
-      const nextTrack = queue[0];
+      const nextTrack = queue.find(hasPlayableTrackSource);
+      if (!nextTrack) {
+        emitPlayerUnavailable(queue[0]);
+        set({
+          queue: [],
+          isPlaying: false,
+          currentTime: 0,
+        });
+        return;
+      }
+      const nextTrackIndex = queue.findIndex(track => track.id === nextTrack.id);
       // Gate check for anonymous users
       if (!isUserLoggedIn()) {
         const gate = useFreePlayGateStore.getState();
@@ -210,7 +256,7 @@ export const usePlayerStore = create<PlayerStore>((set, get) => ({
       }
       set({
         currentTrack: nextTrack,
-        queue: queue.slice(1),
+        queue: queue.slice(nextTrackIndex + 1),
         currentTime: 0,
         isPlaying: true
       });

@@ -13,11 +13,35 @@ import ManagingComposerBanner from '@/components/ManagingComposerBanner';
 import { usePlayerStore } from '@/stores/playerStore';
 import { useMobileMenu } from '@/contexts/MobileMenuContext';
 import { useAuth } from '@/contexts/AuthContext';
-import { ToastProvider } from '@/contexts/ToastContext';
+import { ToastProvider, useToast } from '@/contexts/ToastContext';
+import { PLAYER_UNAVAILABLE_EVENT } from '@/lib/playerFeedback';
 
 interface LayoutProps {
   children?: React.ReactNode;
 }
+
+const PlayerFeedbackBridge: React.FC = () => {
+  const { showToast } = useToast();
+
+  React.useEffect(() => {
+    const handlePlayerUnavailable = (event: Event) => {
+      const detail = (event as CustomEvent<{ title?: string; artist?: string }>).detail || {};
+      const title = detail.title || 'Este hino';
+      const artist = detail.artist ? ` • ${detail.artist}` : '';
+
+      showToast(
+        'warning',
+        'Áudio temporariamente indisponível',
+        `${title}${artist} não possui mídia reproduzível neste momento.`
+      );
+    };
+
+    window.addEventListener(PLAYER_UNAVAILABLE_EVENT, handlePlayerUnavailable);
+    return () => window.removeEventListener(PLAYER_UNAVAILABLE_EVENT, handlePlayerUnavailable);
+  }, [showToast]);
+
+  return null;
+};
 
 const Layout: React.FC<LayoutProps> = ({ children }) => {
   const { currentTrack } = usePlayerStore();
@@ -56,6 +80,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
 
   return (
     <ToastProvider>
+    <PlayerFeedbackBridge />
     <div className="min-h-screen bg-background-primary flex flex-col">
       {/* Header - Ocultar em páginas de auth */}
       {!isAuthPage && <Header />}

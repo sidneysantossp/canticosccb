@@ -8,6 +8,7 @@ import { usePlayerContext } from '@/contexts/PlayerContext';
 import type { Hino } from '@/types';
 import { DEFAULT_COVER_URL } from '@/lib/config';
 import { buildHinoUrl } from '@/utils/slugUrl';
+import { hasPlayableTrackSource } from '@/lib/playerFeedback';
 
 const emptyHomeData: HomePageData = {
   banners: [],
@@ -79,7 +80,17 @@ const RadioPage: React.FC = () => {
       ...homeData.hymnsCantados,
       ...homeData.hymnsTocados,
     ]);
-    return combined.slice(0, 16);
+    return combined
+      .filter((hymn) =>
+        hasPlayableTrackSource({
+          number: hymn.number,
+          title: hymn.title,
+          artist: hymn.composer_name,
+          audioUrl: hymn.audio_url,
+          youtubeSource: hymn.youtube_source,
+        })
+      )
+      .slice(0, 16);
   }, [homeData]);
 
   const startRadio = (startAtIndex = 0) => {
@@ -90,7 +101,8 @@ const RadioPage: React.FC = () => {
     clearQueue();
     tracks.slice(startAtIndex + 1).forEach((track) => addToQueue(track));
     setPlaybackContext({ type: 'unknown', id: 'radio-ccb' });
-    play(currentTrack);
+    const started = play(currentTrack);
+    if (started === false) return;
 
     setTimeout(() => {
       if (window.innerWidth < 768) openFullScreen();

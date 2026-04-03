@@ -2,10 +2,17 @@ import { useEffect, useRef, useState } from 'react';
 import { usePlayerStore } from '@/stores/playerStore';
 import { useAuth } from '@/contexts/AuthContext';
 import { getSignedSupabaseUrl } from '@/lib/supabaseMedia';
+import {
+  getCachedEmergencyPlaybackUrl,
+  isEmergencyArchiveRouteUrl,
+  resolveEmergencyPlaybackUrl,
+} from '@/lib/emergencyAudioPlayback';
+import { resolveTrackAudioUrl } from '@/lib/playableAudio';
 
 export const useAudioPlayer = () => {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const blobUrlRef = useRef<string | null>(null);
   const startedAtRef = useRef<number | null>(null);
   const trackIdRef = useRef<number | string | null>(null);
   const listenersAttachedRef = useRef(false);
@@ -29,66 +36,70 @@ export const useAudioPlayer = () => {
   const [prefs, setPrefs] = useState<{ autoplay: boolean; gaplessPlayback: boolean; crossfade: boolean } | null>(null);
 
   const attemptPlayback = (audio: HTMLAudioElement) => {
-    const playAttempt = () => {
-      audio.muted = false;
-      audio.volume = 1.0;
+    audio.muted = false;
+    audio.autoplay = true;
+    audio.volume = 1.0;
 
-      try {
-        audio.setAttribute('volume', '1.0');
-        audio.removeAttribute('muted');
-      } catch { }
+    try {
+      audio.setAttribute('volume', '1.0');
+      audio.removeAttribute('muted');
+    } catch { }
 
-      const playPromise = audio.play();
+    const retryPlayback = (delayMs: number, finalAttempt = false) => {
+      setTimeout(() => {
+        if (!audioRef.current || !usePlayerStore.getState().isPlaying) {
+          return;
+        }
 
-      if (playPromise !== undefined) {
-        playPromise.catch(error => {
-          console.error('❌ Erro ao reproduzir:', {
-            name: error.name,
-            message: error.message,
-            src: audio.src,
-            readyState: audio.readyState,
-            networkState: audio.networkState,
-            audioError: audio.error
-          });
-
-          if (error.name === 'NotAllowedError') {
-            console.warn('⚠️ Autoplay bloqueado - aguardando interação do usuário');
+        audioRef.current.play().catch(retryError => {
+          if (finalAttempt) {
+            console.warn('⚠️ Tentativa final de reprodução falhou', retryError);
             pause();
-          } else if (error.name === 'NotSupportedError') {
-            console.error('❌ Formato de áudio não suportado ou URL inválida');
-            console.error('URL problemática:', audio.src);
-            pause();
-          } else if (error.name === 'AbortError') {
-            console.warn('⚠️ Play interrompido - tentando novamente...');
-            setTimeout(() => {
-              if (audioRef.current && usePlayerStore.getState().isPlaying) {
-                audioRef.current.play().catch(() => { });
-              }
-            }, 100);
-          } else {
-            setTimeout(() => {
-              if (audioRef.current && usePlayerStore.getState().isPlaying) {
-                audioRef.current.play().catch(() => {
-                  console.warn('⚠️ Segunda tentativa falhou');
-                  pause();
-                });
-              }
-            }, 150);
           }
         });
-      }
+      }, delayMs);
     };
 
-    if (audio.readyState < 2) {
-      const onCanPlay = () => {
-        audio.removeEventListener('canplay', onCanPlay);
-        if (usePlayerStore.getState().isPlaying) {
-          playAttempt();
+    const playPromise = audio.play();
+
+    if (playPromise !== undefined) {
+      playPromise.catch(error => {
+        console.error('❌ Erro ao reproduzir:', {
+          name: error.name,
+          message: error.message,
+          src: audio.src,
+          readyState: audio.readyState,
+          networkState: audio.networkState,
+          audioError: audio.error
+        });
+
+        if (error.name === 'NotAllowedError') {
+          console.warn('⚠️ Autoplay bloqueado - aguardando interação do usuário');
+          pause();
+          return;
         }
-      };
-      audio.addEventListener('canplay', onCanPlay, { once: true });
-    } else {
-      playAttempt();
+
+        if (error.name === 'NotSupportedError') {
+          console.error('❌ Formato de áudio não suportado ou URL inválida');
+          console.error('URL problemática:', audio.src);
+          pause();
+          return;
+        }
+
+        if (error.name === 'AbortError') {
+          console.warn('⚠️ Play interrompido - tentando novamente...');
+          retryPlayback(100);
+          return;
+        }
+
+        const onCanPlay = () => {
+          audio.removeEventListener('canplay', onCanPlay);
+          retryPlayback(0, true);
+        };
+
+        audio.addEventListener('canplay', onCanPlay, { once: true });
+        retryPlayback(200, true);
+      });
     }
   };
 
@@ -250,8 +261,15 @@ export const useAudioPlayer = () => {
       return;
     }
 
-    if (currentTrack?.audioUrl) {
-      let audioUrl = currentTrack.audioUrl;
+    const resolvedTrackAudioUrl = resolveTrackAudioUrl({
+      title: (currentTrack as any)?.title,
+      number: (currentTrack as any)?.number,
+      audioUrl: currentTrack?.audioUrl,
+      youtubeSource: (currentTrack as any)?.youtubeSource,
+    });
+
+    if (resolvedTrackAudioUrl) {
+      let audioUrl = resolvedTrackAudioUrl;
 
       // Validar URL
       if (!audioUrl || audioUrl.trim() === '' || audioUrl === 'undefined' || audioUrl === 'null') {
@@ -270,7 +288,68 @@ export const useAudioPlayer = () => {
         trackIdRef.current = resolvedId;
 
         try {
-          audioUrl = await getSignedSupabaseUrl(audioUrl, 'hinos');
+          if (blobUrlRef.current && blobUrlRef.current.startsWith('blob:')) {
+            URL.revokeObjectURL(blobUrlRef.current);
+            blobUrlRef.current = null;
+          }
+
+          if (isEmergencyArchiveRouteUrl(audioUrl)) {
+            const emergencyRouteUrl = audioUrl;
+            const cachedEmergencyUrl = getCachedEmergencyPlaybackUrl(emergencyRouteUrl);
+
+            if (cachedEmergencyUrl) {
+              audioUrl = cachedEmergencyUrl;
+              blobUrlRef.current = cachedEmergencyUrl;
+            } else {
+              blobUrlRef.current = null;
+
+              const resolverPromise = resolveEmergencyPlaybackUrl(emergencyRouteUrl)
+                .then((resolvedUrl) => {
+                  if (trackIdRef.current !== resolvedId || !audioRef.current) {
+                    return resolvedUrl;
+                  }
+
+                  const activeAudio = audioRef.current;
+                  if (activeAudio.src === resolvedUrl) {
+                    return resolvedUrl;
+                  }
+
+                  const shouldResume = usePlayerStore.getState().isPlaying;
+                  const lastKnownTime = activeAudio.currentTime;
+
+                  activeAudio.src = resolvedUrl;
+                  try {
+                    activeAudio.currentTime = lastKnownTime;
+                  } catch { }
+                  activeAudio.load();
+
+                  if (shouldResume) {
+                    attemptPlayback(activeAudio);
+                  }
+
+                  blobUrlRef.current = resolvedUrl;
+                  return resolvedUrl;
+                })
+                .catch((error) => {
+                  console.warn('⚠️ Não foi possível resolver o blob do acervo a tempo:', error);
+                  return emergencyRouteUrl;
+                });
+
+              const resolvedWithinBudget = await Promise.race<string | null>([
+                resolverPromise,
+                new Promise<null>((resolve) => setTimeout(() => resolve(null), 1200)),
+              ]);
+
+              if (resolvedWithinBudget && resolvedWithinBudget !== emergencyRouteUrl) {
+                audioUrl = resolvedWithinBudget;
+                blobUrlRef.current = resolvedWithinBudget;
+              } else {
+                audioUrl = emergencyRouteUrl;
+              }
+            }
+          } else {
+            audioUrl = await getSignedSupabaseUrl(audioUrl, 'hinos');
+          }
 
           if (audio.src && audio.src !== audioUrl) {
             audio.pause();
@@ -293,7 +372,15 @@ export const useAudioPlayer = () => {
       prepareAndLoad();
 
     }
-  }, [currentTrack?.audioUrl, volume]);
+  }, [currentTrack?.audioUrl, (currentTrack as any)?.number, (currentTrack as any)?.youtubeSource, volume]);
+
+  useEffect(() => {
+    return () => {
+      if (blobUrlRef.current && blobUrlRef.current.startsWith('blob:')) {
+        URL.revokeObjectURL(blobUrlRef.current);
+      }
+    };
+  }, []);
 
   // Controlar play/pause
   useEffect(() => {
@@ -309,7 +396,7 @@ export const useAudioPlayer = () => {
     } else {
       audio.pause();
     }
-  }, [isPlaying, pause, currentTrack?.audioUrl]);
+  }, [isPlaying, pause, currentTrack?.audioUrl, (currentTrack as any)?.number, (currentTrack as any)?.youtubeSource]);
 
   // iOS: tentar retomar reprodução ao voltar para a aba (backgrounding pode pausar)
   useEffect(() => {

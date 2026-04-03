@@ -1,5 +1,6 @@
 import React from 'react';
 import { Play, Pause, Heart } from 'lucide-react';
+import { hasPlayableTrackSource } from '@/lib/playerFeedback';
 
 interface TrendsSectionAltProps {
   title: string;
@@ -42,6 +43,13 @@ const TrendsSectionAlt: React.FC<TrendsSectionAltProps> = ({
         {items.map((item, index) => {
           const isCurrentTrack = currentTrackId === item.id;
           const isCurrentlyPlaying = isCurrentTrack && isPlaying;
+          const canPlay = hasPlayableTrackSource({
+            number: item.number,
+            title: item.title,
+            artist: item.artist,
+            audioUrl: item.audioUrl,
+            youtubeSource: item.youtubeSource,
+          });
           
           return (
             <div
@@ -70,18 +78,20 @@ const TrendsSectionAlt: React.FC<TrendsSectionAltProps> = ({
                     alt={item.title}
                     className="w-full h-full object-cover rounded"
                   />
-                  <button
-                    onClick={() => onTogglePlay(item)}
-                    className={`absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity ${
-                      isDarkMode ? 'bg-black/60' : 'bg-white/60'
-                    }`}
-                  >
-                    {isCurrentlyPlaying ? (
-                      <Pause className={isDarkMode ? 'text-white' : 'text-black'} size={24} />
-                    ) : (
-                      <Play className={isDarkMode ? 'text-white' : 'text-black'} size={24} />
-                    )}
-                  </button>
+                  {canPlay ? (
+                    <button
+                      onClick={() => onTogglePlay(item)}
+                      className={`absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity ${
+                        isDarkMode ? 'bg-black/60' : 'bg-white/60'
+                      }`}
+                    >
+                      {isCurrentlyPlaying ? (
+                        <Pause className={isDarkMode ? 'text-white' : 'text-black'} size={24} />
+                      ) : (
+                        <Play className={isDarkMode ? 'text-white' : 'text-black'} size={24} />
+                      )}
+                    </button>
+                  ) : null}
                 </div>
 
                 {/* Info */}

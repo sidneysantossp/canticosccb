@@ -303,7 +303,7 @@ const Player: React.FC<PlayerProps> = ({ isHidden = false }) => {
                   />
                 </div>
                 <span className="text-xs text-gray-400 w-10">
-                  {formatTime(duration || 225)}
+                  {formatTime(duration > 0 ? duration : 0)}
                 </span>
               </div>
             </div>

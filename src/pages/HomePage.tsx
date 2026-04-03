@@ -24,6 +24,9 @@ import AlbumsSection from '@/components/home/AlbumsSection';
 import HymnsSection from '@/components/home/HymnsSection';
 import { isSupabaseConfigured, supabaseFetch } from '@/lib/supabaseRest';
 import { DEFAULT_COVER_IDENTIFIER } from '@/lib/config';
+import { hasPlayableTrackSource } from '@/lib/playerFeedback';
+import { resolveEmergencyArchiveTrack } from '@/lib/emergencyAudioResolver';
+import { prewarmEmergencyPlaybackUrl } from '@/lib/emergencyAudioPlayback';
 type PopularHino = {
   id: string;
   number: number;
@@ -187,7 +190,47 @@ const HomePage: React.FC = () => {
   const [homepageTrends, setHomepageTrends] = useState<PopularHino[]>([]);
 
   const popularHinos: PopularHino[] = homepageTrends;
-  const popularHinosFiltered: PopularHino[] = popularHinos;
+  const popularHinosFiltered: PopularHino[] = popularHinos.filter((hino) =>
+    hasPlayableTrackSource({
+      number: hino.number,
+      title: hino.title,
+      artist: hino.artist,
+      audioUrl: hino.audioUrl,
+      youtubeSource: hino.youtubeSource,
+    })
+  );
+
+  useEffect(() => {
+    const timers: number[] = [];
+    const warmCandidates = homepageTrends
+      .slice(0, 4)
+      .map((track) => resolveEmergencyArchiveTrack({
+        id: track.id,
+        number: track.number,
+        title: track.title,
+        artist: track.artist,
+        category: track.category,
+        duration: track.duration,
+        plays: track.plays,
+        isLiked: track.isLiked,
+        createdAt: track.createdAt,
+        coverUrl: track.coverUrl,
+        audioUrl: track.audioUrl,
+        youtubeSource: track.youtubeSource,
+      } as any))
+      .filter((track): track is NonNullable<typeof track> => !!track?.audioUrl);
+
+    warmCandidates.forEach((track, index) => {
+      const timer = window.setTimeout(() => {
+        void prewarmEmergencyPlaybackUrl(track.audioUrl);
+      }, index * 350);
+      timers.push(timer);
+    });
+
+    return () => {
+      timers.forEach((timer) => window.clearTimeout(timer));
+    };
+  }, [homepageTrends]);
 
   // Scroll to top quando a página carregar
   useEffect(() => {
@@ -282,7 +325,17 @@ const HomePage: React.FC = () => {
           const remaining = maxItems - diversifiedCover.length;
           const diversifiedNoCover = remaining > 0 ? diversifyByArtist(withoutCover, remaining) : [];
           const combined = [...diversifiedCover, ...diversifiedNoCover];
-          setHomepageTrends(combined);
+          setHomepageTrends(
+            combined.filter((hino) =>
+              hasPlayableTrackSource({
+                number: hino.number,
+                title: hino.title,
+                artist: hino.artist,
+                audioUrl: hino.audioUrl,
+                youtubeSource: hino.youtubeSource,
+              })
+            )
+          );
         }
       } catch (error) {
         console.error('❌ Error loading recent hymns:', error);
@@ -300,22 +353,35 @@ const HomePage: React.FC = () => {
         ...(homeData.hymnsAvulsos || []),
       ];
       if (allHymns.length > 0) {
-        setHomepageTrends(allHymns.map((h, i) => ({
-          id: h.id,
-          number: h.number,
-          title: h.title,
-          artist: h.composer_name || 'Cânticos CCB',
-          category: h.category || 'Cantados',
-          duration: h.duration || '00:00',
-          plays: 0,
-          isLiked: false,
-          coverUrl: h.cover_url || '',
-          audioUrl: h.audio_url || '',
-          createdAt: h.created_at || new Date().toISOString(),
-          rank: i + 1,
-          previousRank: i + 1,
-          trending: 'stable' as const,
-        })));
+        setHomepageTrends(
+          allHymns
+            .map((h, i) => ({
+              id: h.id,
+              number: h.number,
+              title: h.title,
+              artist: h.composer_name || 'Cânticos CCB',
+              category: h.category || 'Cantados',
+              duration: h.duration || '00:00',
+              plays: 0,
+              isLiked: false,
+              coverUrl: h.cover_url || '',
+              audioUrl: h.audio_url || '',
+              createdAt: h.created_at || new Date().toISOString(),
+              rank: i + 1,
+              previousRank: i + 1,
+              trending: 'stable' as const,
+              youtubeSource: h.youtube_source || undefined,
+            }))
+            .filter((hino) =>
+              hasPlayableTrackSource({
+                number: hino.number,
+                title: hino.title,
+                artist: hino.artist,
+                audioUrl: hino.audioUrl,
+                youtubeSource: hino.youtubeSource,
+              })
+            )
+        );
       }
     }
   }, [isLoading, homeData, homepageTrends.length]);
@@ -391,7 +457,18 @@ const HomePage: React.FC = () => {
       artist: hymn.composer_name || 'Hino Cantado',
       coverUrl: hymn.cover_url || '',
     }));
-  const hinosCantadosFinal = prioritizeRealCovers(hinosCantados, 12);
+  const hinosCantadosFinal = prioritizeRealCovers(
+    hinosCantados.filter((hino) =>
+      hasPlayableTrackSource({
+        number: hino.number,
+        title: hino.title,
+        artist: hino.artist,
+        audioUrl: hino.audioUrl,
+        youtubeSource: hino.youtubeSource,
+      })
+    ),
+    12
+  );
 
   // Converter hinos tocados do backend (apenas categoria Tocados)
   const hinosTocados = (homeData.hymnsTocados || [])
@@ -410,7 +487,18 @@ const HomePage: React.FC = () => {
       artist: hymn.composer_name || 'Hino Tocado',
       coverUrl: hymn.cover_url || '',
     }));
-  const hinosTocadosFinal = prioritizeRealCovers(hinosTocados, 12);
+  const hinosTocadosFinal = prioritizeRealCovers(
+    hinosTocados.filter((hino) =>
+      hasPlayableTrackSource({
+        number: hino.number,
+        title: hino.title,
+        artist: hino.artist,
+        audioUrl: hino.audioUrl,
+        youtubeSource: hino.youtubeSource,
+      })
+    ),
+    12
+  );
 
   // Converter hinos avulsos do backend (apenas categoria Avulsos)
   const hinosAvulsos = (homeData.hymnsAvulsos || [])
@@ -429,7 +517,18 @@ const HomePage: React.FC = () => {
       artist: hymn.composer_name || 'Hino Avulso',
       coverUrl: hymn.cover_url || '',
     }));
-  const hinosAvulsosFinal = prioritizeRealCovers(hinosAvulsos, 12);
+  const hinosAvulsosFinal = prioritizeRealCovers(
+    hinosAvulsos.filter((hino) =>
+      hasPlayableTrackSource({
+        number: hino.number,
+        title: hino.title,
+        artist: hino.artist,
+        audioUrl: hino.audioUrl,
+        youtubeSource: hino.youtubeSource,
+      })
+    ),
+    12
+  );
 
   // FunÃ§Ã£o para calcular mudanÃ§a de ranking
   const getRankChange = (hino: any) => {
@@ -489,7 +588,8 @@ const HomePage: React.FC = () => {
       // This would be handled by the player store
       pause();
     } else {
-      play(hino);
+      const started = play(hino);
+      if (started === false) return;
       
       // Adicionar prÃ³ximas mÃºsicas na fila automaticamente
       const currentIndex = popularHinos.findIndex(h => h.id === hino.id);
@@ -508,7 +608,8 @@ const HomePage: React.FC = () => {
   };
 
   const handlePlayTrack = (track: any) => {
-    play(track);
+    const started = play(track);
+    if (started === false) return;
     // Small delay to allow state to update before opening full screen
     setTimeout(() => {
       if (window.innerWidth < 768) { // Only on mobile
@@ -556,7 +657,7 @@ const HomePage: React.FC = () => {
           <PersonalizedSection
             title="Recomendado para você"
             items={personalized.mix}
-            onPlay={(t: RecTrack) => handlePlayTrack({ id: t.id, title: t.title, artist: t.composer_name, coverUrl: t.cover_url, audioUrl: t.youtube_source ? '' : t.audio_url, youtubeSource: t.youtube_source || undefined })}
+            onPlay={(t: RecTrack) => handlePlayTrack({ id: t.id, number: t.number, category: t.category || 'Hinos CCB', title: t.title, artist: t.composer_name, duration: '00:00', plays: 0, isLiked: false, createdAt: new Date().toISOString(), coverUrl: t.cover_url, audioUrl: t.youtube_source ? '' : t.audio_url, youtubeSource: t.youtube_source || undefined })}
           />
         )}
         {(() => {
@@ -566,7 +667,7 @@ const HomePage: React.FC = () => {
           <PersonalizedSection
             title="Dos compositores que você segue"
             items={personalized.byFollowedComposers}
-            onPlay={(t: RecTrack) => handlePlayTrack({ id: t.id, title: t.title, artist: t.composer_name, coverUrl: t.cover_url, audioUrl: t.youtube_source ? '' : t.audio_url, youtubeSource: t.youtube_source || undefined })}
+            onPlay={(t: RecTrack) => handlePlayTrack({ id: t.id, number: t.number, category: t.category || 'Hinos CCB', title: t.title, artist: t.composer_name, duration: '00:00', plays: 0, isLiked: false, createdAt: new Date().toISOString(), coverUrl: t.cover_url, audioUrl: t.youtube_source ? '' : t.audio_url, youtubeSource: t.youtube_source || undefined })}
           />
         )}
 
@@ -656,11 +757,6 @@ const HomePage: React.FC = () => {
 };
 
 export default HomePage;
-
-
-
-
-
 
 
 
