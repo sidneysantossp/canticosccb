@@ -76,6 +76,7 @@ Thumbs.db
 !/api/_emergencyAudioIndex.js
 !/api/emergency-audio-track.ts
 !/api/emergency-audio-archive.ts
+!/api/hino-audio-fallback.ts
 vendor/
 media/
 media_protegida/

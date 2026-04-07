@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import SEOHead from '@/components/SEO/SEOHead';
 import HeroSection from '@/components/home/HeroSection';
 import CategoryGrid from '@/components/home/CategoryGrid';
@@ -22,11 +22,11 @@ import { apiFetch } from '@/lib/api-helper';
 import TrendsSection from '@/components/home/TrendsSection';
 import AlbumsSection from '@/components/home/AlbumsSection';
 import HymnsSection from '@/components/home/HymnsSection';
-import { isSupabaseConfigured, supabaseFetch } from '@/lib/supabaseRest';
 import { DEFAULT_COVER_IDENTIFIER } from '@/lib/config';
-import { hasPlayableTrackSource } from '@/lib/playerFeedback';
-import { resolveEmergencyArchiveTrack } from '@/lib/emergencyAudioResolver';
 import { prewarmEmergencyPlaybackUrl } from '@/lib/emergencyAudioPlayback';
+import { resolveTrackAudioUrl } from '@/lib/playableAudio';
+import { getEmergencyCatalog, type EmergencyCatalog, type EmergencyHymn } from '@/lib/emergencyCatalog';
+import { normalizeYoutubeSource } from '@/lib/youtubeSource';
 type PopularHino = {
   id: string;
   number: number;
@@ -45,18 +45,36 @@ type PopularHino = {
   youtubeSource?: string;
 };
 
-type SupabaseHymnRow = {
-  id?: number | string;
-  numero?: number;
-  titulo?: string;
-  compositor?: string;
-  compositor_nome?: string;
-  categoria?: string;
-  cover_url?: string;
-  audio_url?: string;
-  duracao?: string;
-  created_at?: string;
-  youtube_source?: string;
+type HomeSectionCard = {
+  id: string;
+  number: number;
+  title: string;
+  cover: string;
+  subtitle: string;
+  audioUrl: string;
+  youtubeSource?: string;
+  artist: string;
+  coverUrl: string;
+  category: string;
+  duration: string;
+  plays: number;
+  isLiked: boolean;
+  createdAt: string;
+};
+
+type PlaybackHomeTrack = {
+  id: string;
+  number: number;
+  title: string;
+  artist: string;
+  category: string;
+  duration: string;
+  plays: number;
+  isLiked: boolean;
+  coverUrl: string;
+  audioUrl: string;
+  createdAt: string;
+  youtubeSource?: string;
 };
 
 /**
@@ -106,23 +124,167 @@ function diversifyByArtist<T extends { artist?: string }>(items: T[], maxItems: 
   return result.slice(0, maxItems);
 }
 
-const mapSupabasePopularHino = (row: SupabaseHymnRow, index: number): PopularHino => ({
-  id: String(row.id ?? `recent-${index}`),
-  number: Number(row.numero ?? index + 1),
-  title: row.titulo ?? 'Hino',
-  artist: row.compositor_nome ?? row.compositor ?? 'Canticos CCB',
-  category: row.categoria ?? 'Cantados',
-  duration: row.duracao ?? '00:00',
+const mapHomeHymnToPopular = (row: HomePageData['newReleases'][number], index: number): PopularHino => ({
+  id: String(row.id ?? `home-${index}`),
+  number: Number(row.number ?? index + 1),
+  title: row.title ?? 'Hino',
+  artist: row.composer_name ?? 'Canticos CCB',
+  category: row.category ?? 'Cantados',
+  duration: row.duration ?? '00:00',
   plays: 0,
   isLiked: false,
   coverUrl: row.cover_url ?? '',
-  audioUrl: row.audio_url ?? '',
+  audioUrl: normalizeYoutubeSource(row.youtube_source) ? '' : (row.audio_url ?? ''),
   createdAt: row.created_at ?? new Date().toISOString(),
   rank: index + 1,
   previousRank: index + 1,
   trending: 'stable',
-  youtubeSource: row.youtube_source || undefined,
+  youtubeSource: normalizeYoutubeSource(row.youtube_source),
 });
+
+const mapEmergencyHymnToHomeSectionCard = (hymn: EmergencyHymn, fallbackSubtitle: string): HomeSectionCard => ({
+  id: String(hymn.id),
+  number: Number(hymn.numero ?? 0),
+  title: String(hymn.titulo || 'Hino'),
+  cover: hymn.cover_url || '',
+  subtitle: String(hymn.compositor_nome || fallbackSubtitle),
+  audioUrl: normalizeYoutubeSource(hymn.youtube_source) ? '' : String(hymn.audio_url || ''),
+  youtubeSource: normalizeYoutubeSource(hymn.youtube_source),
+  artist: String(hymn.compositor_nome || fallbackSubtitle),
+  coverUrl: hymn.cover_url || '',
+  category: String(hymn.categoria || fallbackSubtitle),
+  duration: hymn.duracao || '00:00',
+  plays: 0,
+  isLiked: false,
+  createdAt: hymn.created_at || new Date().toISOString(),
+});
+
+const mapEmergencyHymnToPopular = (hymn: EmergencyHymn, index: number): PopularHino => ({
+  id: String(hymn.id),
+  number: Number(hymn.numero ?? index + 1),
+  title: String(hymn.titulo || 'Hino'),
+  artist: String(hymn.compositor_nome || 'Canticos CCB'),
+  category: String(hymn.categoria || 'Cantados'),
+  duration: hymn.duracao || '00:00',
+  plays: 0,
+  isLiked: false,
+  coverUrl: hymn.cover_url || '',
+  audioUrl: normalizeYoutubeSource(hymn.youtube_source) ? '' : String(hymn.audio_url || ''),
+  createdAt: hymn.created_at || new Date().toISOString(),
+  rank: index + 1,
+  previousRank: index + 1,
+  trending: 'stable',
+  youtubeSource: normalizeYoutubeSource(hymn.youtube_source),
+});
+
+const isServerMediatedPlaybackUrl = (value?: string | null) => {
+  const normalized = String(value || '').trim();
+  return (
+    normalized.includes('/api/emergency-audio-track')
+    || normalized.includes('/api/hino-audio-fallback')
+  );
+};
+
+const hasHomeReadyTrackSource = (track?: {
+  id?: string | number | null;
+  number?: number | string | null;
+  title?: string;
+  artist?: string;
+  audioUrl?: string | null;
+  youtubeSource?: string | null;
+}) => {
+  const youtubeSource = normalizeYoutubeSource(track?.youtubeSource);
+  if (youtubeSource) return false;
+
+  const resolvedUrl = resolveTrackAudioUrl({
+    id: track?.id ?? track?.number ?? '',
+    number: track?.number ?? 0,
+    title: track?.title ?? '',
+    audioUrl: track?.audioUrl ?? '',
+    youtubeSource,
+  });
+
+  return Boolean(resolvedUrl);
+};
+
+const normalizeHomeCategory = (value: string | undefined | null) =>
+  String(value ?? '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase();
+
+const buildStableHomeSelections = (catalog: EmergencyCatalog) => {
+  const activeHymns = catalog.hymns
+    .filter((hymn) => hymn.ativo !== false)
+    .sort((left, right) => {
+      const leftDate = left.created_at ? new Date(left.created_at).getTime() : 0;
+      const rightDate = right.created_at ? new Date(right.created_at).getTime() : 0;
+      return rightDate - leftDate;
+    });
+
+  const directPlayable = activeHymns.filter((hymn) =>
+    hasHomeReadyTrackSource({
+      id: hymn.id,
+      number: hymn.numero,
+      title: hymn.titulo,
+      artist: hymn.compositor_nome,
+      audioUrl: hymn.audio_url || '',
+      youtubeSource: hymn.youtube_source || '',
+    })
+  );
+
+  const byCategory = (keyword: string, fallbackSubtitle: string) =>
+    directPlayable
+      .filter((hymn) => normalizeHomeCategory(hymn.categoria).includes(keyword))
+      .map((hymn) => mapEmergencyHymnToHomeSectionCard(hymn, fallbackSubtitle));
+
+  return {
+    recent: diversifyByArtist(directPlayable.map(mapEmergencyHymnToPopular), 12),
+    cantados: diversifyByArtist(byCategory('cantad', 'Hino Cantado'), 12),
+    tocados: diversifyByArtist(
+      directPlayable
+        .filter((hymn) => {
+          const normalizedCategory = normalizeHomeCategory(hymn.categoria);
+          return normalizedCategory.includes('tocad') || normalizedCategory.includes('instrument');
+        })
+        .map((hymn) => mapEmergencyHymnToHomeSectionCard(hymn, 'Hino Tocado')),
+      12
+    ),
+    avulsos: diversifyByArtist(byCategory('avulso', 'Hino Avulso'), 12),
+  };
+};
+
+const buildHomeTrackLookupKey = (title?: string, number?: number | string | null) =>
+  `${Number(number || 0)}::${normalizeHomeCategory(title)}`;
+
+const normalizeHomeTrackForPlayback = (track: any): PlaybackHomeTrack => ({
+  id: String(track?.id || ''),
+  number: Number(track?.number || 0),
+  title: String(track?.title || 'Hino'),
+  artist: String(track?.artist || track?.subtitle || 'Canticos CCB'),
+  category: String(track?.category || 'Hinos CCB'),
+  duration: String(track?.duration || '00:00'),
+  plays: Number(track?.plays || 0),
+  isLiked: Boolean(track?.isLiked),
+  coverUrl: String(track?.coverUrl || track?.cover || ''),
+  audioUrl: String(track?.audioUrl || ''),
+  createdAt: String(track?.createdAt || new Date().toISOString()),
+  youtubeSource: normalizeYoutubeSource(track?.youtubeSource),
+});
+
+const EMPTY_HOME_DATA: HomePageData = {
+  banners: [],
+  featured: [],
+  albums: [],
+  hymnsCantados: [],
+  hymnsTocados: [],
+  hymnsAvulsos: [],
+  newReleases: [],
+  trending: [],
+  composers: [],
+  playlists: [],
+  categories: [],
+};
 
 const HomePage: React.FC = () => {
   // FAQ data for SEO
@@ -170,28 +332,28 @@ const HomePage: React.FC = () => {
   const [selectedTrackForPlaylist, setSelectedTrackForPlaylist] = useState<any>(null);
   
   // Estados para dados do backend
-  const [homeData, setHomeData] = useState<HomePageData>({
-    banners: [],
-    featured: [],
-    albums: [],
-    hymnsCantados: [],
-    hymnsTocados: [],
-    hymnsAvulsos: [],
-    newReleases: [],
-    trending: [],
-    composers: [],
-    playlists: [],
-    categories: [],
-  });
+  const [homeData, setHomeData] = useState<HomePageData>(EMPTY_HOME_DATA);
   const [isLoading, setIsLoading] = useState(true);
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [showBibleNarrated, setShowBibleNarrated] = useState(true);
   
   const [homepageTrends, setHomepageTrends] = useState<PopularHino[]>([]);
+  const [stableHomeSelections, setStableHomeSelections] = useState<{
+    recent: PopularHino[];
+    cantados: HomeSectionCard[];
+    tocados: HomeSectionCard[];
+    avulsos: HomeSectionCard[];
+  }>({
+    recent: [],
+    cantados: [],
+    tocados: [],
+    avulsos: [],
+  });
 
   const popularHinos: PopularHino[] = homepageTrends;
   const popularHinosFiltered: PopularHino[] = popularHinos.filter((hino) =>
-    hasPlayableTrackSource({
+    hasHomeReadyTrackSource({
+      id: hino.id,
       number: hino.number,
       title: hino.title,
       artist: hino.artist,
@@ -200,29 +362,72 @@ const HomePage: React.FC = () => {
     })
   );
 
+  const stableTrackLookup = useMemo(() => {
+    const byId = new Map<string, PlaybackHomeTrack>();
+    const byKey = new Map<string, PlaybackHomeTrack>();
+    const byTitle = new Map<string, PlaybackHomeTrack>();
+
+    const register = (track: any) => {
+      const normalized = normalizeHomeTrackForPlayback(track);
+      if (!hasHomeReadyTrackSource(normalized)) return;
+
+      if (normalized.id) {
+        byId.set(normalized.id, normalized);
+      }
+
+      byKey.set(buildHomeTrackLookupKey(normalized.title, normalized.number), normalized);
+      byTitle.set(normalizeHomeCategory(normalized.title), normalized);
+    };
+
+    stableHomeSelections.recent.forEach(register);
+    stableHomeSelections.cantados.forEach(register);
+    stableHomeSelections.tocados.forEach(register);
+    stableHomeSelections.avulsos.forEach(register);
+
+    return { byId, byKey, byTitle };
+  }, [stableHomeSelections]);
+
+  const resolveHomeTrackForPlayback = (track: any): PlaybackHomeTrack => {
+    const normalized = normalizeHomeTrackForPlayback(track);
+    const byIdMatch = stableTrackLookup.byId.get(normalized.id);
+    const byKeyMatch = stableTrackLookup.byKey.get(buildHomeTrackLookupKey(normalized.title, normalized.number));
+    const byTitleMatch = stableTrackLookup.byTitle.get(normalizeHomeCategory(normalized.title));
+    const stableMatch = byIdMatch || byKeyMatch || byTitleMatch;
+
+    if (!stableMatch) {
+      return normalized;
+    }
+
+    return {
+      ...normalized,
+      category: normalized.category || stableMatch.category,
+      duration: normalized.duration && normalized.duration !== '00:00' ? normalized.duration : stableMatch.duration,
+      coverUrl: normalized.coverUrl || stableMatch.coverUrl,
+      audioUrl: stableMatch.audioUrl || normalized.audioUrl,
+      youtubeSource: stableMatch.youtubeSource || normalized.youtubeSource,
+      createdAt: normalized.createdAt || stableMatch.createdAt,
+    };
+  };
+
   useEffect(() => {
     const timers: number[] = [];
     const warmCandidates = homepageTrends
       .slice(0, 4)
-      .map((track) => resolveEmergencyArchiveTrack({
-        id: track.id,
-        number: track.number,
-        title: track.title,
-        artist: track.artist,
-        category: track.category,
-        duration: track.duration,
-        plays: track.plays,
-        isLiked: track.isLiked,
-        createdAt: track.createdAt,
-        coverUrl: track.coverUrl,
-        audioUrl: track.audioUrl,
-        youtubeSource: track.youtubeSource,
-      } as any))
-      .filter((track): track is NonNullable<typeof track> => !!track?.audioUrl);
+      .map((track) =>
+        resolveTrackAudioUrl({
+          id: track.id,
+          number: track.number,
+          title: track.title,
+          artist: track.artist,
+          audioUrl: track.audioUrl,
+          youtubeSource: track.youtubeSource,
+        })
+      )
+      .filter((url): url is string => Boolean(url) && !isServerMediatedPlaybackUrl(url));
 
-    warmCandidates.forEach((track, index) => {
+    warmCandidates.forEach((audioUrl, index) => {
       const timer = window.setTimeout(() => {
-        void prewarmEmergencyPlaybackUrl(track.audioUrl);
+        void prewarmEmergencyPlaybackUrl(audioUrl);
       }, index * 350);
       timers.push(timer);
     });
@@ -242,37 +447,38 @@ const HomePage: React.FC = () => {
   // Carregar dados da API
   useEffect(() => {
     const loadHomeData = async () => {
+      let resolvedEmergency = false;
       try {
         setIsLoading(true);
-        
-        // Timeout de 8 segundos para toda a operaÃ§Ã£o
+
+        try {
+          const emergencyCatalog = await getEmergencyCatalog();
+          setStableHomeSelections(buildStableHomeSelections(emergencyCatalog));
+          resolvedEmergency = true;
+          setIsLoading(false);
+        } catch (emergencyError) {
+          console.warn('⚠️ Emergency catalog unavailable on homepage:', emergencyError);
+          setStableHomeSelections({
+            recent: [],
+            cantados: [],
+            tocados: [],
+            avulsos: [],
+          });
+        }
+
         const dataPromise = getHomePageData();
-        const timeoutPromise = new Promise((_, reject) => 
+        const timeoutPromise = new Promise((_, reject) =>
           setTimeout(() => reject(new Error('HomePage timeout')), 8000)
         );
-        
-        const data = await Promise.race([dataPromise, timeoutPromise]) as any;
-
+        const data = await Promise.race([dataPromise, timeoutPromise]) as HomePageData;
         setHomeData(data);
       } catch (error) {
         console.error('âŒ Error loading homepage data:', error);
-        
-        // FALLBACK COMPLETO
-        setHomeData({
-          banners: [],
-          featured: [],
-          albums: [],
-          hymnsCantados: [],
-          hymnsTocados: [],
-          hymnsAvulsos: [],
-          newReleases: [],
-          trending: [],
-          composers: [],
-          playlists: [],
-          categories: []
-        });
+        setHomeData(EMPTY_HOME_DATA);
       } finally {
-        setIsLoading(false);
+        if (!resolvedEmergency) {
+          setIsLoading(false);
+        }
       }
     };
     
@@ -291,6 +497,26 @@ const HomePage: React.FC = () => {
   // Recomendação personalizada
   const { user } = useAuth();
   const [personalized, setPersonalized] = useState<PersonalizedData>({ byCategories: [], byFollowedComposers: [], mix: [] });
+  const personalizedMixPlayable = personalized.mix.filter((track) =>
+    hasHomeReadyTrackSource({
+      id: track.id,
+      number: track.number,
+      title: track.title,
+      artist: track.composer_name,
+      audioUrl: track.audio_url,
+      youtubeSource: track.youtube_source,
+    })
+  );
+  const personalizedFollowedPlayable = personalized.byFollowedComposers.filter((track) =>
+    hasHomeReadyTrackSource({
+      id: track.id,
+      number: track.number,
+      title: track.title,
+      artist: track.composer_name,
+      audioUrl: track.audio_url,
+      youtubeSource: track.youtube_source,
+    })
+  );
   useEffect(() => {
     const load = async () => {
       if (!user?.id) { setPersonalized({ byCategories: [], byFollowedComposers: [], mix: [] }); return; }
@@ -306,85 +532,54 @@ const HomePage: React.FC = () => {
   }, [user?.id]);
 
   useEffect(() => {
-    const loadRecentPublished = async () => {
-      try {
-        const rows = await supabaseFetch<SupabaseHymnRow>('hinos', {
-          select: 'id,numero,titulo,compositor_nome,categoria,cover_url,audio_url,duracao,created_at,youtube_source',
-          ativo: 'eq.true',
-          order: 'created_at.desc',
-          limit: '30',
-        });
-        if (rows.length > 0) {
-          const mapped = rows.map(mapSupabasePopularHino);
-          // Separate hymns with and without covers
-          const withCover = mapped.filter(h => h.coverUrl && h.coverUrl.trim() !== '');
-          const withoutCover = mapped.filter(h => !h.coverUrl || h.coverUrl.trim() === '');
-          // Prioritize hymns with covers, then fill remaining slots with no-cover
-          const maxItems = 12;
-          const diversifiedCover = diversifyByArtist(withCover, maxItems);
-          const remaining = maxItems - diversifiedCover.length;
-          const diversifiedNoCover = remaining > 0 ? diversifyByArtist(withoutCover, remaining) : [];
-          const combined = [...diversifiedCover, ...diversifiedNoCover];
-          setHomepageTrends(
-            combined.filter((hino) =>
-              hasPlayableTrackSource({
-                number: hino.number,
-                title: hino.title,
-                artist: hino.artist,
-                audioUrl: hino.audioUrl,
-                youtubeSource: hino.youtubeSource,
-              })
-            )
-          );
-        }
-      } catch (error) {
-        console.error('❌ Error loading recent hymns:', error);
-      }
-    };
-    loadRecentPublished();
-  }, []);
+    if (isLoading) return;
 
-  // Fallback: usar hinos do homeData quando supabaseFetch retorna vazio
-  useEffect(() => {
-    if (homepageTrends.length === 0 && !isLoading) {
-      const allHymns = [
-        ...(homeData.hymnsCantados || []),
-        ...(homeData.hymnsTocados || []),
-        ...(homeData.hymnsAvulsos || []),
-      ];
-      if (allHymns.length > 0) {
-        setHomepageTrends(
-          allHymns
-            .map((h, i) => ({
-              id: h.id,
-              number: h.number,
-              title: h.title,
-              artist: h.composer_name || 'Cânticos CCB',
-              category: h.category || 'Cantados',
-              duration: h.duration || '00:00',
-              plays: 0,
-              isLiked: false,
-              coverUrl: h.cover_url || '',
-              audioUrl: h.audio_url || '',
-              createdAt: h.created_at || new Date().toISOString(),
-              rank: i + 1,
-              previousRank: i + 1,
-              trending: 'stable' as const,
-              youtubeSource: h.youtube_source || undefined,
-            }))
-            .filter((hino) =>
-              hasPlayableTrackSource({
-                number: hino.number,
-                title: hino.title,
-                artist: hino.artist,
-                audioUrl: hino.audioUrl,
-                youtubeSource: hino.youtubeSource,
-              })
-            )
-        );
-      }
+    if (stableHomeSelections.recent.length > 0) {
+      setHomepageTrends(stableHomeSelections.recent);
+      return;
     }
-  }, [isLoading, homeData, homepageTrends.length]);
+
+    const merged = [
+      ...(homeData.newReleases || []),
+      ...(homeData.hymnsCantados || []),
+      ...(homeData.hymnsTocados || []),
+      ...(homeData.hymnsAvulsos || []),
+    ];
+
+    if (merged.length === 0) {
+      setHomepageTrends([]);
+      return;
+    }
+
+    const unique = Array.from(
+      new Map(merged.map((hymn) => [String(hymn.id), hymn])).values()
+    )
+      .sort((left, right) => {
+        const leftDate = left.created_at ? new Date(left.created_at).getTime() : 0;
+        const rightDate = right.created_at ? new Date(right.created_at).getTime() : 0;
+        return rightDate - leftDate;
+      })
+      .map(mapHomeHymnToPopular)
+      .filter((hino) =>
+        hasHomeReadyTrackSource({
+          id: hino.id,
+          number: hino.number,
+          title: hino.title,
+          artist: hino.artist,
+          audioUrl: hino.audioUrl,
+          youtubeSource: hino.youtubeSource,
+        })
+      );
+
+    const withCover = unique.filter((hino) => hino.coverUrl && hino.coverUrl.trim() !== '');
+    const withoutCover = unique.filter((hino) => !hino.coverUrl || hino.coverUrl.trim() === '');
+    const maxItems = 12;
+    const diversifiedCover = diversifyByArtist(withCover, maxItems);
+    const remaining = maxItems - diversifiedCover.length;
+    const diversifiedNoCover = remaining > 0 ? diversifyByArtist(withoutCover, remaining) : [];
+
+    setHomepageTrends([...diversifiedCover, ...diversifiedNoCover].slice(0, maxItems));
+  }, [isLoading, homeData, stableHomeSelections]);
   
   // Calculate items to show based on screen size - always even numbers and multiples of 3
   const getItemsToShow = () => {
@@ -424,12 +619,6 @@ const HomePage: React.FC = () => {
       }))
     : [];
 
-  const normalizeCategory = (value: string | undefined | null) =>
-    String(value ?? '')
-      .normalize('NFD')
-      .replace(/[\u0300-\u036f]/g, '')
-      .toLowerCase();
-
   const DEFAULT_COVER = DEFAULT_COVER_IDENTIFIER;
   const hasRealCover = (url: string) => url && url.trim() !== '' && !url.includes(DEFAULT_COVER);
   const prioritizeRealCovers = (items: any[], max: number) => {
@@ -443,7 +632,7 @@ const HomePage: React.FC = () => {
   // Converter hinos cantados do backend (apenas categoria Cantados)
   const hinosCantados = (homeData.hymnsCantados || [])
     .filter((h) => {
-      const normalized = normalizeCategory(h.category);
+      const normalized = normalizeHomeCategory(h.category);
       return normalized === 'cantados' || normalized.includes('cantados');
     })
     .map(hymn => ({
@@ -452,28 +641,31 @@ const HomePage: React.FC = () => {
       title: hymn.title,
       cover: hymn.cover_url || '',
       subtitle: hymn.composer_name || 'Hino Cantado',
-      audioUrl: hymn.youtube_source ? '' : (hymn.audio_url || ''),
-      youtubeSource: hymn.youtube_source || undefined,
+      audioUrl: normalizeYoutubeSource(hymn.youtube_source) ? '' : (hymn.audio_url || ''),
+      youtubeSource: normalizeYoutubeSource(hymn.youtube_source),
       artist: hymn.composer_name || 'Hino Cantado',
       coverUrl: hymn.cover_url || '',
     }));
-  const hinosCantadosFinal = prioritizeRealCovers(
-    hinosCantados.filter((hino) =>
-      hasPlayableTrackSource({
-        number: hino.number,
-        title: hino.title,
-        artist: hino.artist,
-        audioUrl: hino.audioUrl,
-        youtubeSource: hino.youtubeSource,
-      })
-    ),
-    12
-  );
+  const hinosCantadosFinal = stableHomeSelections.cantados.length > 0
+    ? stableHomeSelections.cantados
+    : prioritizeRealCovers(
+        hinosCantados.filter((hino) =>
+          hasHomeReadyTrackSource({
+            id: hino.id,
+            number: hino.number,
+            title: hino.title,
+            artist: hino.artist,
+            audioUrl: hino.audioUrl,
+            youtubeSource: hino.youtubeSource,
+          })
+        ),
+        12
+      );
 
   // Converter hinos tocados do backend (apenas categoria Tocados)
   const hinosTocados = (homeData.hymnsTocados || [])
     .filter((h) => {
-      const normalized = normalizeCategory(h.category);
+      const normalized = normalizeHomeCategory(h.category);
       return normalized === 'tocados' || normalized.includes('tocados');
     })
     .map(hymn => ({
@@ -482,28 +674,31 @@ const HomePage: React.FC = () => {
       title: hymn.title,
       cover: hymn.cover_url || '',
       subtitle: hymn.composer_name || 'Hino Tocado',
-      audioUrl: hymn.youtube_source ? '' : (hymn.audio_url || ''),
-      youtubeSource: hymn.youtube_source || undefined,
+      audioUrl: normalizeYoutubeSource(hymn.youtube_source) ? '' : (hymn.audio_url || ''),
+      youtubeSource: normalizeYoutubeSource(hymn.youtube_source),
       artist: hymn.composer_name || 'Hino Tocado',
       coverUrl: hymn.cover_url || '',
     }));
-  const hinosTocadosFinal = prioritizeRealCovers(
-    hinosTocados.filter((hino) =>
-      hasPlayableTrackSource({
-        number: hino.number,
-        title: hino.title,
-        artist: hino.artist,
-        audioUrl: hino.audioUrl,
-        youtubeSource: hino.youtubeSource,
-      })
-    ),
-    12
-  );
+  const hinosTocadosFinal = stableHomeSelections.tocados.length > 0
+    ? stableHomeSelections.tocados
+    : prioritizeRealCovers(
+        hinosTocados.filter((hino) =>
+          hasHomeReadyTrackSource({
+            id: hino.id,
+            number: hino.number,
+            title: hino.title,
+            artist: hino.artist,
+            audioUrl: hino.audioUrl,
+            youtubeSource: hino.youtubeSource,
+          })
+        ),
+        12
+      );
 
   // Converter hinos avulsos do backend (apenas categoria Avulsos)
   const hinosAvulsos = (homeData.hymnsAvulsos || [])
     .filter((h) => {
-      const normalized = normalizeCategory(h.category);
+      const normalized = normalizeHomeCategory(h.category);
       return normalized === 'avulsos' || normalized.includes('avulsos');
     })
     .map(hymn => ({
@@ -512,23 +707,26 @@ const HomePage: React.FC = () => {
       title: hymn.title,
       cover: hymn.cover_url || '',
       subtitle: hymn.composer_name || 'Hino Avulso',
-      audioUrl: hymn.youtube_source ? '' : (hymn.audio_url || ''),
-      youtubeSource: hymn.youtube_source || undefined,
+      audioUrl: normalizeYoutubeSource(hymn.youtube_source) ? '' : (hymn.audio_url || ''),
+      youtubeSource: normalizeYoutubeSource(hymn.youtube_source),
       artist: hymn.composer_name || 'Hino Avulso',
       coverUrl: hymn.cover_url || '',
     }));
-  const hinosAvulsosFinal = prioritizeRealCovers(
-    hinosAvulsos.filter((hino) =>
-      hasPlayableTrackSource({
-        number: hino.number,
-        title: hino.title,
-        artist: hino.artist,
-        audioUrl: hino.audioUrl,
-        youtubeSource: hino.youtubeSource,
-      })
-    ),
-    12
-  );
+  const hinosAvulsosFinal = stableHomeSelections.avulsos.length > 0
+    ? stableHomeSelections.avulsos
+    : prioritizeRealCovers(
+        hinosAvulsos.filter((hino) =>
+          hasHomeReadyTrackSource({
+            id: hino.id,
+            number: hino.number,
+            title: hino.title,
+            artist: hino.artist,
+            audioUrl: hino.audioUrl,
+            youtubeSource: hino.youtubeSource,
+          })
+        ),
+        12
+      );
 
   // FunÃ§Ã£o para calcular mudanÃ§a de ranking
   const getRankChange = (hino: any) => {
@@ -583,24 +781,25 @@ const HomePage: React.FC = () => {
   };
   
   const handleTogglePlay = (hino: any) => {
-    if (currentTrack?.id === hino.id && isPlaying) {
-      // Pause current track
-      // This would be handled by the player store
+    const track = resolveHomeTrackForPlayback(hino);
+
+    if (currentTrack?.id === track.id && isPlaying) {
       pause();
     } else {
-      const started = play(hino);
+      const started = play(track);
       if (started === false) return;
-      
-      // Adicionar prÃ³ximas mÃºsicas na fila automaticamente
-      const currentIndex = popularHinos.findIndex(h => h.id === hino.id);
-      const nextSongs = popularHinos.slice(currentIndex + 1, currentIndex + 6); // PrÃ³ximas 5
+
+      const queueSource = popularHinosFiltered.length > 0
+        ? popularHinosFiltered.map(resolveHomeTrackForPlayback)
+        : [];
+      const currentIndex = queueSource.findIndex(h => h.id === track.id);
+      const nextSongs = currentIndex >= 0 ? queueSource.slice(currentIndex + 1, currentIndex + 6) : [];
       const { addToQueue, clearQueue } = usePlayerStore.getState();
       clearQueue();
       nextSongs.forEach(song => addToQueue(song));
-      
-      // Small delay to allow state to update before opening full screen
+
       setTimeout(() => {
-        if (window.innerWidth < 768) { // Only on mobile
+        if (window.innerWidth < 768) {
           openFullScreen();
         }
       }, 300);
@@ -608,11 +807,10 @@ const HomePage: React.FC = () => {
   };
 
   const handlePlayTrack = (track: any) => {
-    const started = play(track);
+    const started = play(resolveHomeTrackForPlayback(track));
     if (started === false) return;
-    // Small delay to allow state to update before opening full screen
     setTimeout(() => {
-      if (window.innerWidth < 768) { // Only on mobile
+      if (window.innerWidth < 768) {
         openFullScreen();
       }
     }, 300);
@@ -653,21 +851,21 @@ const HomePage: React.FC = () => {
         <HeroSection banners={homeData.banners} />
 
         {/* Personalized Sections */}
-        {personalized.mix.length > 0 && (
+        {personalizedMixPlayable.length > 0 && (
           <PersonalizedSection
             title="Recomendado para você"
-            items={personalized.mix}
-            onPlay={(t: RecTrack) => handlePlayTrack({ id: t.id, number: t.number, category: t.category || 'Hinos CCB', title: t.title, artist: t.composer_name, duration: '00:00', plays: 0, isLiked: false, createdAt: new Date().toISOString(), coverUrl: t.cover_url, audioUrl: t.youtube_source ? '' : t.audio_url, youtubeSource: t.youtube_source || undefined })}
+            items={personalizedMixPlayable}
+            onPlay={(t: RecTrack) => handlePlayTrack({ id: t.id, number: t.number, category: t.category || 'Hinos CCB', title: t.title, artist: t.composer_name, duration: '00:00', plays: 0, isLiked: false, createdAt: new Date().toISOString(), coverUrl: t.cover_url, audioUrl: normalizeYoutubeSource(t.youtube_source) ? '' : t.audio_url, youtubeSource: normalizeYoutubeSource(t.youtube_source) })}
           />
         )}
         {(() => {
-          const hasFollowed = !!user?.id && personalized.byFollowedComposers.length > 0;
+          const hasFollowed = !!user?.id && personalizedFollowedPlayable.length > 0;
           return hasFollowed;
         })() && (
           <PersonalizedSection
             title="Dos compositores que você segue"
-            items={personalized.byFollowedComposers}
-            onPlay={(t: RecTrack) => handlePlayTrack({ id: t.id, number: t.number, category: t.category || 'Hinos CCB', title: t.title, artist: t.composer_name, duration: '00:00', plays: 0, isLiked: false, createdAt: new Date().toISOString(), coverUrl: t.cover_url, audioUrl: t.youtube_source ? '' : t.audio_url, youtubeSource: t.youtube_source || undefined })}
+            items={personalizedFollowedPlayable}
+            onPlay={(t: RecTrack) => handlePlayTrack({ id: t.id, number: t.number, category: t.category || 'Hinos CCB', title: t.title, artist: t.composer_name, duration: '00:00', plays: 0, isLiked: false, createdAt: new Date().toISOString(), coverUrl: t.cover_url, audioUrl: normalizeYoutubeSource(t.youtube_source) ? '' : t.audio_url, youtubeSource: normalizeYoutubeSource(t.youtube_source) })}
           />
         )}
 
@@ -757,7 +955,3 @@ const HomePage: React.FC = () => {
 };
 
 export default HomePage;
-
-
-
-
