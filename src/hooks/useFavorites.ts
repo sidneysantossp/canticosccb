@@ -19,7 +19,7 @@ export const useFavorites = () => {
       try {
         if (user) {
           // Usuário logado: buscar do banco
-          const favIds = await getUserFavorites((user as any).id as number);
+          const favIds = await getUserFavorites((user as any).id as string);
           setFavorites(new Set(favIds));
         } else {
           // Usuário não logado: buscar do localStorage
@@ -45,9 +45,9 @@ export const useFavorites = () => {
         const localFavorites = localStorage.getItem('favoriteHymns');
         if (localFavorites) {
           try {
-            await syncLocalFavoritesWithBackend((user as any).id as number);
+            await syncLocalFavoritesWithBackend((user as any).id as string);
             // Recarregar favoritos do banco
-            const favIds = await getUserFavorites((user as any).id as number);
+            const favIds = await getUserFavorites((user as any).id as string);
             setFavorites(new Set(favIds));
           } catch (error) {
             console.error('Erro ao sincronizar favoritos:', error);
@@ -91,8 +91,8 @@ export const useFavorites = () => {
       });
 
       // Chamar API do backend
-      const uid = (user as any).id as number;
-      const hid = Number(hymnId) || parseInt(hymnId, 10) || 0;
+      const uid = String((user as any).id || '');
+      const hid = String(hymnId || '').trim();
       let ok = false;
       if (hid) {
         ok = wasRemoving ? await removeFavorite(uid, hid) : await addFavorite(uid, hid);

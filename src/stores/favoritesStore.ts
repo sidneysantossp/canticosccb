@@ -10,6 +10,10 @@ export interface FavoriteHino {
   album: string;
   duration: string;
   coverUrl: string;
+  audioUrl?: string;
+  youtubeSource?: string;
+  number?: number;
+  category?: string;
   likedAt: string;
   addedDaysAgo: number;
 }
@@ -26,6 +30,81 @@ interface FavoritesState {
   loadFavorites: (userId?: string | number) => Promise<void>;
   clearError: () => void;
 }
+
+const normalizeDuration = (value: unknown): string => {
+  if (value == null) return '0:00';
+
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    const totalSeconds = Math.max(0, Math.floor(value));
+    const minutes = Math.floor(totalSeconds / 60);
+    const seconds = totalSeconds % 60;
+    return `${minutes}:${String(seconds).padStart(2, '0')}`;
+  }
+
+  const text = String(value).trim();
+  if (!text) return '0:00';
+  if (text.includes(':')) return text;
+
+  const numeric = Number(text);
+  return Number.isFinite(numeric) ? normalizeDuration(numeric) : text;
+};
+
+const isUuidLike = (value: string): boolean =>
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value);
+
+const buildFallbackFavorite = (favoriteRow: any): FavoriteHino => ({
+  id: String(favoriteRow.hino_id || favoriteRow.id),
+  title: 'Hino Favorito',
+  artist: 'Cânticos CCB',
+  album: 'Hinos CCB',
+  duration: '0:00',
+  coverUrl: '',
+  audioUrl: undefined,
+  youtubeSource: undefined,
+  number: 0,
+  category: 'favoritos',
+  likedAt: String(favoriteRow.created_at || new Date().toISOString()),
+  addedDaysAgo: 0,
+});
+
+const loadFavoriteHymnLookup = async (rawFavoriteIds: string[]) => {
+  const favoriteIds = Array.from(new Set(rawFavoriteIds.map((value) => String(value).trim()).filter(Boolean)));
+  const uuidIds = favoriteIds.filter(isUuidLike);
+  const numericIds = favoriteIds
+    .filter((value) => /^\d+$/.test(value))
+    .map((value) => Number(value))
+    .filter(Number.isFinite);
+
+  const lookup = new Map<string, any>();
+
+  if (uuidIds.length > 0) {
+    const { data } = await supabase
+      .from('hinos')
+      .select('id, titulo, compositor_nome, duracao, cover_url, categoria, numero, audio_url, youtube_source')
+      .in('id', uuidIds);
+
+    for (const row of data || []) {
+      lookup.set(String(row.id), row);
+      if (row.numero != null) {
+        lookup.set(String(row.numero), row);
+      }
+    }
+  }
+
+  if (numericIds.length > 0) {
+    const { data } = await supabase
+      .from('hinos')
+      .select('id, titulo, compositor_nome, duracao, cover_url, categoria, numero, audio_url, youtube_source')
+      .in('numero', numericIds);
+
+    for (const row of data || []) {
+      lookup.set(String(row.numero), row);
+      lookup.set(String(row.id), row);
+    }
+  }
+
+  return lookup;
+};
 
 const useFavoritesStore = create<FavoritesState>()(
   persist(
@@ -48,20 +127,15 @@ const useFavoritesStore = create<FavoritesState>()(
         }));
 
         if (userId) {
-          const uid = Number(userId) || 0;
-          if (uid) {
-            apiAddFavorite(uid, hino.id)
-              .then(success => {
-                if (success) {
-                  return;
-                } else {
-                  console.error('❌ Falha ao salvar favorito no Supabase');
-                }
-              })
-              .catch(err => {
-                console.error('❌ Erro ao salvar favorito no Supabase:', err);
-              });
-          }
+          apiAddFavorite(userId, hino.id)
+            .then(success => {
+              if (!success) {
+                console.error('❌ Falha ao salvar favorito no Supabase');
+              }
+            })
+            .catch(err => {
+              console.error('❌ Erro ao salvar favorito no Supabase:', err);
+            });
         }
       },
 
@@ -70,10 +144,7 @@ const useFavoritesStore = create<FavoritesState>()(
           favorites: state.favorites.filter(fav => String(fav.id) !== String(id)),
           error: null
         }));
-        if (userId) {
-          const uid = Number(userId) || 0;
-          if (uid) apiRemoveFavorite(uid, id).catch(() => { });
-        }
+        if (userId) apiRemoveFavorite(userId, id).catch(() => { });
       },
 
       isFavorite: (id) => {
@@ -90,61 +161,45 @@ const useFavoritesStore = create<FavoritesState>()(
           }
 
           const uid = String(userId);
-
-          // Buscar favoritos com join na tabela hinos
           const { data, error } = await supabase
             .from('favorites')
-            .select(`
-              id,
-              created_at,
-              hino_id,
-              hinos:hino_id ( id, titulo, compositor_nome, duracao, cover_url, categoria )
-            `)
+            .select('id, created_at, hino_id')
             .eq('user_id', uid)
             .order('created_at', { ascending: false });
 
           if (error) {
-            console.error('❌ Erro na consulta favorites:', error);
-            // Fallback: buscar sem join
-            const { data: fallbackData, error: fallbackError } = await supabase
-              .from('favorites')
-              .select('id, created_at, hino_id')
-              .eq('user_id', uid)
-              .order('created_at', { ascending: false });
-
-            if (fallbackError) {
-              throw new Error(`Falha ao carregar favoritos: ${fallbackError.message}`);
-            }
-
-            const items = fallbackData || [];
-            const mapped = items.map((it: any) => ({
-              id: it.hino_id || it.id,
-              title: 'Hino Favorito',
-              artist: 'Cânticos CCB',
-              album: 'Hinos CCB',
-              duration: '00:00',
-              coverUrl: '',
-              likedAt: String(it.created_at || new Date().toISOString()),
-              addedDaysAgo: 0,
-            }));
-            set({ favorites: mapped, isLoading: false });
-            return;
+            throw new Error(`Falha ao carregar favoritos: ${error.message}`);
           }
 
           const items = data || [];
+          if (items.length === 0) {
+            set({ favorites: [], isLoading: false });
+            return;
+          }
 
-          const mapped = items.map((it: any) => {
-            const hino = it.hinos;
+          const hymnLookup = await loadFavoriteHymnLookup(items.map((item: any) => String(item.hino_id)));
+
+          const mapped = items.map((item: any) => {
+            const hymn = hymnLookup.get(String(item.hino_id));
+
+            if (!hymn) {
+              return buildFallbackFavorite(item);
+            }
+
             return {
-              id: it.hino_id || it.id,
-              title: hino?.titulo || 'Hino Favorito',
-              artist: hino?.compositor_nome || 'Cânticos CCB',
-              album: hino?.categoria || 'Hinos CCB',
-              duration: hino?.duracao || '00:00',
-              coverUrl: hino?.cover_url || '',
-              likedAt: String(it.created_at || new Date().toISOString()),
+              id: String(hymn.id || item.hino_id || item.id),
+              title: hymn.titulo || 'Hino Favorito',
+              artist: hymn.compositor_nome || 'Cânticos CCB',
+              album: hymn.categoria || 'Hinos CCB',
+              duration: normalizeDuration(hymn.duracao),
+              coverUrl: hymn.cover_url || '',
+              audioUrl: hymn.audio_url || undefined,
+              youtubeSource: hymn.youtube_source || undefined,
+              number: Number(hymn.numero) || 0,
+              category: hymn.categoria || 'favoritos',
+              likedAt: String(item.created_at || new Date().toISOString()),
               addedDaysAgo: 0,
-            };
+            } satisfies FavoriteHino;
           });
 
           set({ favorites: mapped, isLoading: false });

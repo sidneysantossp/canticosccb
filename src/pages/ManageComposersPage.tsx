@@ -5,7 +5,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { compositorGerentesApi } from '@/lib/api-client';
 
 interface ManagedComposer {
-  compositor_id: number;
+  compositor_id: string;
   compositor_nome: string;
   compositor_nome_artistico: string;
   compositor_email: string;

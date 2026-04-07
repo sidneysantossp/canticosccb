@@ -28,19 +28,36 @@ interface AuthContextType {
   isAdmin: boolean;
   isComposer: boolean;
   // Gerenciamento de compositores
-  managingComposerId: number | null;
+  managingComposerId: string | null;
   managingComposerName: string | null;
-  switchToComposer: (composerId: number, composerName: string) => void;
+  switchToComposer: (composerId: string | number, composerName: string) => void;
   switchBackToSelf: () => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+const resolveUserFlags = (
+  email?: string | null,
+  isAdmin?: boolean,
+  isComposer?: boolean,
+  tipo?: User['tipo']
+) => {
+  const resolvedIsAdmin = isAdmin === true || tipo === 'admin' || authClient.isConfiguredAdminEmail(email);
+  const resolvedIsComposer = isComposer === true || tipo === 'compositor';
+  const resolvedTipo: User['tipo'] = resolvedIsAdmin ? 'admin' : resolvedIsComposer ? 'compositor' : 'usuario';
+
+  return {
+    resolvedIsAdmin,
+    resolvedIsComposer,
+    resolvedTipo,
+  };
+};
+
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
-  const [managingComposerId, setManagingComposerId] = useState<number | null>(null);
+  const [managingComposerId, setManagingComposerId] = useState<string | null>(null);
   const [managingComposerName, setManagingComposerName] = useState<string | null>(null);
 
   useEffect(() => {
@@ -54,21 +71,36 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const loadUser = () => {
       const currentUser = authClient.getCurrentUser();
       if (currentUser) {
+        const { resolvedIsAdmin, resolvedIsComposer, resolvedTipo } = resolveUserFlags(
+          currentUser.email,
+          currentUser.is_admin,
+          currentUser.is_composer,
+          currentUser.tipo
+        );
+
         // Mapear para compatibilidade com interface User
         const userCompat: User = {
           id: String(currentUser.id),
           email: currentUser.email,
           nome: currentUser.nome || currentUser.name,
           avatar_url: currentUser.avatar_url,
-          tipo: currentUser.tipo || 'usuario',
+          tipo: resolvedTipo,
           ativo: currentUser.ativo ?? 1,
         };
+
+        authClient.cacheCurrentUser({
+          ...currentUser,
+          tipo: resolvedTipo,
+          is_admin: resolvedIsAdmin,
+          is_composer: resolvedIsComposer,
+        });
+
         setUser(userCompat);
         setProfile({
           ...userCompat,
           plan: currentUser.plano === 'premium' ? 'premium' : 'free',
-          is_admin: currentUser.is_admin || currentUser.tipo === 'admin',
-          is_composer: currentUser.is_composer || currentUser.tipo === 'compositor'
+          is_admin: resolvedIsAdmin,
+          is_composer: resolvedIsComposer
         });
         return true;
       }
@@ -119,23 +151,33 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             }
           }
           
+          const { resolvedIsAdmin, resolvedIsComposer, resolvedTipo } = resolveUserFlags(
+            user.email,
+            user.is_admin,
+            user.is_composer
+          );
+
           // Mapear para compatibilidade com a interface User
           const usuarioCompat: User = {
             id: String(user.id),
             email: user.email,
             nome: user.name,
             avatar_url: user.avatar_url,
-            tipo: user.is_admin ? 'admin' : user.is_composer ? 'compositor' : 'usuario',
+            tipo: resolvedTipo,
             ativo: user.status !== 'inactive' && !user.is_blocked,
           };
           
-          authClient.cacheCurrentUser(usuarioCompat);
+          authClient.cacheCurrentUser({
+            ...usuarioCompat,
+            is_admin: resolvedIsAdmin,
+            is_composer: resolvedIsComposer,
+          });
           setUser(usuarioCompat);
           setProfile({
             ...usuarioCompat,
             plan: user.plan === 'premium' ? 'premium' : 'free',
-            is_admin: user.is_admin,
-            is_composer: user.is_composer
+            is_admin: resolvedIsAdmin,
+            is_composer: resolvedIsComposer
           });
           return true;
         } else {
@@ -158,23 +200,33 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             .single();
           
           if (!error && newUser) {
+            const { resolvedIsAdmin, resolvedIsComposer, resolvedTipo } = resolveUserFlags(
+              newUser.email,
+              newUser.is_admin,
+              newUser.is_composer
+            );
+
             // Mapear para compatibilidade
             const usuarioCompat: User = {
               id: String(newUser.id),
               email: newUser.email,
               nome: newUser.name,
               avatar_url: newUser.avatar_url,
-              tipo: 'usuario',
+              tipo: resolvedTipo,
               ativo: true,
             };
             
-            authClient.cacheCurrentUser(usuarioCompat);
+            authClient.cacheCurrentUser({
+              ...usuarioCompat,
+              is_admin: resolvedIsAdmin,
+              is_composer: resolvedIsComposer,
+            });
             setUser(usuarioCompat);
             setProfile({
               ...usuarioCompat,
               plan: 'free',
-              is_admin: false,
-              is_composer: false
+              is_admin: resolvedIsAdmin,
+              is_composer: resolvedIsComposer
             });
             return true;
           } else if (error) {
@@ -183,23 +235,33 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
       } catch (err: any) {
         console.error('❌ Erro ao sincronizar usuário:', err);
+        const { resolvedIsAdmin, resolvedIsComposer, resolvedTipo } = resolveUserFlags(
+          session.user.email,
+          false,
+          false
+        );
+
         // Se falhar (tabela não existe, RLS, AbortError), criar perfil mínimo em memória
         const usuarioCompat: User = {
           id: String(session.user.id),
           email: session.user.email!,
           nome: session.user.user_metadata?.name || session.user.email?.split('@')[0] || 'Usuário',
           avatar_url: session.user.user_metadata?.avatar_url,
-          tipo: 'usuario',
+          tipo: resolvedTipo,
           ativo: true,
         };
         
-        authClient.cacheCurrentUser(usuarioCompat);
+        authClient.cacheCurrentUser({
+          ...usuarioCompat,
+          is_admin: resolvedIsAdmin,
+          is_composer: resolvedIsComposer,
+        });
         setUser(usuarioCompat);
         setProfile({
           ...usuarioCompat,
           plan: 'free',
-          is_admin: false,
-          is_composer: false
+          is_admin: resolvedIsAdmin,
+          is_composer: resolvedIsComposer
         });
         return true;
       }
@@ -214,7 +276,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const storedComposerId = sessionStorage.getItem('managingComposerId');
     const storedComposerName = sessionStorage.getItem('managingComposerName');
     if (storedComposerId && storedComposerName) {
-      setManagingComposerId(parseInt(storedComposerId));
+      setManagingComposerId(storedComposerId);
       setManagingComposerName(storedComposerName);
     }
     
@@ -291,23 +353,33 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           }
 
           // Marcar como sessão fallback (sem JWT)
+          const { resolvedIsAdmin, resolvedIsComposer, resolvedTipo } = resolveUserFlags(
+            dbUser.email,
+            dbUser.is_admin,
+            dbUser.is_composer
+          );
+
           const usuarioCompat: User = {
             id: String(dbUser.id),
             email: dbUser.email,
             nome: dbUser.name,
             avatar_url: dbUser.avatar_url,
-            tipo: dbUser.is_admin ? 'admin' : dbUser.is_composer ? 'compositor' : 'usuario',
+            tipo: resolvedTipo,
             ativo: dbUser.status !== 'inactive' && !dbUser.is_blocked,
           };
 
-          authClient.cacheCurrentUser(usuarioCompat);
+          authClient.cacheCurrentUser({
+            ...usuarioCompat,
+            is_admin: resolvedIsAdmin,
+            is_composer: resolvedIsComposer,
+          });
           localStorage.setItem('auth_fallback', 'true');
           setUser(usuarioCompat);
           setProfile({
             ...usuarioCompat,
             plan: dbUser.plan === 'premium' ? 'premium' : 'free',
-            is_admin: dbUser.is_admin === true,
-            is_composer: dbUser.is_composer === true,
+            is_admin: resolvedIsAdmin,
+            is_composer: resolvedIsComposer,
           });
           console.warn('⚠️ ATENÇÃO: Login sem JWT. Operações admin usarão REST API.');
           return;
@@ -351,10 +423,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const switchToComposer = (composerId: number, composerName: string) => {
-    setManagingComposerId(composerId);
+  const switchToComposer = (composerId: string | number, composerName: string) => {
+    const resolvedComposerId = String(composerId);
+    setManagingComposerId(resolvedComposerId);
     setManagingComposerName(composerName);
-    sessionStorage.setItem('managingComposerId', composerId.toString());
+    sessionStorage.setItem('managingComposerId', resolvedComposerId);
     sessionStorage.setItem('managingComposerName', composerName);
   };
 

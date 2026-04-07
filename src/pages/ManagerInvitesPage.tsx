@@ -7,8 +7,8 @@ import SuccessModal from '@/components/ui/SuccessModal';
 import ErrorModal from '@/components/ui/ErrorModal';
 
 interface Invite {
-  id: number;
-  compositor_id: number;
+  id: string;
+  compositor_id: string;
   compositor_nome: string;
   compositor_nome_artistico: string;
   status: string;
@@ -21,7 +21,7 @@ const ManagerInvitesPage: React.FC = () => {
   const navigate = useNavigate();
   const [invites, setInvites] = useState<Invite[]>([]);
   const [loading, setLoading] = useState(true);
-  const [processing, setProcessing] = useState<number | null>(null);
+  const [processing, setProcessing] = useState<string | null>(null);
 
   // Estados dos modais
   const [showSuccessModal, setShowSuccessModal] = useState(false);
@@ -72,7 +72,7 @@ const ManagerInvitesPage: React.FC = () => {
     }
   };
 
-  const handleAccept = async (inviteId: number) => {
+  const handleAccept = async (inviteId: string) => {
     try {
       setProcessing(inviteId);
       await compositorGerentesApi.aceitar(inviteId);
@@ -90,7 +90,7 @@ const ManagerInvitesPage: React.FC = () => {
     }
   };
 
-  const handleReject = async (inviteId: number) => {
+  const handleReject = async (inviteId: string) => {
     try {
       setProcessing(inviteId);
       await compositorGerentesApi.recusar(inviteId);

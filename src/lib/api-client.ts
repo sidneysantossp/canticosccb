@@ -695,86 +695,35 @@ function applyAlbumTipoFilterLocally(rows: any[], tipo?: string) {
 export const albunsApi = {
   list: async (params?: { page?: number; limit?: number; search?: string; compositor_id?: string; tipo?: string }) => {
     try {
-
       const pageSize = params?.limit || 12;
       const page = params?.page || 1;
-
-      const buildQuery = (typeFieldMode: AlbumsTypeFieldMode) => {
-        const typeField = typeFieldMode === 'none' ? '' : `,${typeFieldMode}`;
-        let query = supabase
-          .from('albums')
-          .select(
-            `id,title,artist,description,cover_url,total_tracks,release_date,composer_id,created_at,updated_at,is_published,active,featured,featured_order,genre${typeField}`,
-            { count: 'exact' }
-          )
-          .order('created_at', { ascending: false });
-
-        if (params?.search) {
-          query = query.or(`title.ilike.%${params.search}%,artist.ilike.%${params.search}%`);
-        }
-        if (params?.compositor_id) {
-          query = query.eq('composer_id', params.compositor_id);
-        }
-        if (params?.tipo && typeFieldMode !== 'none') {
-          query = query.eq(typeFieldMode, params.tipo);
-        }
-
-        return query;
+      const filters: Record<string, string> = {
+        select: '*',
+        order: 'created_at.desc',
       };
 
-      const runListQuery = async (typeFieldMode: AlbumsTypeFieldMode, withRange: boolean) => {
-        let query = buildQuery(typeFieldMode);
-        if (withRange) {
-          query = query.range((page - 1) * pageSize, page * pageSize - 1);
-        }
-        return query;
-      };
-
-      let response = null as Awaited<ReturnType<typeof runListQuery>> | null;
-      let usedTypeFieldMode: AlbumsTypeFieldMode = 'none';
-
-      for (const typeFieldMode of getAlbumsTypeFieldModes()) {
-        const candidate = await runListQuery(typeFieldMode, typeFieldMode !== 'none' || !params?.tipo);
-        if (candidate.error && typeFieldMode !== 'none' && isMissingAlbumsTypeFieldError(candidate.error)) {
-          continue;
-        }
-
-        response = candidate;
-        usedTypeFieldMode = typeFieldMode;
-        albumsTypeFieldMode = typeFieldMode;
-        break;
+      if (params?.search) {
+        filters.or = `(title.ilike.%${params.search}%,artist.ilike.%${params.search}%)`;
+      }
+      if (params?.compositor_id) {
+        filters.composer_id = `eq.${params.compositor_id}`;
       }
 
-      if (!response) {
-        response = await runListQuery('none', !params?.tipo);
-        usedTypeFieldMode = 'none';
-        albumsTypeFieldMode = 'none';
-      }
-
-      const { data: rawRows, error, count } = response;
-      if (error) {
-        console.error('❌ [albunsApi.list] Error:', error);
-        return { data: { albuns: [], data: [], total: 0, pages: 0 }, error: error.message };
-      }
-
-      const shouldFilterTipoLocally = usedTypeFieldMode === 'none';
-      const compatibleRows = applyAlbumTipoFilterLocally(rawRows || [], shouldFilterTipoLocally ? params?.tipo : undefined);
-      const total = shouldFilterTipoLocally && params?.tipo
-        ? compatibleRows.length
-        : (count ?? compatibleRows.length ?? 0);
-      const rows = shouldFilterTipoLocally && params?.tipo
-        ? compatibleRows.slice((page - 1) * pageSize, page * pageSize)
-        : compatibleRows;
+      const rawRows = await supabaseFetch<any>('albums', filters);
+      const publishedRows = (rawRows || []).filter((row: any) => row.is_published !== false && row.active !== false);
+      const compatibleRows = applyAlbumTipoFilterLocally(publishedRows, params?.tipo);
+      const total = compatibleRows.length;
+      const rows = compatibleRows.slice((page - 1) * pageSize, page * pageSize);
 
       // Buscar contagem real de hinos por álbum
       const albumIds = rows.map((r: any) => r.id);
       let trackCounts: Record<string, number> = {};
       if (albumIds.length > 0) {
         try {
-          const { data: albumHinos } = await supabase
-            .from('album_hinos')
-            .select('album_id')
-            .in('album_id', albumIds);
+          const albumHinos = await supabaseFetch<any>('album_hinos', {
+            select: 'album_id',
+            album_id: `in.(${albumIds.join(',')})`,
+          });
           for (const ah of (albumHinos || [])) {
             trackCounts[ah.album_id] = (trackCounts[ah.album_id] || 0) + 1;
           }
@@ -1161,6 +1110,44 @@ export const categoriasApi = {
   },
 };
 
+function normalizeUsersMetadata(value: unknown): Record<string, any> {
+  if (value && typeof value === 'object' && !Array.isArray(value)) {
+    return { ...(value as Record<string, any>) };
+  }
+  return {};
+}
+
+function toPreferenceInt(value: unknown, fallback: number): number {
+  if (value === undefined || value === null || value === '') return fallback;
+  return value === true || value === 1 || value === '1' ? 1 : 0;
+}
+
+function mapUserRowForUi(row: any) {
+  const metadata = normalizeUsersMetadata(row?.metadata);
+
+  return {
+    ...row,
+    metadata,
+    nome: row?.name || '',
+    telefone: row?.phone ?? metadata.telefone ?? '',
+    localizacao: row?.location ?? metadata.localizacao ?? '',
+    data_nascimento: row?.birthdate ?? metadata.data_nascimento ?? '',
+    biografia: metadata.biografia ?? metadata.bio ?? metadata.biography ?? '',
+    notificacoes_email: toPreferenceInt(metadata.notificacoes_email, 1),
+    reproducao_automatica: toPreferenceInt(metadata.reproducao_automatica, 1),
+    perfil_publico: toPreferenceInt(metadata.perfil_publico, 0),
+    reproducao_sem_pausas: toPreferenceInt(metadata.reproducao_sem_pausas, 1),
+    crossfade: toPreferenceInt(metadata.crossfade, 0),
+    qualidade_audio: String(metadata.qualidade_audio ?? 'high'),
+    qualidade_download: String(metadata.qualidade_download ?? 'high'),
+    download_wifi_only: toPreferenceInt(metadata.download_wifi_only, 1),
+    mostrar_hinos_indisponiveis: toPreferenceInt(metadata.mostrar_hinos_indisponiveis, 0),
+    tipo: row?.is_admin ? 'admin' : row?.is_composer ? 'compositor' : 'usuario',
+    ativo: row?.status !== 'inactive' && !row?.is_blocked ? 1 : 0,
+    plano: row?.plan,
+  };
+}
+
 export const usuariosApi = {
   list: async (params?: { search?: string; page?: number; limit?: number }) => {
 
@@ -1169,7 +1156,7 @@ export const usuariosApi = {
       const page = params?.page || 1;
 
       const filters: Record<string, string> = {
-        select: 'id,email,name,avatar_url,is_admin,is_composer,is_blocked,status,plan,created_at',
+        select: 'id,email,name,avatar_url,phone,location,birthdate,metadata,is_admin,is_composer,is_blocked,status,plan,created_at',
         order: 'created_at.desc',
       };
 
@@ -1194,13 +1181,7 @@ export const usuariosApi = {
       const rows = await supabaseFetch<any>('users', filters);
 
       // Mapear campos para compatibilidade com a UI (português)
-      const mapped = rows.map((r: any) => ({
-        ...r,
-        nome: r.name,
-        tipo: r.is_admin ? 'admin' : r.is_composer ? 'compositor' : 'usuario',
-        ativo: r.status !== 'inactive' && !r.is_blocked ? 1 : 0,
-        plano: r.plan,
-      }));
+      const mapped = rows.map((r: any) => mapUserRowForUi(r));
 
       return {
         data: {
@@ -1228,14 +1209,7 @@ export const usuariosApi = {
         limit: '1'
       });
       if (rows.length > 0) {
-        const r = rows[0];
-        const mapped = {
-          ...r,
-          nome: r.name,
-          tipo: r.is_admin ? 'admin' : r.is_composer ? 'compositor' : 'usuario',
-          ativo: r.status !== 'inactive' && !r.is_blocked ? 1 : 0,
-          plano: r.plan,
-        };
+        const mapped = mapUserRowForUi(rows[0]);
         return { data: mapped, error: null };
       }
       return { data: null, error: 'Usuário não encontrado' };
@@ -1251,12 +1225,27 @@ export const usuariosApi = {
   update: async (id: string | number, data: any) => {
 
     try {
+      const currentRows = await supabaseFetch<any>('users', {
+        id: `eq.${id}`,
+        select: 'id,metadata',
+        limit: '1',
+      });
+      const currentMetadata = normalizeUsersMetadata(currentRows[0]?.metadata);
+
       // Mapear campos em português para inglês
       const updateData: any = {};
+      const metadataUpdates: Record<string, any> = {};
       if (data.nome !== undefined) updateData.name = data.nome;
       if (data.name !== undefined) updateData.name = data.name;
       if (data.email !== undefined) updateData.email = data.email;
       if (data.avatar_url !== undefined) updateData.avatar_url = data.avatar_url;
+      if (data.telefone !== undefined) updateData.phone = data.telefone;
+      if (data.phone !== undefined) updateData.phone = data.phone;
+      if (data.localizacao !== undefined) updateData.location = data.localizacao;
+      if (data.location !== undefined) updateData.location = data.location;
+      if (data.data_nascimento !== undefined) updateData.birthdate = data.data_nascimento;
+      if (data.birthdate !== undefined) updateData.birthdate = data.birthdate;
+      if (data.username !== undefined) updateData.username = data.username;
       if (data.tipo !== undefined) {
         updateData.is_admin = data.tipo === 'admin';
         updateData.is_composer = data.tipo === 'compositor';
@@ -1271,6 +1260,27 @@ export const usuariosApi = {
       if (data.status !== undefined) updateData.status = data.status;
       if (data.plano !== undefined) updateData.plan = data.plano;
       if (data.plan !== undefined) updateData.plan = data.plan;
+      if (data.biografia !== undefined) metadataUpdates.biografia = data.biografia;
+      if (data.bio !== undefined) metadataUpdates.biografia = data.bio;
+      if (data.notificacoes_email !== undefined) metadataUpdates.notificacoes_email = toPreferenceInt(data.notificacoes_email, 0);
+      if (data.reproducao_automatica !== undefined) metadataUpdates.reproducao_automatica = toPreferenceInt(data.reproducao_automatica, 0);
+      if (data.perfil_publico !== undefined) metadataUpdates.perfil_publico = toPreferenceInt(data.perfil_publico, 0);
+      if (data.reproducao_sem_pausas !== undefined) metadataUpdates.reproducao_sem_pausas = toPreferenceInt(data.reproducao_sem_pausas, 0);
+      if (data.crossfade !== undefined) metadataUpdates.crossfade = toPreferenceInt(data.crossfade, 0);
+      if (data.qualidade_audio !== undefined) metadataUpdates.qualidade_audio = data.qualidade_audio;
+      if (data.qualidade_download !== undefined) metadataUpdates.qualidade_download = data.qualidade_download;
+      if (data.download_wifi_only !== undefined) metadataUpdates.download_wifi_only = toPreferenceInt(data.download_wifi_only, 0);
+      if (data.mostrar_hinos_indisponiveis !== undefined) metadataUpdates.mostrar_hinos_indisponiveis = toPreferenceInt(data.mostrar_hinos_indisponiveis, 0);
+      if (data.metadata && typeof data.metadata === 'object' && !Array.isArray(data.metadata)) {
+        Object.assign(metadataUpdates, data.metadata);
+      }
+
+      if (Object.keys(metadataUpdates).length > 0) {
+        updateData.metadata = {
+          ...currentMetadata,
+          ...metadataUpdates,
+        };
+      }
 
       const results = await supabaseUpdate<any>('users', { id: `eq.${id}` }, updateData);
       return { data: results.length > 0 ? results[0] : null, error: null };
@@ -1515,7 +1525,7 @@ export const compositorGerentesApi = {
         const composer = composersById[String(row.composer_id)] || {};
         return {
           id: row.id,
-          compositor_id: Number(row.composer_id),
+          compositor_id: String(row.composer_id),
           nome: composer.name || '',
           nome_artistico: composer.artistic_name || '',
           compositor_nome: composer.name || '',
@@ -1545,7 +1555,7 @@ export const compositorGerentesApi = {
       return { data: null, error: error.message };
     }
   },
-  convidar: async (data: { compositor_id: number; email_gerente: string; gerente_id?: string; compositor_nome?: string; compositor_nome_artistico?: string; notas?: string }) => {
+  convidar: async (data: { compositor_id: string | number; email_gerente: string; gerente_id?: string; compositor_nome?: string; compositor_nome_artistico?: string; notas?: string }) => {
 
     try {
       await supabaseInsert('composer_managers', {
@@ -1556,6 +1566,27 @@ export const compositorGerentesApi = {
       return { error: null };
     } catch (error: any) {
       return { error: error.message };
+    }
+  },
+  aceitar: async (id: string | number) => {
+    try {
+      const results = await supabaseUpdate<any>('composer_managers', { id: `eq.${id}` }, {
+        status: 'active',
+        accepted_at: new Date().toISOString(),
+      });
+      return { data: results.length > 0 ? results[0] : null, error: null };
+    } catch (error: any) {
+      return { data: null, error: error.message };
+    }
+  },
+  recusar: async (id: string | number) => {
+    try {
+      const results = await supabaseUpdate<any>('composer_managers', { id: `eq.${id}` }, {
+        status: 'rejected',
+      });
+      return { data: results.length > 0 ? results[0] : null, error: null };
+    } catch (error: any) {
+      return { data: null, error: error.message };
     }
   },
   getAll: async () => [],
@@ -1684,7 +1715,7 @@ export interface Compositor {
 
 export interface CompositorGerente {
   id: string | number;
-  compositor_id: number;
+  compositor_id: string | number;
   nome?: string;
   nome_artistico?: string;
   compositor_nome?: string;
