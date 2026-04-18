@@ -51,6 +51,8 @@ const AdminUsers: React.FC = () => {
       setIsLoading(true);
       const response = await usuariosApi.list({
         search: filters.search,
+        role: filters.role,
+        status: filters.status,
         page: currentPage,
         limit: 20
       });
@@ -342,7 +344,10 @@ const AdminUsers: React.FC = () => {
           {/* Role Filter */}
           <select
             value={filters.role}
-            onChange={(e) => setFilters({ ...filters, role: e.target.value as any })}
+            onChange={(e) => {
+              setCurrentPage(1);
+              setFilters({ ...filters, role: e.target.value as any });
+            }}
             className="bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 text-white"
           >
             <option value="all">Todos os papéis</option>
@@ -353,7 +358,10 @@ const AdminUsers: React.FC = () => {
           {/* Status Filter */}
           <select
             value={filters.status}
-            onChange={(e) => setFilters({ ...filters, status: e.target.value as any })}
+            onChange={(e) => {
+              setCurrentPage(1);
+              setFilters({ ...filters, status: e.target.value as any });
+            }}
             className="bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 text-white"
           >
             <option value="all">Todos os status</option>

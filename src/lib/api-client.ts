@@ -1148,49 +1148,130 @@ function mapUserRowForUi(row: any) {
   };
 }
 
+type UsuariosListParams = {
+  search?: string;
+  page?: number;
+  limit?: number;
+  role?: string;
+  status?: string;
+};
+
+type UsuariosListPayload = {
+  usuarios: ReturnType<typeof mapUserRowForUi>[];
+  total: number;
+  pages: number;
+};
+
+const USERS_LIST_RETRY_DELAYS_MS = [300, 900, 1800];
+const USERS_LIST_CACHE_TTL_MS = 5 * 60 * 1000;
+const usuariosListCache = new Map<string, { timestamp: number; payload: UsuariosListPayload }>();
+
+function waitForRetry(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function normalizeUserSearchTerm(value?: string): string {
+  return String(value || '')
+    .trim()
+    .replace(/[(),]/g, ' ')
+    .replace(/\s+/g, ' ');
+}
+
+function normalizeUsersFilter(value?: string): string {
+  return String(value || 'all').trim().toLowerCase();
+}
+
+function getUsersListCacheKey(params: UsuariosListParams, page: number, limit: number): string {
+  return JSON.stringify({
+    search: normalizeUserSearchTerm(params.search),
+    role: normalizeUsersFilter(params.role),
+    status: normalizeUsersFilter(params.status),
+    page,
+    limit,
+  });
+}
+
+function isTransientUsersError(error: unknown): boolean {
+  const message = String((error as any)?.message || error || '');
+  return /503|service unavailable|upstream connect|failed to fetch|network|timeout|abort/i.test(message);
+}
+
 export const usuariosApi = {
-  list: async (params?: { search?: string; page?: number; limit?: number }) => {
+  list: async (params?: UsuariosListParams) => {
 
     try {
       const limit = params?.limit || 20;
       const page = params?.page || 1;
+      const cacheKey = getUsersListCacheKey(params || {}, page, limit);
+      const cached = usuariosListCache.get(cacheKey);
+      const from = (page - 1) * limit;
+      const to = from + limit - 1;
 
-      const filters: Record<string, string> = {
-        select: 'id,email,name,avatar_url,phone,location,birthdate,metadata,is_admin,is_composer,is_blocked,status,plan,created_at',
-        order: 'created_at.desc',
+      const fetchPage = async () => {
+        let query = supabase
+          .from('users')
+          .select('id,email,name,avatar_url,phone,location,birthdate,metadata,is_admin,is_composer,is_blocked,status,plan,created_at', {
+            count: 'exact',
+          })
+          .order('created_at', { ascending: false })
+          .range(from, to);
+
+        const search = normalizeUserSearchTerm(params?.search);
+        if (search) {
+          query = query.or(`name.ilike.%${search}%,email.ilike.%${search}%`);
+        }
+
+        const role = normalizeUsersFilter(params?.role);
+        if (role === 'admin' || role === 'admins') {
+          query = query.eq('is_admin', true);
+        } else if (role === 'composer' || role === 'compositor' || role === 'composers') {
+          query = query.eq('is_composer', true);
+        } else if (role === 'user' || role === 'users' || role === 'usuario' || role === 'usuarios') {
+          query = query.not('is_admin', 'is', true).not('is_composer', 'is', true);
+        }
+
+        const status = normalizeUsersFilter(params?.status);
+        if (status === 'blocked' || status === 'bloqueado' || status === 'bloqueados') {
+          query = query.eq('is_blocked', true);
+        } else if (status === 'active' || status === 'ativo' || status === 'ativos') {
+          query = query.not('is_blocked', 'is', true);
+        }
+
+        const { data, error, count } = await query;
+        if (error) throw error;
+
+        const usuarios = (data || []).map((r: any) => mapUserRowForUi(r));
+        const total = count ?? usuarios.length;
+        const payload = {
+          usuarios,
+          total,
+          pages: Math.max(1, Math.ceil(total / limit)),
+        };
+
+        usuariosListCache.set(cacheKey, { timestamp: Date.now(), payload });
+        return payload;
       };
 
-      if (params?.search) {
-        filters.or = `(name.ilike.%${params.search}%,email.ilike.%${params.search}%)`;
+      let lastError: unknown = null;
+      for (let attempt = 0; attempt < USERS_LIST_RETRY_DELAYS_MS.length; attempt += 1) {
+        try {
+          const payload = await fetchPage();
+          return { data: payload, error: null };
+        } catch (error) {
+          lastError = error;
+          if (!isTransientUsersError(error) || attempt === USERS_LIST_RETRY_DELAYS_MS.length - 1) {
+            break;
+          }
+          await waitForRetry(USERS_LIST_RETRY_DELAYS_MS[attempt]);
+        }
       }
 
-      // Buscar total de registros (sem limit)
-      const totalFilters = { ...filters };
-      delete totalFilters.limit;
-      delete totalFilters.offset;
-      const allRows = await supabaseFetch<any>('users', totalFilters);
-      const total = allRows.length;
-
-      // Buscar página específica
-      filters.limit = String(limit);
-      if (page > 1) {
-        const offset = (page - 1) * limit;
-        filters.offset = String(offset);
+      if (cached && Date.now() - cached.timestamp <= USERS_LIST_CACHE_TTL_MS && isTransientUsersError(lastError)) {
+        console.warn('⚠️ [usuariosApi.list] Usando cache após falha transitória do Supabase:', lastError);
+        return { data: cached.payload, error: null };
       }
 
-      const rows = await supabaseFetch<any>('users', filters);
-
-      // Mapear campos para compatibilidade com a UI (português)
-      const mapped = rows.map((r: any) => mapUserRowForUi(r));
-
-      return {
-        data: {
-          usuarios: mapped,
-          total: total,
-          pages: Math.ceil(total / limit)
-        },
-        error: null
-      };
+      throw lastError;
     } catch (error: any) {
       console.error('❌ [usuariosApi.list] Error:', error);
       return { data: { usuarios: [], total: 0, pages: 0 }, error: error.message };
@@ -1198,7 +1279,7 @@ export const usuariosApi = {
   },
   getAll: async () => {
     const result = await usuariosApi.list({ limit: 1000 });
-    return result.data || [];
+    return result.data?.usuarios || [];
   },
   get: async (id: string | number) => {
 
