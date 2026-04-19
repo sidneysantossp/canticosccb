@@ -258,7 +258,6 @@ const AdminSidebar: React.FC = () => {
       title: 'Ferramentas',
       icon: Wrench,
       items: [
-        { path: '/admin/acervo/importar', label: 'Importar Acervo', icon: Database },
         { path: '/admin/import', label: 'Importação', icon: Database },
         { path: '/admin/export', label: 'Exportação', icon: Database },
         { path: '/admin/backup', label: 'Backup', icon: Shield },

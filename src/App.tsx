@@ -99,7 +99,6 @@ import {
   AdminAPI,
   AdminAPIForm,
   AdminApprovals,
-  AdminArchiveImport,
   AdminBackup,
   AdminBackupForm,
   AdminBannerForm,
@@ -619,11 +618,6 @@ const AppContent: React.FC = () => {
           <Route path="admin/hinario" element={<ProtectedRoute requireAdmin><AdminHinario /></ProtectedRoute>} />
           <Route path="admin/hinario/new" element={<ProtectedRoute requireAdmin><AdminHinarioForm /></ProtectedRoute>} />
           <Route path="admin/hinario/:id/edit" element={<ProtectedRoute requireAdmin><AdminHinarioForm /></ProtectedRoute>} />
-
-          {/* Archive Import */}
-          <Route path="admin/archive-import" element={<ProtectedRoute requireAdmin><AdminArchiveImport /></ProtectedRoute>} />
-          <Route path="admin/importar-acervo" element={<ProtectedRoute requireAdmin><AdminArchiveImport /></ProtectedRoute>} />
-          <Route path="admin/acervo/importar" element={<ProtectedRoute requireAdmin><AdminArchiveImport /></ProtectedRoute>} />
 
           {/* 404 - Catch All */}
           <Route path="*" element={<NotFoundPage />} />
