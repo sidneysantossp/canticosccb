@@ -87,8 +87,8 @@ const AlbumsPage: React.FC = () => {
     e.preventDefault();
     e.stopPropagation();
     
-    const albumId = parseInt(album.id);
-    const uid = user?.id ? Number(user.id) : undefined;
+    const albumId = String(album.id);
+    const uid = user?.id;
     if (isFavorite(albumId)) {
       removeFavorite(albumId, uid);
     } else {
@@ -98,7 +98,8 @@ const AlbumsPage: React.FC = () => {
         artist: album.artist,
         album: album.title,
         duration: `${album.totalTracks} faixas`,
-        coverUrl: album.coverUrl
+        coverUrl: album.coverUrl,
+        category: 'album',
       }, uid);
     }
     setOpenMenuId(null);
@@ -296,10 +297,10 @@ const AlbumsPage: React.FC = () => {
                           className="w-full px-4 py-3 flex items-center gap-3 hover:bg-white/10 transition-colors text-left"
                         >
                           <Heart 
-                            className={`w-4 h-4 ${isFavorite(parseInt(album.id)) ? 'text-red-500 fill-red-500' : 'text-gray-400'}`}
+                            className={`w-4 h-4 ${isFavorite(String(album.id)) ? 'text-red-500 fill-red-500' : 'text-gray-400'}`}
                           />
                           <span className="text-white text-sm">
-                            {isFavorite(parseInt(album.id)) ? 'Remover dos favoritos' : 'Adicionar aos favoritos'}
+                            {isFavorite(String(album.id)) ? 'Remover dos favoritos' : 'Adicionar aos favoritos'}
                           </span>
                         </button>
 

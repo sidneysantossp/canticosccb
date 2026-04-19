@@ -262,13 +262,18 @@ const HymnDetailPage: React.FC = () => {
   };
 
   const handlePlayRelated = (song: any) => {
-    const fallback = 'https://commondatastorage.googleapis.com/codeskulptor-demos/DDR_assets/Sevish_-__nbsp_.mp3';
     play({
       id: String(song.id),
       title: song.titulo,
+      number: Number(song.numero || 0),
+      category: song.categoria || hymn?.categoria || 'Hinos CCB',
       artist: song.compositor_nome || 'Coral CCB',
+      duration: song.duracao || '00:00',
       coverUrl: song.cover_url || '',
-      audioUrl: song.youtube_source ? '' : (song.audio_url || fallback),
+      audioUrl: song.youtube_source ? '' : (song.audio_url || ''),
+      plays: 0,
+      isLiked: false,
+      createdAt: new Date().toISOString(),
       youtubeSource: song.youtube_source || undefined
     } as any);
     openFullScreen('default');
@@ -276,14 +281,19 @@ const HymnDetailPage: React.FC = () => {
 
   const handlePlay = () => {
     if (!hymn) return;
-    
-    const fallback = 'https://commondatastorage.googleapis.com/codeskulptor-demos/DDR_assets/Sevish_-__nbsp_.mp3';
+
     play({
       id: hymn.id,
       title: hymn.titulo,
+      number: Number(hymn.numero || 0),
+      category: hymn.categoria || 'Hinos CCB',
       artist: hymn.compositor_nome || 'Coral CCB',
+      duration: hymn.duracao || '00:00',
       coverUrl: hymn.cover_url || '',
-      audioUrl: hymn.youtube_source ? '' : (hymn.audio_url || fallback),
+      audioUrl: hymn.youtube_source ? '' : (hymn.audio_url || ''),
+      plays: 0,
+      isLiked: false,
+      createdAt: new Date().toISOString(),
       youtubeSource: hymn.youtube_source || undefined
     } as any);
     

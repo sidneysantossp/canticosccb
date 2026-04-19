@@ -96,6 +96,7 @@ const MESSAGES_TABLE = 'copyright_claim_messages';
 const ATTACHMENTS_TABLE_CANDIDATES = ['copyright_chat_attachments', 'copyright_claim_attachments'] as const;
 const STORAGE_BUCKET = 'documents';
 const SYSTEM_SENDER_NAME = 'Equipe Cânticos CCB';
+const SUPPORT_THREAD_MARKER = 'support-chat-meta';
 let resolvedAttachmentsTable: string | null = null;
 
 function sanitizeFileName(fileName: string) {
@@ -126,16 +127,20 @@ function toClaimAttachment(raw: any): ClaimAttachment {
 
 function mapClaimMessage(row: any, attachmentsByMessageId: Map<string, ClaimAttachment[]>): ChatMessage {
   const id = String(row.id);
+  const inlineAttachments = Array.isArray(row.attachments)
+    ? row.attachments.map(toClaimAttachment)
+    : [];
+
   return {
     id,
     claimId: String(row.claim_id),
-    senderId: String(row.sender_user_id || 'system'),
+    senderId: String(row.sender_id || 'system'),
     senderName: row.sender_name || SYSTEM_SENDER_NAME,
     senderRole: row.sender_role === 'admin' ? 'admin' : 'composer',
     message: row.message || '',
-    attachments: attachmentsByMessageId.get(id) || [],
+    attachments: attachmentsByMessageId.get(id) || inlineAttachments,
     timestamp: row.created_at,
-    read: Boolean(row.is_read),
+    read: Boolean(row.read),
   };
 }
 
@@ -151,7 +156,7 @@ function mapClaim(row: any, messagesByClaimId: Map<string, ChatMessage[]>): Copy
     songTitle: row.song_title || 'Conteúdo sem título',
     songArtist: row.song_artist || '',
     songCoverUrl: row.song_cover_url || 'https://canticosccb.com.br/logo-canticos-ccb.png',
-    contentUrl: row.content_url || undefined,
+    contentUrl: undefined,
     composerId: row.composer_id ? String(row.composer_id) : '',
     composerName: row.composer_name || 'Solicitante',
     composerEmail: row.composer_email || '',
@@ -164,15 +169,31 @@ function mapClaim(row: any, messagesByClaimId: Map<string, ChatMessage[]>): Copy
     updatedAt: row.updated_at || row.created_at,
     reviewedAt: row.reviewed_at || undefined,
     resolvedAt: row.resolved_at || undefined,
-    reviewedBy: row.reviewed_by_user_id || undefined,
+    reviewedBy: row.reviewed_by || undefined,
     reviewerNotes: row.reviewer_notes || undefined,
     chatMessages,
     hasUnreadForAdmin: Boolean(row.has_unread_for_admin),
     hasUnreadForComposer: Boolean(row.has_unread_for_composer),
     hasUnreadMessages: Boolean(row.has_unread_for_admin || row.has_unread_for_composer),
     lastMessageAt: row.last_message_at || undefined,
-    createdByUserId: row.created_by_user_id || undefined,
+    createdByUserId: row.composer_id ? String(row.composer_id) : undefined,
   };
+}
+
+function buildClaimDescription(description: string, contentUrl?: string) {
+  const base = description.trim();
+  const url = String(contentUrl || '').trim();
+
+  if (!url) {
+    return base;
+  }
+
+  return `${base}\n\nURL do conteúdo: ${url}`;
+}
+
+function isSupportThread(row: any) {
+  const proofDocuments = Array.isArray(row?.proof_documents) ? row.proof_documents : [];
+  return proofDocuments.some((item) => item?.kind === SUPPORT_THREAD_MARKER);
 }
 
 function isMissingAttachmentsTableError(error: any) {
@@ -321,7 +342,7 @@ export async function listCopyrightClaims(options: LoadCopyrightClaimsOptions = 
     throw error;
   }
 
-  return hydrateClaims(data || []);
+  return hydrateClaims((data || []).filter((row) => !isSupportThread(row)));
 }
 
 export async function getCopyrightClaimById(claimId: string): Promise<CopyrightClaim | null> {
@@ -335,7 +356,7 @@ export async function getCopyrightClaimById(claimId: string): Promise<CopyrightC
     throw error;
   }
 
-  if (!data) return null;
+  if (!data || isSupportThread(data)) return null;
 
   const [claim] = await hydrateClaims([data]);
   return claim || null;
@@ -374,8 +395,9 @@ export async function uploadClaimAttachment(claimId: string, file: File): Promis
 }
 
 export async function createCopyrightClaim(input: CreateCopyrightClaimInput): Promise<CopyrightClaim> {
-  const userId = await requireAuthenticatedUserId();
+  await requireAuthenticatedUserId();
   const now = new Date().toISOString();
+  const claimDescription = buildClaimDescription(input.description, input.contentUrl);
 
   const { data: insertedClaim, error: insertError } = await supabase
     .from(CLAIMS_TABLE)
@@ -384,15 +406,13 @@ export async function createCopyrightClaim(input: CreateCopyrightClaimInput): Pr
       song_title: input.songTitle,
       song_artist: input.songArtist || '',
       song_cover_url: input.songCoverUrl || 'https://canticosccb.com.br/logo-canticos-ccb.png',
-      content_url: input.contentUrl || null,
       composer_id: input.composerId || null,
       composer_name: input.composerName,
       composer_email: input.composerEmail,
       claim_type: input.claimType,
-      description: input.description,
+      description: claimDescription,
       priority: input.priority || 'medium',
       status: 'pending',
-      created_by_user_id: userId,
       proof_documents: [],
       has_unread_for_admin: true,
       has_unread_for_composer: false,
@@ -427,13 +447,13 @@ export async function createCopyrightClaim(input: CreateCopyrightClaimInput): Pr
     .from(MESSAGES_TABLE)
     .insert({
       claim_id: insertedClaim.id,
-      sender_user_id: null,
+      sender_id: null,
       sender_name: SYSTEM_SENDER_NAME,
       sender_role: 'admin',
       message: 'Recebemos sua solicitação. Em breve nossa equipe entrará em contato para os devidos esclarecimentos.',
-      is_read: true,
+      attachments: [],
+      read: true,
       created_at: now,
-      updated_at: now,
     });
 
   if (autoMessageError) {
@@ -457,13 +477,13 @@ export async function sendCopyrightClaimMessage(claimId: string, input: SendCopy
     .from(MESSAGES_TABLE)
     .insert({
       claim_id: claimId,
-      sender_user_id: userId,
+      sender_id: userId,
       sender_name: input.senderName,
       sender_role: input.senderRole,
       message: input.message,
-      is_read: false,
+      attachments: [],
+      read: false,
       created_at: now,
-      updated_at: now,
     })
     .select('*')
     .single();
@@ -481,7 +501,6 @@ export async function sendCopyrightClaimMessage(claimId: string, input: SendCopy
       file_type: attachment.type,
       mime_type: attachment.mimeType || null,
       size_bytes: attachment.size,
-      created_by_user_id: userId,
       created_at: now,
       updated_at: now,
     }));
@@ -525,13 +544,11 @@ export async function markCopyrightClaimMessagesAsRead(
   const { error: messagesError } = await supabase
     .from(MESSAGES_TABLE)
     .update({
-      is_read: true,
-      updated_at: now,
-      read_at: now,
+      read: true,
     })
     .eq('claim_id', claimId)
-    .eq('is_read', false)
-    .neq('sender_user_id', userId);
+    .eq('read', false)
+    .neq('sender_id', userId);
 
   if (messagesError) {
     throw messagesError;
@@ -591,7 +608,7 @@ export async function updateCopyrightClaimStatus(
       status: input.status,
       reviewer_notes: input.reviewerNotes || null,
       reviewed_at: now,
-      reviewed_by_user_id: reviewerId,
+      reviewed_by: reviewerId,
       resolved_at: input.status === 'resolved' ? now : null,
       has_unread_for_composer: true,
       last_message_at: now,
@@ -607,13 +624,13 @@ export async function updateCopyrightClaimStatus(
     .from(MESSAGES_TABLE)
     .insert({
       claim_id: claimId,
-      sender_user_id: reviewerId,
+      sender_id: reviewerId,
       sender_name: input.reviewerName || SYSTEM_SENDER_NAME,
       sender_role: 'admin',
       message: buildStatusMessage(input.status, input.reviewerNotes),
-      is_read: false,
+      attachments: [],
+      read: false,
       created_at: now,
-      updated_at: now,
     });
 
   if (messageError) {

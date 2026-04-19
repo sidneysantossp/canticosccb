@@ -1,6 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { Search, Save, Globe, FileText, Code, BarChart, AlertTriangle } from 'lucide-react';
 import { getSiteConfigMap, parseBooleanConfig, upsertSiteConfigEntries } from '@/lib/admin/adminTableUtils';
+import { DEFAULT_SITE_URL, normalizeAssetUrl, normalizeSiteUrl } from '@/utils/siteUrl';
+
+const normalizeRobotsText = (value: string) => value
+  .replace(/https:\/\/canticosccb\.com\.br\/robots\.txt/gi, `${DEFAULT_SITE_URL}/robots.txt`)
+  .replace(/https:\/\/canticosccb\.com\.br\/sitemap\.xml/gi, `${DEFAULT_SITE_URL}/sitemap.xml`);
 
 const AdminSEO: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
@@ -14,12 +19,12 @@ const AdminSEO: React.FC = () => {
     site_title: 'Cânticos CCB',
     site_description: 'Plataforma completa de hinos e cânticos da Congregação Cristã no Brasil',
     site_keywords: 'hinos ccb, cânticos ccb, hinário ccb, congregação cristã',
-    site_url: 'https://canticosccb.com.br',
+    site_url: DEFAULT_SITE_URL,
     
     // Open Graph
     og_title: 'Cânticos CCB',
     og_description: 'Plataforma completa de hinos e cânticos da Congregação Cristã no Brasil',
-    og_image: 'https://canticosccb.com.br/og-image.jpg',
+    og_image: `${DEFAULT_SITE_URL}/og-image.jpg`,
     
     // Twitter
     twitter_card: 'summary_large_image',
@@ -28,7 +33,7 @@ const AdminSEO: React.FC = () => {
     // Robots
     robots_index: true,
     robots_follow: true,
-    robots_txt: 'User-agent: *\nDisallow: /admin/\nAllow: /\n\nSitemap: https://canticosccb.com.br/sitemap.xml',
+    robots_txt: `User-agent: *\nDisallow: /admin/\nAllow: /\n\nSitemap: ${DEFAULT_SITE_URL}/sitemap.xml`,
     
     // Schema
     schema_name: 'Cânticos CCB',
@@ -66,15 +71,15 @@ const AdminSEO: React.FC = () => {
           site_title: config.site_title || current.site_title,
           site_description: config.site_description || current.site_description,
           site_keywords: config.site_keywords || current.site_keywords,
-          site_url: config.site_url || current.site_url,
+          site_url: normalizeSiteUrl(config.site_url || current.site_url, current.site_url),
           og_title: config.og_title || current.og_title,
           og_description: config.og_description || current.og_description,
-          og_image: config.og_image || current.og_image,
+          og_image: normalizeAssetUrl(config.og_image || current.og_image),
           twitter_card: config.twitter_card || current.twitter_card,
           twitter_site: config.twitter_site || current.twitter_site,
           robots_index: parseBooleanConfig(config.robots_index, current.robots_index),
           robots_follow: parseBooleanConfig(config.robots_follow, current.robots_follow),
-          robots_txt: config.robots_txt || current.robots_txt,
+          robots_txt: normalizeRobotsText(config.robots_txt || current.robots_txt),
           schema_name: config.schema_name || current.schema_name,
           schema_type: config.schema_type || current.schema_type,
           google_analytics_id: config.google_analytics_id || current.google_analytics_id,
@@ -94,24 +99,34 @@ const AdminSEO: React.FC = () => {
     setIsSaving(true);
     try {
       setError(null);
+      const normalizedSiteUrl = normalizeSiteUrl(settings.site_url, settings.site_url);
+      const normalizedOgImage = normalizeAssetUrl(settings.og_image);
+      const normalizedRobotsTxt = normalizeRobotsText(settings.robots_txt);
+
       await upsertSiteConfigEntries({
         site_title: settings.site_title,
         site_description: settings.site_description,
         site_keywords: settings.site_keywords,
-        site_url: settings.site_url,
+        site_url: normalizedSiteUrl,
         og_title: settings.og_title,
         og_description: settings.og_description,
-        og_image: settings.og_image,
+        og_image: normalizedOgImage,
         twitter_card: settings.twitter_card,
         twitter_site: settings.twitter_site,
         robots_index: settings.robots_index,
         robots_follow: settings.robots_follow,
-        robots_txt: settings.robots_txt,
+        robots_txt: normalizedRobotsTxt,
         schema_name: settings.schema_name,
         schema_type: settings.schema_type,
         google_analytics_id: settings.google_analytics_id,
         google_search_console_id: settings.google_search_console_id,
       });
+      setSettings((current) => ({
+        ...current,
+        site_url: normalizedSiteUrl,
+        og_image: normalizedOgImage,
+        robots_txt: normalizedRobotsTxt,
+      }));
       setSuccess('Configurações de SEO salvas com sucesso.');
       window.setTimeout(() => setSuccess(null), 3000);
     } catch (error) {
@@ -260,7 +275,7 @@ const AdminSEO: React.FC = () => {
                   value={settings.site_url}
                   onChange={(e) => setSettings({ ...settings, site_url: e.target.value })}
                   className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-primary-600"
-                  placeholder="https://canticosccb.com.br"
+                  placeholder={DEFAULT_SITE_URL}
                 />
               </div>
             </div>
@@ -309,7 +324,7 @@ const AdminSEO: React.FC = () => {
                     value={settings.og_image}
                     onChange={(e) => setSettings({ ...settings, og_image: e.target.value })}
                     className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-primary-600"
-                    placeholder="https://canticosccb.com.br/og-image.jpg"
+                    placeholder={`${DEFAULT_SITE_URL}/og-image.jpg`}
                   />
                 </div>
               </div>

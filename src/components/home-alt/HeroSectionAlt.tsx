@@ -1,6 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { Play, ChevronRight } from 'lucide-react';
+import { buildBannerUrl } from '@/lib/media-helper';
 
 interface Banner {
   id: string;
@@ -19,6 +20,16 @@ interface HeroSectionAltProps {
 
 const HeroSectionAlt: React.FC<HeroSectionAltProps> = ({ banners, isDarkMode }) => {
   const [currentSlide, setCurrentSlide] = React.useState(0);
+  const [failedSlides, setFailedSlides] = React.useState<Record<string, true>>({});
+
+  const markSlideAsFailed = React.useCallback((slideId: string) => {
+    setFailedSlides((prev) => (prev[slideId] ? prev : { ...prev, [slideId]: true }));
+  }, []);
+
+  const isVideoUrl = React.useCallback((url: string) => {
+    const value = String(url || '').toLowerCase();
+    return /\.(mp4|webm|mov)(\?|#|$)/i.test(value);
+  }, []);
 
   React.useEffect(() => {
     if (banners.length <= 1) return;
@@ -65,16 +76,44 @@ const HeroSectionAlt: React.FC<HeroSectionAltProps> = ({ banners, isDarkMode }) 
   }
 
   const currentBanner = banners[currentSlide];
+  const currentBannerUrl = buildBannerUrl(currentBanner);
+  const currentBannerFailed = failedSlides[currentBanner.id];
+  const currentBannerIsVideo = isVideoUrl(currentBannerUrl);
 
   return (
     <div className="relative h-[400px] md:h-[500px] overflow-hidden">
-      {/* Banner Image */}
+      {/* Banner Media */}
       <div className="absolute inset-0">
-        <img
-          src={currentBanner.image_url}
-          alt={currentBanner.title}
-          className="w-full h-full object-cover"
-        />
+        {currentBannerFailed ? (
+          <div className={`w-full h-full flex items-center justify-center ${
+            isDarkMode ? 'bg-neutral-950' : 'bg-neutral-100'
+          }`}>
+            <img
+              src="/logo-canticos-ccb.png"
+              alt="Cânticos CCB"
+              className="w-full h-full object-contain p-8 md:p-12 opacity-90"
+            />
+          </div>
+        ) : currentBannerIsVideo ? (
+          <video
+            src={currentBannerUrl}
+            className="w-full h-full object-cover"
+            autoPlay
+            muted
+            loop
+            playsInline
+            preload="auto"
+            controls={false}
+            onError={() => markSlideAsFailed(currentBanner.id)}
+          />
+        ) : (
+          <img
+            src={currentBannerUrl}
+            alt={currentBanner.title}
+            className="w-full h-full object-cover"
+            onError={() => markSlideAsFailed(currentBanner.id)}
+          />
+        )}
         <div className={`absolute inset-0 ${
           currentBanner.gradient_overlay || (isDarkMode 
             ? 'bg-gradient-to-t from-black via-black/50 to-transparent'

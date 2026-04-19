@@ -14,6 +14,7 @@
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
     "preview": "vite preview",
     "type-check": "tsc --noEmit",
+    "backfill:legacy-audio": "node scripts/backfill-legacy-audio-r2.mjs",
     "clean": "rimraf node_modules/.vite dist",
     "clean:all": "rimraf node_modules/.vite dist node_modules && npm install"
   },
@@ -27,6 +28,7 @@
     "cheerio": "^1.1.2",
     "clsx": "^2.0.0",
     "date-fns": "^2.30.0",
+    "ffmpeg-static": "^5.3.0",
     "framer-motion": "^10.16.0",
     "howler": "^2.2.4",
     "jszip": "^3.10.1",

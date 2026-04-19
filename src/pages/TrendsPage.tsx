@@ -135,11 +135,12 @@ const TrendsPage: React.FC = () => {
           if (r.ok) {
             const d = await r.json();
             const item = d?.data || d?.hino || d;
-            if (item?.audio_url) (track as any).audioUrl = buildHinoUrl({ id: String(hymn.id), audio_url: item.audio_url });
+            if (item?.audio_url) (track as any).audioUrl = item.audio_url;
           }
         } catch {}
       }
-      play(track as any);
+      const started = play(track as any);
+      if (started === false) return;
       // Open full screen on mobile for a consistent UX
       setTimeout(() => {
         if (typeof window !== 'undefined' && window.innerWidth < 768) {
@@ -150,8 +151,8 @@ const TrendsPage: React.FC = () => {
   };
 
   const handleToggleFavorite = (hymnId: string) => {
-    const id = parseInt(hymnId);
-    const uid = user?.id ? Number(user.id) : undefined;
+    const id = String(hymnId);
+    const uid = user?.id;
     if (isFavorite(id)) {
       removeFavorite(id, uid);
     } else {
@@ -163,7 +164,11 @@ const TrendsPage: React.FC = () => {
           artist: hymn.artist,
           album: hymn.albumTitle || 'Álbum Desconhecido',
           duration: hymn.duration,
-          coverUrl: hymn.coverUrl
+          coverUrl: hymn.coverUrl,
+          audioUrl: hymn.audioUrl,
+          youtubeSource: hymn.youtubeSource,
+          number: hymn.number || 0,
+          category: hymn.category || 'tendencias',
         }, uid);
       }
     }
@@ -371,14 +376,14 @@ const TrendsPage: React.FC = () => {
                       <button
                         onClick={() => handleToggleFavorite(hymn.id)}
                         className={`hidden md:inline-flex p-2 rounded-full hover:bg-white/10 transition-colors ${
-                          isFavorite(parseInt(hymn.id))
+                          isFavorite(String(hymn.id))
                             ? 'text-primary-500'
                             : 'text-gray-400'
                         }`}
                       >
                         <Heart
                           className={`w-5 h-5 ${
-                            isFavorite(parseInt(hymn.id)) ? 'fill-current' : ''
+                            isFavorite(String(hymn.id)) ? 'fill-current' : ''
                           }`}
                         />
                       </button>

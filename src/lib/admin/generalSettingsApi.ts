@@ -1,4 +1,5 @@
 import { supabaseFetch, supabaseUpdate, supabaseInsert } from '@/lib/supabaseRest';
+import { DEFAULT_SITE_URL, normalizeSiteUrl } from '@/utils/siteUrl';
 
 export interface GeneralSettings {
   site_name: string;
@@ -27,7 +28,7 @@ export interface GeneralSettings {
 const defaultSettings: GeneralSettings = {
   site_name: 'Cânticos CCB',
   site_description: 'Plataforma completa de hinos e cânticos da Congregação Cristã no Brasil',
-  site_url: 'https://canticosccb.com.br',
+  site_url: DEFAULT_SITE_URL,
   admin_email: 'admin@canticosccb.com.br',
   support_email: 'suporte@canticosccb.com.br',
   maintenance_mode: false,
@@ -103,6 +104,7 @@ export const getGeneralSettings = async (): Promise<GeneralSettings> => {
       }
     }
 
+    result.site_url = normalizeSiteUrl(result.site_url, defaultSettings.site_url);
     return result as GeneralSettings;
   } catch (err) {
     console.error('Erro ao carregar configurações gerais:', err);
@@ -111,13 +113,17 @@ export const getGeneralSettings = async (): Promise<GeneralSettings> => {
 };
 
 export const updateGeneralSettings = async (settings: GeneralSettings): Promise<GeneralSettings> => {
-  const entries = Object.entries(settings);
+  const normalizedSettings: GeneralSettings = {
+    ...settings,
+    site_url: normalizeSiteUrl(settings.site_url, settings.site_url),
+  };
+  const entries = Object.entries(normalizedSettings);
 
   for (const [key, value] of entries) {
     await upsertConfigKey(key, String(value));
   }
 
-  return { ...settings };
+  return { ...normalizedSettings };
 };
 
 export const resetToDefaultSettings = async (): Promise<GeneralSettings> => {

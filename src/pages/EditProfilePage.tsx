@@ -139,7 +139,7 @@ const EditProfilePage: React.FC = () => {
         return;
       }
       try {
-        const res = await usuariosApi.get(Number(user.id));
+        const res = await usuariosApi.get(user.id);
 
         const u = (res as any)?.data as { nome?: string; email?: string; avatar_url?: string; telefone?: string; localizacao?: string; data_nascimento?: string; biografia?: string; notificacoes_email?: number; reproducao_automatica?: number; perfil_publico?: number } | undefined;
 
@@ -218,7 +218,7 @@ const EditProfilePage: React.FC = () => {
       const backendField = fieldMap[key];
       const payload = { [backendField]: newValue ? 1 : 0 };
 
-      const result = await usuariosApi.update(Number(user.id), payload as any);
+      const result = await usuariosApi.update(user.id, payload as any);
 
       if ((result as any)?.error) {
         throw new Error((result as any).error);
@@ -244,7 +244,7 @@ const EditProfilePage: React.FC = () => {
     setMessage({ type: '', text: '' });
     try {
       // Atualizar dados completos do usuário
-      const res = await usuariosApi.update(Number(user.id), {
+      const res = await usuariosApi.update(user.id, {
         nome: formData.name,
         email: formData.email,
         telefone: formData.phone || null,

@@ -1,15 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import { CheckCircle, Music, Mic2, AlertCircle } from 'lucide-react';
+import { CheckCircle, Music, Mic2, AlertCircle, Album as AlbumIcon } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { getPendingComposers } from '@/lib/admin/composersAdminApi';
-import { getAllSongs } from '@/lib/admin/songsAdminApi';
-import { getOpenReportsCount } from '@/lib/admin/reportsApi';
+import { getAdminStats } from '@/lib/admin/adminStatsApi';
 
 const AdminApprovals: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [pendingCounts, setPendingCounts] = useState({
     songs: 0,
+    albums: 0,
     composers: 0,
     reports: 0,
     total: 0
@@ -23,27 +22,14 @@ const AdminApprovals: React.FC = () => {
     try {
       setIsLoading(true);
       setError(null);
-      
-      // Load pending composers from API
-      const composers = await getPendingComposers();
-      const composersCount = composers.length;
-      
-      // Load pending songs from API
-      let songsCount = 0;
-      try {
-        const songsResult = await getAllSongs(1, 1, { status: 'draft', search: '' });
-        songsCount = songsResult.count || 0;
-      } catch (e) {
-        console.warn('Could not load pending songs count:', e);
-      }
-      
-      const reportsCount = await getOpenReportsCount();
-      
+      const stats = await getAdminStats();
+
       setPendingCounts({
-        songs: songsCount,
-        composers: composersCount,
-        reports: reportsCount,
-        total: songsCount + composersCount + reportsCount
+        songs: stats.pendingSongs,
+        albums: stats.pendingAlbums,
+        composers: stats.pendingComposers,
+        reports: stats.openReports,
+        total: stats.pendingSongs + stats.pendingAlbums + stats.pendingComposers + stats.openReports
       });
     } catch (error: any) {
       console.error('Error loading pending counts:', error);
@@ -88,7 +74,7 @@ const AdminApprovals: React.FC = () => {
         <p className="text-gray-400">Gerencie todas as aprovações pendentes</p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
         <Link
           to="/admin/songs/pending"
           className="bg-gray-900/50 border border-gray-800 rounded-xl p-6 hover:border-yellow-600 transition-colors"
@@ -101,6 +87,20 @@ const AdminApprovals: React.FC = () => {
           </div>
           <h3 className="text-xl font-bold text-white mb-2">Hinos Pendentes</h3>
           <p className="text-gray-400 text-sm">Hinos aguardando aprovação</p>
+        </Link>
+
+        <Link
+          to="/admin/albums/pending"
+          className="bg-gray-900/50 border border-gray-800 rounded-xl p-6 hover:border-emerald-600 transition-colors"
+        >
+          <div className="flex items-center justify-between mb-4">
+            <AlbumIcon className="w-12 h-12 text-emerald-500" />
+            <span className="px-4 py-2 bg-emerald-500/20 text-emerald-400 font-bold rounded-full text-lg">
+              {pendingCounts.albums}
+            </span>
+          </div>
+          <h3 className="text-xl font-bold text-white mb-2">Álbuns Pendentes</h3>
+          <p className="text-gray-400 text-sm">Álbuns aguardando publicação</p>
         </Link>
 
         <Link

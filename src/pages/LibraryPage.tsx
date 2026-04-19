@@ -9,6 +9,21 @@ import usePlaylistsStore from '@/stores/playlistsStore';
 import { useAuth } from '@/contexts/AuthContext';
 import * as playlistsApi from '@/lib/playlistsApi';
 
+const mapPlaylistTrack = (track: playlistsApi.PlaylistDTOTrack) => ({
+  id: String(track.id),
+  title: track.title,
+  artist: track.artist,
+  coverUrl: track.cover_url || '',
+  duration: track.duration || '0:00',
+  backendTrackId: String(track.id),
+  audioUrl: track.audio_url || undefined,
+  youtubeSource: track.youtube_source || undefined,
+  number: track.number,
+  category: track.category,
+  position: track.position ?? undefined,
+  createdAt: track.created_at,
+});
+
 const LibraryPage: React.FC = () => {
   const { play, setPlaybackContext } = usePlayerStore();
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
@@ -22,25 +37,17 @@ const LibraryPage: React.FC = () => {
     const fetchPlaylists = async () => {
       try {
         if (!user?.id) return;
-        const dtos = await playlistsApi.list(Number(user.id));
+        const dtos = await playlistsApi.list(user.id);
         const mapped = dtos.map((p) => ({
           id: String(p.id),
           name: p.name,
           description: p.description || undefined,
           coverUrl: p.cover_url || `https://picsum.photos/seed/${p.id}/300/300`,
-          tracks: (p.tracks || []).map((t) => ({
-            id: isNaN(parseInt(String(t.id))) ? Date.now() : parseInt(String(t.id)),
-            title: t.title,
-            artist: t.artist,
-            coverUrl: t.cover_url || '',
-            duration: t.duration || '0:00',
-            backendTrackId: String(t.id),
-          })),
+          tracks: (p.tracks || []).map(mapPlaylistTrack),
           createdAt: p.created_at,
           updatedAt: p.updated_at,
         }));
-        // Manter playlists locais não persistidas (ids não numéricos)
-        const locals = playlists.filter((pl) => !/^\d+$/.test(pl.id));
+        const locals = playlists.filter((pl) => pl.id.startsWith('playlist_'));
         setPlaylists([...mapped, ...locals]);
       } catch (e) {
         console.error('Erro ao carregar playlists do backend:', e);
@@ -56,23 +63,25 @@ const LibraryPage: React.FC = () => {
 
   const handlePlayPlaylist = (playlist: any) => {
     if (!playlist || !playlist.tracks || playlist.tracks.length === 0) return;
-    const t = playlist.tracks[0];
+    const t = playlist.tracks.find((item: any) => item.audioUrl || item.youtubeSource) || playlist.tracks[0];
     const track: Hino = {
-      id: String(t.id),
+      id: String(t.backendTrackId || t.id),
       title: t.title,
-      number: 0,
-      category: 'playlist',
+      number: t.number || 0,
+      category: t.category || 'playlist',
       artist: t.artist,
       duration: t.duration,
-      audioUrl: undefined,
+      audioUrl: t.audioUrl,
       coverUrl: t.coverUrl,
       lyrics: undefined,
       plays: 0,
       isLiked: false,
-      createdAt: new Date().toISOString(),
+      createdAt: t.createdAt || new Date().toISOString(),
+      youtubeSource: t.youtubeSource,
     };
     setPlaybackContext({ type: 'playlist', id: String(playlist.id) });
-    play(track);
+    const started = play(track);
+    if (started === false) return;
     openFullScreen();
   };
 

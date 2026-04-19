@@ -20,6 +20,7 @@ import {
   BibliaNarradaPage,
   CategoriesPage,
   CategoryPage,
+  ChatPage,
   CifraInstrumentHubPage,
   CifrasHubPage,
   CifraPage,
@@ -92,6 +93,7 @@ import {
 } from '@/pages/composer/lazyPages';
 import {
   AdminAlbumForm,
+  AdminAlbumsPending,
   AdminAlbums,
   AdminAnalytics,
   AdminAPI,
@@ -106,6 +108,7 @@ import {
   AdminBibleNarratedForm,
   AdminCampaignForm,
   AdminCampaigns,
+  AdminChat,
   AdminCategories,
   AdminCategoryForm,
   AdminCifraForm,
@@ -143,6 +146,7 @@ import {
   AdminNoticeForm,
   AdminNotices,
   AdminPlaylistForm,
+  AdminPlaylists,
   AdminPlaylistsEditorial,
   AdminPromotionForm,
   AdminPromotions,
@@ -218,6 +222,9 @@ const NOINDEX_PREFIXES = [
   '/downloads',
   '/notifications',
   '/notificacoes',
+  '/chat',
+  '/suporte',
+  '/support',
   '/configuracoes',
   '/settings',
   '/assinatura',
@@ -366,6 +373,9 @@ const AppContent: React.FC = () => {
           <Route path="downloads" element={<ProtectedRoute><DownloadsPage /></ProtectedRoute>} />
           <Route path="notifications" element={<ProtectedRoute><NotificationsPage /></ProtectedRoute>} />
           <Route path="notificacoes" element={<ProtectedRoute><NotificationsPage /></ProtectedRoute>} />
+          <Route path="chat" element={<ProtectedRoute><ChatPage /></ProtectedRoute>} />
+          <Route path="suporte" element={<ProtectedRoute><ChatPage /></ProtectedRoute>} />
+          <Route path="support" element={<ProtectedRoute><ChatPage /></ProtectedRoute>} />
           <Route path="configuracoes" element={<ProtectedRoute><SettingsPageNew /></ProtectedRoute>} />
           <Route path="settings" element={<ProtectedRoute><SettingsPageNew /></ProtectedRoute>} />
           <Route path="assinatura" element={<ProtectedRoute><SubscriptionPage /></ProtectedRoute>} />
@@ -444,6 +454,8 @@ const AppContent: React.FC = () => {
           <Route path="admin/compositor/editar/:id" element={<ProtectedRoute requireAdmin><AdminComposerForm /></ProtectedRoute>} />
           <Route path="admin/composer/edit/:id" element={<ProtectedRoute requireAdmin><AdminComposerForm /></ProtectedRoute>} />
           <Route path="admin/composers/edit/:id" element={<ProtectedRoute requireAdmin><AdminComposerForm /></ProtectedRoute>} />
+          <Route path="admin/chat" element={<ProtectedRoute requireAdmin><AdminChat /></ProtectedRoute>} />
+          <Route path="admin/support" element={<ProtectedRoute requireAdmin><AdminChat /></ProtectedRoute>} />
 
           {/* Content Management */}
           <Route path="admin/hinos" element={<ProtectedRoute requireAdmin><AdminHymns /></ProtectedRoute>} />
@@ -456,6 +468,8 @@ const AppContent: React.FC = () => {
           <Route path="admin/songs/:id" element={<ProtectedRoute requireAdmin><AdminSongDetails /></ProtectedRoute>} />
           <Route path="admin/musicas/pendentes" element={<ProtectedRoute requireAdmin><AdminSongsPending /></ProtectedRoute>} />
           <Route path="admin/songs/pending" element={<ProtectedRoute requireAdmin><AdminSongsPending /></ProtectedRoute>} />
+          <Route path="admin/albuns/pendentes" element={<ProtectedRoute requireAdmin><AdminAlbumsPending /></ProtectedRoute>} />
+          <Route path="admin/albums/pending" element={<ProtectedRoute requireAdmin><AdminAlbumsPending /></ProtectedRoute>} />
           <Route path="admin/musica/criar" element={<ProtectedRoute requireAdmin><AdminSongForm /></ProtectedRoute>} />
           <Route path="admin/musica/editar/:id" element={<ProtectedRoute requireAdmin><AdminSongForm /></ProtectedRoute>} />
           <Route path="admin/albuns" element={<ProtectedRoute requireAdmin><AdminAlbums /></ProtectedRoute>} />
@@ -483,7 +497,7 @@ const AppContent: React.FC = () => {
           <Route path="admin/tags/edit/:id" element={<ProtectedRoute requireAdmin><AdminTagForm /></ProtectedRoute>} />
           <Route path="admin/playlists" element={<ProtectedRoute requireAdmin><AdminPlaylistsEditorial /></ProtectedRoute>} />
           <Route path="admin/playlists-editorial" element={<ProtectedRoute requireAdmin><AdminPlaylistsEditorial /></ProtectedRoute>} />
-          <Route path="admin/users/playlists" element={<ProtectedRoute requireAdmin><AdminPlaylistsEditorial /></ProtectedRoute>} />
+          <Route path="admin/users/playlists" element={<ProtectedRoute requireAdmin><AdminPlaylists /></ProtectedRoute>} />
           <Route path="admin/playlists/criar" element={<ProtectedRoute requireAdmin><AdminPlaylistForm /></ProtectedRoute>} />
           <Route path="admin/playlists/create" element={<ProtectedRoute requireAdmin><AdminPlaylistForm /></ProtectedRoute>} />
           <Route path="admin/playlists/editar/:id" element={<ProtectedRoute requireAdmin><AdminPlaylistForm /></ProtectedRoute>} />

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link, Check, X, AlertCircle } from 'lucide-react';
 import { generateSlug, isValidSlug } from '@/lib/utils/slugUtils';
+import { DEFAULT_SITE_URL } from '@/utils/siteUrl';
 
 interface SlugInputProps {
   value: string;
@@ -79,7 +80,7 @@ const SlugInput: React.FC<SlugInputProps> = ({
     onChange(newSlug);
   };
 
-  const fullUrl = `https://canticosccb.com.br${prefix}${value}`;
+  const fullUrl = `${DEFAULT_SITE_URL}${prefix}${value}`;
 
   return (
     <div className="space-y-2">

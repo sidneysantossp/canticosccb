@@ -56,6 +56,7 @@ export const NotificationsProvider: React.FC<{ children: React.ReactNode }> = ({
         .from('notifications')
         .select('id', { count: 'exact', head: true })
         .or(orParts.join(','))
+        .neq('type', 'support_chat')
         .eq('is_read', false);
 
       if (!error) setUnreadCount(count ?? 0);

@@ -13,11 +13,20 @@ const MEDIA_UPLOAD_FOLDER_BY_TYPE = {
   exports: 'exports',
 };
 
-const R2_ACCOUNT_ID = process.env.R2_ACCOUNT_ID || process.env.CLOUDFLARE_R2_ACCOUNT_ID || '';
-const R2_ACCESS_KEY_ID = process.env.R2_ACCESS_KEY_ID || '';
-const R2_SECRET_ACCESS_KEY = process.env.R2_SECRET_ACCESS_KEY || '';
-const R2_BUCKET = process.env.R2_BUCKET || 'canticos-media';
-const R2_PUBLIC_URL = (process.env.R2_PUBLIC_URL || process.env.VITE_MEDIA_PUBLIC_BASE_URL || 'https://media.canticosccb.com.br').replace(/\/+$/, '');
+function cleanEnvValue(value) {
+  return String(value || '')
+    .replace(/\\[nrt]/g, '')
+    .replace(/[\r\n\t]/g, '')
+    .trim();
+}
+
+const R2_ACCOUNT_ID = cleanEnvValue(process.env.R2_ACCOUNT_ID || process.env.CLOUDFLARE_R2_ACCOUNT_ID || '');
+const R2_ACCESS_KEY_ID = cleanEnvValue(process.env.R2_ACCESS_KEY_ID || '');
+const R2_SECRET_ACCESS_KEY = cleanEnvValue(process.env.R2_SECRET_ACCESS_KEY || '');
+const R2_BUCKET = cleanEnvValue(process.env.R2_BUCKET || 'canticos-media') || 'canticos-media';
+const R2_PUBLIC_URL = cleanEnvValue(
+  process.env.R2_PUBLIC_URL || process.env.VITE_MEDIA_PUBLIC_BASE_URL || 'https://media.canticosccb.com.br'
+).replace(/\/+$/, '');
 
 const MAX_UPLOAD_SIZE_MB = {
   avatars: 5,

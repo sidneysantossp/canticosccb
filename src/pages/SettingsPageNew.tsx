@@ -73,7 +73,7 @@ const SettingsPage: React.FC = () => {
       const userId: any = (authUser as any)?.id || (profile as any)?.id;
       if (!userId) return;
       try {
-        const res = await usuariosApi.get(Number(userId));
+        const res = await usuariosApi.get(userId);
         const u: any = (res as any)?.data || {};
         const next = {
           autoplay: u?.reproducao_automatica === 1,
@@ -119,7 +119,7 @@ const SettingsPage: React.FC = () => {
 
     if (updateTimer.current) window.clearTimeout(updateTimer.current);
     updateTimer.current = window.setTimeout(async () => {
-      try { await usuariosApi.update(Number(userId), { [field]: nextVal ? 1 : 0 } as any); } catch {}
+      try { await usuariosApi.update(userId, { [field]: nextVal ? 1 : 0 } as any); } catch {}
     }, 300);
   };
 
@@ -141,7 +141,7 @@ const SettingsPage: React.FC = () => {
 
     if (updateTimer.current) window.clearTimeout(updateTimer.current);
     updateTimer.current = window.setTimeout(async () => {
-      try { await usuariosApi.update(Number(userId), { [field]: value } as any); } catch {}
+      try { await usuariosApi.update(userId, { [field]: value } as any); } catch {}
     }, 300);
   };
 

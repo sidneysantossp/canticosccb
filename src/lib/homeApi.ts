@@ -1,6 +1,8 @@
 import { apiFetch } from '@/lib/api-helper';
 import { ASSETS } from '@/constants/index';
 import { isSupabaseConfigured, supabaseFetch } from '@/lib/supabaseRest';
+import { buildAlbumCoverUrl, buildAvatarUrl, buildBannerUrl, buildHinoUrl } from '@/lib/media-helper';
+import { normalizeYoutubeSource } from '@/lib/youtubeSource';
 // import { getDocuments } from './firebaseHelpers';
 
 // const isFirebaseConfigured = Boolean(import.meta.env && import.meta.env.VITE_FIREBASE_PROJECT_ID);
@@ -157,18 +159,22 @@ const mapSupabaseHymn = (row: SupabaseHymnRow): HomeHymn => ({
   composer_name: row.compositor_nome ?? row.compositor ?? 'Compositor Desconhecido',
   category: row.categoria ?? 'Outros',
   album_id: row.album_id != null ? String(row.album_id) : undefined,
-  cover_url: row.cover_url ?? '',
-  audio_url: row.audio_url ?? '',
+  cover_url: buildAlbumCoverUrl({ id: String(row.id ?? row.numero ?? 'album'), cover_url: row.cover_url ?? '' }),
+  audio_url: normalizeYoutubeSource(row.youtube_source)
+    ? undefined
+    : buildHinoUrl({ id: String(row.id ?? row.numero ?? 'hino'), audio_url: row.audio_url ?? '' }),
   duration: row.duracao ?? '00:00',
   created_at: row.created_at ?? new Date().toISOString(),
-  youtube_source: row.youtube_source || undefined,
+  youtube_source: normalizeYoutubeSource(row.youtube_source),
 });
 
 const mapSupabaseComposer = (row: SupabaseComposerRow): HomeComposer => {
   const id = String(row.id ?? Math.random());
   const name = row.artistic_name ?? row.name ?? 'Compositor CCB';
   const rowAvatar = row.avatar_url || row.photo_url;
-  const avatarUrl = rowAvatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&size=400&background=1a1a1a&color=00D1FF`;
+  const avatarUrl = rowAvatar
+    ? buildAvatarUrl({ id, avatar_url: rowAvatar, name })
+    : `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&size=400&background=1a1a1a&color=00D1FF`;
   return {
     id,
     name,
@@ -188,7 +194,7 @@ const mapSupabaseAlbum = (
     id: String(row.id ?? `album-${index}`),
     title: row.title ?? `Álbum ${index + 1}`,
     artist: row.artist ?? 'Canticos CCB',
-    cover_url: row.cover_url ?? '',
+    cover_url: buildAlbumCoverUrl({ id: String(row.id ?? `album-${index}`), cover_url: row.cover_url ?? '' }),
   };
 };
 
@@ -239,7 +245,7 @@ const mapSupabaseBanner = (row: SupabaseBannerRow): HomeBanner => ({
   id: String(row.id ?? row.title ?? `banner-${Math.random()}`),
   title: row.title ?? '',
   description: row.description ?? '',
-  image_url: row.image_url ?? ASSETS.PLACEHOLDER_IMAGE,
+  image_url: row.image_url ? buildBannerUrl(row.image_url) : ASSETS.PLACEHOLDER_IMAGE,
   button_text: row.button_text ?? undefined,
   link_type: row.type ?? undefined,
   link_url: row.link_url ?? undefined,
@@ -471,18 +477,20 @@ const mapHymn = (hymn: any, fallbackId: string, index: number): HomeHymn => {
   const id = String(hymn.id ?? hymn.documentId ?? `${fallbackId}-${index}`);
   const title = hymn.title ?? hymn.name ?? `Hino ${index + 1}`;
   const cover = hymn.cover_url ?? hymn.coverUrl ?? '';
+  const hymnId = String(hymn.id ?? hymn.documentId ?? `${fallbackId}-${index}`);
+  const youtubeSource = normalizeYoutubeSource(hymn.youtube_source);
 
   return {
-    id,
+    id: hymnId,
     number: Number(hymn.number ?? index + 1),
     title,
     composer_name: hymn.composer_name ?? hymn.artist ?? 'Compositor Desconhecido',
     category: hymn.category ?? 'Cantados',
-    cover_url: cover,
-    audio_url: hymn.audio_url ?? hymn.audioUrl ?? '',
+    cover_url: buildAlbumCoverUrl({ id: hymnId, cover_url: cover }),
+    audio_url: youtubeSource ? undefined : buildHinoUrl({ id: hymnId, audio_url: hymn.audio_url ?? hymn.audioUrl ?? '' }),
     duration: hymn.duration ?? '4:00',
     created_at: hymn.created_at ?? hymn.createdAt ?? new Date().toISOString(),
-    youtube_source: hymn.youtube_source || undefined,
+    youtube_source: youtubeSource,
   };
 };
 
@@ -492,7 +500,7 @@ const mapAlbum = (album: any, index: number): HomeAlbum => {
     id,
     title: String(album.title ?? ''),
     artist: String(album.artist ?? album.artist_name ?? ''),
-    cover_url: String(album.cover_url ?? album.coverUrl ?? ''),
+    cover_url: buildAlbumCoverUrl({ id, cover_url: String(album.cover_url ?? album.coverUrl ?? '') }),
   };
 };
 
@@ -505,7 +513,7 @@ const mapComposer = (composer: any, index: number): HomeComposer => {
   return {
     id,
     name,
-    avatar_url: avatar && avatar.trim() !== '' ? avatar : ensureImage(`composer-${id}`, 200, 200),
+    avatar_url: avatar && avatar.trim() !== '' ? buildAvatarUrl({ id, avatar_url: avatar, name }) : ensureImage(`composer-${id}`, 200, 200),
     followers_count: followers,
     is_trending: Boolean(composer.is_trending ?? composer.trending ?? followers > 75000),
     bio: composer.bio ?? composer.description ?? undefined,
@@ -518,7 +526,7 @@ const mapPlaylist = (playlist: any, index: number): HomePlaylist => {
     id,
     name: playlist.name ?? `Playlist ${index + 1}`,
     description: playlist.description ?? undefined,
-    cover_url: playlist.cover_url ?? playlist.coverUrl ?? ensureImage(`playlist-${id}`, 320, 320),
+    cover_url: buildAlbumCoverUrl({ id, cover_url: playlist.cover_url ?? playlist.coverUrl ?? '' }) || ensureImage(`playlist-${id}`, 320, 320),
   };
 };
 

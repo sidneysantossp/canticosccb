@@ -52,7 +52,7 @@ Cânticos CCB é a plataforma digital mais completa para ouvir, ler e estudar hi
 - URL: /categorias/{slug}
 
 ## Informações Técnicas
-- Site: https://canticosccb.com.br
+- Site: https://www.canticosccb.com.br
 - Idioma: Português Brasileiro (pt-BR)
 - Contato: via redes sociais (@canticosccb)
 
@@ -69,7 +69,7 @@ O Hinário 5, oficialmente chamado "Hinos de Louvores e Súplicas a Deus", é o 
 O Hinário 5 possui 480 hinos numerados, utilizados nos cultos e reuniões da Congregação Cristã no Brasil.
 
 ### Como ouvir hinos da CCB online grátis?
-No Cânticos CCB você pode ouvir todos os hinos do Hinário 5 gratuitamente, tanto cantados quanto tocados (instrumentais). Basta acessar canticosccb.com.br e buscar pelo número ou nome do hino.
+No Cânticos CCB você pode ouvir todos os hinos do Hinário 5 gratuitamente, tanto cantados quanto tocados (instrumentais). Basta acessar www.canticosccb.com.br e buscar pelo número ou nome do hino.
 
 ### O que são cifras de hinos da CCB?
 Cifras são representações simplificadas das notas musicais e acordes de um hino, permitindo que músicos toquem os hinos em instrumentos como violão, teclado e outros. O Cânticos CCB oferece cifras gratuitas com transposição de tom.

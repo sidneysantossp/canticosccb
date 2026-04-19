@@ -2,6 +2,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { Eye, EyeOff, Edit, Trash2, Video } from 'lucide-react';
 import { Banner } from '@/lib/admin/bannersAdminApi';
+import { buildBannerUrl } from '@/lib/media-helper';
 
 interface Props {
   banner: Banner;
@@ -10,22 +11,29 @@ interface Props {
 }
 
 const BannerListItem: React.FC<Props> = ({ banner, onToggleActive, onDelete }) => {
-  const isVideo = banner.image_url.includes('.mp4') || banner.image_url.includes('.webm') || banner.image_url.includes('.mov');
+  const [failed, setFailed] = React.useState(false);
+  const mediaUrl = buildBannerUrl(banner);
+  const isVideo = mediaUrl.includes('.mp4') || mediaUrl.includes('.webm') || mediaUrl.includes('.mov');
 
   return (
     <div className="bg-gray-900/50 border border-gray-800 rounded-xl overflow-hidden hover:border-gray-700 transition-colors">
       <div className="flex gap-4">
         <div className="w-64 h-32 bg-gray-800 flex-shrink-0 relative">
-          {isVideo ? (
+          {failed ? (
+            <div className="w-full h-full flex items-center justify-center bg-gray-950">
+              <img src="/logo-canticos-ccb.png" alt="Cânticos CCB" className="w-full h-full object-contain p-4 opacity-90" />
+            </div>
+          ) : isVideo ? (
             <>
               <video
-                src={banner.image_url}
+                src={mediaUrl}
                 className="w-full h-full object-cover"
                 muted
                 loop
                 autoPlay
                 playsInline
                 preload="auto"
+                onError={() => setFailed(true)}
                 onLoadedData={(e) => {
                   const video = e.target as HTMLVideoElement;
                   video.currentTime = 0;
@@ -38,7 +46,7 @@ const BannerListItem: React.FC<Props> = ({ banner, onToggleActive, onDelete }) =
               </div>
             </>
           ) : (
-            <img src={banner.image_url} alt={banner.title} className="w-full h-full object-cover" />
+            <img src={mediaUrl} alt={banner.title} className="w-full h-full object-cover" onError={() => setFailed(true)} />
           )}
         </div>
 

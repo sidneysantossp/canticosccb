@@ -1,4 +1,7 @@
-import 'dotenv/config';
+try {
+  await import('dotenv/config');
+} catch {}
+
 import { createClient } from '@supabase/supabase-js';
 import { S3Client, PutObjectCommand, HeadObjectCommand } from '@aws-sdk/client-s3';
 

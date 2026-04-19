@@ -5,6 +5,7 @@ const STORAGE_URL_REGEX = /storage\/v1\/object\/public\/([^\/]+)/i;
 export async function getSignedSupabaseUrl(value: string, fallbackBucket = 'hinos'): Promise<string> {
   if (!value) return value;
   if (!isSupabaseConfigured) return value;
+  if (/^(blob:|data:)/i.test(value)) return value;
 
   if (/^https?:\/\/.+storage\/v1\/object\/public\//i.test(value)) {
     return value;
@@ -15,6 +16,17 @@ export async function getSignedSupabaseUrl(value: string, fallbackBucket = 'hino
 
   try {
     const parsed = new URL(value, window.location.origin);
+    const isSameOrigin = parsed.origin === window.location.origin;
+    const isApiRoute = parsed.pathname.startsWith('/api/');
+    const isExternalNonSupabase =
+      /^https?:$/i.test(parsed.protocol) &&
+      !/supabase\.co$/i.test(parsed.hostname) &&
+      !parsed.pathname.includes('/storage/v1/object/');
+
+    if ((isSameOrigin && isApiRoute) || isExternalNonSupabase) {
+      return value;
+    }
+
     const typeParam = parsed.searchParams.get('type');
     const fileParam = parsed.searchParams.get('file');
     if (fileParam) {

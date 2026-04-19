@@ -4,6 +4,7 @@ import useCopyrightClaimsStore from '@/stores/copyrightClaimsStore';
 import { getLogoByType } from '@/lib/mockApis';
 import { getOpenReportsCount } from '@/lib/admin/reportsApi';
 import { getAdminStats } from '@/lib/admin/adminStatsApi';
+import { getSupportInboxStats } from '@/lib/supportChatApi';
 import {
   LayoutDashboard,
   Music,
@@ -36,7 +37,8 @@ import {
   Book,
   BookOpen,
   Copyright,
-  Bell
+  Bell,
+  Clock
 } from 'lucide-react';
 
 const AdminSidebar: React.FC = () => {
@@ -45,8 +47,10 @@ const AdminSidebar: React.FC = () => {
   const { getPendingClaimsCount, loadClaims } = useCopyrightClaimsStore();
   const [pendingComposersCount, setPendingComposersCount] = useState(0);
   const [pendingSongsCount, setPendingSongsCount] = useState(0);
+  const [pendingAlbumsCount, setPendingAlbumsCount] = useState(0);
   const [approvalsCount, setApprovalsCount] = useState(0);
   const [openReportsCount, setOpenReportsCount] = useState(0);
+  const [supportUnreadCount, setSupportUnreadCount] = useState(0);
   const [logoSrc, setLogoSrc] = useState<string>('https://canticosccb.com.br/logo-canticos-ccb.png');
 
   useEffect(() => {
@@ -59,7 +63,8 @@ const AdminSidebar: React.FC = () => {
         const stats = await getAdminStats();
         setPendingComposersCount(stats.pendingComposers);
         setPendingSongsCount(stats.pendingSongs);
-        setApprovalsCount(stats.pendingSongs + stats.pendingComposers);
+        setPendingAlbumsCount(stats.pendingAlbums);
+        setApprovalsCount(stats.pendingSongs + stats.pendingAlbums + stats.pendingComposers);
       } catch (error) {
         console.error('Erro ao carregar contagens do admin:', error);
       }
@@ -82,6 +87,21 @@ const AdminSidebar: React.FC = () => {
 
     void loadOpenCount();
     const interval = setInterval(loadOpenCount, 30000);
+    return () => clearInterval(interval);
+  }, []);
+
+  useEffect(() => {
+    const loadSupportCount = async () => {
+      try {
+        const stats = await getSupportInboxStats({ role: 'admin' });
+        setSupportUnreadCount(stats.unread);
+      } catch (error) {
+        console.error('Erro ao carregar contagem do chat:', error);
+      }
+    };
+
+    void loadSupportCount();
+    const interval = setInterval(loadSupportCount, 30000);
     return () => clearInterval(interval);
   }, []);
 
@@ -135,7 +155,8 @@ const AdminSidebar: React.FC = () => {
       icon: Music,
       items: [
         { path: '/admin/hymns', label: 'Hinos', icon: Music },
-        { path: '/admin/songs/pending', label: 'Aprovação Pendente', icon: CheckCircle, badge: pendingSongsCount },
+        { path: '/admin/songs/pending', label: 'Hinos Pendentes', icon: CheckCircle, badge: pendingSongsCount },
+        { path: '/admin/albums/pending', label: 'Álbuns Pendentes', icon: Clock, badge: pendingAlbumsCount },
         { path: '/admin/albums', label: 'Álbuns', icon: Album },
         { path: '/admin/collections', label: 'Coletâneas', icon: Layers },
         { path: '/admin/bible-narrated', label: 'Bíblia Narrada', icon: Book },
@@ -182,6 +203,7 @@ const AdminSidebar: React.FC = () => {
       title: 'Notificações',
       icon: Bell,
       items: [
+        { path: '/admin/chat', label: 'Chat', icon: MessageSquare, badge: supportUnreadCount },
         { path: '/admin/notices', label: 'Avisos', icon: Megaphone }
       ]
     },
@@ -236,7 +258,7 @@ const AdminSidebar: React.FC = () => {
       title: 'Ferramentas',
       icon: Wrench,
       items: [
-        { path: '/admin/archive-import', label: 'Importar do Archive', icon: Database },
+        { path: '/admin/acervo/importar', label: 'Importar Acervo', icon: Database },
         { path: '/admin/import', label: 'Importação', icon: Database },
         { path: '/admin/export', label: 'Exportação', icon: Database },
         { path: '/admin/backup', label: 'Backup', icon: Shield },

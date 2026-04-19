@@ -156,18 +156,23 @@ const Player: React.FC<PlayerProps> = ({ isHidden = false }) => {
       return;
     }
 
-    const isCurrentlyFavorite = isFavorite(parseInt(currentTrack.id));
-    const uid = user?.id ? Number(user.id) : undefined;
+    const currentId = String(currentTrack.id);
+    const isCurrentlyFavorite = isFavorite(currentId);
+    const uid = user?.id;
     if (isCurrentlyFavorite) {
-      removeFavorite(parseInt(currentTrack.id), uid);
+      removeFavorite(currentId, uid);
     } else {
       addFavorite({
-        id: parseInt(currentTrack.id),
+        id: currentId,
         title: currentTrack.title,
         artist: currentTrack.artist,
         album: 'album' in currentTrack ? (currentTrack as any).album : 'Álbum Desconhecido',
         duration: currentTrack.duration || '0:00',
-        coverUrl: currentTrack.coverUrl
+        coverUrl: currentTrack.coverUrl,
+        audioUrl: currentTrack.audioUrl,
+        youtubeSource: currentTrack.youtubeSource,
+        number: currentTrack.number,
+        category: currentTrack.category,
       }, uid);
     }
   };
@@ -226,13 +231,13 @@ const Player: React.FC<PlayerProps> = ({ isHidden = false }) => {
 
               <button
                 onClick={handleFavoriteToggle}
-                className={`transition-colors flex-shrink-0 p-1 ${isFavorite(parseInt(currentTrack.id))
+                className={`transition-colors flex-shrink-0 p-1 ${isFavorite(String(currentTrack.id))
                     ? 'text-primary-500 hover:text-red-500'
                     : 'text-gray-400 hover:text-white'
                   }`}
-                title={isFavorite(parseInt(currentTrack.id)) ? 'Remover dos favoritos' : 'Adicionar aos favoritos'}
+                title={isFavorite(String(currentTrack.id)) ? 'Remover dos favoritos' : 'Adicionar aos favoritos'}
               >
-                <Heart className={`w-4 h-4 md:w-5 md:h-5 ${isFavorite(parseInt(currentTrack.id)) ? 'fill-current' : ''}`} />
+                <Heart className={`w-4 h-4 md:w-5 md:h-5 ${isFavorite(String(currentTrack.id)) ? 'fill-current' : ''}`} />
               </button>
             </div>
 

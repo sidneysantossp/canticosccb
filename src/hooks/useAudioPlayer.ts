@@ -3,11 +3,21 @@ import { usePlayerStore } from '@/stores/playerStore';
 import { useAuth } from '@/contexts/AuthContext';
 import { getSignedSupabaseUrl } from '@/lib/supabaseMedia';
 import {
+  getSharedPlayerAudioElement,
+  IMMEDIATE_PLAYER_REQUEST_EVENT,
+  type ImmediatePlaybackDetail,
+} from '@/lib/playerImmediatePlayback';
+import {
   getCachedEmergencyPlaybackUrl,
   isEmergencyArchiveRouteUrl,
   resolveEmergencyPlaybackUrl,
 } from '@/lib/emergencyAudioPlayback';
-import { resolveTrackAudioUrl } from '@/lib/playableAudio';
+import {
+  getEmergencyArchiveRouteForTrack,
+  getServerAudioFallbackRouteForTrack,
+  resolveTrackAudioUrl,
+} from '@/lib/playableAudio';
+import { normalizeYoutubeSource } from '@/lib/youtubeSource';
 
 export const useAudioPlayer = () => {
   const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -15,6 +25,10 @@ export const useAudioPlayer = () => {
   const blobUrlRef = useRef<string | null>(null);
   const startedAtRef = useRef<number | null>(null);
   const trackIdRef = useRef<number | string | null>(null);
+  const lastImmediateRequestRef = useRef<{ trackId: string; audioUrl: string; requestedAt: number } | null>(null);
+  const latestTrackRef = useRef<any>(null);
+  const emergencyFallbackKeyRef = useRef<string | null>(null);
+  const serverFallbackKeyRef = useRef<string | null>(null);
   const listenersAttachedRef = useRef(false);
   const latestPrefsRef = useRef<{ autoplay: boolean; gaplessPlayback: boolean; crossfade: boolean } | null>(null);
   const latestVolumeRef = useRef<number>(1);
@@ -34,6 +48,37 @@ export const useAudioPlayer = () => {
 
   const SETTINGS_STORAGE_KEY = 'user_settings_prefs_v1';
   const [prefs, setPrefs] = useState<{ autoplay: boolean; gaplessPlayback: boolean; crossfade: boolean } | null>(null);
+  const normalizedYoutubeSource = normalizeYoutubeSource((currentTrack as any)?.youtubeSource);
+
+  const normalizeAudioUrl = (value?: string | null) => {
+    const raw = String(value || '').trim();
+    if (!raw) return '';
+
+    try {
+      return new URL(raw, window.location.origin).toString();
+    } catch {
+      return raw;
+    }
+  };
+
+  const shouldUseDirectAudioUrl = (value?: string | null) => {
+    const normalized = normalizeAudioUrl(value);
+    if (!normalized) return false;
+
+    if (/^(blob:|data:)/i.test(normalized)) return true;
+    if (isEmergencyArchiveRouteUrl(normalized)) return true;
+
+    try {
+      const parsed = new URL(normalized, window.location.origin);
+      const hostname = parsed.hostname.toLowerCase();
+      if (hostname === 'media.canticosccb.com.br') return true;
+      if (parsed.origin === window.location.origin && parsed.pathname.startsWith('/api/')) return true;
+    } catch {
+      return false;
+    }
+
+    return false;
+  };
 
   const attemptPlayback = (audio: HTMLAudioElement) => {
     audio.muted = false;
@@ -124,14 +169,21 @@ export const useAudioPlayer = () => {
   // Manter refs com os últimos valores para uso nos listeners
   useEffect(() => { latestPrefsRef.current = prefs; }, [prefs]);
   useEffect(() => { latestVolumeRef.current = volume; }, [volume]);
+  useEffect(() => {
+    latestTrackRef.current = currentTrack;
+    emergencyFallbackKeyRef.current = null;
+    serverFallbackKeyRef.current = null;
+  }, [currentTrack?.id, currentTrack?.title, currentTrack?.audioUrl, (currentTrack as any)?.number, normalizedYoutubeSource]);
 
   // Criar e configurar elemento de áudio persistente e listeners uma única vez
   useEffect(() => {
     if (!audioRef.current) {
       try {
-        audioRef.current = new Audio();
-        try { (audioRef.current as any).crossOrigin = 'anonymous'; } catch { }
-        try { audioRef.current.setAttribute('crossorigin', 'anonymous'); } catch { }
+        audioRef.current = getSharedPlayerAudioElement() || new Audio();
+        // O player só precisa reproduzir mídia remota; não lemos samples do áudio,
+        // então forçar crossorigin aqui só cria bloqueios desnecessários no preview local.
+        try { (audioRef.current as any).crossOrigin = null; } catch { }
+        try { audioRef.current.removeAttribute('crossorigin'); } catch { }
         audioRef.current.preload = 'auto';
         (audioRef.current as any).playsInline = true;
         audioRef.current.defaultMuted = false;
@@ -139,7 +191,9 @@ export const useAudioPlayer = () => {
         audioRef.current.volume = 1.0;
         // iOS: adicionar ao DOM para garantir que o áudio funcione
         audioRef.current.style.display = 'none';
-        document.body.appendChild(audioRef.current);
+        if (!document.body.contains(audioRef.current)) {
+          document.body.appendChild(audioRef.current);
+        }
       } catch { }
     }
     // Garante volume inicial não-zero
@@ -162,12 +216,96 @@ export const useAudioPlayer = () => {
       };
 
       const onError = (e: Event) => {
-        setIsLoading(false);
         const src = audio.currentSrc || audio.src || '';
         if (!src) {
+          setIsLoading(false);
           return;
         }
 
+        const fallbackTrack = latestTrackRef.current;
+        const serverFallbackRoute = getServerAudioFallbackRouteForTrack({
+          id: fallbackTrack?.id,
+          title: fallbackTrack?.title,
+          number: fallbackTrack?.number,
+          audioUrl: fallbackTrack?.audioUrl,
+          youtubeSource: fallbackTrack?.youtubeSource,
+        });
+        const serverFallbackKey = serverFallbackRoute
+          ? `${fallbackTrack?.id || fallbackTrack?.number || fallbackTrack?.title || 'track'}:${serverFallbackRoute}`
+          : '';
+        const emergencyRoute = getEmergencyArchiveRouteForTrack({
+          title: fallbackTrack?.title,
+          number: fallbackTrack?.number,
+          audioUrl: fallbackTrack?.audioUrl,
+          youtubeSource: fallbackTrack?.youtubeSource,
+        });
+        const emergencyFallbackKey = emergencyRoute
+          ? `${fallbackTrack?.id || fallbackTrack?.number || fallbackTrack?.title || 'track'}:${emergencyRoute}`
+          : '';
+
+        if (
+          serverFallbackRoute
+          && src !== serverFallbackRoute
+          && serverFallbackKey
+          && serverFallbackKeyRef.current !== serverFallbackKey
+        ) {
+          console.warn('⚠️ Áudio principal falhou; tentando fallback server-side...', {
+            src,
+            serverFallbackRoute,
+            code: audio.error?.code,
+            message: audio.error?.message,
+            event: e.type,
+          });
+
+          serverFallbackKeyRef.current = serverFallbackKey;
+          setIsLoading(true);
+
+          try {
+            audio.pause();
+            audio.src = serverFallbackRoute;
+            audio.load();
+
+            if (usePlayerStore.getState().isPlaying) {
+              attemptPlayback(audio);
+            }
+            return;
+          } catch (fallbackError) {
+            console.warn('⚠️ Fallback server-side falhou ao preparar o player:', fallbackError);
+          }
+        }
+
+        if (
+          emergencyRoute
+          && !isEmergencyArchiveRouteUrl(src)
+          && emergencyFallbackKey
+          && emergencyFallbackKeyRef.current !== emergencyFallbackKey
+        ) {
+          console.warn('⚠️ Áudio principal falhou; tentando fallback do acervo...', {
+            src,
+            emergencyRoute,
+            code: audio.error?.code,
+            message: audio.error?.message,
+            event: e.type,
+          });
+
+          emergencyFallbackKeyRef.current = emergencyFallbackKey;
+          setIsLoading(true);
+
+          try {
+            audio.pause();
+            audio.src = emergencyRoute;
+            audio.load();
+
+            if (usePlayerStore.getState().isPlaying) {
+              attemptPlayback(audio);
+            }
+            return;
+          } catch (fallbackError) {
+            console.warn('⚠️ Fallback do acervo também falhou ao preparar o player:', fallbackError);
+          }
+        }
+
+        setIsLoading(false);
         console.warn('⚠️ Erro ao carregar áudio:', {
           src,
           code: audio.error?.code,
@@ -223,12 +361,44 @@ export const useAudioPlayer = () => {
         }
       };
 
+      const onImmediatePlaybackRequest = (event: Event) => {
+        const customEvent = event as CustomEvent<ImmediatePlaybackDetail>;
+        const detail = customEvent.detail;
+        if (!detail?.audioUrl) return;
+
+        setIsLoading(true);
+
+        try {
+          const normalizedRequestedUrl = normalizeAudioUrl(detail.audioUrl);
+          const normalizedCurrentUrl = normalizeAudioUrl(audio.currentSrc || audio.src);
+          lastImmediateRequestRef.current = {
+            trackId: String(detail.trackId || ''),
+            audioUrl: normalizedRequestedUrl,
+            requestedAt: Date.now(),
+          };
+
+          if (normalizedCurrentUrl !== normalizedRequestedUrl) {
+            audio.pause();
+            audio.currentTime = 0;
+            audio.src = detail.audioUrl;
+            audio.load();
+          }
+
+          startedAtRef.current = Date.now();
+          trackIdRef.current = detail.trackId || trackIdRef.current;
+          attemptPlayback(audio);
+        } catch (error) {
+          console.warn('⚠️ Não foi possível iniciar reprodução imediata:', error);
+        }
+      };
+
       audio.addEventListener('loadeddata', onLoadedData);
       audio.addEventListener('loadedmetadata', onLoadedMetadata);
       audio.addEventListener('error', onError);
       audio.addEventListener('timeupdate', onTimeUpdate);
       audio.addEventListener('playing', onPlaying);
       audio.addEventListener('ended', onEnded);
+      window.addEventListener(IMMEDIATE_PLAYER_REQUEST_EVENT, onImmediatePlaybackRequest as EventListener);
 
       listenersAttachedRef.current = true;
 
@@ -239,6 +409,7 @@ export const useAudioPlayer = () => {
         audio.removeEventListener('timeupdate', onTimeUpdate);
         audio.removeEventListener('playing', onPlaying);
         audio.removeEventListener('ended', onEnded);
+        window.removeEventListener(IMMEDIATE_PLAYER_REQUEST_EVENT, onImmediatePlaybackRequest as EventListener);
         listenersAttachedRef.current = false;
         audio.pause();
         audio.removeAttribute('src');
@@ -250,7 +421,7 @@ export const useAudioPlayer = () => {
   // Carregar e reproduzir quando há uma nova faixa
   useEffect(() => {
     // Se a faixa usa YouTube oculto, não carregar no <Audio> HTML
-    const hasYoutubeSource = !!(currentTrack as any)?.youtubeSource;
+    const hasYoutubeSource = Boolean(normalizedYoutubeSource);
     if (hasYoutubeSource) {
       // Pausar áudio HTML se estiver tocando (YouTube player cuida)
       if (audioRef.current) {
@@ -262,10 +433,11 @@ export const useAudioPlayer = () => {
     }
 
     const resolvedTrackAudioUrl = resolveTrackAudioUrl({
+      id: (currentTrack as any)?.id ?? (currentTrack as any)?.hino_id ?? null,
       title: (currentTrack as any)?.title,
       number: (currentTrack as any)?.number,
       audioUrl: currentTrack?.audioUrl,
-      youtubeSource: (currentTrack as any)?.youtubeSource,
+      youtubeSource: normalizedYoutubeSource,
     });
 
     if (resolvedTrackAudioUrl) {
@@ -347,11 +519,38 @@ export const useAudioPlayer = () => {
                 audioUrl = emergencyRouteUrl;
               }
             }
-          } else {
+          } else if (!shouldUseDirectAudioUrl(audioUrl)) {
             audioUrl = await getSignedSupabaseUrl(audioUrl, 'hinos');
           }
 
-          if (audio.src && audio.src !== audioUrl) {
+          const normalizedResolvedUrl = normalizeAudioUrl(audioUrl);
+          const normalizedCurrentUrl = normalizeAudioUrl(audio.currentSrc || audio.src);
+          const recentImmediateRequest = lastImmediateRequestRef.current;
+          const shouldReuseImmediatePlayback =
+            !!recentImmediateRequest &&
+            recentImmediateRequest.trackId === String(resolvedId || '') &&
+            recentImmediateRequest.audioUrl === normalizedResolvedUrl &&
+            Date.now() - recentImmediateRequest.requestedAt < 5000;
+
+          if (shouldReuseImmediatePlayback && normalizedCurrentUrl === normalizedResolvedUrl) {
+            audio.muted = false;
+            audio.volume = Math.max(0.1, volume);
+            if (usePlayerStore.getState().isPlaying && audio.paused) {
+              attemptPlayback(audio);
+            }
+            return;
+          }
+
+          if (normalizedCurrentUrl === normalizedResolvedUrl && trackIdRef.current === resolvedId) {
+            audio.muted = false;
+            audio.volume = Math.max(0.1, volume);
+            if (usePlayerStore.getState().isPlaying && audio.paused) {
+              attemptPlayback(audio);
+            }
+            return;
+          }
+
+          if (audio.src && normalizedCurrentUrl !== normalizedResolvedUrl) {
             audio.pause();
           }
           audio.src = audioUrl;
@@ -372,7 +571,7 @@ export const useAudioPlayer = () => {
       prepareAndLoad();
 
     }
-  }, [currentTrack?.audioUrl, (currentTrack as any)?.number, (currentTrack as any)?.youtubeSource, volume]);
+  }, [currentTrack?.id, currentTrack?.title, currentTrack?.audioUrl, (currentTrack as any)?.number, normalizedYoutubeSource, volume]);
 
   useEffect(() => {
     return () => {
@@ -385,7 +584,7 @@ export const useAudioPlayer = () => {
   // Controlar play/pause
   useEffect(() => {
     // Se é YouTube, o useYoutubePlayer controla
-    const hasYoutubeSource = !!(currentTrack as any)?.youtubeSource;
+    const hasYoutubeSource = Boolean(normalizedYoutubeSource);
     if (hasYoutubeSource) return;
 
     const audio = audioRef.current;
@@ -396,7 +595,7 @@ export const useAudioPlayer = () => {
     } else {
       audio.pause();
     }
-  }, [isPlaying, pause, currentTrack?.audioUrl, (currentTrack as any)?.number, (currentTrack as any)?.youtubeSource]);
+  }, [isPlaying, pause, currentTrack?.id, currentTrack?.title, currentTrack?.audioUrl, (currentTrack as any)?.number, normalizedYoutubeSource]);
 
   // iOS: tentar retomar reprodução ao voltar para a aba (backgrounding pode pausar)
   useEffect(() => {

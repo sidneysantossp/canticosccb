@@ -3,6 +3,7 @@ import { X, Music, Plus } from 'lucide-react';
 import usePlaylistsStore from '@/stores/playlistsStore';
 import * as playlistsApi from '@/lib/playlistsApi';
 import { useToast } from '@/contexts/ToastContext';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface TrackBrief {
   id: string | number;
@@ -10,6 +11,10 @@ interface TrackBrief {
   artist: string;
   duration: string;
   coverUrl?: string;
+  audioUrl?: string;
+  youtubeSource?: string;
+  number?: number;
+  category?: string;
 }
 
 interface AddToPlaylistModalProps {
@@ -20,8 +25,9 @@ interface AddToPlaylistModalProps {
 }
 
 export default function AddToPlaylistModal({ isOpen, onClose, track, bulkTracks }: AddToPlaylistModalProps) {
-  const { playlists, addTrackToPlaylist, createPlaylist } = usePlaylistsStore();
+  const { playlists, addTrackToPlaylist, createPlaylist, upsertPlaylist } = usePlaylistsStore();
   const { showToast } = useToast();
+  const { user } = useAuth();
   const [isCreating, setIsCreating] = useState(false);
   const [newPlaylistName, setNewPlaylistName] = useState('');
 
@@ -36,32 +42,91 @@ export default function AddToPlaylistModal({ isOpen, onClose, track, bulkTracks 
 
     try {
       setIsCreating(true);
-      const newPlaylist = await createPlaylist(newPlaylistName.trim());
+      let newPlaylist = createPlaylist(newPlaylistName.trim());
+
+      if (user?.id) {
+        const created = await playlistsApi.create({
+          userId: user.id,
+          name: newPlaylistName.trim(),
+          description: '',
+          coverUrl: '',
+          isPublic: true,
+        });
+
+        newPlaylist = {
+          id: String(created.id),
+          name: created.name,
+          description: created.description || undefined,
+          coverUrl: created.cover_url || newPlaylist.coverUrl,
+          tracks: (created.tracks || []).map((t) => ({
+            id: String(t.id),
+            title: t.title,
+            artist: t.artist,
+            coverUrl: t.cover_url || '',
+            duration: t.duration || '0:00',
+            backendTrackId: String(t.id),
+            audioUrl: t.audio_url || undefined,
+            youtubeSource: t.youtube_source || undefined,
+            number: t.number,
+            category: t.category,
+            position: t.position ?? undefined,
+            createdAt: t.created_at,
+          })),
+          createdAt: created.created_at,
+          updatedAt: created.updated_at,
+        };
+        upsertPlaylist(newPlaylist);
+      }
       
-      // Adicionar tracks à nova playlist se houver
       if (isBulk && bulkTracks) {
         for (const t of bulkTracks) {
-          const trackIdNum = typeof t.id === 'string' ? (isNaN(parseInt(t.id)) ? Date.now() : parseInt(t.id)) : t.id;
+          if (user?.id && !newPlaylist.id.startsWith('playlist_')) {
+            await playlistsApi.addTrack({
+              playlistId: newPlaylist.id,
+              trackId: t.id,
+              title: t.title,
+              artist: t.artist,
+              duration: t.duration,
+              coverUrl: t.coverUrl,
+            });
+          }
           addTrackToPlaylist(newPlaylist.id, {
-            id: trackIdNum,
+            id: String(t.id),
             title: t.title,
             artist: t.artist,
             duration: t.duration,
             coverUrl: t.coverUrl || '',
-            backendTrackId: String(t.id)
+            backendTrackId: String(t.id),
+            audioUrl: t.audioUrl,
+            youtubeSource: t.youtubeSource,
+            number: t.number,
+            category: t.category,
           } as any);
         }
         onClose();
         showToast('success', 'Playlist criada', `"${newPlaylistName}" criada com ${bulkTracks.length} hinos.`);
       } else if (track) {
-        const trackIdNum = typeof track.id === 'string' ? (isNaN(parseInt(track.id)) ? Date.now() : parseInt(track.id)) : track.id;
+        if (user?.id && !newPlaylist.id.startsWith('playlist_')) {
+          await playlistsApi.addTrack({
+            playlistId: newPlaylist.id,
+            trackId: track.id,
+            title: track.title,
+            artist: track.artist,
+            duration: track.duration,
+            coverUrl: track.coverUrl,
+          });
+        }
         addTrackToPlaylist(newPlaylist.id, {
-          id: trackIdNum,
+          id: String(track.id),
           title: track.title,
           artist: track.artist,
           duration: track.duration,
           coverUrl: track.coverUrl || '',
-          backendTrackId: String(track.id)
+          backendTrackId: String(track.id),
+          audioUrl: track.audioUrl,
+          youtubeSource: track.youtubeSource,
+          number: track.number,
+          category: track.category,
         } as any);
         onClose();
         showToast('success', 'Playlist criada', `"${newPlaylistName}" criada com "${track.title}".`);
@@ -82,12 +147,10 @@ export default function AddToPlaylistModal({ isOpen, onClose, track, bulkTracks 
 
   const handleAddToPlaylist = async (playlistId: string) => {
     try {
-      const numericId = /^\d+$/.test(String(playlistId));
+      const isLocalOnly = String(playlistId).startsWith('playlist_');
       if (isBulk && bulkTracks) {
-        // Adicionar vários
         for (const t of bulkTracks) {
-          const trackIdNum = typeof t.id === 'string' ? (isNaN(parseInt(t.id)) ? Date.now() : parseInt(t.id)) : t.id;
-          if (numericId) {
+          if (!isLocalOnly) {
             try {
               await playlistsApi.addTrack({
                 playlistId,
@@ -100,19 +163,22 @@ export default function AddToPlaylistModal({ isOpen, onClose, track, bulkTracks 
             } catch {}
           }
           addTrackToPlaylist(playlistId, {
-            id: trackIdNum,
+            id: String(t.id),
             title: t.title,
             artist: t.artist,
             duration: t.duration,
             coverUrl: t.coverUrl || '',
-            backendTrackId: String(t.id)
+            backendTrackId: String(t.id),
+            audioUrl: t.audioUrl,
+            youtubeSource: t.youtubeSource,
+            number: t.number,
+            category: t.category,
           } as any);
         }
         onClose();
         showToast('success', 'Adicionados à playlist', `${bulkTracks.length} hinos adicionados com sucesso.`);
       } else if (track) {
-        const trackIdNum = typeof track.id === 'string' ? (isNaN(parseInt(track.id)) ? Date.now() : parseInt(track.id)) : track.id;
-        if (numericId) {
+        if (!isLocalOnly) {
           await playlistsApi.addTrack({
             playlistId,
             trackId: track.id,
@@ -123,12 +189,16 @@ export default function AddToPlaylistModal({ isOpen, onClose, track, bulkTracks 
           });
         }
         addTrackToPlaylist(playlistId, {
-          id: trackIdNum,
+          id: String(track.id),
           title: track.title,
           artist: track.artist,
           duration: track.duration,
           coverUrl: track.coverUrl || '',
-          backendTrackId: String(track.id)
+          backendTrackId: String(track.id),
+          audioUrl: track.audioUrl,
+          youtubeSource: track.youtubeSource,
+          number: track.number,
+          category: track.category,
         } as any);
         onClose();
         showToast('success', 'Adicionada à playlist', `"${track.title}" foi adicionada com sucesso.`);

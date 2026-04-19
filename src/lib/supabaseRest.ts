@@ -6,6 +6,23 @@ const SUPABASE_ANON_KEY = String(import.meta.env.VITE_SUPABASE_ANON_KEY ?? '').t
 
 export const isSupabaseConfigured = Boolean(SUPABASE_URL && SUPABASE_ANON_KEY);
 const isDebugEnabled = import.meta.env.DEV;
+const PUBLIC_FETCH_TIMEOUT_MS = 3500;
+const EMERGENCY_FIRST_TABLES = new Set([
+  'hinos',
+  'albums',
+  'composers',
+  'playlists',
+  'categorias',
+  'album_hinos',
+  'hino_categorias',
+  'hinario',
+  'banners',
+  'site_config',
+  'cifras',
+  'cifra_public_catalog',
+  'bible_narrated',
+  'user_follows',
+]);
 const debugLog = (...args: unknown[]) => {
   if (isDebugEnabled) {
     console.log(...args);
@@ -15,6 +32,38 @@ const debugLog = (...args: unknown[]) => {
 // Simple in-memory cache with TTL
 const cache = new Map<string, { data: any; timestamp: number }>();
 const CACHE_TTL = 2 * 60 * 1000; // 2 minutes
+
+interface SupabaseFetchOptions {
+  bypassCache?: boolean;
+}
+
+function normalizeTableName(table: string) {
+  return String(table || '')
+    .trim()
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '');
+}
+
+function isPublicCatalogRoute() {
+  if (typeof window === 'undefined') return false;
+
+  const path = window.location.pathname || '/';
+  return !(
+    path.startsWith('/admin')
+    || path.startsWith('/compositor')
+    || path.startsWith('/chat')
+    || path.startsWith('/profile')
+    || path.startsWith('/biblioteca')
+    || path.startsWith('/library')
+    || path.startsWith('/downloads')
+    || path.startsWith('/settings')
+  );
+}
+
+function shouldUseEmergencyCatalogImmediately(table: string) {
+  return isPublicCatalogRoute() && EMERGENCY_FIRST_TABLES.has(normalizeTableName(table));
+}
 
 // Debug: Log configuration status on load
 if (typeof window !== 'undefined') {
@@ -120,7 +169,52 @@ function buildUrl(table: string, params: Record<string, string> = {}) {
   return url;
 }
 
+async function fetchWithTimeout(input: RequestInfo | URL, init: RequestInit = {}, timeoutMs = PUBLIC_FETCH_TIMEOUT_MS) {
+  const controller = new AbortController();
+  const timeoutId = window.setTimeout(() => controller.abort(), timeoutMs);
+
+  try {
+    return await fetch(input, {
+      ...init,
+      signal: controller.signal,
+    });
+  } catch (error) {
+    if ((error as Error)?.name === 'AbortError') {
+      throw new Error(`Supabase request timeout after ${timeoutMs}ms`);
+    }
+    throw error;
+  } finally {
+    window.clearTimeout(timeoutId);
+  }
+}
+
 export async function supabaseFetch<T>(table: string, params: Record<string, string> = {}): Promise<T[]> {
+  return supabaseFetchWithOptions<T>(table, params);
+}
+
+function invalidateTableCache(table: string) {
+  const tablePath = `/rest/v1/${table}`;
+  for (const key of cache.keys()) {
+    if (key.includes(tablePath)) {
+      cache.delete(key);
+    }
+  }
+}
+
+export function invalidateSupabaseCache(table?: string) {
+  if (!table) {
+    cache.clear();
+    return;
+  }
+
+  invalidateTableCache(table);
+}
+
+export async function supabaseFetchWithOptions<T>(
+  table: string,
+  params: Record<string, string> = {},
+  options: SupabaseFetchOptions = {}
+): Promise<T[]> {
   if (!isSupabaseConfigured) {
     console.warn(`[supabaseFetch] Supabase not configured, returning empty array for table: ${table}`);
     return [];
@@ -129,10 +223,16 @@ export async function supabaseFetch<T>(table: string, params: Record<string, str
   const url = buildUrl(table, params);
   const cacheKey = url.toString();
   const now = Date.now();
+
+  if (shouldUseEmergencyCatalogImmediately(table)) {
+    const fallbackRows = await getEmergencyRowsForTable(table, params);
+    cache.set(cacheKey, { data: fallbackRows, timestamp: now });
+    return fallbackRows as T[];
+  }
   
   // Check cache first
   const cached = cache.get(cacheKey);
-  if (cached && (now - cached.timestamp) < CACHE_TTL) {
+  if (!options.bypassCache && cached && (now - cached.timestamp) < CACHE_TTL) {
     debugLog(`[supabaseFetch] Cache hit for ${table}, returning ${cached.data.length} cached records`);
     return cached.data;
   }
@@ -142,7 +242,7 @@ export async function supabaseFetch<T>(table: string, params: Record<string, str
   try {
     const headers = buildHeaders();
     
-    const response = await fetch(url.toString(), {
+    const response = await fetchWithTimeout(url.toString(), {
       method: 'GET',
       headers,
     });
@@ -194,7 +294,7 @@ export async function supabaseAuthFetch<T>(table: string, params: Record<string,
 
   try {
     const headers = await buildAuthHeaders();
-    const response = await fetch(url.toString(), {
+    const response = await fetchWithTimeout(url.toString(), {
       method: 'GET',
       headers,
     });
@@ -251,6 +351,80 @@ export async function supabaseInsert<T>(table: string, data: any): Promise<T | n
   }
 }
 
+export async function supabasePublicInsert<T>(table: string, data: any): Promise<T | null> {
+  if (!isSupabaseConfigured) {
+    console.warn(`[supabasePublicInsert] Supabase not configured`);
+    return null;
+  }
+
+  const url = `${SUPABASE_URL}/rest/v1/${table}`;
+  debugLog(`[supabasePublicInsert] Inserting into ${table}:`, data);
+
+  try {
+    const response = await fetch(url.toString(), {
+      method: 'POST',
+      headers: { ...buildHeaders(), Prefer: 'return=representation' },
+      body: JSON.stringify(data),
+    });
+
+    if (!response.ok) {
+      const text = await response.text().catch(() => '');
+      console.error(`[supabasePublicInsert] Error ${response.status}:`, text);
+      throw new Error(`Insert failed: ${response.status} ${text}`);
+    }
+
+    const result = await response.json();
+    debugLog(`[supabasePublicInsert] Response for ${table}:`, result);
+    if (Array.isArray(result) && result.length === 0) {
+      throw new Error(`Insert into ${table} returned empty array`);
+    }
+    invalidateTableCache(table);
+    return Array.isArray(result) ? result[0] : result;
+  } catch (error) {
+    console.error(`[supabasePublicInsert] Exception:`, error);
+    throw error;
+  }
+}
+
+export async function supabasePublicUpsert<T>(table: string, data: any, onConflict?: string): Promise<T[]> {
+  if (!isSupabaseConfigured) {
+    console.warn(`[supabasePublicUpsert] Supabase not configured`);
+    return [];
+  }
+
+  const url = new URL(`${SUPABASE_URL}/rest/v1/${table}`);
+  if (onConflict) {
+    url.searchParams.set('on_conflict', onConflict);
+  }
+
+  debugLog(`[supabasePublicUpsert] Upserting into ${table}:`, data);
+
+  try {
+    const response = await fetch(url.toString(), {
+      method: 'POST',
+      headers: {
+        ...buildHeaders(),
+        Prefer: 'resolution=merge-duplicates,return=representation',
+      },
+      body: JSON.stringify(data),
+    });
+
+    if (!response.ok) {
+      const text = await response.text().catch(() => '');
+      console.error(`[supabasePublicUpsert] Error ${response.status}:`, text);
+      throw new Error(`Upsert failed: ${response.status} ${text}`);
+    }
+
+    const result = await response.json();
+    debugLog(`[supabasePublicUpsert] Result for ${table}:`, result);
+    invalidateTableCache(table);
+    return Array.isArray(result) ? result : [result];
+  } catch (error) {
+    console.error(`[supabasePublicUpsert] Exception:`, error);
+    throw error;
+  }
+}
+
 export async function supabaseUpdate<T>(table: string, filters: Record<string, string>, data: any): Promise<T[]> {
   if (!isSupabaseConfigured) {
     console.warn(`[supabaseUpdate] Supabase not configured`);
@@ -279,6 +453,7 @@ export async function supabaseUpdate<T>(table: string, filters: Record<string, s
     if (Array.isArray(result) && result.length === 0) {
       console.warn(`[supabaseUpdate] Update on ${table} returned empty array - possibly blocked by RLS or no matching rows`);
     }
+    invalidateTableCache(table);
     return Array.isArray(result) ? result : [result];
   } catch (error) {
     console.error(`[supabaseUpdate] Exception:`, error);
@@ -308,9 +483,39 @@ export async function supabaseDelete(table: string, filters: Record<string, stri
       return false;
     }
 
+    invalidateTableCache(table);
     return true;
   } catch (error) {
     console.error(`[supabaseDelete] Exception:`, error);
+    return false;
+  }
+}
+
+export async function supabasePublicDelete(table: string, filters: Record<string, string>): Promise<boolean> {
+  if (!isSupabaseConfigured) {
+    console.warn(`[supabasePublicDelete] Supabase not configured`);
+    return false;
+  }
+
+  const url = buildUrl(table, filters);
+  debugLog(`[supabasePublicDelete] Deleting from ${table}`);
+
+  try {
+    const response = await fetch(url.toString(), {
+      method: 'DELETE',
+      headers: buildHeaders(),
+    });
+
+    if (!response.ok) {
+      const text = await response.text().catch(() => '');
+      console.error(`[supabasePublicDelete] Error ${response.status}:`, text);
+      return false;
+    }
+
+    invalidateTableCache(table);
+    return true;
+  } catch (error) {
+    console.error(`[supabasePublicDelete] Exception:`, error);
     return false;
   }
 }

@@ -42,6 +42,7 @@ const NotificationsPage: React.FC = () => {
         .from('notifications')
         .select('id,title,message,type,link,is_read,created_at')
         .eq('user_id', user.id)
+        .neq('type', 'support_chat')
         .order('created_at', { ascending: false })
         .limit(50);
 
@@ -116,6 +117,7 @@ const NotificationsPage: React.FC = () => {
         .from('notifications')
         .update({ is_read: true })
         .eq('user_id', user.id)
+        .neq('type', 'support_chat')
         .eq('is_read', false);
 
       setNotifications(prev => prev.map(n => ({ ...n, lida: true })));

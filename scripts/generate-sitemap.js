@@ -34,7 +34,24 @@ loadEnvFile(path.resolve(__dirname, '..', '.env.local'));
 
 const SUPABASE_URL = (process.env.VITE_SUPABASE_URL || '').replace(/\/+$/, '');
 const SUPABASE_ANON_KEY = process.env.VITE_SUPABASE_ANON_KEY || '';
-const SITE_URL = 'https://canticosccb.com.br';
+const DEFAULT_SITE_URL = 'https://www.canticosccb.com.br';
+
+function normalizeSiteUrl(siteUrl = DEFAULT_SITE_URL) {
+  try {
+    const normalizedInput = /^https?:\/\//i.test(siteUrl) ? siteUrl : `https://${siteUrl}`;
+    const url = new URL(normalizedInput);
+
+    if (url.hostname === 'canticosccb.com.br') {
+      url.hostname = 'www.canticosccb.com.br';
+    }
+
+    return url.toString().replace(/\/+$/, '');
+  } catch {
+    return DEFAULT_SITE_URL;
+  }
+}
+
+const SITE_URL = normalizeSiteUrl(process.env.VITE_SITE_URL || DEFAULT_SITE_URL);
 let hadFetchFailure = false;
 
 if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {

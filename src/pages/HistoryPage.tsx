@@ -19,7 +19,7 @@ const HistoryPage: React.FC = () => {
       setIsLoading(true);
       setError(null);
       try {
-        const history = await historyApi.listHistory(Number(user.id), 100);
+        const history = await historyApi.listHistory(user.id, 100);
         setItems(history);
       } catch (err) {
         console.error('Erro ao carregar histórico:', err);
@@ -35,7 +35,7 @@ const HistoryPage: React.FC = () => {
   const clearHistory = async () => {
     if (!user?.id) return;
     try {
-      await historyApi.clearHistory(Number(user.id));
+      await historyApi.clearHistory(user.id);
       setItems([]);
     } catch (err) {
       console.error('Erro ao limpar histórico:', err);

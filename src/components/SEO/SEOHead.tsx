@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { getSiteRuntimeConfig, type RuntimeSeoSettings } from '@/lib/publicSiteConfig';
+import { DEFAULT_SITE_URL, normalizeAssetUrl, normalizeSiteUrl } from '@/utils/siteUrl';
 
 interface SEOProps {
   title: string;
@@ -54,15 +55,24 @@ const SEOHead: React.FC<SEOProps> = ({
 
   const siteName = runtimeSeo?.site_title || 'Cânticos CCB';
   const fullTitle = title.includes(siteName) ? title : `${title} | ${siteName}`;
-  const baseUrl = runtimeSeo?.site_url || import.meta.env.VITE_APP_URL || 'https://canticosccb.com.br';
+  const baseUrl = normalizeSiteUrl(
+    runtimeSeo?.site_url || import.meta.env.VITE_APP_URL || DEFAULT_SITE_URL,
+    DEFAULT_SITE_URL
+  );
   const cleanPath = window.location.pathname;
-  const defaultUrl = `${baseUrl}${cleanPath}`;
-  const canonicalUrl = canonical ? (canonical.startsWith('http') ? canonical : `${baseUrl}${canonical}`) : defaultUrl;
+  const defaultUrl = normalizeSiteUrl(`${baseUrl}${cleanPath}`, baseUrl);
+  const canonicalUrl = canonical
+    ? normalizeSiteUrl(canonical.startsWith('http') ? canonical : `${baseUrl}${canonical}`, baseUrl)
+    : defaultUrl;
   const resolvedDescription = description || runtimeSeo?.site_description || '';
   const resolvedKeywords = keywords || runtimeSeo?.site_keywords || undefined;
   const resolvedImage = ogImage || runtimeSeo?.og_image || '/logo-canticos-ccb.png';
-  const imageUrl = resolvedImage.startsWith('http') ? resolvedImage : `${baseUrl}${resolvedImage}`;
-  const pageUrl = ogUrl ? (ogUrl.startsWith('http') ? ogUrl : `${baseUrl}${ogUrl}`) : canonicalUrl;
+  const imageUrl = normalizeAssetUrl(
+    resolvedImage.startsWith('http') ? resolvedImage : `${baseUrl}${resolvedImage}`
+  );
+  const pageUrl = ogUrl
+    ? normalizeSiteUrl(ogUrl.startsWith('http') ? ogUrl : `${baseUrl}${ogUrl}`, baseUrl)
+    : canonicalUrl;
   const resolvedTwitterCard = twitterCard || runtimeSeo?.twitter_card || 'summary_large_image';
   const robotsContent = [
     noindex || runtimeSeo?.robots_index === false ? 'noindex' : 'index',

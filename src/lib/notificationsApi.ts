@@ -22,6 +22,7 @@ export async function getComposerNotifications(composerId: string, opts?: { limi
       .from('notifications')
       .select('*')
       .eq('composer_id', composerId)
+      .neq('type', 'support_chat')
       .order('created_at', { ascending: false })
       .limit(opts?.limit || 50);
 
@@ -74,7 +75,9 @@ export function subscribeToComposerNotifications(composerId: string, cb: (n: Com
         filter: `composer_id=eq.${composerId}`
       },
       (payload) => {
-        cb(payload.new as ComposerNotification);
+        const row = payload.new as ComposerNotification;
+        if (row?.type === 'support_chat') return;
+        cb(row);
       }
     )
     .subscribe();

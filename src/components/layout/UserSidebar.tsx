@@ -6,6 +6,7 @@ import {
   Library,
   Heart,
   ListMusic,
+  MessageSquare,
   Users,
   Grid,
   Music,
@@ -16,15 +17,37 @@ import {
 import { getLogoByType } from '@/lib/mockApis';
 import { useAuth } from '@/contexts/AuthContext';
 import { compositorGerentesApi } from '@/lib/api-client';
+import { getSupportInboxStats } from '@/lib/supportChatApi';
 
 const UserSidebar: React.FC = () => {
   const location = useLocation();
   const { user } = useAuth();
   const [isManager, setIsManager] = useState(false);
+  const [supportUnreadCount, setSupportUnreadCount] = useState(0);
 
   useEffect(() => {
     checkIfManager();
   }, [user]);
+
+  useEffect(() => {
+    const loadSupportCount = async () => {
+      if (!user?.id) {
+        setSupportUnreadCount(0);
+        return;
+      }
+
+      try {
+        const stats = await getSupportInboxStats({ userId: user.id, role: 'user' });
+        setSupportUnreadCount(stats.unread);
+      } catch {
+        setSupportUnreadCount(0);
+      }
+    };
+
+    void loadSupportCount();
+    const interval = setInterval(loadSupportCount, 30000);
+    return () => clearInterval(interval);
+  }, [user?.id]);
 
   const checkIfManager = async () => {
     if (!user?.id) return;
@@ -73,7 +96,12 @@ const UserSidebar: React.FC = () => {
       items: [
         { icon: Heart, label: 'Meus Favoritos', path: '/favoritos' },
         { icon: ListMusic, label: 'Minhas Playlists', path: '/library' },
-
+      ]
+    },
+    {
+      category: 'Atendimento',
+      items: [
+        { icon: MessageSquare, label: 'Chat', path: '/chat', badge: supportUnreadCount }
       ]
     }
   ];
@@ -116,6 +144,11 @@ const UserSidebar: React.FC = () => {
                         }`}
                     />
                     <span className="text-sm font-medium">{item.label}</span>
+                    {item.badge ? (
+                      <span className="ml-auto inline-flex min-w-[20px] items-center justify-center rounded-full bg-primary-500 px-1.5 py-0.5 text-[11px] font-bold text-black">
+                        {item.badge}
+                      </span>
+                    ) : null}
                     {/* Indicador ativo/hover (barra direita) */}
                     <span
                       className={`absolute right-0 top-1/2 -translate-y-1/2 w-1 h-4 rounded-l ${active ? 'bg-yellow-500' : 'bg-yellow-500/0 group-hover:bg-yellow-500/60'

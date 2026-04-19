@@ -6,6 +6,7 @@
  */
 import { useEffect, useRef, useCallback } from 'react';
 import { usePlayerStore } from '@/stores/playerStore';
+import { normalizeYoutubeSource } from '@/lib/youtubeSource';
 
 declare global {
   interface Window {
@@ -58,7 +59,7 @@ export const useYoutubePlayer = () => {
   const isPlaying = usePlayerStore((s) => s.isPlaying);
   const volume = usePlayerStore((s) => s.volume);
 
-  const youtubeSource = (currentTrack as any)?.youtubeSource || null;
+  const youtubeSource = normalizeYoutubeSource((currentTrack as any)?.youtubeSource) || null;
 
   // Garantir container no DOM (uma vez, fora do ciclo de vida do React)
   const ensureContainer = useCallback(() => {

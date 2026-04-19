@@ -2,7 +2,9 @@
  * Utilitários para geração e validação de slugs SEO-friendly
  */
 
-const SITE_URL = 'https://canticosccb.com.br';
+import { DEFAULT_SITE_URL } from '@/utils/siteUrl';
+
+const SITE_URL = DEFAULT_SITE_URL;
 
 /**
  * Gera um slug a partir de um texto

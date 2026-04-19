@@ -4,6 +4,7 @@ import { ArrowLeft, Play, Pause, Heart, Music, ListPlus, Share2, Plus, Search, X
 import { DEFAULT_COVER_URL } from '@/lib/config';
 import { supabaseFetch, isSupabaseConfigured } from '@/lib/supabaseRest';
 import { getAll as getAllCategories } from '@/lib/categoriesApi';
+import { getEmergencyCatalog } from '@/lib/emergencyCatalog';
 import { usePlayerStore } from '@/stores/playerStore';
 import useFavoritesStore from '@/stores/favoritesStore';
 import { usePlayerContext } from '@/contexts/PlayerContext';
@@ -13,6 +14,7 @@ import LoginRequiredModal from '@/components/modals/LoginRequiredModal';
 import SEOHead from '@/components/SEO/SEOHead';
 import { generateBreadcrumbSchema, generateItemListSchema } from '@/utils/schemaGenerator';
 import { buildHinoUrl } from '@/utils/slugUrl';
+import { buildAlbumCoverUrl, buildHinoUrl as buildPlayableHinoUrl } from '@/lib/media-helper';
 
 interface Category {
   id: string;
@@ -34,6 +36,7 @@ interface Song {
   cover_url?: string;
   audio_url?: string;
   plays_count?: number;
+  youtube_source?: string;
 }
 
 const normalizeCategoryText = (value: string) =>
@@ -42,6 +45,28 @@ const normalizeCategoryText = (value: string) =>
     .replace(/[\u0300-\u036f]/g, '')
     .toLowerCase()
     .trim();
+
+const normalizeCategorySlug = (value: string) =>
+  normalizeCategoryText(value)
+    .replace(/[_\s]+/g, '-')
+    .replace(/-+/g, '-')
+    .replace(/^-+|-+$/g, '');
+
+const CATEGORY_SLUG_ALIASES: Record<string, string[]> = {
+  avulsos: ['avulsos', 'hinos-avulsos', 'hinos-avulsos-ccb'],
+  'hinos-avulsos': ['avulsos', 'hinos-avulsos', 'hinos-avulsos-ccb'],
+  'hinos-avulsos-ccb': ['avulsos', 'hinos-avulsos', 'hinos-avulsos-ccb'],
+  cantados: ['cantados', 'hinos-cantados', 'hinos-cantados-ccb'],
+  'hinos-cantados': ['cantados', 'hinos-cantados', 'hinos-cantados-ccb'],
+  'hinos-cantados-ccb': ['cantados', 'hinos-cantados', 'hinos-cantados-ccb'],
+  tocados: ['tocados', 'hinos-tocados', 'hinos-tocados-ccb', 'instrumentais'],
+  'hinos-tocados': ['tocados', 'hinos-tocados', 'hinos-tocados-ccb', 'instrumentais'],
+  'hinos-tocados-ccb': ['tocados', 'hinos-tocados', 'hinos-tocados-ccb', 'instrumentais'],
+  instrumentais: ['instrumentais', 'tocados', 'hinos-tocados', 'hinos-tocados-ccb'],
+  'hinario-5': ['hinario-5', 'hinario5', 'hinario-5-ccb'],
+  hinario5: ['hinario-5', 'hinario5', 'hinario-5-ccb'],
+  'hinario-5-ccb': ['hinario-5', 'hinario5', 'hinario-5-ccb'],
+};
 
 const slugToTitle = (value: string) =>
   String(value || '')
@@ -62,6 +87,138 @@ const buildCategorySearchTerms = (slugValue: string, categoryName?: string) => {
     const normalized = normalizeCategoryText(value);
     return normalized && list.findIndex((candidate) => normalizeCategoryText(candidate) === normalized) === index;
   });
+};
+
+const buildCategorySlugCandidates = (slugValue: string, categoryName?: string) => {
+  const normalizedSlug = normalizeCategorySlug(slugValue);
+  const normalizedName = normalizeCategorySlug(categoryName || '');
+  const directAliases = CATEGORY_SLUG_ALIASES[normalizedSlug] || CATEGORY_SLUG_ALIASES[normalizedName] || [];
+
+  return Array.from(
+    new Set(
+      [
+        normalizedSlug,
+        normalizedName,
+        normalizedSlug.replace(/^hinos-/, ''),
+        normalizedSlug.replace(/-ccb$/, ''),
+        normalizedName.replace(/^hinos-/, ''),
+        normalizedName.replace(/-ccb$/, ''),
+        ...directAliases,
+      ].filter(Boolean)
+    )
+  );
+};
+
+const formatSongDuration = (seconds: number | string | null): string => {
+  if (!seconds) return '3:45';
+  const num = typeof seconds === 'string' ? parseInt(seconds, 10) : seconds;
+  if (!Number.isFinite(num)) return '3:45';
+  const mins = Math.floor(num / 60);
+  const secs = num % 60;
+  return `${mins}:${secs.toString().padStart(2, '0')}`;
+};
+
+async function buildEmergencyCategorySongs(
+  slugValue: string,
+  categoryName?: string,
+  categoryId?: string
+): Promise<Song[]> {
+  const catalog = await getEmergencyCatalog();
+  const slugCandidates = buildCategorySlugCandidates(slugValue, categoryName);
+  const normalizedCandidates = new Set(
+    [categoryId, ...slugCandidates, ...buildCategorySearchTerms(slugValue, categoryName)].map((value) => normalizeCategorySlug(String(value || ''))).filter(Boolean)
+  );
+
+  const matchingCategoryIds = new Set(
+    catalog.categories
+      .filter((category) => {
+        const values = [
+          normalizeCategorySlug(String(category.id || '')),
+          normalizeCategorySlug(String(category.slug || '')),
+          normalizeCategorySlug(String((category as any).nome || '')),
+        ];
+        return values.some((value) => normalizedCandidates.has(value));
+      })
+      .map((category) => String(category.id))
+  );
+
+  if (normalizedCandidates.has('avulsos') || normalizedCandidates.has('hinos-avulsos')) {
+    matchingCategoryIds.add('avulsos');
+  }
+  if (normalizedCandidates.has('cantados') || normalizedCandidates.has('hinos-cantados')) {
+    matchingCategoryIds.add('cantados');
+  }
+  if (
+    normalizedCandidates.has('tocados')
+    || normalizedCandidates.has('hinos-tocados')
+    || normalizedCandidates.has('instrumentais')
+  ) {
+    matchingCategoryIds.add('tocados');
+    if (normalizedCandidates.has('instrumentais')) {
+      matchingCategoryIds.add('instrumentais');
+    }
+  }
+  if (normalizedCandidates.has('hinario-5') || normalizedCandidates.has('hinario5')) {
+    matchingCategoryIds.add('hinario5');
+  }
+
+  const hymnIds = new Set(
+    catalog.hymnCategories
+      .filter((relation) => matchingCategoryIds.has(String(relation.categoria_id)))
+      .map((relation) => String(relation.hino_id))
+  );
+
+  let hymns = catalog.hymns.filter((hymn) => hymnIds.has(String(hymn.id)));
+
+  if (hymns.length === 0) {
+    const wantsAvulsos = matchingCategoryIds.has('avulsos');
+    const wantsCantados = matchingCategoryIds.has('cantados');
+    const wantsTocados = matchingCategoryIds.has('tocados');
+    const wantsInstrumentais = matchingCategoryIds.has('instrumentais');
+    const wantsHinario = matchingCategoryIds.has('hinario5');
+    const searchTerms = buildCategorySearchTerms(slugValue, categoryName).map((term) => normalizeCategoryText(term));
+
+    hymns = catalog.hymns.filter((hymn) => {
+      const normalizedCategory = normalizeCategoryText(hymn.categoria);
+      const normalizedTitle = normalizeCategoryText(hymn.titulo);
+
+      if (wantsAvulsos) return normalizedCategory.includes('avulso');
+      if (wantsCantados) return normalizedCategory.includes('cantado');
+      if (wantsInstrumentais) return normalizedCategory.includes('instrument') || normalizedCategory.includes('tocado');
+      if (wantsTocados) return normalizedCategory.includes('tocado');
+      if (wantsHinario) return Number(hymn.numero || 0) >= 1 && Number(hymn.numero || 0) <= 480;
+
+      return searchTerms.some((term) => normalizedCategory.includes(term) || normalizedTitle.includes(term));
+    });
+  }
+
+  return hymns
+    .filter((hymn) => hymn.ativo !== false)
+    .sort((left, right) => {
+      const leftNumber = Number(left.numero || 0);
+      const rightNumber = Number(right.numero || 0);
+      if (leftNumber !== rightNumber) return leftNumber - rightNumber;
+      return String(left.titulo || '').localeCompare(String(right.titulo || ''), 'pt-BR');
+    })
+    .map((hymn) => ({
+      id: String(hymn.id),
+      title: String(hymn.titulo || 'Hino'),
+      number: hymn.numero != null ? Number(hymn.numero) : undefined,
+      artist: String(hymn.compositor_nome || 'Compositor Desconhecido'),
+      duration: formatSongDuration(hymn.duracao),
+      cover_url: buildAlbumCoverUrl({ id: String(hymn.id), cover_url: hymn.cover_url || '' }) || undefined,
+      audio_url: buildPlayableHinoUrl({ id: String(hymn.id), audio_url: hymn.audio_url || '' }) || undefined,
+      plays_count: undefined,
+      youtube_source: hymn.youtube_source || undefined,
+    }));
+}
+
+const chunkArray = <T,>(items: T[], size: number): T[][] => {
+  const chunks: T[][] = [];
+  for (let index = 0; index < items.length; index += size) {
+    chunks.push(items.slice(index, index + size));
+  }
+  return chunks;
 };
 
 const CategoryPage: React.FC = () => {
@@ -95,9 +252,16 @@ const CategoryPage: React.FC = () => {
 
       // 1) Resolver metadados da categoria pelo slug
       const all = await getAllCategories({ limit: 1000 });
-      const found = (all || []).find((c: any) => String(c.slug).toLowerCase() === String(slug).toLowerCase());
+      const initialName = slugToTitle(String(slug));
+      const slugCandidates = buildCategorySlugCandidates(String(slug), initialName);
+      const found = (all || []).find((c: any) => {
+        const categorySlug = normalizeCategorySlug(String(c?.slug || ''));
+        const categoryName = normalizeCategorySlug(String(c?.name || ''));
+        return slugCandidates.includes(categorySlug) || slugCandidates.includes(categoryName);
+      });
       const resolvedName = found?.name || slugToTitle(String(slug));
       const searchTerms = buildCategorySearchTerms(String(slug), resolvedName);
+      const emergencySongs = await buildEmergencyCategorySongs(String(slug), resolvedName, String(found?.id || ''));
 
       setCategory({
         id: String(found?.id || slug),
@@ -110,9 +274,14 @@ const CategoryPage: React.FC = () => {
         meta_description: found?.meta_description,
       });
 
+      if (emergencySongs.length > 0) {
+        setSongs(emergencySongs);
+        return;
+      }
+
       // 2) Buscar hinos dessa categoria no Supabase
       if (!isSupabaseConfigured) {
-        setSongs([]);
+        setSongs(emergencySongs);
         return;
       }
 
@@ -187,17 +356,22 @@ const CategoryPage: React.FC = () => {
       );
 
       const idMatchedHymns = Array.from(new Set([...directHymnIds, ...albumHymnIds]));
-      const directAndAlbumSongs = idMatchedHymns.length > 0
-        ? await supabaseFetch<any>('hinos', {
-            id: `in.(${idMatchedHymns.join(',')})`,
+      const directAndAlbumSongs: any[] = [];
+      if (idMatchedHymns.length > 0) {
+        for (const idChunk of chunkArray(idMatchedHymns, 150)) {
+          const chunkRows = await supabaseFetch<any>('hinos', {
+            id: `in.(${idChunk.join(',')})`,
             select: hymnSelect,
             order: 'created_at.desc',
-            limit: '500',
+            limit: String(idChunk.length),
           }).catch((error) => {
-            console.warn('direct category hymn fetch failed:', error);
+            console.warn('direct category hymn fetch chunk failed:', error);
             return [];
-          })
-        : [];
+          });
+
+          directAndAlbumSongs.push(...chunkRows);
+        }
+      }
 
       const list = [...directAndAlbumSongs];
       const seenIds = new Set(list.map((h: any) => String(h.id)));
@@ -219,17 +393,21 @@ const CategoryPage: React.FC = () => {
         title: String(h.titulo || 'Hino'),
         number: h.numero != null ? Number(h.numero) : undefined,
         artist: String(h.compositor_nome || 'Compositor Desconhecido'),
-        duration: formatDuration(h.duracao),
-        cover_url: h.cover_url || undefined,
-        audio_url: h.audio_url || undefined,
+        duration: formatSongDuration(h.duracao),
+        cover_url: buildAlbumCoverUrl({ id: String(h.id), cover_url: h.cover_url || '' }) || undefined,
+        audio_url: buildPlayableHinoUrl({ id: String(h.id), audio_url: h.audio_url || '' }) || undefined,
         plays_count: h.plays_count != null ? Number(h.plays_count) : undefined,
         youtube_source: h.youtube_source || undefined,
       }));
 
-      setSongs(formattedSongs);
+      if (formattedSongs.length > 0) {
+        setSongs(formattedSongs);
+      } else {
+        setSongs(emergencySongs);
+      }
     } catch (error) {
       console.error('Erro ao carregar categoria:', error);
-      setSongs([]);
+      setSongs(await buildEmergencyCategorySongs(String(slug || ''), slugToTitle(String(slug || ''))));
     } finally {
       setIsLoading(false);
     }
@@ -243,9 +421,10 @@ const CategoryPage: React.FC = () => {
   };
 
   const resolveSongTrack = (song: Song) => {
-    const coverUrl = song.cover_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(song.title)}&background=1f2937&color=ffffff`;
+    const coverUrl = buildAlbumCoverUrl({ id: String(song.id), cover_url: song.cover_url || '' })
+      || `https://ui-avatars.com/api/?name=${encodeURIComponent(song.title)}&background=1f2937&color=ffffff`;
     const ytSource = (song as any).youtube_source || undefined;
-    let audioUrl = ytSource ? '' : (song.audio_url || '');
+    const audioUrl = ytSource ? '' : (buildPlayableHinoUrl({ id: String(song.id), audio_url: song.audio_url || '' }) || '');
     return {
       id: song.id,
       title: song.title,
@@ -270,7 +449,8 @@ const CategoryPage: React.FC = () => {
     clearQueue();
     setRepeat('all');
     tracks.slice(1).forEach((t: any) => addToQueue(t));
-    play(first);
+    const started = play(first);
+    if (started === false) return;
     openFullScreen();
   };
 
@@ -292,14 +472,6 @@ const CategoryPage: React.FC = () => {
     }
   };
 
-  const formatDuration = (seconds: number | string | null): string => {
-    if (!seconds) return '3:45';
-    const num = typeof seconds === 'string' ? parseInt(seconds) : seconds;
-    const mins = Math.floor(num / 60);
-    const secs = num % 60;
-    return `${mins}:${secs.toString().padStart(2, '0')}`;
-  };
-
   const handlePlayPause = (song: Song) => {
     const ytSource = (song as any).youtube_source || undefined;
     const track = {
@@ -312,7 +484,7 @@ const CategoryPage: React.FC = () => {
       number: song.number || 0,
       category: category?.name || 'Categoria',
       plays: song.plays_count || 0,
-      isLiked: isFavorite(parseInt(song.id)),
+      isLiked: isFavorite(String(song.id)),
       createdAt: new Date().toISOString(),
       youtubeSource: ytSource,
     };
@@ -320,15 +492,16 @@ const CategoryPage: React.FC = () => {
     if (currentTrack?.id === song.id && isPlaying) {
       pause();
     } else {
-      play(track);
+      const started = play(track);
+      if (started === false) return;
       openFullScreen();
     }
   };
 
   const handleToggleFavorite = (song: Song) => {
     if (!user) { setShowLoginModal(true); return; }
-    const songId = parseInt(song.id);
-    const uid = user?.id ? Number(user.id) : undefined;
+    const songId = String(song.id);
+    const uid = user?.id;
     const isFav = isFavorite(songId);
     
     if (isFav) {
@@ -340,7 +513,11 @@ const CategoryPage: React.FC = () => {
         artist: song.artist,
         album: category?.name || 'Categoria',
         duration: song.duration,
-        coverUrl: song.cover_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(song.title)}&background=1f2937&color=ffffff`
+        coverUrl: song.cover_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(song.title)}&background=1f2937&color=ffffff`,
+        audioUrl: song.audio_url || undefined,
+        youtubeSource: song.youtube_source || undefined,
+        number: song.number || 0,
+        category: category?.name || 'categoria',
       }, uid);
     }
   };
@@ -643,10 +820,10 @@ const CategoryPage: React.FC = () => {
                     <button
                       onClick={() => handleToggleFavorite(song)}
                       className={`p-2 hover:bg-white/10 rounded-full transition-all`}
-                      title={user ? (isFavorite(parseInt(song.id)) ? 'Remover dos favoritos' : 'Adicionar aos favoritos') : 'Faça login para favoritar'}
+                      title={user ? (isFavorite(String(song.id)) ? 'Remover dos favoritos' : 'Adicionar aos favoritos') : 'Faça login para favoritar'}
                     >
                       <Heart className={`w-5 h-5 ${
-                        user && isFavorite(parseInt(song.id)) 
+                        user && isFavorite(String(song.id)) 
                           ? 'text-red-500 fill-red-500' 
                           : 'text-gray-400 hover:text-red-500'
                       }`} />

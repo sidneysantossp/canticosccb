@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Mail, ArrowLeft, RefreshCw, CheckCircle, Clock, AlertCircle } from 'lucide-react';
 import { supabase } from '@/lib/supabase-auth';
+import { DEFAULT_SITE_URL, normalizeSiteUrl } from '@/utils/siteUrl';
 
 const VerifyEmailPage: React.FC = () => {
   const location = useLocation();
@@ -12,6 +13,7 @@ const VerifyEmailPage: React.FC = () => {
   const [resent, setResent] = useState(false);
   const [resendError, setResendError] = useState('');
   const [countdown, setCountdown] = useState(0);
+  const redirectBase = normalizeSiteUrl(import.meta.env.VITE_APP_URL || window.location.origin, DEFAULT_SITE_URL);
 
   useEffect(() => {
     let mounted = true;
@@ -43,7 +45,7 @@ const VerifyEmailPage: React.FC = () => {
         type: 'signup',
         email,
         options: {
-          emailRedirectTo: `${import.meta.env.VITE_APP_URL || window.location.origin}/auth/callback?type=email_verification`,
+          emailRedirectTo: `${redirectBase}/auth/callback?type=email_verification`,
         },
       });
       if (error) {

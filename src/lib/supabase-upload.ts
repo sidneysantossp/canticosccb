@@ -28,6 +28,26 @@ interface ArchiveToR2UploadInput {
   type: MediaUploadType;
 }
 
+export interface ArchiveTrackServerImportInput {
+  archiveUrl: string;
+  fileName: string;
+  contentType?: string;
+  albumId: string;
+  position: number;
+  title: string;
+  slug: string;
+  number?: number | null;
+  primaryCategory: string;
+  categoryIds: string[];
+  lyrics?: string;
+}
+
+export interface ArchiveTrackServerImportResult {
+  publicUrl: string;
+  duration: string;
+  hinoId: string;
+}
+
 interface SignedR2BatchUploadInput {
   file: File;
   type: MediaUploadType;
@@ -203,25 +223,32 @@ async function signR2Upload(file: File, type: MediaUploadType) {
 }
 
 export async function uploadArchiveMediaToR2(input: ArchiveToR2UploadInput): Promise<string> {
-  const accessToken = await getAccessToken();
+  const controller = new AbortController();
+  const timeoutId = window.setTimeout(() => controller.abort(), 180000);
 
-  if (!accessToken) {
-    throw new Error('Sua sessão expirou. Faça login novamente para enviar arquivos.');
+  let response: Response;
+  try {
+    response = await fetch('/api/archive-r2-upload', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        archiveUrl: input.archiveUrl,
+        fileName: input.fileName,
+        contentType: input.contentType || 'application/octet-stream',
+        type: input.type,
+      }),
+      signal: controller.signal,
+    });
+  } catch (error: any) {
+    if (error?.name === 'AbortError') {
+      throw new Error('Timeout ao baixar a mídia do acervo para o R2.');
+    }
+    throw error;
+  } finally {
+    clearTimeout(timeoutId);
   }
-
-  const response = await fetch('/api/archive-r2-upload', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${accessToken}`,
-    },
-    body: JSON.stringify({
-      archiveUrl: input.archiveUrl,
-      fileName: input.fileName,
-      contentType: input.contentType || 'application/octet-stream',
-      type: input.type,
-    }),
-  });
 
   const payload = await response.json().catch(() => ({}));
 
@@ -234,6 +261,48 @@ export async function uploadArchiveMediaToR2(input: ArchiveToR2UploadInput): Pro
   }
 
   return String(payload.publicUrl);
+}
+
+export async function importArchiveTrackServerSide(
+  input: ArchiveTrackServerImportInput
+): Promise<ArchiveTrackServerImportResult> {
+  const controller = new AbortController();
+  const timeoutId = window.setTimeout(() => controller.abort(), 240000);
+
+  let response: Response;
+  try {
+    response = await fetch('/api/archive-track-import', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(input),
+      signal: controller.signal,
+    });
+  } catch (error: any) {
+    if (error?.name === 'AbortError') {
+      throw new Error('Timeout ao importar a faixa do acervo no servidor.');
+    }
+    throw error;
+  } finally {
+    clearTimeout(timeoutId);
+  }
+
+  const payload = await response.json().catch(() => ({}));
+
+  if (!response.ok) {
+    throw new Error(payload?.error || 'Falha ao importar a faixa do acervo no servidor');
+  }
+
+  if (!payload?.publicUrl || !payload?.hinoId) {
+    throw new Error('O servidor não retornou os dados esperados da faixa importada.');
+  }
+
+  return {
+    publicUrl: String(payload.publicUrl),
+    duration: String(payload.duration || ''),
+    hinoId: String(payload.hinoId),
+  };
 }
 
 export async function signR2UploadBatch(
@@ -284,6 +353,8 @@ export async function uploadFileWithSignedR2Url(
   payload: SignedR2UploadPayload
 ): Promise<string> {
   const method = payload.method || 'PUT';
+  const controller = new AbortController();
+  const timeoutId = window.setTimeout(() => controller.abort(), 120000);
 
   let response: Response;
   try {
@@ -293,13 +364,19 @@ export async function uploadFileWithSignedR2Url(
         'Content-Type': file.type || 'application/octet-stream',
       },
       body: file,
+      signal: controller.signal,
     });
   } catch (error: any) {
     const message = String(error?.message || error || '');
+    if (error?.name === 'AbortError') {
+      throw new Error('Timeout ao enviar a faixa para o armazenamento de mídia.');
+    }
     if (/failed to fetch|networkerror|load failed/i.test(message)) {
       throw new Error('Upload bloqueado pelo navegador. Configure a política de CORS do bucket canticos-media para permitir PUT do domínio canticosccb.com.br.');
     }
     throw error;
+  } finally {
+    clearTimeout(timeoutId);
   }
 
   if (!response.ok) {

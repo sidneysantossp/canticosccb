@@ -98,6 +98,19 @@ function normalizeEmergencyRouteUrl(routeUrl: string): URL | null {
   }
 }
 
+function getEmergencyApiOrigin(routeUrl?: string | null): string {
+  const normalized = normalizeEmergencyRouteUrl(String(routeUrl || '').trim());
+  if (normalized?.origin) {
+    return normalized.origin;
+  }
+
+  if (typeof window !== 'undefined' && window.location.origin) {
+    return window.location.origin;
+  }
+
+  return 'https://www.canticosccb.com.br';
+}
+
 export function isEmergencyArchiveRouteUrl(routeUrl?: string | null): boolean {
   return !!normalizeEmergencyRouteUrl(String(routeUrl || '').trim());
 }
@@ -183,10 +196,15 @@ function selectEntry(
   return scoredEntries[0]?.score > 0 ? scoredEntries[0].entry : expectedEntry;
 }
 
-async function fetchArchiveRangeViaProxy(snapshotUrl: string, start: number, endExclusive: number): Promise<Uint8Array> {
+async function fetchArchiveRangeViaProxy(
+  snapshotUrl: string,
+  start: number,
+  endExclusive: number,
+  apiOrigin?: string,
+): Promise<Uint8Array> {
   const proxyUrl = new URL(
     `/api/archive-proxy?url=${encodeURIComponent(snapshotUrl)}`,
-    window.location.origin,
+    apiOrigin || getEmergencyApiOrigin(),
   ).toString();
   const response = await fetch(proxyUrl, {
     headers: {
@@ -205,6 +223,7 @@ async function resolveEntryDataRange(
   snapshotUrl: string,
   entry: EmergencyAudioEntry,
   cacheKey: string,
+  apiOrigin?: string,
 ): Promise<{ dataStart: number; dataEnd: number }> {
   const cached = resolvedRangeCache.get(cacheKey);
   if (cached) {
@@ -228,6 +247,7 @@ async function resolveEntryDataRange(
     snapshotUrl,
     entry.relativeOffsetOfLocalHeader,
     entry.relativeOffsetOfLocalHeader + 30,
+    apiOrigin,
   );
 
   const view = new DataView(localHeader.buffer, localHeader.byteOffset, localHeader.byteLength);
@@ -251,6 +271,7 @@ export async function resolveEmergencyPlaybackUrl(routeUrl: string): Promise<str
   if (!normalized) {
     return routeUrl;
   }
+  const apiOrigin = getEmergencyApiOrigin(normalized.toString());
 
   const pending = pendingUrlCache.get(routeUrl);
   if (pending) {
@@ -276,6 +297,7 @@ export async function resolveEmergencyPlaybackUrl(routeUrl: string): Promise<str
       indexedSegment.snapshotUrl,
       selectedEntry,
       `${indexedSegment.segment.id}:${selectedEntry.name}`,
+      apiOrigin,
     );
     const cacheKey = `${indexedSegment.segment.id}:${selectedEntry.name}:${dataStart}:${dataEnd}`;
     const cachedUrl = resolvedUrlCache.get(cacheKey);
@@ -283,7 +305,12 @@ export async function resolveEmergencyPlaybackUrl(routeUrl: string): Promise<str
       return cachedUrl;
     }
 
-    const compressedBody = await fetchArchiveRangeViaProxy(indexedSegment.snapshotUrl, dataStart, dataEnd);
+    const compressedBody = await fetchArchiveRangeViaProxy(
+      indexedSegment.snapshotUrl,
+      dataStart,
+      dataEnd,
+      apiOrigin,
+    );
     const decompressedBody = selectedEntry.compressionMethod === 8
       ? inflateRaw(compressedBody)
       : compressedBody;

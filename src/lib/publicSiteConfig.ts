@@ -1,4 +1,5 @@
 import { publicSupabase } from '@/lib/supabase-auth';
+import { DEFAULT_SITE_URL, normalizeAssetUrl, normalizeSiteUrl } from '@/utils/siteUrl';
 
 export interface RuntimeThemeColors {
   primary: string;
@@ -103,8 +104,8 @@ const defaultSeoSettings: RuntimeSeoSettings = {
   site_title: 'Cânticos CCB',
   site_description: 'Plataforma completa de hinos e cânticos da Congregação Cristã no Brasil',
   site_keywords: 'hinos CCB, hinário 5, congregação cristã no brasil',
-  site_url: 'https://canticosccb.com.br',
-  og_image: 'https://canticosccb.com.br/logo-canticos-ccb.png',
+  site_url: DEFAULT_SITE_URL,
+  og_image: `${DEFAULT_SITE_URL}/logo-canticos-ccb.png`,
   twitter_card: 'summary_large_image',
   twitter_site: '@canticosccb',
   robots_index: true,
@@ -292,8 +293,13 @@ export async function getSiteRuntimeConfig(force = false): Promise<SiteRuntimeCo
           site_title: toNonEmptyString(config.site_title, defaultSeoSettings.site_title),
           site_description: toNonEmptyString(config.site_description, defaultSeoSettings.site_description),
           site_keywords: toNonEmptyString(config.site_keywords, defaultSeoSettings.site_keywords),
-          site_url: toNonEmptyString(config.site_url, defaultSeoSettings.site_url),
-          og_image: toNonEmptyString(config.og_image, defaultSeoSettings.og_image),
+          site_url: normalizeSiteUrl(
+            toNonEmptyString(config.site_url, defaultSeoSettings.site_url),
+            defaultSeoSettings.site_url
+          ),
+          og_image: normalizeAssetUrl(
+            toNonEmptyString(config.og_image, defaultSeoSettings.og_image)
+          ),
           twitter_card: (toNonEmptyString(config.twitter_card, defaultSeoSettings.twitter_card) as RuntimeSeoSettings['twitter_card']),
           twitter_site: toNonEmptyString(config.twitter_site, defaultSeoSettings.twitter_site),
           robots_index: parseBoolean(config.robots_index, defaultSeoSettings.robots_index),

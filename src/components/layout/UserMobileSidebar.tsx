@@ -6,6 +6,7 @@ import {
   Library,
   Heart,
   ListMusic,
+  MessageSquare,
   User,
   Settings,
   X,
@@ -13,6 +14,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { compositorGerentesApi } from '@/lib/api-client';
+import { getSupportInboxStats } from '@/lib/supportChatApi';
 
 interface UserMobileSidebarProps {
   isOpen: boolean;
@@ -23,6 +25,7 @@ const UserMobileSidebar: React.FC<UserMobileSidebarProps> = ({ isOpen, onClose }
   const location = useLocation();
   const { user } = useAuth();
   const [isManager, setIsManager] = useState(false);
+  const [supportUnreadCount, setSupportUnreadCount] = useState(0);
 
   const isActive = (path: string) => {
     return location.pathname === path;
@@ -41,6 +44,25 @@ const UserMobileSidebar: React.FC<UserMobileSidebarProps> = ({ isOpen, onClose }
       } catch { }
     };
     checkIfManager();
+  }, [user?.id]);
+
+  useEffect(() => {
+    const loadSupportCount = async () => {
+      if (!user?.id) {
+        setSupportUnreadCount(0);
+        return;
+      }
+      try {
+        const stats = await getSupportInboxStats({ userId: user.id, role: 'user' });
+        setSupportUnreadCount(stats.unread);
+      } catch {
+        setSupportUnreadCount(0);
+      }
+    };
+
+    void loadSupportCount();
+    const interval = setInterval(loadSupportCount, 30000);
+    return () => clearInterval(interval);
   }, [user?.id]);
 
   const menuItems = [
@@ -70,6 +92,12 @@ const UserMobileSidebar: React.FC<UserMobileSidebarProps> = ({ isOpen, onClose }
       items: [
         { icon: Heart, label: 'Meus Favoritos', path: '/favoritos' },
         { icon: ListMusic, label: 'Minhas Playlists', path: '/library' }
+      ]
+    },
+    {
+      category: 'Atendimento',
+      items: [
+        { icon: MessageSquare, label: 'Chat', path: '/chat', badge: supportUnreadCount }
       ]
     }
   ];
@@ -139,6 +167,11 @@ const UserMobileSidebar: React.FC<UserMobileSidebarProps> = ({ isOpen, onClose }
                             }`}
                         />
                         <span className="font-medium">{item.label}</span>
+                        {item.badge ? (
+                          <span className="ml-auto inline-flex min-w-[22px] items-center justify-center rounded-full bg-primary-400 px-1.5 py-0.5 text-[11px] font-bold text-black">
+                            {item.badge}
+                          </span>
+                        ) : null}
                       </Link>
                     );
                   })}

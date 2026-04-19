@@ -3,15 +3,15 @@
  * Referência: https://schema.org/
  */
 
-const FALLBACK_BASE_URL = 'https://canticosccb.com.br';
+import { DEFAULT_SITE_URL, normalizeSiteUrl } from '@/utils/siteUrl';
 
 const getBaseUrl = () => {
   const envUrl = (import.meta.env.VITE_APP_URL || '').trim();
-  if (envUrl) return envUrl.replace(/\/+$/, '');
+  if (envUrl) return normalizeSiteUrl(envUrl, DEFAULT_SITE_URL);
   if (typeof window !== 'undefined' && window.location?.origin) {
-    return window.location.origin.replace(/\/+$/, '');
+    return normalizeSiteUrl(window.location.origin, DEFAULT_SITE_URL);
   }
-  return FALLBACK_BASE_URL;
+  return DEFAULT_SITE_URL;
 };
 
 /**

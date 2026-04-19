@@ -21,7 +21,7 @@ import CifrasOverlay from '@/components/player/CifrasOverlay';
 import PlayerControls from '@/components/player/PlayerControls';
 import { useToast } from '@/contexts/ToastContext';
 import { useAuth } from '@/contexts/AuthContext';
-import { buildHinoUrl, buildAlbumCoverUrl } from '@/lib/media-helper';
+import { buildAlbumCoverUrl } from '@/lib/media-helper';
 import { resolveActiveComposer } from '@/lib/activeComposer';
 import * as playlistsApi from '@/lib/playlistsApi';
 import { useState, useEffect } from 'react';
@@ -73,9 +73,9 @@ export default function FullScreenPlayer({ isOpen, onClose }: FullScreenPlayerPr
     const ok = window.confirm(`Remover "${pTrack.title}" da playlist "${playlist.name}"?`);
     if (!ok) return;
     try {
-      const isNumeric = /^\d+$/.test(String(playlistId));
+      const isLocalOnly = String(playlistId).startsWith('playlist_');
       const backendId = pTrack.backendTrackId || String(pTrack.id);
-      if (isNumeric) {
+      if (!isLocalOnly) {
         await playlistsApi.removeTrack({ playlistId, trackId: backendId });
       }
       removeTrackFromPlaylist(String(playlistId), pTrack.id);
@@ -110,9 +110,9 @@ export default function FullScreenPlayer({ isOpen, onClose }: FullScreenPlayerPr
     const ok = window.confirm(`Remover "${track.title}" da playlist "${playlist.name}"?`);
     if (!ok) return;
     try {
-      const isNumeric = /^\d+$/.test(String(playlistId));
+      const isLocalOnly = String(playlistId).startsWith('playlist_');
       const backendId = track.backendTrackId || String(track.id);
-      if (isNumeric) {
+      if (!isLocalOnly) {
         await playlistsApi.removeTrack({ playlistId, trackId: backendId });
       }
       removeTrackFromPlaylist(String(playlistId), track.id);
@@ -222,7 +222,7 @@ export default function FullScreenPlayer({ isOpen, onClose }: FullScreenPlayerPr
   const [showDownloadNotAvailableAlert, setShowDownloadNotAvailableAlert] = useState(false);
   const [playlistSuccessMessage, setPlaylistSuccessMessage] = useState('');
 
-  const isLiked = currentTrack ? isFavorite(parseInt(currentTrack.id)) : false;
+  const isLiked = currentTrack ? isFavorite(String(currentTrack.id)) : false;
 
   // Verificar se deve abrir formulário automaticamente (via URL)
   useEffect(() => {
@@ -349,7 +349,7 @@ export default function FullScreenPlayer({ isOpen, onClose }: FullScreenPlayerPr
     }
     try {
       const created = await playlistsApi.create({
-        userId: Number(user.id),
+        userId: user.id,
         name: newPlaylistName,
         description: newPlaylistDescription,
         coverUrl: '',
@@ -378,11 +378,16 @@ export default function FullScreenPlayer({ isOpen, onClose }: FullScreenPlayerPr
       });
 
       addTrackToPlaylist(String(created.id), {
-        id: parseInt(currentTrack.id),
+        id: String(currentTrack.id),
         title: currentTrack.title,
         artist: currentTrack.artist,
         coverUrl: currentTrack.coverUrl,
-        duration: currentTrack.duration || '0:00'
+        duration: currentTrack.duration || '0:00',
+        backendTrackId: String(currentTrack.id),
+        audioUrl: currentTrack.audioUrl,
+        youtubeSource: currentTrack.youtubeSource,
+        number: currentTrack.number,
+        category: currentTrack.category,
       });
 
       // Resetar e fechar
@@ -404,8 +409,8 @@ export default function FullScreenPlayer({ isOpen, onClose }: FullScreenPlayerPr
   const handleAddToExistingPlaylist = async (playlistId: string) => {
     const playlist = playlists.find(p => p.id === playlistId);
     try {
-      const isNumeric = /^\d+$/.test(String(playlistId));
-      if (isNumeric) {
+      const isLocalOnly = String(playlistId).startsWith('playlist_');
+      if (!isLocalOnly) {
         await playlistsApi.addTrack({
           playlistId,
           trackId: currentTrack.id,
@@ -417,11 +422,16 @@ export default function FullScreenPlayer({ isOpen, onClose }: FullScreenPlayerPr
       }
 
       addTrackToPlaylist(playlistId, {
-        id: parseInt(currentTrack.id),
+        id: String(currentTrack.id),
         title: currentTrack.title,
         artist: currentTrack.artist,
         coverUrl: currentTrack.coverUrl,
-        duration: currentTrack.duration || '0:00'
+        duration: currentTrack.duration || '0:00',
+        backendTrackId: String(currentTrack.id),
+        audioUrl: currentTrack.audioUrl,
+        youtubeSource: currentTrack.youtubeSource,
+        number: currentTrack.number,
+        category: currentTrack.category,
       });
 
       setShowAddToPlaylist(false);
@@ -543,7 +553,7 @@ export default function FullScreenPlayer({ isOpen, onClose }: FullScreenPlayerPr
   const handleTrackSelect = (track: any) => {
     const resolvedAudioUrl = track.audioUrl
       ? track.audioUrl
-      : buildHinoUrl({ id: String(track.id), audio_url: track.audio_url });
+      : (track.audio_url || '');
     const trackData = {
       id: track.id,
       title: track.title,
@@ -568,20 +578,23 @@ export default function FullScreenPlayer({ isOpen, onClose }: FullScreenPlayerPr
 
   // Função para favoritar faixa da lista
   const handleToggleFavoriteTrack = (trackId: string) => {
-    const id = parseInt(trackId);
     const track = albumTracks.find(t => String(t.id) === String(trackId));
     
-    const uid = user?.id ? Number(user.id) : undefined;
-    if (isFavorite(id)) {
-      removeFavorite(id, uid);
+    const uid = user?.id;
+    if (isFavorite(String(trackId))) {
+      removeFavorite(String(trackId), uid);
     } else if (track) {
       addFavorite({
-        id,
+        id: String(trackId),
         title: track.title,
         artist: track.artist,
         album: (currentTrack as any)?.album || 'Hinário 5 - Completo',
         duration: track.duration,
-        coverUrl: currentTrack?.coverUrl || 'https://picsum.photos/400/400'
+        coverUrl: currentTrack?.coverUrl || 'https://picsum.photos/400/400',
+        audioUrl: track.audioUrl || track.audio_url,
+        youtubeSource: track.youtubeSource || track.youtube_source,
+        number: track.number || 0,
+        category: track.category || 'album',
       }, uid);
     }
   };
@@ -772,8 +785,8 @@ export default function FullScreenPlayer({ isOpen, onClose }: FullScreenPlayerPr
                     return;
                   }
 
-                  const currentId = parseInt(currentTrack.id);
-                  const uid = user?.id ? Number(user.id) : undefined;
+                  const currentId = String(currentTrack.id);
+                  const uid = user?.id;
                   if (isLiked) {
                     removeFavorite(currentId, uid);
                   } else {
@@ -783,7 +796,11 @@ export default function FullScreenPlayer({ isOpen, onClose }: FullScreenPlayerPr
                       artist: currentTrack.artist,
                       album: 'album' in currentTrack ? (currentTrack as any).album : 'Álbum Desconhecido',
                       duration: currentTrack.duration || '0:00',
-                      coverUrl: currentTrack.coverUrl
+                      coverUrl: currentTrack.coverUrl,
+                      audioUrl: currentTrack.audioUrl,
+                      youtubeSource: currentTrack.youtubeSource,
+                      number: currentTrack.number,
+                      category: currentTrack.category,
                     }, uid);
                   }
                 }}

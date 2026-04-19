@@ -61,6 +61,7 @@ const ComposerNotifications: React.FC = () => {
       const from = (page - 1) * ITEMS_PER_PAGE;
       const to = from + ITEMS_PER_PAGE - 1;
       const { data: rows, error: queryError, count } = await query
+        .neq('type', 'support_chat')
         .order('created_at', { ascending: false })
         .range(from, to);
 

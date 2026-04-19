@@ -1,4 +1,5 @@
 import { albunsApi } from '@/lib/api-client';
+import { supabaseFetch } from '@/lib/supabaseRest';
 
 export interface Album {
   id: string;
@@ -58,6 +59,58 @@ export const getAllAlbums = async (page: number = 1, limit: number = 12): Promis
 
 export const getAll = getAllAlbums;
 
+export const getPendingAlbums = async (
+  page: number = 1,
+  limit: number = 12
+): Promise<{ data: Album[]; count: number; totalPages: number }> => {
+  const from = (page - 1) * limit;
+  const pendingFilter = '(is_published.eq.false,active.eq.false)';
+
+  const [allPendingRows, rows] = await Promise.all([
+    supabaseFetch<any>('albums', {
+      select: 'id',
+      or: pendingFilter,
+      order: 'created_at.desc',
+    }),
+    supabaseFetch<any>('albums', {
+      select:
+        'id,title,artist,description,cover_url,total_tracks,release_date,composer_id,created_at,updated_at,is_published,active,featured,featured_order,genre',
+      or: pendingFilter,
+      order: 'created_at.desc',
+      limit: String(limit),
+      offset: String(from),
+    }),
+  ]);
+
+  const albumIds = (rows || []).map((row: any) => String(row.id));
+  const trackCounts: Record<string, number> = {};
+
+  if (albumIds.length > 0) {
+    const albumHinos = await supabaseFetch<any>('album_hinos', {
+      select: 'album_id',
+      album_id: `in.(${albumIds.join(',')})`,
+    });
+
+    for (const item of albumHinos || []) {
+      const albumId = String((item as any).album_id);
+      trackCounts[albumId] = (trackCounts[albumId] || 0) + 1;
+    }
+  }
+
+  const albums = (rows || []).map((row: any) => mapAlbum({
+    ...row,
+    total_tracks: trackCounts[String(row.id)] || row.total_tracks || 0,
+  }));
+
+  const total = allPendingRows.length;
+
+  return {
+    data: albums,
+    count: total,
+    totalPages: Math.max(1, Math.ceil(total / limit)),
+  };
+};
+
 export const getById = async (id: string): Promise<Album | null> => {
   const response = await albunsApi.get(id);
   if (response.error) {
@@ -105,6 +158,15 @@ export const updateAlbum = async (id: string, data: Partial<Album>): Promise<{ s
 };
 
 export const update = updateAlbum;
+
+export const approveAlbum = async (id: string): Promise<{ success: boolean }> => {
+  const response = await albunsApi.update(id, { is_published: true, ativo: 1 } as any);
+  if (response.error) {
+    throw new Error(response.error);
+  }
+
+  return { success: true };
+};
 
 export const deleteAlbum = async (id: string): Promise<{ success: boolean }> => {
   await albunsApi.delete(id);

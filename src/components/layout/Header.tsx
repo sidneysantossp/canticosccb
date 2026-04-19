@@ -9,7 +9,7 @@ import { buildAvatarUrl } from '@/lib/media-helper';
 import ComposerMobileSidebar from './ComposerMobileSidebar';
 import AdminMobileSidebar from './AdminMobileSidebar';
 import PublicMobileSidebar from './PublicMobileSidebar';
-import { quickSearch } from '@/lib/mockApis';
+import { quickSearch } from '@/lib/searchApi';
 import { buildAlbumUrl, buildCompositorUrl, buildHinoUrl } from '@/utils/slugUrl';
 import { useVoiceSearch } from '@/hooks/useVoiceSearch';
 import { clearAuthStorage } from '@/lib/supabase-auth';
@@ -251,7 +251,7 @@ const Header: React.FC = () => {
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-text-muted w-4 h-4" />
               <input
                 type="text"
-                placeholder="Busque por hinos, compositores, álbuns ou playlists"
+                placeholder="Busque por hino, numero, compositor, album, instrumento ou playlist"
                 value={searchQuery}
                 onChange={(e) => handleSearch(e.target.value)}
                 onFocus={() => searchQuery && setShowResults(true)}

@@ -10,6 +10,21 @@ import { useToast } from '@/contexts/ToastContext';
 import SEOHead from '@/components/SEO/SEOHead';
 import { generateBreadcrumbSchema, generateMusicPlaylistSchema } from '@/utils/schemaGenerator';
 
+const mapPlaylistTrack = (track: playlistsApi.PlaylistDTOTrack): PlaylistTrack => ({
+  id: String(track.id),
+  title: track.title,
+  artist: track.artist,
+  coverUrl: track.cover_url || '',
+  duration: track.duration || '0:00',
+  backendTrackId: String(track.id),
+  audioUrl: track.audio_url || undefined,
+  youtubeSource: track.youtube_source || undefined,
+  number: track.number,
+  category: track.category,
+  position: track.position ?? undefined,
+  createdAt: track.created_at,
+});
+
 const PlaylistDetailPage: React.FC = () => {
   const { id } = useParams();
   const { currentTrack, isPlaying, play, pause, setPlaybackContext } = usePlayerStore();
@@ -29,18 +44,19 @@ const PlaylistDetailPage: React.FC = () => {
   const { showToast } = useToast();
 
   const toHino = (t: PlaylistTrack): Hino => ({
-    id: String(t.id),
+    id: String(t.backendTrackId || t.id),
     title: t.title,
-    number: 0,
-    category: 'playlist',
+    number: t.number || 0,
+    category: t.category || 'playlist',
     artist: t.artist,
     duration: t.duration,
-    audioUrl: undefined,
+    audioUrl: t.audioUrl,
     coverUrl: t.coverUrl,
     lyrics: undefined,
     plays: 0,
     isLiked: false,
-    createdAt: new Date().toISOString(),
+    createdAt: t.createdAt || new Date().toISOString(),
+    youtubeSource: t.youtubeSource,
   });
 
   const parseDuration = (d: string) => {
@@ -69,13 +85,11 @@ const PlaylistDetailPage: React.FC = () => {
 
   const formatNumber = (num: number) => new Intl.NumberFormat('pt-BR').format(num);
 
-  // Buscar playlist no backend se não estiver no store (apenas ids numéricos)
+  // Buscar playlist no backend se não estiver no store.
   useEffect(() => {
     const fetchIfNeeded = async () => {
       if (!id) return;
       if (playlist) return;
-      const isNumeric = /^\d+$/.test(String(id));
-      if (!isNumeric) return;
       try {
         const dto = await playlistsApi.get(id);
         const mapped = {
@@ -83,14 +97,7 @@ const PlaylistDetailPage: React.FC = () => {
           name: dto.name,
           description: dto.description || undefined,
           coverUrl: dto.cover_url || `https://picsum.photos/seed/${dto.id}/300/300`,
-          tracks: (dto.tracks || []).map((t) => ({
-            id: isNaN(parseInt(String(t.id))) ? Date.now() : parseInt(String(t.id)),
-            title: t.title,
-            artist: t.artist,
-            coverUrl: t.cover_url || '',
-            duration: t.duration || '0:00',
-            backendTrackId: String(t.id),
-          })),
+          tracks: (dto.tracks || []).map(mapPlaylistTrack),
           createdAt: dto.created_at,
           updatedAt: dto.updated_at,
         };
@@ -108,9 +115,9 @@ const PlaylistDetailPage: React.FC = () => {
     const ok = window.confirm(`Remover "${track.title}" desta playlist?`);
     if (!ok) return;
     try {
-      const isNumeric = /^\d+$/.test(String(playlist.id));
+      const isLocalOnly = String(playlist.id).startsWith('playlist_');
       const trackId = track.backendTrackId || String(track.id);
-      if (isNumeric) {
+      if (!isLocalOnly) {
         await playlistsApi.removeTrack({ playlistId: playlist.id, trackId });
       }
       removeTrackFromPlaylist(playlist.id, track.id);

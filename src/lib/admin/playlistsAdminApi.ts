@@ -1,6 +1,7 @@
 import { getCurrentUser, publicSupabase, supabase } from '@/lib/supabase-auth';
 import { upsertSiteConfigEntries } from '@/lib/admin/adminTableUtils';
 import { supabaseDelete, supabaseInsert, supabaseUpdate } from '@/lib/supabaseRest';
+import { getEmergencyEditorialPlaylists, getEmergencyPlaylistById, isSupabaseQuotaRestrictionErrorMessage } from '@/lib/emergencyCatalog';
 import {
   EDITORIAL_PLAYLISTS_CONFIG_KEY,
   getEditorialPlaylistMetadataMap,
@@ -93,6 +94,10 @@ const sortEditorialPlaylists = (a: EditorialPlaylist, b: EditorialPlaylist) => {
   return new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime();
 };
 
+function isRestrictedSupabaseError(error: unknown): boolean {
+  return isSupabaseQuotaRestrictionErrorMessage(String((error as any)?.message || error || ''));
+}
+
 async function loadMetadataMap(): Promise<Record<string, EditorialPlaylistMetadata>> {
   return getEditorialPlaylistMetadataMap();
 }
@@ -145,6 +150,26 @@ export const getAll = async (): Promise<EditorialPlaylist[]> => {
     ]);
 
     if (rowsResponse.error) {
+      if (isRestrictedSupabaseError(rowsResponse.error)) {
+        const emergencyPlaylists = await getEmergencyEditorialPlaylists();
+        return emergencyPlaylists.map((playlist) => ({
+          id: playlist.id,
+          title: playlist.name,
+          description: playlist.description || '',
+          category: 'special',
+          mood: undefined,
+          curator_name: 'Equipe Editorial CCB',
+          cover_url: playlist.cover_url || '',
+          is_featured: false,
+          is_active: true,
+          plays_count: 0,
+          likes_count: 0,
+          followers_count: 0,
+          items_count: 0,
+          created_at: playlist.created_at,
+          updated_at: playlist.updated_at,
+        }));
+      }
       throw rowsResponse.error;
     }
 
@@ -178,6 +203,27 @@ export const getById = async (id: string): Promise<EditorialPlaylist | null> => 
     ]);
 
     if (playlistResponse.error) {
+      if (isRestrictedSupabaseError(playlistResponse.error)) {
+        const playlist = await getEmergencyPlaylistById(id);
+        if (!playlist) return null;
+        return {
+          id: playlist.id,
+          title: playlist.name,
+          description: playlist.description || '',
+          category: 'special',
+          mood: undefined,
+          curator_name: 'Equipe Editorial CCB',
+          cover_url: playlist.cover_url || '',
+          is_featured: false,
+          is_active: true,
+          plays_count: 0,
+          likes_count: 0,
+          followers_count: 0,
+          items_count: 0,
+          created_at: playlist.created_at,
+          updated_at: playlist.updated_at,
+        };
+      }
       throw playlistResponse.error;
     }
 

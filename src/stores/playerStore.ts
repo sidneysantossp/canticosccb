@@ -3,6 +3,7 @@ import { PlayerState, Hino } from '@/types';
 import { useFreePlayGateStore } from '@/stores/freePlayGateStore';
 import { emitPlayerUnavailable, hasPlayableTrackSource } from '@/lib/playerFeedback';
 import { resolveEmergencyArchiveTrack } from '@/lib/emergencyAudioResolver';
+import { requestImmediateTrackPlayback } from '@/lib/playerImmediatePlayback';
 
 // Helper: check if user is logged in (reads from localStorage where AuthContext persists)
 function isUserLoggedIn(): boolean {
@@ -82,6 +83,9 @@ export const usePlayerStore = create<PlayerStore>((set, get) => ({
         gate.recordPlay(resolvedTrack.id);
       }
 
+      // Tenta iniciar a reprodução ainda dentro do gesto do usuário.
+      requestImmediateTrackPlayback(resolvedTrack);
+
       const { history } = get();
       set({
         currentTrack: resolvedTrack,
@@ -118,6 +122,7 @@ export const usePlayerStore = create<PlayerStore>((set, get) => ({
       set({ isPlaying: false });
       return;
     }
+    requestImmediateTrackPlayback(currentTrack);
     set({ isPlaying: true });
   },
 
@@ -144,6 +149,7 @@ export const usePlayerStore = create<PlayerStore>((set, get) => ({
         }
         gate.recordPlay(nextTrack.id);
       }
+      requestImmediateTrackPlayback(nextTrack);
       const newQueue = queue.slice(nextTrackIndex + 1);
       set({
         currentTrack: nextTrack,
@@ -157,6 +163,7 @@ export const usePlayerStore = create<PlayerStore>((set, get) => ({
     const { history } = get();
     if (history.length > 1) {
       const previousTrack = history[1];
+      requestImmediateTrackPlayback(previousTrack);
       set({
         currentTrack: previousTrack,
         currentTime: 0

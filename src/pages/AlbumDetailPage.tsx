@@ -178,7 +178,8 @@ const AlbumDetailPage: React.FC = () => {
     if (currentTrack?.id === track.id && isPlaying) {
       pause();
     } else {
-      play(track);
+      const started = play(track);
+      if (started === false) return;
       // Registrar play
       registerPlay(track.id);
     }
@@ -203,7 +204,8 @@ const AlbumDetailPage: React.FC = () => {
       remainingTracks.forEach(t => addToQueue(t));
     }
 
-    play(track);
+    const started = play(track);
+    if (started === false) return;
     // Registrar play
     registerPlay(track.id);
     openFullScreen('album');
@@ -226,7 +228,8 @@ const AlbumDetailPage: React.FC = () => {
 
     // Tocar primeira faixa
     const firstTrack = album.tracks[0];
-    play(firstTrack);
+    const started = play(firstTrack);
+    if (started === false) return;
 
     // Registrar play da primeira faixa
     registerPlay(firstTrack.id);
@@ -242,20 +245,23 @@ const AlbumDetailPage: React.FC = () => {
       return;
     }
 
-    const id = parseInt(trackId);
-    const uid = user?.id ? Number(user.id) : undefined;
-    if (isFavorite(id)) {
-      removeFavorite(id, uid);
+    const uid = user?.id;
+    if (isFavorite(String(trackId))) {
+      removeFavorite(String(trackId), uid);
     } else {
       const track = album?.tracks.find(t => t.id === trackId);
       if (track) {
         addFavorite({
-          id,
+          id: String(trackId),
           title: track.title,
           artist: track.artist,
           album: album?.title || 'Álbum',
           duration: track.duration,
-          coverUrl: track.coverUrl
+          coverUrl: track.coverUrl,
+          audioUrl: track.audioUrl,
+          youtubeSource: track.youtubeSource,
+          number: track.number,
+          category: track.category,
         }, uid);
       }
     }
@@ -302,8 +308,8 @@ const AlbumDetailPage: React.FC = () => {
     }
 
     if (!album) return;
-    const albumId = parseInt(album.id);
-    const uid = user?.id ? Number(user.id) : undefined;
+    const albumId = String(album.id);
+    const uid = user?.id;
     if (isFavorite(albumId)) {
       removeFavorite(albumId, uid);
     } else {
@@ -313,7 +319,8 @@ const AlbumDetailPage: React.FC = () => {
         artist: album.artist,
         album: album.title,
         duration: album.totalDuration,
-        coverUrl: album.coverUrl
+        coverUrl: album.coverUrl,
+        category: 'album',
       }, uid);
     }
   };
@@ -485,13 +492,13 @@ const AlbumDetailPage: React.FC = () => {
 
               <button
                 onClick={handleToggleFavoriteAlbum}
-                className={`p-3 rounded-full hover:bg-white/10 transition-all ${album && isFavorite(parseInt(album.id))
+                className={`p-3 rounded-full hover:bg-white/10 transition-all ${album && isFavorite(String(album.id))
                     ? 'text-red-500'
                     : 'text-gray-400 hover:text-white'
                   }`}
-                title={album && isFavorite(parseInt(album.id)) ? "Remover dos favoritos" : "Adicionar aos favoritos"}
+                title={album && isFavorite(String(album.id)) ? "Remover dos favoritos" : "Adicionar aos favoritos"}
               >
-                <Heart className={`w-6 h-6 ${album && isFavorite(parseInt(album.id)) ? 'fill-red-500' : ''
+                <Heart className={`w-6 h-6 ${album && isFavorite(String(album.id)) ? 'fill-red-500' : ''
                   }`} />
               </button>
 
@@ -538,13 +545,13 @@ const AlbumDetailPage: React.FC = () => {
                       className="w-full px-4 py-3 flex items-center gap-3 hover:bg-white/10 transition-colors text-left"
                     >
                       <Heart
-                        className={`w-4 h-4 ${isFavorite(parseInt(album.id))
+                        className={`w-4 h-4 ${isFavorite(String(album.id))
                             ? 'text-red-500 fill-red-500'
                             : 'text-gray-400'
                           }`}
                       />
                       <span className="text-white text-sm">
-                        {isFavorite(parseInt(album.id)) ? 'Remover dos favoritos' : 'Adicionar aos favoritos'}
+                        {isFavorite(String(album.id)) ? 'Remover dos favoritos' : 'Adicionar aos favoritos'}
                       </span>
                     </button>
 
@@ -667,12 +674,12 @@ const AlbumDetailPage: React.FC = () => {
                   </button>
                   <button
                     onClick={() => handleToggleFavorite(track.id)}
-                    className={`p-1.5 rounded-full transition-all ${isFavorite(parseInt(track.id))
+                    className={`p-1.5 rounded-full transition-all ${isFavorite(String(track.id))
                         ? 'text-primary-400 opacity-100'
                         : 'text-gray-400 opacity-0 group-hover:opacity-100 hover:text-white'
                       }`}
                   >
-                    <Heart className={`w-4 h-4 ${isFavorite(parseInt(track.id)) ? 'fill-current' : ''}`} />
+                    <Heart className={`w-4 h-4 ${isFavorite(String(track.id)) ? 'fill-current' : ''}`} />
                   </button>
                   <span className="text-sm text-gray-400 min-w-[45px] text-right tabular-nums">
                     {track.duration}
@@ -734,11 +741,15 @@ const AlbumDetailPage: React.FC = () => {
                         if (selectedTrackForPlaylist) {
                           // Adicionar apenas a faixa selecionada
                           addTrackToPlaylist(playlist.id, {
-                            id: parseInt(selectedTrackForPlaylist.id) || 0,
+                            id: selectedTrackForPlaylist.id,
                             title: selectedTrackForPlaylist.title,
                             artist: selectedTrackForPlaylist.artist,
                             duration: selectedTrackForPlaylist.duration,
-                            coverUrl: selectedTrackForPlaylist.coverUrl
+                            coverUrl: selectedTrackForPlaylist.coverUrl,
+                            audioUrl: (selectedTrackForPlaylist as any).audioUrl,
+                            youtubeSource: (selectedTrackForPlaylist as any).youtubeSource,
+                            number: (selectedTrackForPlaylist as any).number,
+                            category: (selectedTrackForPlaylist as any).category
                           });
                           setShowPlaylistModal(false);
                           setSelectedTrackForPlaylist(null);
@@ -748,11 +759,15 @@ const AlbumDetailPage: React.FC = () => {
                           if (album?.tracks) {
                             album.tracks.forEach(track => {
                               addTrackToPlaylist(playlist.id, {
-                                id: parseInt(track.id) || 0,
+                                id: track.id,
                                 title: track.title,
                                 artist: track.artist,
                                 duration: track.duration,
-                                coverUrl: track.coverUrl
+                                coverUrl: track.coverUrl,
+                                audioUrl: (track as any).audioUrl,
+                                youtubeSource: (track as any).youtubeSource,
+                                number: (track as any).number,
+                                category: (track as any).category
                               });
                             });
                           }

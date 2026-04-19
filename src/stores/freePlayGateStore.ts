@@ -3,6 +3,14 @@ import { Hino } from '@/types';
 
 const STORAGE_KEY = 'ccb_free_plays';
 const MAX_FREE_PLAYS = 1;
+const FREE_PLAY_GATE_ENABLED =
+  String(import.meta.env.VITE_PUBLIC_PLAY_GATE_ENABLED ?? '').toLowerCase() === 'true';
+
+function isLocalPlaybackBypass(): boolean {
+  if (typeof window === 'undefined') return false;
+  const host = String(window.location.hostname || '').toLowerCase();
+  return host === 'localhost' || host === '127.0.0.1';
+}
 
 interface FreePlayGateState {
   // Modal state
@@ -42,11 +50,15 @@ export const useFreePlayGateStore = create<FreePlayGateState>((set) => ({
   blockedTrack: null,
 
   canPlay: () => {
+    if (!FREE_PLAY_GATE_ENABLED) return true;
+    if (isLocalPlaybackBypass()) return true;
     const played = getPlayedIds();
     return played.length < MAX_FREE_PLAYS;
   },
 
   recordPlay: (trackId: string) => {
+    if (!FREE_PLAY_GATE_ENABLED) return;
+    if (isLocalPlaybackBypass()) return;
     const played = getPlayedIds();
     if (!played.includes(trackId)) {
       played.push(trackId);
@@ -63,6 +75,8 @@ export const useFreePlayGateStore = create<FreePlayGateState>((set) => ({
   },
 
   getPlayCount: () => {
+    if (!FREE_PLAY_GATE_ENABLED) return 0;
+    if (isLocalPlaybackBypass()) return 0;
     return getPlayedIds().length;
   },
 

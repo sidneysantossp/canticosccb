@@ -3,6 +3,7 @@
  * Substitui completamente o backend PHP
  */
 import { supabase } from './supabase-auth';
+import { supabaseFetch } from './supabaseRest';
 
 // ==================== HINOS ====================
 
@@ -33,48 +34,41 @@ export async function getHinos(params?: {
   search?: string;
   order?: string;
 }) {
-  let query = supabase
-    .from('hinos')
-    .select('*')
-    .eq('ativo', true)
-    .eq('status', 'published');
+  const filters: Record<string, string> = {
+    select: '*',
+    ativo: 'eq.true',
+    status: 'eq.published',
+    order: params?.order || 'created_at.desc',
+  };
 
   if (params?.categoria) {
-    query = query.eq('categoria', params.categoria);
+    filters.categoria = `eq.${params.categoria}`;
   }
   if (params?.compositor_id) {
-    query = query.eq('compositor_id', params.compositor_id);
+    filters.compositor_id = `eq.${params.compositor_id}`;
   }
   if (params?.search) {
-    query = query.ilike('titulo', `%${params.search}%`);
-  }
-  if (params?.order) {
-    const [col, dir] = params.order.split('.');
-    query = query.order(col, { ascending: dir === 'asc' });
-  } else {
-    query = query.order('created_at', { ascending: false });
+    filters.titulo = `ilike.%${params.search}%`;
   }
   if (params?.limit) {
-    query = query.limit(params.limit);
+    filters.limit = String(params.limit);
   }
   if (params?.offset) {
-    query = query.range(params.offset, params.offset + (params.limit || 10) - 1);
+    filters.offset = String(params.offset);
   }
 
-  const { data, error } = await query;
-  if (error) throw error;
-  return data || [];
+  return await supabaseFetch<any>('hinos', filters);
 }
 
 export async function getHinoById(id: string) {
-  const { data, error } = await supabase
-    .from('hinos')
-    .select('*')
-    .eq('id', id)
-    .single();
-  
-  if (error) throw error;
-  return data;
+  const rows = await supabaseFetch<any>('hinos', {
+    select: '*',
+    id: `eq.${id}`,
+    limit: '1',
+  });
+
+  if (!rows.length) throw new Error('Hino não encontrado');
+  return rows[0];
 }
 
 export async function createHino(hino: Partial<Hino>) {
@@ -129,48 +123,46 @@ export async function getCompositores(params?: {
   search?: string;
   verified?: boolean;
 }) {
-  let query = supabase
-    .from('composers')
-    .select('*')
-    .or('verified.eq.true,status.eq.approved');
+  const filters: Record<string, string> = {
+    select: '*',
+    order: 'name.asc',
+  };
 
   if (params?.verified) {
-    query = query.eq('verified', true);
+    filters.verified = 'eq.true';
+  } else {
+    filters.or = '(verified.eq.true,status.eq.approved)';
   }
   if (params?.search) {
-    query = query.or(`name.ilike.%${params.search}%,artistic_name.ilike.%${params.search}%`);
+    filters.or = `(name.ilike.%${params.search}%,artistic_name.ilike.%${params.search}%)`;
   }
   if (params?.limit) {
-    query = query.limit(params.limit);
+    filters.limit = String(params.limit);
   }
 
-  query = query.order('name', { ascending: true });
-
-  const { data, error } = await query;
-  if (error) throw error;
-  return data || [];
+  return await supabaseFetch<any>('composers', filters);
 }
 
 export async function getCompositorById(id: string) {
-  const { data, error } = await supabase
-    .from('composers')
-    .select('*')
-    .eq('id', id)
-    .single();
-  
-  if (error) throw error;
-  return data;
+  const rows = await supabaseFetch<any>('composers', {
+    select: '*',
+    id: `eq.${id}`,
+    limit: '1',
+  });
+
+  if (!rows.length) throw new Error('Compositor não encontrado');
+  return rows[0];
 }
 
 export async function getCompositorBySlug(slug: string) {
-  const { data, error } = await supabase
-    .from('composers')
-    .select('*')
-    .eq('slug', slug)
-    .single();
-  
-  if (error) throw error;
-  return data;
+  const rows = await supabaseFetch<any>('composers', {
+    select: '*',
+    slug: `eq.${slug}`,
+    limit: '1',
+  });
+
+  if (!rows.length) throw new Error('Compositor não encontrado');
+  return rows[0];
 }
 
 // ==================== ALBUMS ====================
@@ -192,34 +184,32 @@ export async function getAlbums(params?: {
   limit?: number;
   compositor_id?: string;
 }) {
-  let query = supabase
-    .from('albums')
-    .select('*')
-    .eq('is_published', true);
+  const filters: Record<string, string> = {
+    select: '*',
+    is_published: 'eq.true',
+    order: 'created_at.desc',
+  };
 
   if (params?.compositor_id) {
-    query = query.eq('composer_id', params.compositor_id);
+    filters.composer_id = `eq.${params.compositor_id}`;
   }
   if (params?.limit) {
-    query = query.limit(params.limit);
+    filters.limit = String(params.limit);
   }
 
-  query = query.order('created_at', { ascending: false });
-
-  const { data, error } = await query;
-  if (error) throw error;
-  return (data || []).filter((album: any) => album.active !== false);
+  const rows = await supabaseFetch<any>('albums', filters);
+  return (rows || []).filter((album: any) => album.active !== false);
 }
 
 export async function getAlbumById(id: string) {
-  const { data, error } = await supabase
-    .from('albums')
-    .select('*')
-    .eq('id', id)
-    .single();
-  
-  if (error) throw error;
-  return data;
+  const rows = await supabaseFetch<any>('albums', {
+    select: '*',
+    id: `eq.${id}`,
+    limit: '1',
+  });
+
+  if (!rows.length) throw new Error('Álbum não encontrado');
+  return rows[0];
 }
 
 // ==================== CATEGORIAS ====================
@@ -234,14 +224,11 @@ export interface Categoria {
 }
 
 export async function getCategorias() {
-  const { data, error } = await supabase
-    .from('categorias')
-    .select('*')
-    .eq('ativo', true)
-    .order('nome', { ascending: true });
-  
-  if (error) throw error;
-  return data || [];
+  return await supabaseFetch<any>('categorias', {
+    select: '*',
+    ativo: 'eq.true',
+    order: 'nome.asc',
+  });
 }
 
 // ==================== BANNERS ====================
@@ -259,14 +246,11 @@ export interface Banner {
 }
 
 export async function getBanners() {
-  const { data, error } = await supabase
-    .from('banners')
-    .select('*')
-    .eq('is_active', true)
-    .order('position', { ascending: true });
-  
-  if (error) throw error;
-  return data || [];
+  return await supabaseFetch<any>('banners', {
+    select: '*',
+    is_active: 'eq.true',
+    order: 'position.asc',
+  });
 }
 
 // ==================== FAVORITOS ====================

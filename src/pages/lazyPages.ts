@@ -48,6 +48,7 @@ export const LibraryPage = lazyWithChunkRecovery(() => import('./LibraryPage'));
 export const LikedSongsPage = lazyWithChunkRecovery(() => import('./LikedSongsPage'));
 export const HistoryPage = lazyWithChunkRecovery(() => import('./HistoryPage'));
 export const NotificationsPage = lazyWithChunkRecovery(() => import('./NotificationsPage'));
+export const ChatPage = lazyWithChunkRecovery(() => import('./ChatPage'));
 export const HinosHubPage = lazyWithChunkRecovery(() => import('./HinosHubPage'));
 export const HinarioRangePage = lazyWithChunkRecovery(() => import('./HinarioRangePage'));
 export const ManageComposersPage = lazyWithChunkRecovery(() => import('./ManageComposersPage'));

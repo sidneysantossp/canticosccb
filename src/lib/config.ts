@@ -3,16 +3,57 @@
  * Centralize todas as URLs e configurações aqui
  */
 
+import { DEFAULT_SITE_URL, normalizeMediaBaseUrl, normalizeSiteUrl } from '@/utils/siteUrl';
+
 const SUPABASE_URL = (import.meta.env?.VITE_SUPABASE_URL ?? '').replace(/\/+$/, '');
 const SUPABASE_STORAGE_URL = SUPABASE_URL ? `${SUPABASE_URL}/storage/v1/object/public` : '';
-const MEDIA_PUBLIC_BASE_URL =
-  (import.meta.env?.VITE_MEDIA_PUBLIC_BASE_URL ?? '').replace(/\/+$/, '') ||
-  (SUPABASE_STORAGE_URL ? `${SUPABASE_STORAGE_URL}/images` : '');
+const MEDIA_PUBLIC_BASE_URL = normalizeMediaBaseUrl(
+  import.meta.env?.VITE_MEDIA_PUBLIC_BASE_URL ?? '',
+  SUPABASE_STORAGE_URL ? `${SUPABASE_STORAGE_URL}/images` : ''
+);
+const APP_BASE_URL = normalizeSiteUrl(
+  import.meta.env?.VITE_APP_URL || (typeof window !== 'undefined' ? window.location.origin : DEFAULT_SITE_URL),
+  DEFAULT_SITE_URL
+);
 
 export const DEFAULT_COVER_IDENTIFIER = '1771984574638_y6tw06';
 export const DEFAULT_COVER_URL =
-  import.meta.env?.VITE_DEFAULT_COVER_URL ??
+  normalizeMediaBaseUrl(import.meta.env?.VITE_DEFAULT_COVER_URL ?? '') ||
   `${MEDIA_PUBLIC_BASE_URL}/covers/${DEFAULT_COVER_IDENTIFIER}.png`;
+
+function basename(value: string): string {
+  return String(value || '').split('/').filter(Boolean).pop() || '';
+}
+
+function mapStorageObjectToMediaPath(bucket: string, path: string): string {
+  const cleanPath = String(path || '').replace(/^\/+/, '');
+  if (!bucket || !cleanPath) return '';
+
+  switch (bucket) {
+    case 'images':
+      return cleanPath;
+    case 'banners':
+      return cleanPath.startsWith('banners/') ? cleanPath : `banners/${cleanPath}`;
+    case 'avatars':
+    case 'user-avatars':
+    case 'composer-avatars':
+      return `avatars/${basename(cleanPath)}`;
+    case 'covers':
+      return `covers/${basename(cleanPath)}`;
+    case 'logos':
+      return `logos/${basename(cleanPath)}`;
+    case 'documents':
+      return `documents/${basename(cleanPath)}`;
+    case 'songs':
+      return `songs/${basename(cleanPath)}`;
+    case 'media':
+      return `media/${basename(cleanPath)}`;
+    case 'copyright-attachments':
+      return `copyright-attachments/${basename(cleanPath)}`;
+    default:
+      return '';
+  }
+}
 
 
 export function getHinoUrl(filename: string): string {
@@ -43,6 +84,18 @@ export function getBannerUrl(filename: string): string {
   return `${MEDIA_PUBLIC_BASE_URL}/banners/${encodeURIComponent(filename)}`;
 }
 
+export function getStorageObjectUrl(bucket: string, path: string): string {
+  if (!bucket || !path) return '';
+  if (path.startsWith('http')) return path;
+  const mediaPath = mapStorageObjectToMediaPath(bucket, path);
+  if (MEDIA_PUBLIC_BASE_URL && mediaPath) {
+    return `${MEDIA_PUBLIC_BASE_URL}/${mediaPath}`;
+  }
+  if (!SUPABASE_URL) return '';
+  const cleanPath = String(path).replace(/^\/+/, '');
+  return `${SUPABASE_URL}/storage/v1/object/public/${bucket}/${cleanPath}`;
+}
+
 /**
  * Gera URL de fallback para quando mídia não existe
  */
@@ -58,7 +111,7 @@ export function getPlaceholderUrl(type: 'hino' | 'album' | 'avatar'): string {
 export const APP_CONFIG = {
   name: 'Cânticos CCB',
   description: 'Plataforma de Hinos da Congregação Cristã no Brasil',
-  url: import.meta.env.VITE_APP_URL || 'http://localhost:5173',
+  url: APP_BASE_URL,
   mediaUrl: MEDIA_PUBLIC_BASE_URL,
 } as const;
 

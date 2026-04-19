@@ -19,6 +19,7 @@ import { uploadApi } from '@/lib/api-client';
 import { DEFAULT_COVER_URL } from '@/lib/config';
 import {
   extractAudioDuration,
+  importArchiveTrackServerSide,
   signR2UploadBatch,
   uploadArchiveMediaToR2,
   uploadFileWithSignedR2Url,
@@ -45,8 +46,13 @@ import {
   getWaybackDiscoveryPreset,
   normalizeWaybackDiscoverySeedUrl,
 } from '@/lib/admin/archiveImportAutomation';
-import { supabase } from '@/lib/supabase-auth';
-import { supabaseDelete, supabaseFetch, supabaseInsert } from '@/lib/supabaseRest';
+import {
+  supabaseFetch,
+  supabaseFetchWithOptions,
+  supabasePublicDelete,
+  supabasePublicInsert,
+  supabasePublicUpsert,
+} from '@/lib/supabaseRest';
 
 interface TrackInfo {
   fileName: string;
@@ -558,22 +564,22 @@ function mapHinarioCategoryName(value?: string | null): string | null {
 }
 
 async function findExistingAlbumBySlug(slug: string): Promise<ExistingAlbumRow | null> {
-  const rows = await supabaseFetch<ExistingAlbumRow>('albums', {
+  const rows = await supabaseFetchWithOptions<ExistingAlbumRow>('albums', {
     select: 'id,slug,title,total_tracks,metadata',
     slug: `eq.${slug}`,
     limit: '1',
-  });
+  }, { bypassCache: true });
 
   return rows[0] || null;
 }
 
 async function getExistingAlbumTrackOrders(albumId: string): Promise<Set<number>> {
-  const rows = await supabaseFetch<{ position?: number | null; track_number?: number | null }>('album_hinos', {
+  const rows = await supabaseFetchWithOptions<{ position?: number | null; track_number?: number | null }>('album_hinos', {
     select: 'position,track_number',
     album_id: `eq.${albumId}`,
     order: 'position.asc',
     limit: '2000',
-  });
+  }, { bypassCache: true });
 
   return new Set(
     rows
@@ -583,22 +589,12 @@ async function getExistingAlbumTrackOrders(albumId: string): Promise<Set<number>
 }
 
 async function upsertAlbumHinoLink(albumId: string, hinoId: string, position: number) {
-  const { error } = await supabase
-    .from('album_hinos')
-    .upsert(
-      {
-        album_id: albumId,
-        hino_id: hinoId,
-        position,
-        track_number: position,
-      },
-      {
-        onConflict: 'album_id,hino_id',
-        ignoreDuplicates: false,
-      }
-    );
-
-  if (error) throw error;
+  await supabasePublicUpsert('album_hinos', {
+    album_id: albumId,
+    hino_id: hinoId,
+    position,
+    track_number: position,
+  }, 'album_id,hino_id');
 }
 
 async function attachHinoCategories(hinoId: string, categoryIds: string[]) {
@@ -609,14 +605,7 @@ async function attachHinoCategories(hinoId: string, categoryIds: string[]) {
     categoria_id: categoryId,
   }));
 
-  const { error } = await supabase
-    .from('hino_categorias')
-    .upsert(rows, {
-      onConflict: 'hino_id,categoria_id',
-      ignoreDuplicates: true,
-    });
-
-  if (error) throw error;
+  await supabasePublicUpsert('hino_categorias', rows, 'hino_id,categoria_id');
 }
 
 const AdminArchiveImport: React.FC = () => {
@@ -916,7 +905,7 @@ const AdminArchiveImport: React.FC = () => {
 
     try {
       const proxyUrl = `/api/archive-proxy?url=${encodeURIComponent(targetUrl)}`;
-      const response = await fetch(proxyUrl);
+      const response = await fetchWithTimeout(proxyUrl, undefined, 45000);
       if (response.ok) {
         return await response.json();
       }
@@ -927,7 +916,19 @@ const AdminArchiveImport: React.FC = () => {
     }
 
     try {
-      const response = await fetch(targetUrl);
+      const proxyUrl = `/api/archive-json?url=${encodeURIComponent(targetUrl)}`;
+      const response = await fetchWithTimeout(proxyUrl, undefined, 45000);
+      if (response.ok) {
+        return await response.json();
+      }
+
+      errors.push(`Serviço protegido auxiliar indisponível (${response.status}).`);
+    } catch (error: any) {
+      errors.push(`Serviço protegido auxiliar indisponível: ${error?.message || 'erro de rede'}`);
+    }
+
+    try {
+      const response = await fetchWithTimeout(targetUrl, undefined, 30000);
       if (response.ok) {
         return await response.json();
       }
@@ -1171,50 +1172,6 @@ const AdminArchiveImport: React.FC = () => {
     );
   }, []);
 
-  const downloadWaybackMediaFile = useCallback(async (item: WaybackDiscoveryItem): Promise<File> => {
-    const fileName = getWaybackMediaFileName(item);
-    const mimeType = getWaybackMediaMimeType(item);
-    const errors: string[] = [];
-
-    const blobToFile = async (blobPromise: Promise<Blob>) => {
-      const blob = await blobPromise;
-      if (blob.size <= 0) {
-        throw new Error('Arquivo vazio retornado pela fonte protegida do acervo.');
-      }
-
-      return new File([blob], fileName, { type: mimeType });
-    };
-
-    try {
-      const proxyUrl = `/api/archive-proxy?url=${encodeURIComponent(item.archiveUrl)}`;
-      const response = await fetchWithTimeout(proxyUrl);
-      if (response.ok) {
-        return await blobToFile(response.blob());
-      }
-
-      errors.push(`O serviço protegido retornou ${response.status}.`);
-    } catch (error: any) {
-      errors.push(`O serviço protegido falhou: ${error?.message || 'erro de rede'}`);
-    }
-
-    try {
-      const response = await fetchWithTimeout(item.archiveUrl, { redirect: 'follow' });
-      if (response.ok) {
-        return await blobToFile(response.blob());
-      }
-
-      errors.push(`A consulta complementar retornou ${response.status}.`);
-    } catch (error: any) {
-      errors.push(`A consulta complementar falhou: ${error?.message || 'erro de rede'}`);
-    }
-
-    throw new Error(
-      `Não foi possível baixar a mídia do acervo "${fileName}".\n` +
-      errors.join('\n') +
-      '\n\nSe estiver em ambiente local, ative o serviço de importação do acervo.'
-    );
-  }, []);
-
   const extractTracksFromZip = useCallback(async (
     zipBlob: Blob,
     context: { rawArchiveSlug: string; albumTitle: string },
@@ -1273,9 +1230,9 @@ const AdminArchiveImport: React.FC = () => {
 
     for (let index = 0; index < group.items.length; index += 1) {
       const item = group.items[index];
-      const file = await downloadWaybackMediaFile(item);
-      const fileName = file.name;
-      const mimeType = file.type || getWaybackMediaMimeType(item);
+      const fileName = getWaybackMediaFileName(item);
+      const mimeType = getWaybackMediaMimeType(item);
+      const placeholderFile = new File([], fileName, { type: mimeType });
 
       tracks.push(normalizeTrackFromHinario({
         fileName,
@@ -1287,8 +1244,8 @@ const AdminArchiveImport: React.FC = () => {
           albumSlug: group.rawArchiveSlug,
           albumTitle: group.albumTitle,
         }),
-        file,
-        size: file.size,
+        file: placeholderFile,
+        size: 0,
         status: 'pending',
         sourceArchiveUrl: item.archiveUrl,
         mimeType,
@@ -1296,7 +1253,7 @@ const AdminArchiveImport: React.FC = () => {
 
       if (onProgress) {
         const progress = 15 + Math.round(((index + 1) / group.items.length) * 45);
-        onProgress(progress, `Baixando faixa ${index + 1}/${group.items.length}: ${fileName}`);
+        onProgress(progress, `Preparando faixa ${index + 1}/${group.items.length}: ${fileName}`);
       }
     }
 
@@ -1315,7 +1272,7 @@ const AdminArchiveImport: React.FC = () => {
       sourceSite: PUBLIC_ARCHIVE_SITE_REFERENCE,
       sourcePath: group.sourcePath,
     };
-  }, [downloadWaybackMediaFile, normalizeTrackFromHinario, refreshTrackCategories, resolveArchiveCategoryNames]);
+  }, [normalizeTrackFromHinario, refreshTrackCategories, resolveArchiveCategoryNames]);
 
   const analyzeArchiveUrl = useCallback(async (
     inputUrl: string,
@@ -1397,67 +1354,60 @@ const AdminArchiveImport: React.FC = () => {
   const uploadPreparedTrackFile = useCallback(async (track: TrackInfo, preparedUpload?: PreparedTrackUpload) => {
     const uploadFile = preparedUpload?.file || createTrackUploadFile(track);
     const extension = normalizeDiscoveryExtension(uploadFile.name.split('.').pop() || '');
+    const canResolveDurationFromLocalFile = uploadFile.size > 0 && extension !== 'wma' && extension !== 'mid' && extension !== 'midi';
+    const resolveDurationIfPossible = async (url: string) => {
+      if (extension === 'wma' || extension === 'mid' || extension === 'midi') {
+        return {
+          url,
+          duration: '',
+        };
+      }
+
+      try {
+        const duration = await extractAudioDuration(uploadFile);
+        return { url, duration };
+      } catch (error: any) {
+        console.warn('⚠️ Não foi possível extrair a duração do áudio após upload, continuando sem esse campo:', error?.message || error);
+        return { url, duration: '' };
+      }
+    };
 
     if (track.sourceArchiveUrl) {
       const url = await uploadArchiveMediaToR2({
         archiveUrl: track.sourceArchiveUrl,
         fileName: uploadFile.name,
-        contentType: track.mimeType || uploadFile.type || 'application/octet-stream',
+        contentType: uploadFile.type || track.mimeType || 'application/octet-stream',
         type: 'hinos',
       });
 
-      if (extension === 'wma' || extension === 'mid' || extension === 'midi') {
+      if (!canResolveDurationFromLocalFile) {
         return {
           url,
           duration: '',
         };
       }
 
-      try {
-        const duration = await extractAudioDuration(uploadFile);
-        return { url, duration };
-      } catch (error: any) {
-        console.warn(
-          '⚠️ Não foi possível extrair a duração da mídia direta após upload no servidor, continuando sem esse campo:',
-          error?.message || error
-        );
-        return { url, duration: '' };
-      }
+      return await resolveDurationIfPossible(url);
     }
 
     if (preparedUpload?.signedUpload) {
-      let url = '';
-
       try {
-        url = await uploadFileWithSignedR2Url(uploadFile, preparedUpload.signedUpload);
+        const url = await uploadFileWithSignedR2Url(uploadFile, preparedUpload.signedUpload);
+        return await resolveDurationIfPossible(url);
       } catch (error: any) {
         console.warn(
-          '⚠️ Upload com assinatura em lote falhou; tentando novamente com uma assinatura nova da faixa...',
+          '⚠️ Upload com assinatura em lote falhou; tentando fallback da faixa...',
           error?.message || error
         );
 
         try {
-          url = await uploadApi.uploadFile(uploadFile, 'hinos');
+          const url = await uploadApi.uploadFile(uploadFile, 'hinos');
+          return await resolveDurationIfPossible(url);
         } catch (retryError: any) {
           throw retryError instanceof Error
             ? retryError
             : new Error(retryError?.message || 'Falha ao reenviar a faixa para o armazenamento de mídia.');
         }
-      }
-
-      if (extension === 'wma' || extension === 'mid' || extension === 'midi') {
-        return {
-          url,
-          duration: '',
-        };
-      }
-
-      try {
-        const duration = await extractAudioDuration(uploadFile);
-        return { url, duration };
-      } catch (error: any) {
-        console.warn('⚠️ Não foi possível extrair a duração do áudio após upload em lote, continuando sem esse campo:', error?.message || error);
-        return { url, duration: '' };
       }
     }
 
@@ -1526,25 +1476,23 @@ const AdminArchiveImport: React.FC = () => {
       };
     }
 
-    const preparedTrackUploads = await prepareArchiveTrackUploads(
-      pendingTrackIndexes
-        .filter((trackIndex) => !tracks[trackIndex]?.sourceArchiveUrl)
-        .map((trackIndex) => tracks[trackIndex])
-    );
+    const preparedTrackUploads = prepared.sourceFormat === 'media'
+      ? []
+      : await prepareArchiveTrackUploads(
+          pendingTrackIndexes.map((trackIndex) => tracks[trackIndex])
+        );
     const preparedTrackUploadMap = new Map<number, PreparedTrackUpload>();
-    pendingTrackIndexes
-      .filter((trackIndex) => !tracks[trackIndex]?.sourceArchiveUrl)
-      .forEach((trackIndex, batchIndex) => {
+    pendingTrackIndexes.forEach((trackIndex, batchIndex) => {
       const preparedUpload = preparedTrackUploads[batchIndex];
       if (preparedUpload) {
         preparedTrackUploadMap.set(trackIndex, preparedUpload);
       }
-      });
+    });
 
     let albumId = existingAlbum?.id || '';
     let createdAlbumInThisRun = false;
     if (!albumId) {
-      const albumResult = await supabaseInsert<{ id: string }>('albums', {
+      const albumResult = await supabasePublicInsert<{ id: string }>('albums', {
         title: albumTitle,
         slug: prepared.albumSlug,
         artist: DEFAULT_ARCHIVE_ARTIST,
@@ -1618,7 +1566,6 @@ const AdminArchiveImport: React.FC = () => {
       });
 
       try {
-        const { url, duration } = await uploadPreparedTrackFile(track, preparedTrackUploadMap.get(index));
         const trackCategoryNames = applyKnownCategories(
           track.categoryNames && track.categoryNames.length > 0
             ? track.categoryNames
@@ -1627,35 +1574,66 @@ const AdminArchiveImport: React.FC = () => {
         const trackPrimaryCategory = pickPrimaryArchiveCategory(trackCategoryNames) || primaryCategory;
         const trackCategoryIds = resolveCategoryIds(trackCategoryNames);
 
-        const hinoResult = await supabaseInsert<{ id: string }>('hinos', {
-          titulo: track.title,
-          slug: buildArchiveTrackSlug(track.title, prepared.albumSlug, index + 1),
-          numero: track.number || null,
-          categoria: trackPrimaryCategory,
-          compositor_nome: DEFAULT_ARCHIVE_ARTIST,
-          audio_url: url,
-          cover_url: DEFAULT_COVER_URL,
-          duracao: duration,
-          letra: track.lyrics || undefined,
-          status: 'draft',
-          ativo: false,
-        });
+        let url = '';
+        let duration = '';
+        let hinoId = '';
 
-        if (!hinoResult?.id) {
-          throw new Error('Falha ao criar o hino no banco de dados.');
+        if (track.sourceArchiveUrl) {
+          const serverResult = await importArchiveTrackServerSide({
+            archiveUrl: track.sourceArchiveUrl,
+            fileName: track.fileName,
+            contentType: track.mimeType || (track.file as File)?.type || 'application/octet-stream',
+            albumId,
+            position: index + 1,
+            title: track.title,
+            slug: buildArchiveTrackSlug(track.title, prepared.albumSlug, index + 1),
+            number: track.number ?? null,
+            primaryCategory: trackPrimaryCategory,
+            categoryIds: trackCategoryIds.length > 0 ? trackCategoryIds : categoryIds,
+            lyrics: track.lyrics,
+          });
+
+          url = serverResult.publicUrl;
+          duration = serverResult.duration;
+          hinoId = serverResult.hinoId;
+        } else {
+          const uploadResult = await uploadPreparedTrackFile(track, preparedTrackUploadMap.get(index));
+          url = uploadResult.url;
+          duration = uploadResult.duration;
+
+          const hinoResult = await supabasePublicInsert<{ id: string }>('hinos', {
+            titulo: track.title,
+            slug: buildArchiveTrackSlug(track.title, prepared.albumSlug, index + 1),
+            numero: track.number || null,
+            categoria: trackPrimaryCategory,
+            compositor_nome: DEFAULT_ARCHIVE_ARTIST,
+            audio_url: url,
+            cover_url: DEFAULT_COVER_URL,
+            duracao: duration,
+            letra: track.lyrics || undefined,
+            status: 'draft',
+            ativo: false,
+          });
+
+          if (!hinoResult?.id) {
+            throw new Error('Falha ao criar o hino no banco de dados.');
+          }
+
+          hinoId = hinoResult.id;
+          await upsertAlbumHinoLink(albumId, hinoId, index + 1);
+          await attachHinoCategories(hinoId, trackCategoryIds.length > 0 ? trackCategoryIds : categoryIds);
         }
-
-        await upsertAlbumHinoLink(albumId, hinoResult.id, index + 1);
-        await attachHinoCategories(hinoResult.id, trackCategoryIds.length > 0 ? trackCategoryIds : categoryIds);
 
         const doneTrack: TrackInfo = {
           ...track,
           status: 'done',
           audioUrl: url,
           duration,
+          note: hinoId ? `Hino ${hinoId}` : track.note,
         };
 
         updatedTracks[index] = doneTrack;
+        existingTrackOrders.add(index + 1);
         importedTracks += 1;
 
         onProgress?.({
@@ -1703,7 +1681,7 @@ const AdminArchiveImport: React.FC = () => {
 
     if (shouldCleanupEmptyArchiveAlbum) {
       try {
-        await supabaseDelete('albums', { id: `eq.${albumId}` });
+        await supabasePublicDelete('albums', { id: `eq.${albumId}` });
       } catch (cleanupError) {
         console.warn('Falha ao remover álbum vazio após erro de upload:', cleanupError);
       }

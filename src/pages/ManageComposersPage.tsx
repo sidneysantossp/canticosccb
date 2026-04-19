@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Users, ArrowRight, Music, Mail } from 'lucide-react';
+import { Users, ArrowRight, Music, Mail, Clock } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { compositorGerentesApi } from '@/lib/api-client';
 
@@ -16,6 +16,7 @@ const ManageComposersPage: React.FC = () => {
   const navigate = useNavigate();
   const { user, switchToComposer } = useAuth();
   const [composers, setComposers] = useState<ManagedComposer[]>([]);
+  const [pendingInvitesCount, setPendingInvitesCount] = useState(0);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -31,11 +32,17 @@ const ManageComposersPage: React.FC = () => {
 
       if (response.data) {
         const dataArray = Array.isArray(response.data) ? response.data : response.data.compositores || [];
-        // Filtrar apenas os ativos
+        const pendingInvites = dataArray.filter(
+          (g: any) => g.status === 'pendente'
+        );
         const activeComposers = dataArray.filter(
           (g: any) => g.status === 'ativo'
         );
+
+        setPendingInvitesCount(pendingInvites.length);
         setComposers(activeComposers);
+      } else {
+        setPendingInvitesCount(0);
       }
     } catch (error) {
       console.error('Erro ao carregar compositores:', error);
@@ -87,6 +94,21 @@ const ManageComposersPage: React.FC = () => {
             <p className="text-gray-400">
               Você não possui compositores ativos para gerenciar no momento.
             </p>
+            {pendingInvitesCount > 0 && (
+              <div className="mt-6 inline-flex flex-col items-center gap-3">
+                <div className="inline-flex items-center gap-2 rounded-full border border-primary-500/30 bg-primary-500/10 px-4 py-2 text-sm text-primary-300">
+                  <Clock className="w-4 h-4" />
+                  {pendingInvitesCount} convite(s) aguardando resposta
+                </div>
+                <button
+                  onClick={() => navigate('/manager-invites')}
+                  className="inline-flex items-center gap-2 rounded-lg bg-primary-600 px-5 py-3 font-semibold text-white transition-all hover:bg-primary-700"
+                >
+                  Ver convites pendentes
+                  <ArrowRight className="w-4 h-4" />
+                </button>
+              </div>
+            )}
           </div>
         ) : (
           <div className="space-y-4">

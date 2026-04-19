@@ -4,7 +4,22 @@ import { fileURLToPath } from 'url';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-const DEFAULT_SITE_URL = 'https://canticosccb.com.br';
+const DEFAULT_SITE_URL = 'https://www.canticosccb.com.br';
+
+function normalizeSiteUrl(siteUrl = DEFAULT_SITE_URL) {
+  try {
+    const normalizedInput = /^https?:\/\//i.test(siteUrl) ? siteUrl : `https://${siteUrl}`;
+    const url = new URL(normalizedInput);
+
+    if (url.hostname === 'canticosccb.com.br') {
+      url.hostname = 'www.canticosccb.com.br';
+    }
+
+    return url.toString().replace(/\/+$/, '');
+  } catch {
+    return DEFAULT_SITE_URL;
+  }
+}
 
 function loadEnvFile(filePath) {
   if (!fs.existsSync(filePath)) return;
@@ -86,13 +101,18 @@ Content-Signal: search=yes,ai-input=yes,ai-train=no
 }
 
 function normalizeRobotsContent(content, siteUrl) {
+  const normalizedSiteUrl = normalizeSiteUrl(siteUrl);
   let normalized = (content || '').trim();
   if (!normalized) {
-    normalized = buildDefaultRobots(siteUrl).trim();
+    normalized = buildDefaultRobots(normalizedSiteUrl).trim();
   }
 
+  normalized = normalized
+    .replace(/https:\/\/canticosccb\.com\.br\/robots\.txt/gi, `${normalizedSiteUrl}/robots.txt`)
+    .replace(/^\s*Sitemap:\s*.*$/gim, `Sitemap: ${normalizedSiteUrl}/sitemap.xml`);
+
   if (!/^\s*Sitemap:/im.test(normalized)) {
-    normalized += `\n\nSitemap: ${siteUrl}/sitemap.xml`;
+    normalized += `\n\nSitemap: ${normalizedSiteUrl}/sitemap.xml`;
   }
 
   if (!/User-agent:\s*GPTBot/i.test(normalized)) {
@@ -160,7 +180,7 @@ async function fetchSiteConfig() {
   }, {});
 
   return {
-    siteUrl: String(configMap.site_url || DEFAULT_SITE_URL).replace(/\/+$/, ''),
+    siteUrl: normalizeSiteUrl(String(configMap.site_url || DEFAULT_SITE_URL)),
     robotsTxt: String(configMap.robots_txt || ''),
   };
 }

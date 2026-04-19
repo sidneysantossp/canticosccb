@@ -1,7 +1,9 @@
 import { supabase } from '@/lib/supabase-auth';
+import { normalizeYoutubeSource } from '@/lib/youtubeSource';
 
 export interface RecTrack {
   id: string;
+  number: number;
   title: string;
   composer_name: string;
   cover_url: string;
@@ -19,13 +21,14 @@ export interface PersonalizedData {
 
 const toRecTrack = (h: any, reason?: string): RecTrack => ({
   id: String(h.id),
+  number: Number(h.numero || h.number || 0),
   title: String(h.titulo || h.title || 'Hino'),
   composer_name: String(h.compositor_nome || h.compositor || h.composer_name || 'Desconhecido'),
   cover_url: String(h.cover_url || ''),
-  audio_url: String(h.audio_url || ''),
+  audio_url: normalizeYoutubeSource(h.youtube_source) ? '' : String(h.audio_url || ''),
   category: String(h.categoria || h.category || ''),
   reason,
-  youtube_source: h.youtube_source || undefined,
+  youtube_source: normalizeYoutubeSource(h.youtube_source),
 });
 
 export async function getPersonalizedHomeData(_userId: string): Promise<PersonalizedData> {

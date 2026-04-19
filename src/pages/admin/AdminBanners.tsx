@@ -15,6 +15,7 @@ import {
 import BannersStatsCards from '@/pages/admin/components/banners/BannersStatsCards';
 import BannerListItem from '@/pages/admin/components/banners/BannerListItem';
 import BannerEditModal from '@/pages/admin/components/banners/BannerEditModal';
+import { buildBannerUrl } from '@/lib/media-helper';
 
 const AdminBanners: React.FC = () => {
   const [activeTab, setActiveTab] = useState<BannerType>('hero');
@@ -109,7 +110,7 @@ const AdminBanners: React.FC = () => {
         gradient_overlay: banner.gradient_overlay || 'bg-gradient-to-br from-[#3b82f6]/80 to-[#8b5cf6]/80'
       });
       // Prepara preview a partir da URL existente
-      const url = banner.image_url || '';
+      const url = buildBannerUrl(banner);
       setPreviewUrl(url);
       const lower = url.toLowerCase();
       if (/(\.mp4|\.webm|\.mov)$/.test(lower)) setPreviewType('video');

@@ -66,7 +66,11 @@ export async function syncLocalFavoritesWithBackend(userId: string | number): Pr
     const stored = localStorage.getItem('favoriteHymns');
     if (!stored) return;
     const ids: any[] = JSON.parse(stored);
-    const unique = Array.from(new Set((Array.isArray(ids) ? ids : []).map((v) => Number(v) || parseInt(String(v), 10)).filter((n) => !!n)));
+    const unique = Array.from(new Set(
+      (Array.isArray(ids) ? ids : [])
+        .map((v) => String(v).trim())
+        .filter((v) => v.length > 0)
+    ));
     if (unique.length === 0) return;
     
     for (const id of unique) {

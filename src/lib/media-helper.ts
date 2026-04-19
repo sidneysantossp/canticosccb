@@ -2,7 +2,46 @@
  * Helper para trabalhar com URLs de mídia da VPS
  */
 
-import { getHinoUrl, getAlbumCoverUrl, getAvatarUrl, getPlaceholderUrl, getBannerUrl } from './config';
+import {
+  getHinoUrl,
+  getAlbumCoverUrl,
+  getAvatarUrl,
+  getPlaceholderUrl,
+  getBannerUrl,
+  getStorageObjectUrl,
+} from './config';
+
+function extractSupabasePublicObject(raw: string): { bucket: string; objectPath: string } | null {
+  const value = String(raw || '').trim();
+  if (!value) return null;
+
+  try {
+    const parsed = value.startsWith('http://') || value.startsWith('https://')
+      ? new URL(value)
+      : value.startsWith('/')
+        ? new URL(value, 'https://www.canticosccb.com.br')
+        : null;
+
+    const pathname = parsed?.pathname || value;
+    const marker = '/storage/v1/object/public/';
+
+    if (!pathname.startsWith(marker)) {
+      return null;
+    }
+
+    const remainder = pathname.slice(marker.length);
+    const [bucket, ...rest] = remainder.split('/').filter(Boolean);
+    const objectPath = rest.join('/');
+
+    if (!bucket || !objectPath) {
+      return null;
+    }
+
+    return { bucket, objectPath };
+  } catch {
+    return null;
+  }
+}
 
 /**
  * Formata nome de arquivo para URL
@@ -24,43 +63,80 @@ export function sanitizeFilename(filename: string): string {
 export function buildBannerUrl(banner: { image_url?: string } | string): string {
   const raw = typeof banner === 'string' ? banner : (banner?.image_url || '');
   if (!raw) return '';
-  
+
+  const storageObject = extractSupabasePublicObject(raw);
+  if (storageObject?.bucket === 'banners') {
+    return getStorageObjectUrl('banners', storageObject.objectPath);
+  }
+
   // Se já é uma URL completa (http/https), retornar diretamente
   if (raw.startsWith('http://') || raw.startsWith('https://')) {
     return raw;
   }
-  
+
   // Se começa com /, é um caminho relativo
   if (raw.startsWith('/')) {
+    if (raw.startsWith('/storage/v1/object/public/banners/')) {
+      const cleanPath = raw.replace('/storage/v1/object/public/banners/', '').replace(/^\/+/, '');
+      return getStorageObjectUrl('banners', cleanPath);
+    }
     return raw;
   }
-  
-  // Caso contrário, é um nome de arquivo - construir URL do Supabase
-  const filename = raw.split('/').pop() || raw;
-  return getBannerUrl(filename);
+
+  const cleanPath = raw.replace(/^\/+/, '');
+  if (cleanPath.startsWith('banners/')) {
+    return getStorageObjectUrl('banners', cleanPath);
+  }
+
+  // Caso contrário, é um nome de arquivo - construir URL padrão
+  const filename = cleanPath.split('/').pop() || cleanPath;
+  return getStorageObjectUrl('banners', filename) || getBannerUrl(filename);
 }
 
 /**
  * Gera URL de hino a partir de ID ou objeto
  */
 export function buildHinoUrl(hino: { id: string; audio_url?: string } | string): string {
-  if (typeof hino === 'string') {
-    const hasExt = /\.[a-z0-9]+$/i.test(hino);
-    const filename = hasExt ? hino : `${hino}.mp3`;
-    return getHinoUrl(filename);
+  const raw = typeof hino === 'string' ? String(hino || '').trim() : String(hino.audio_url || '').trim();
+
+  if (raw) {
+    const storageObject = extractSupabasePublicObject(raw);
+    if (storageObject?.bucket === 'images') {
+      const cleanObjectPath = storageObject.objectPath.replace(/^\/+/, '');
+      if (cleanObjectPath.startsWith('hinos/')) {
+        return getStorageObjectUrl('images', cleanObjectPath);
+      }
+
+      const legacyFilename = cleanObjectPath.split('/').pop()?.split('?')[0] || '';
+      if (legacyFilename) {
+        return getHinoUrl(legacyFilename);
+      }
+    }
+
+    if (raw.startsWith('http://') || raw.startsWith('https://')) {
+      return raw;
+    }
+
+    const cleanRaw = raw
+      .replace(/^\/+/, '')
+      .replace(/^storage\/v1\/object\/public\/images\//, '')
+      .replace(/^images\//, '');
+
+    if (cleanRaw.startsWith('hinos/')) {
+      return getStorageObjectUrl('images', cleanRaw);
+    }
+
+    const filenameFromRaw = cleanRaw.split('/').pop()?.split('?')[0] || '';
+    if (filenameFromRaw) {
+      return getHinoUrl(filenameFromRaw);
+    }
   }
-  
-  if (hino.audio_url) {
-    if (hino.audio_url.startsWith('http')) return hino.audio_url;
-    const filename = hino.audio_url.split('/').pop() || hino.audio_url;
-    return getHinoUrl(filename);
-  }
-  
-  let filename = hino.id;
+
+  let filename = typeof hino === 'string' ? String(hino || '').trim() : String(hino.id || '').trim();
   if (filename && !/\.[a-z0-9]+$/i.test(filename)) {
     filename = `${filename}.mp3`;
   }
-  
+
   return getHinoUrl(filename);
 }
 
@@ -74,8 +150,25 @@ export function buildAlbumCoverUrl(album: { id: string; cover_url?: string } | s
   
   const raw = album.cover_url || '';
   if (raw) {
+    const storageObject = extractSupabasePublicObject(raw);
+    if (storageObject) {
+      return getStorageObjectUrl(storageObject.bucket, storageObject.objectPath);
+    }
+
     if (raw.startsWith('http')) return raw;
-    const filename = raw.split('/').pop() || raw;
+
+    const cleanRaw = raw
+      .replace(/^\/+/, '')
+      .replace(/^storage\/v1\/object\/public\/images\//, '')
+      .replace(/^storage\/v1\/object\/public\/covers\//, '')
+      .replace(/^images\//, '')
+      .replace(/^covers\//, '');
+
+    if (cleanRaw.startsWith('covers/') || cleanRaw.startsWith('hinos/')) {
+      return getStorageObjectUrl('images', cleanRaw);
+    }
+
+    const filename = cleanRaw.split('/').pop() || cleanRaw;
     return getAlbumCoverUrl(filename);
   }
 
@@ -92,6 +185,11 @@ export function buildAvatarUrl(user: { id: string; avatar_url?: string; name?: s
   
   const raw = user.avatar_url || '';
   if (raw) {
+    const storageObject = extractSupabasePublicObject(raw);
+    if (storageObject) {
+      return getStorageObjectUrl(storageObject.bucket, storageObject.objectPath);
+    }
+
     if (raw.startsWith('http')) return raw;
     const filename = raw.split('/').pop()?.split('?')[0] || raw;
     return getAvatarUrl(filename);

@@ -1,5 +1,6 @@
 import { supabase } from '@/lib/supabase-auth';
 import { getOpenReportsCount } from '@/lib/admin/reportsApi';
+import { supabaseFetchWithOptions } from '@/lib/supabaseRest';
 
 export type AdminStats = {
   totalUsers: number;
@@ -10,6 +11,7 @@ export type AdminStats = {
   totalLikes: number;
   newUsersToday: number;
   pendingSongs: number;
+  pendingAlbums: number;
   pendingComposers: number;
   openReports: number;
 };
@@ -20,26 +22,35 @@ export const getAdminStats = async (): Promise<AdminStats> => {
       usersRes,
       composersRes,
       songsRes,
+      pendingAlbumsRows,
       openReports
     ] = await Promise.all([
       supabase.from('users').select('id,created_at'),
       supabase.from('composers').select('id,status,verified'),
       supabase.from('hinos').select('id,plays_count,plays,views_count,likes_count,likes,status'),
+      supabaseFetchWithOptions<any>('albums', {
+        select: 'id,is_published,active',
+        or: '(is_published.eq.false,active.eq.false)',
+        limit: '5000',
+      }, {
+        bypassCache: true,
+      }),
       getOpenReportsCount()
     ]);
 
     if (usersRes.error) throw usersRes.error;
     if (composersRes.error) throw composersRes.error;
     if (songsRes.error) throw songsRes.error;
-
     const allUsers = usersRes.data || [];
     const allComposers = composersRes.data || [];
     const allSongs = songsRes.data || [];
+    const allAlbums = pendingAlbumsRows || [];
 
     const totalPlays = allSongs.reduce((sum, song: any) => sum + Number(song.plays_count || song.plays || song.views_count || 0), 0);
     const totalLikes = allSongs.reduce((sum, song: any) => sum + Number(song.likes_count || song.likes || 0), 0);
     const publishedSongs = allSongs.filter((song: any) => song.status === 'published').length;
     const pendingSongs = allSongs.filter((song: any) => ['draft', 'pending'].includes(song.status)).length;
+    const pendingAlbums = allAlbums.length;
     const pendingComposers = allComposers.filter((composer: any) => composer.status === 'pending' || composer.verified === false).length;
 
     const today = new Date();
@@ -58,6 +69,7 @@ export const getAdminStats = async (): Promise<AdminStats> => {
       totalLikes,
       newUsersToday,
       pendingSongs,
+      pendingAlbums,
       pendingComposers,
       openReports
     };
@@ -72,6 +84,7 @@ export const getAdminStats = async (): Promise<AdminStats> => {
       totalLikes: 0,
       newUsersToday: 0,
       pendingSongs: 0,
+      pendingAlbums: 0,
       pendingComposers: 0,
       openReports: 0
     };

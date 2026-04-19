@@ -3,6 +3,7 @@ import { Link, useLocation } from 'react-router-dom';
 import useCopyrightClaimsStore from '@/stores/copyrightClaimsStore';
 import { getOpenReportsCount } from '@/lib/admin/reportsApi';
 import { getAdminStats } from '@/lib/admin/adminStatsApi';
+import { getSupportInboxStats } from '@/lib/supportChatApi';
 import {
   X,
   LayoutDashboard,
@@ -35,7 +36,8 @@ import {
   Layers,
   Book,
   BookOpen,
-  Copyright
+  Copyright,
+  Clock
 } from 'lucide-react';
 
 interface AdminMobileSidebarProps {
@@ -49,8 +51,10 @@ const AdminMobileSidebar: React.FC<AdminMobileSidebarProps> = ({ isOpen, onClose
   const { getPendingClaimsCount, loadClaims } = useCopyrightClaimsStore();
   const [pendingComposersCount, setPendingComposersCount] = useState(0);
   const [pendingSongsCount, setPendingSongsCount] = useState(0);
+  const [pendingAlbumsCount, setPendingAlbumsCount] = useState(0);
   const [approvalsCount, setApprovalsCount] = useState(0);
   const [openReportsCount, setOpenReportsCount] = useState(0);
+  const [supportUnreadCount, setSupportUnreadCount] = useState(0);
 
   useEffect(() => {
     void loadClaims();
@@ -62,7 +66,8 @@ const AdminMobileSidebar: React.FC<AdminMobileSidebarProps> = ({ isOpen, onClose
         const stats = await getAdminStats();
         setPendingComposersCount(stats.pendingComposers);
         setPendingSongsCount(stats.pendingSongs);
-        setApprovalsCount(stats.pendingSongs + stats.pendingComposers);
+        setPendingAlbumsCount(stats.pendingAlbums);
+        setApprovalsCount(stats.pendingSongs + stats.pendingAlbums + stats.pendingComposers);
       } catch (error) {
         console.error('Erro ao carregar contagens do admin:', error);
       }
@@ -85,6 +90,21 @@ const AdminMobileSidebar: React.FC<AdminMobileSidebarProps> = ({ isOpen, onClose
 
     void loadOpenCount();
     const interval = setInterval(loadOpenCount, 30000);
+    return () => clearInterval(interval);
+  }, []);
+
+  useEffect(() => {
+    const loadSupportCount = async () => {
+      try {
+        const stats = await getSupportInboxStats({ role: 'admin' });
+        setSupportUnreadCount(stats.unread);
+      } catch (error) {
+        console.error('Erro ao carregar contagem do chat:', error);
+      }
+    };
+
+    void loadSupportCount();
+    const interval = setInterval(loadSupportCount, 30000);
     return () => clearInterval(interval);
   }, []);
 
@@ -118,7 +138,8 @@ const AdminMobileSidebar: React.FC<AdminMobileSidebarProps> = ({ isOpen, onClose
       icon: Music,
       items: [
         { path: '/admin/hymns', label: 'Hinos', icon: Music },
-        { path: '/admin/songs/pending', label: 'Aprovação Pendente', icon: CheckCircle, badge: pendingSongsCount },
+        { path: '/admin/songs/pending', label: 'Hinos Pendentes', icon: CheckCircle, badge: pendingSongsCount },
+        { path: '/admin/albums/pending', label: 'Álbuns Pendentes', icon: Clock, badge: pendingAlbumsCount },
         { path: '/admin/albums', label: 'Álbuns', icon: Album },
         { path: '/admin/collections', label: 'Coletâneas', icon: Layers },
         { path: '/admin/cifras', label: 'Cifras', icon: FileText },
@@ -158,6 +179,15 @@ const AdminMobileSidebar: React.FC<AdminMobileSidebarProps> = ({ isOpen, onClose
         { path: '/admin/reports', label: 'Denúncias', icon: Flag, badge: openReportsCount },
         { path: '/admin/copyright-claims', label: 'Direitos Autorais', icon: Copyright, badge: getPendingClaimsCount() },
         { path: '/admin/comments', label: 'Comentários', icon: MessageSquare }
+      ]
+    },
+    {
+      id: 'notifications',
+      title: 'Notificações',
+      icon: MessageSquare,
+      items: [
+        { path: '/admin/chat', label: 'Chat', icon: MessageSquare, badge: supportUnreadCount },
+        { path: '/admin/notices', label: 'Avisos', icon: Megaphone }
       ]
     },
     {

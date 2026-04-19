@@ -22,6 +22,7 @@ interface HeroSectionProps {
 
 const HeroSection: React.FC<HeroSectionProps> = ({ banners = [] }) => {
   const [currentSlide, setCurrentSlide] = useState(0);
+  const [failedSlides, setFailedSlides] = useState<Record<number, true>>({});
   const touchStartX = useRef<number | null>(null);
   const touchEndX = useRef<number | null>(null);
   
@@ -72,6 +73,10 @@ const HeroSection: React.FC<HeroSectionProps> = ({ banners = [] }) => {
     if (slidesCount <= 1) return;
     setCurrentSlide((prev) => (prev - 1 + slidesCount) % slidesCount);
   }, [slidesCount]);
+
+  const markSlideAsFailed = useCallback((slideId: number) => {
+    setFailedSlides((prev) => (prev[slideId] ? prev : { ...prev, [slideId]: true }));
+  }, []);
 
   // Garante que o índice atual sempre seja válido quando a lista mudar
   useEffect(() => {
@@ -220,7 +225,7 @@ const HeroSection: React.FC<HeroSectionProps> = ({ banners = [] }) => {
           }`}
         >
           {/* Background Image */}
-          {isVideoUrl(s.image) ? (
+          {isVideoUrl(s.image) && !failedSlides[s.id] ? (
             <video
               src={s.image}
               className="w-full h-full object-cover"
@@ -230,13 +235,23 @@ const HeroSection: React.FC<HeroSectionProps> = ({ banners = [] }) => {
               playsInline
               preload="auto"
               controls={false}
+              onError={() => markSlideAsFailed(s.id)}
             />
+          ) : failedSlides[s.id] ? (
+            <div className="w-full h-full flex items-center justify-center bg-neutral-950">
+              <img
+                src="/logo-canticos-ccb.png"
+                alt="Cânticos CCB"
+                className="w-full h-full object-contain p-8 md:p-12 opacity-90"
+              />
+            </div>
           ) : (
             <img 
               src={s.image}
               alt={s.title}
               className="w-full h-full object-cover"
               loading={index === 0 ? "eager" : "lazy"}
+              onError={() => markSlideAsFailed(s.id)}
             />
           )}
           {/* Gradient Overlay */}

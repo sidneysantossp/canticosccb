@@ -28,6 +28,25 @@ cp .env.example .env
 
 ## Uso
 
+### 0. Auditoria completa da plataforma
+
+Antes de migrar, rode a auditoria completa para medir:
+- buckets e objetos existentes no storage antigo
+- pastas internas do bucket `images`
+- tabelas do banco novo que ainda apontam para URLs do projeto legado
+
+```bash
+npm run audit
+```
+
+Variáveis esperadas no `.env` para a auditoria:
+
+```bash
+OLD_DB_URL=postgresql://...
+NEW_DB_URL=postgresql://...
+MEDIA_BASE_URL=https://media.canticosccb.com.br
+```
+
 ### 1. Dry-run (apenas listar arquivos, sem migrar)
 
 ```bash
@@ -61,6 +80,16 @@ https://rdogsfrplohxnemvtetn.supabase.co/storage/v1/object/public/images/covers/
 → https://media.canticosccb.com.br/covers/abc.png
 ```
 
+Agora o script cobre também URLs legadas em buckets como:
+- `banners`
+- `avatars`
+- `user-avatars`
+- `composer-avatars`
+- `logos`
+- `documents`
+- `songs`
+- `media`
+
 ## Estrutura de pastas no R2
 
 ```
@@ -70,3 +99,15 @@ canticos-media/
 ├── avatars/    ← fotos de perfil
 └── banners/    ← imagens de banners
 ```
+
+## Observação importante
+
+O script original de migração cobria só uma parte do storage legado. A plataforma real também usou buckets e caminhos como:
+
+- `images/albums`
+- `images/documents`
+- `images/collections`
+- `images/categories`
+- buckets separados `avatars`, `banners`, `logos`, `songs`, `media`, `user-avatars`, `composer-avatars`
+
+Por isso a restauração total precisa ser tratada como inventário completo + backfill completo, não só como cópia de `covers` e `hinos`.

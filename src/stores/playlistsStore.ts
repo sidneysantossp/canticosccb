@@ -1,14 +1,19 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import * as playlistsApi from '@/lib/playlistsApi';
 
 export interface PlaylistTrack {
-  id: number;
+  id: string | number;
   title: string;
   artist: string;
   coverUrl: string;
   duration: string;
   backendTrackId?: string;
+  audioUrl?: string;
+  youtubeSource?: string;
+  number?: number;
+  category?: string;
+  position?: number;
+  createdAt?: string;
 }
 
 export interface Playlist {
@@ -29,7 +34,7 @@ interface PlaylistsState {
   // Actions
   createPlaylist: (name: string, description?: string) => Playlist;
   addTrackToPlaylist: (playlistId: string, track: PlaylistTrack) => void;
-  removeTrackFromPlaylist: (playlistId: string, trackId: number) => void;
+  removeTrackFromPlaylist: (playlistId: string, trackId: string | number) => void;
   deletePlaylist: (playlistId: string) => void;
   updatePlaylist: (playlistId: string, updates: Partial<Playlist>) => void;
   getPlaylistById: (playlistId: string) => Playlist | undefined;
@@ -81,27 +86,15 @@ const usePlaylistsStore = create<PlaylistsState>()(
           error: null
         }));
 
-        // Async sync with backend if playlistId is a real database ID (numeric)
-        const isNumeric = /^\d+$/.test(String(playlistId));
-        if (isNumeric) {
-          playlistsApi.addTrack({
-            playlistId: Number(playlistId),
-            trackId: track.backendTrackId || String(track.id),
-            title: track.title,
-            artist: track.artist,
-            duration: track.duration,
-            coverUrl: track.coverUrl
-          }).catch(err => console.error('❌ Sync error:', err));
-        }
       },
 
-      removeTrackFromPlaylist: (playlistId: string, trackId: number) => {
+      removeTrackFromPlaylist: (playlistId: string, trackId: string | number) => {
         set((state) => ({
           playlists: state.playlists.map((playlist) =>
             playlist.id === playlistId
               ? {
                 ...playlist,
-                tracks: playlist.tracks.filter((t) => t.id !== trackId),
+                tracks: playlist.tracks.filter((t) => String(t.id) !== String(trackId)),
                 updatedAt: new Date().toISOString()
               }
               : playlist

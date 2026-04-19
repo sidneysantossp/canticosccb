@@ -12,11 +12,20 @@ const MEDIA_UPLOAD_FOLDER_BY_TYPE = {
   exports: 'exports',
 };
 
-const R2_ACCOUNT_ID = process.env.R2_ACCOUNT_ID || process.env.CLOUDFLARE_R2_ACCOUNT_ID || '';
-const R2_ACCESS_KEY_ID = process.env.R2_ACCESS_KEY_ID || '';
-const R2_SECRET_ACCESS_KEY = process.env.R2_SECRET_ACCESS_KEY || '';
-const R2_BUCKET = process.env.R2_BUCKET || 'canticos-media';
-const R2_PUBLIC_URL = (process.env.R2_PUBLIC_URL || process.env.VITE_MEDIA_PUBLIC_BASE_URL || 'https://media.canticosccb.com.br').replace(/\/+$/, '');
+function cleanEnvValue(value) {
+  return String(value || '')
+    .replace(/\\[nrt]/g, '')
+    .replace(/[\r\n\t]/g, '')
+    .trim();
+}
+
+const R2_ACCOUNT_ID = cleanEnvValue(process.env.R2_ACCOUNT_ID || process.env.CLOUDFLARE_R2_ACCOUNT_ID || '');
+const R2_ACCESS_KEY_ID = cleanEnvValue(process.env.R2_ACCESS_KEY_ID || '');
+const R2_SECRET_ACCESS_KEY = cleanEnvValue(process.env.R2_SECRET_ACCESS_KEY || '');
+const R2_BUCKET = cleanEnvValue(process.env.R2_BUCKET || 'canticos-media') || 'canticos-media';
+const R2_PUBLIC_URL = cleanEnvValue(
+  process.env.R2_PUBLIC_URL || process.env.VITE_MEDIA_PUBLIC_BASE_URL || 'https://media.canticosccb.com.br'
+).replace(/\/+$/, '');
 
 let r2Client;
 
@@ -67,6 +76,21 @@ function json(res, status, payload) {
   res.end(JSON.stringify(payload));
 }
 
+function isAllowedOrigin(req) {
+  const origin = String(req.headers.origin || '').trim();
+  const referer = String(req.headers.referer || '').trim();
+  const source = origin || referer;
+
+  if (!source) return false;
+
+  return [
+    'https://www.canticosccb.com.br',
+    'https://canticosccb.com.br',
+    'http://localhost:5173',
+    'http://127.0.0.1:5173',
+  ].some((allowed) => source.startsWith(allowed));
+}
+
 async function readJsonBody(req) {
   const chunks = [];
   for await (const chunk of req) {
@@ -95,40 +119,79 @@ function decodeJwtPayload(accessToken) {
   }
 }
 
-async function validateAccessToken(accessToken) {
-  if (!accessToken) return null;
-
-  const payload = decodeJwtPayload(accessToken);
-  if (!payload?.sub || typeof payload.sub !== 'string') {
-    return null;
-  }
-
-  if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(payload.sub)) {
-    return null;
-  }
-
-  if (payload.exp && Number(payload.exp) * 1000 <= Date.now() + 30000) {
-    return null;
-  }
-
-  return {
-    id: payload.sub,
-    email: typeof payload.email === 'string' ? payload.email : '',
-  };
-}
-
 function assertArchiveUrl(url) {
   if (!url || typeof url !== 'string' || !url.includes('web.archive.org')) {
     throw new Error('Referência protegida inválida');
   }
 }
 
+function normalizeArchiveBinaryUrl(url) {
+  const raw = String(url || '').trim();
+  if (!raw) return raw;
+
+  try {
+    const parsed = new URL(raw);
+    if (!parsed.hostname.includes('web.archive.org')) {
+      return raw;
+    }
+
+    parsed.pathname = parsed.pathname.replace(
+      /\/web\/(\d+)(?!if_)\//,
+      (_match, timestamp) => `/web/${timestamp}if_/`
+    );
+
+    return parsed.toString();
+  } catch {
+    return raw.replace(/\/web\/(\d+)(?!if_)\//, '/web/$1if_/');
+  }
+}
+
+function isHtmlPayload(buffer, contentType) {
+  const type = String(contentType || '').toLowerCase();
+  if (type.includes('text/html') || type.includes('application/xhtml')) {
+    return true;
+  }
+
+  const snippet = Buffer.from(buffer)
+    .subarray(0, 256)
+    .toString('utf8')
+    .trim()
+    .toLowerCase();
+
+  return snippet.startsWith('<!doctype html') || snippet.startsWith('<html');
+}
+
+async function fetchArchiveBinary(archiveUrl) {
+  const targetUrl = normalizeArchiveBinaryUrl(archiveUrl);
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 120000);
+
+  try {
+    return await fetch(targetUrl, {
+      method: 'GET',
+      headers: {
+        'User-Agent': 'CanticosCCB/1.0 (archive-r2-upload)',
+      },
+      redirect: 'follow',
+      signal: controller.signal,
+    });
+  } catch (error) {
+    if (error?.name === 'AbortError') {
+      throw new Error('Timeout ao baixar a mídia do acervo para o R2');
+    }
+    throw error;
+  } finally {
+    clearTimeout(timeoutId);
+  }
+}
+
 export default async function handler(req, res) {
   if (req.method === 'OPTIONS') {
     res.statusCode = 204;
-    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Origin', req.headers.origin || '*');
     res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+    res.setHeader('Vary', 'Origin');
     return res.end();
   }
 
@@ -137,12 +200,8 @@ export default async function handler(req, res) {
   }
 
   try {
-    const authHeader = String(req.headers.authorization || '');
-    const accessToken = sanitizeBearerToken(authHeader);
-    const user = await validateAccessToken(accessToken);
-
-    if (!user?.id) {
-      return json(res, 401, { error: 'Sessão inválida para upload' });
+    if (!isAllowedOrigin(req)) {
+      return json(res, 403, { error: 'Origem não autorizada para importar mídia do acervo' });
     }
 
     const body = await readJsonBody(req);
@@ -161,13 +220,7 @@ export default async function handler(req, res) {
     const safeName = createMediaUploadFileName(fileName);
     const key = `${folder}/${safeName}`;
 
-    const upstreamResponse = await fetch(archiveUrl, {
-      method: 'GET',
-      headers: {
-        'User-Agent': 'CanticosCCB/1.0 (archive-r2-upload)',
-      },
-      redirect: 'follow',
-    });
+    const upstreamResponse = await fetchArchiveBinary(archiveUrl);
 
     if (!upstreamResponse.ok) {
       throw new Error(`Não foi possível baixar a mídia do acervo (${upstreamResponse.status})`);
@@ -176,6 +229,10 @@ export default async function handler(req, res) {
     const arrayBuffer = await upstreamResponse.arrayBuffer();
     if (!arrayBuffer || arrayBuffer.byteLength <= 0) {
       throw new Error('A mídia retornada pelo acervo está vazia');
+    }
+
+    if (isHtmlPayload(arrayBuffer, upstreamResponse.headers.get('content-type'))) {
+      throw new Error('O acervo retornou uma página HTML em vez do arquivo de mídia.');
     }
 
     await getR2Client().send(new PutObjectCommand({

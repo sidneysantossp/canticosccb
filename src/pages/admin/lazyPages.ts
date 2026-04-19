@@ -20,6 +20,7 @@ export const AdminSongs = lazyWithChunkRecovery(() => import('./AdminSongs'));
 export const AdminSongsPending = lazyWithChunkRecovery(() => import('./songs/AdminSongsPending'));
 export const AdminSongDetails = lazyWithChunkRecovery(() => import('./songs/AdminSongDetails'));
 export const AdminSongForm = lazyWithChunkRecovery(() => import('./AdminSongForm'));
+export const AdminAlbumsPending = lazyWithChunkRecovery(() => import('./AdminAlbumsPending'));
 export const AdminAlbums = lazyWithChunkRecovery(() => import('./AdminAlbums'));
 export const AdminAlbumForm = lazyWithChunkRecovery(() => import('./AdminAlbumForm'));
 export const AdminCategories = lazyWithChunkRecovery(() => import('./AdminCategories'));
@@ -28,6 +29,7 @@ export const AdminGenres = lazyWithChunkRecovery(() => import('./AdminGenres'));
 export const AdminGenreForm = lazyWithChunkRecovery(() => import('./AdminGenreForm'));
 export const AdminTags = lazyWithChunkRecovery(() => import('./AdminTags'));
 export const AdminTagForm = lazyWithChunkRecovery(() => import('./AdminTagForm'));
+export const AdminPlaylists = lazyWithChunkRecovery(() => import('./playlists/AdminPlaylists'));
 export const AdminPlaylistsEditorial = lazyWithChunkRecovery(() => import('./AdminPlaylistsEditorial'));
 export const AdminPlaylistForm = lazyWithChunkRecovery(() => import('./AdminPlaylistForm'));
 
@@ -53,6 +55,7 @@ export const AdminCustomReports = lazyWithChunkRecovery(() => import('./AdminCus
 export const AdminLogs = lazyWithChunkRecovery(() => import('./AdminLogs'));
 export const AdminLogos = lazyWithChunkRecovery(() => import('./AdminLogos'));
 export const AdminComments = lazyWithChunkRecovery(() => import('./AdminComments'));
+export const AdminChat = lazyWithChunkRecovery(() => import('./AdminChat'));
 export const AdminCopyrightClaims = lazyWithChunkRecovery(() => import('./AdminCopyrightClaims'));
 
 export const AdminSettingsGeneral = lazyWithChunkRecovery(() => import('./AdminSettingsGeneral'));

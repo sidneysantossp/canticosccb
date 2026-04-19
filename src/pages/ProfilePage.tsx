@@ -51,6 +51,22 @@ const ProfilePage: React.FC = () => {
   const avatarInputRef = useRef<HTMLInputElement>(null);
   const [avatarTempUrl, setAvatarTempUrl] = useState<string | null>(null);
 
+  const normalizedDashboardPlaylists = userPlaylists.map((playlist) => ({
+    id: playlist.id,
+    name: playlist.name,
+    description: playlist.description,
+    coverUrl: playlist.cover_url || 'https://placehold.co/200x200/1a1a1a/green?text=Playlist',
+    tracks: Array.from({ length: playlist.songs_count }).map((_, index) => ({
+      id: `${playlist.id}_track_${index}`,
+      title: '',
+      artist: '',
+      coverUrl: '',
+      duration: '0:00'
+    }))
+  }));
+
+  const displayPlaylists = playlists.length > 0 ? playlists : normalizedDashboardPlaylists;
+
   // Carregar todos os dados do usuário
   useEffect(() => {
     const loadData = async () => {
@@ -353,19 +369,20 @@ const ProfilePage: React.FC = () => {
               <h3 className="text-xl font-bold text-white mb-4">Tocados Recentemente</h3>
               {recentPlays.length > 0 ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {recentPlays.map((play) => (
-                    <div key={play.id} className="bg-background-secondary rounded-lg p-4 hover:bg-background-tertiary transition-colors group">
+                  {recentPlays.map((recentPlay) => (
+                    <div key={recentPlay.id} className="bg-background-secondary rounded-lg p-4 hover:bg-background-tertiary transition-colors group">
                       <div className="flex items-center gap-3">
                         <div className="relative">
                           <img
-                            src={play.hymn?.cover_url || 'https://placehold.co/48x48/1a1a1a/green?text=CCB'}
-                            alt={play.hymn?.title}
+                            src={recentPlay.hymn?.coverUrl || recentPlay.hymn?.cover_url || 'https://placehold.co/48x48/1a1a1a/green?text=CCB'}
+                            alt={recentPlay.hymn?.title}
                             className="w-12 h-12 rounded object-cover"
                           />
                           <button
                             onClick={() => {
-                              if (play.hymn) {
-                                play(play.hymn as any);
+                              if (recentPlay.hymn) {
+                                const started = play(recentPlay.hymn as any);
+                                if (started === false) return;
                                 openFullScreen();
                               }
                             }}
@@ -375,8 +392,8 @@ const ProfilePage: React.FC = () => {
                           </button>
                         </div>
                         <div className="flex-1 min-w-0">
-                          <h4 className="font-medium text-white truncate">{play.hymn?.title}</h4>
-                          <p className="text-sm text-text-muted truncate">{play.hymn?.composer_name || 'Compositor Desconhecido'}</p>
+                          <h4 className="font-medium text-white truncate">{recentPlay.hymn?.title}</h4>
+                          <p className="text-sm text-text-muted truncate">{recentPlay.hymn?.composer_name || 'Compositor Desconhecido'}</p>
                         </div>
                       </div>
                     </div>
@@ -394,9 +411,9 @@ const ProfilePage: React.FC = () => {
             {/* Top Playlists */}
             <div>
               <h3 className="text-xl font-bold text-white mb-4">Minhas Playlists</h3>
-              {playlists.length > 0 ? (
+              {displayPlaylists.length > 0 ? (
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                  {playlists.slice(0, 3).map((playlist) => (
+                  {displayPlaylists.slice(0, 3).map((playlist) => (
                     <Link
                       key={playlist.id}
                       to={`/playlist/${playlist.id}`}
@@ -445,9 +462,9 @@ const ProfilePage: React.FC = () => {
                 Criar Playlist
               </Link>
             </div>
-            {playlists.length > 0 ? (
+            {displayPlaylists.length > 0 ? (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                {playlists.map((playlist) => (
+                {displayPlaylists.map((playlist) => (
                   <Link
                     key={playlist.id}
                     to={`/playlist/${playlist.id}`}

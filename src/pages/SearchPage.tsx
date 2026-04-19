@@ -5,11 +5,12 @@ import { usePlayerStore } from '@/stores/playerStore';
 import SEOHead from '@/components/SEO/SEOHead';
 import { generateWebsiteSchema } from '@/utils/schemaGenerator';
 import { buildHinoUrl, buildCompositorUrl, buildAlbumUrl } from '@/utils/slugUrl';
-import { advancedSearch, type HymnSearchResult, type ComposerSearchResult, type AlbumSearchResult, type PlaylistSearchResult } from '@/lib/mockApis';
+import { advancedSearch, type HymnSearchResult, type ComposerSearchResult, type AlbumSearchResult, type PlaylistSearchResult } from '@/lib/searchApi';
 import { useAuth } from '@/contexts/AuthContext';
 import { publicSupabase, supabase } from '@/lib/supabase-auth';
 import { getPublicTags, type PublicTag } from '@/lib/publicSiteConfig';
 import { useVoiceSearch } from '@/hooks/useVoiceSearch';
+import { getEmergencyDiscoveryData, isSupabaseQuotaRestrictionErrorMessage } from '@/lib/emergencyCatalog';
 
 type DiscoveryComposer = {
   id: string;
@@ -36,7 +37,6 @@ const mapComposerDiscovery = (composer: any): DiscoveryComposer => ({
   id: String(composer.id),
   name: composer.artistic_name || composer.name || 'Compositor',
   imageUrl: composer.photo_url || composer.avatar_url || undefined,
-  totalHymns: composer.total_hymns ? Number(composer.total_hymns) : undefined,
 });
 
 const mapAlbumDiscovery = (album: any): DiscoveryAlbum => ({
@@ -52,6 +52,9 @@ const mapPlaylistDiscovery = (playlist: any): DiscoveryPlaylist => ({
   description: playlist.description || undefined,
   coverUrl: playlist.cover_url || undefined,
 });
+
+const isRestrictedSupabaseError = (error: unknown) =>
+  isSupabaseQuotaRestrictionErrorMessage(String((error as any)?.message || error || ''));
 
 const SearchPage: React.FC = () => {
   const { play } = usePlayerStore();
@@ -71,6 +74,7 @@ const SearchPage: React.FC = () => {
   const [discoveryComposers, setDiscoveryComposers] = useState<DiscoveryComposer[]>([]);
   const [discoveryAlbums, setDiscoveryAlbums] = useState<DiscoveryAlbum[]>([]);
   const [discoveryPlaylists, setDiscoveryPlaylists] = useState<DiscoveryPlaylist[]>([]);
+  const [catalogHymns, setCatalogHymns] = useState<HymnSearchResult[]>([]);
   const [catalogComposers, setCatalogComposers] = useState<DiscoveryComposer[]>([]);
   const [catalogAlbums, setCatalogAlbums] = useState<DiscoveryAlbum[]>([]);
   const [catalogPlaylists, setCatalogPlaylists] = useState<DiscoveryPlaylist[]>([]);
@@ -86,13 +90,31 @@ const SearchPage: React.FC = () => {
   });
 
   const schema = generateWebsiteSchema();
+  const playSearchResult = (song: HymnSearchResult) => {
+    const ytSrc = (song as any).youtube_source || undefined;
+
+    play({
+      id: song.id,
+      title: song.title,
+      number: Number(song.number || 0),
+      category: song.category || 'Hinos CCB',
+      artist: song.composer_name || 'Coral CCB',
+      duration: song.duration || '00:00',
+      coverUrl: song.cover_url || '',
+      audioUrl: ytSrc ? '' : (song.audio_url || ''),
+      plays: 0,
+      isLiked: false,
+      createdAt: new Date().toISOString(),
+      youtubeSource: ytSrc,
+    } as any);
+  };
 
   const filters = [
     { id: 'all', label: 'Tudo', icon: List },
     { id: 'songs', label: 'Hinos', icon: Music },
     { id: 'artists', label: 'Compositores', icon: Mic },
     { id: 'albums', label: 'Álbuns', icon: Disc },
-    { id: 'playlists', label: 'Playlists', icon: Disc }
+    { id: 'playlists', label: 'Playlists', icon: List }
   ];
 
   // Carregar categorias do banco de dados
@@ -108,7 +130,7 @@ const SearchPage: React.FC = () => {
             .limit(8),
           publicSupabase
             .from('composers')
-            .select('id, name, artistic_name, photo_url, avatar_url, total_hymns')
+            .select('id, name, artistic_name, photo_url, avatar_url')
             .or('verified.eq.true,status.eq.approved')
             .order('created_at', { ascending: false })
             .limit(8),
@@ -125,6 +147,27 @@ const SearchPage: React.FC = () => {
             .order('updated_at', { ascending: false })
             .limit(8),
         ]);
+
+        const shouldUseEmergencyFallback =
+          isRestrictedSupabaseError(categoriesRes.error) ||
+          isRestrictedSupabaseError(composersRes.error) ||
+          isRestrictedSupabaseError(albumsRes.error) ||
+          isRestrictedSupabaseError(playlistsRes.error);
+
+        if (shouldUseEmergencyFallback) {
+          const emergency = await getEmergencyDiscoveryData();
+          setCategories(emergency.categories.slice(0, 8).map((category) => ({
+            id: category.id,
+            nome: category.nome,
+            slug: category.slug,
+            descricao: category.descricao,
+            imagem_url: category.imagem_url,
+          })));
+          setDiscoveryComposers(emergency.composers.slice(0, 8).map(mapComposerDiscovery));
+          setDiscoveryAlbums(emergency.albums.slice(0, 8).map(mapAlbumDiscovery));
+          setDiscoveryPlaylists(emergency.playlists.slice(0, 8).map(mapPlaylistDiscovery));
+          return;
+        }
 
         if (!categoriesRes.error && categoriesRes.data) {
           setCategories(categoriesRes.data);
@@ -147,6 +190,23 @@ const SearchPage: React.FC = () => {
         }
       } catch (error) {
         console.error('Erro ao carregar dados de descoberta:', error);
+        if (isRestrictedSupabaseError(error)) {
+          try {
+            const emergency = await getEmergencyDiscoveryData();
+            setCategories(emergency.categories.slice(0, 8).map((category) => ({
+              id: category.id,
+              nome: category.nome,
+              slug: category.slug,
+              descricao: category.descricao,
+              imagem_url: category.imagem_url,
+            })));
+            setDiscoveryComposers(emergency.composers.slice(0, 8).map(mapComposerDiscovery));
+            setDiscoveryAlbums(emergency.albums.slice(0, 8).map(mapAlbumDiscovery));
+            setDiscoveryPlaylists(emergency.playlists.slice(0, 8).map(mapPlaylistDiscovery));
+          } catch (fallbackError) {
+            console.error('Erro ao carregar contingência de descoberta:', fallbackError);
+          }
+        }
       }
     };
 
@@ -244,21 +304,99 @@ const SearchPage: React.FC = () => {
     const loadFullCatalogForActiveFilter = async () => {
       if (searchQuery.trim()) return;
 
+      if (activeFilter === 'songs' && catalogHymns.length === 0) {
+        setIsLoading(true);
+        try {
+          const { data, error } = await publicSupabase
+            .from('hinos')
+            .select('id,numero,titulo,compositor_nome,categoria,cover_url,audio_url,youtube_source')
+            .eq('ativo', 1)
+            .order('numero', { ascending: true })
+            .limit(1000);
+
+          if (isRestrictedSupabaseError(error)) {
+            const emergency = await getEmergencyDiscoveryData();
+            if (isMounted) {
+              setCatalogHymns(
+                emergency.hymns.map((hymn) => ({
+                  id: hymn.id,
+                  number: hymn.numero,
+                  title: hymn.titulo,
+                  composer_name: hymn.compositor_nome || undefined,
+                  category_name: hymn.categoria || undefined,
+                  cover_url: hymn.cover_url || undefined,
+                  audio_url: hymn.audio_url || undefined,
+                  youtube_source: hymn.youtube_source || undefined,
+                  matchScore: 0,
+                }))
+              );
+            }
+          } else if (!error && data && isMounted) {
+            setCatalogHymns(
+              data.map((hymn: any) => ({
+                id: String(hymn.id),
+                number: Number(hymn.numero || 0),
+                title: hymn.titulo || 'Hino',
+                composer_name: hymn.compositor_nome || undefined,
+                category_name: hymn.categoria || undefined,
+                cover_url: hymn.cover_url || undefined,
+                audio_url: hymn.audio_url || undefined,
+                youtube_source: hymn.youtube_source || undefined,
+                matchScore: 0,
+              }))
+            );
+          }
+        } catch (error) {
+          console.error('Erro ao carregar catálogo de hinos:', error);
+          if (isRestrictedSupabaseError(error)) {
+            const emergency = await getEmergencyDiscoveryData();
+            if (isMounted) {
+              setCatalogHymns(
+                emergency.hymns.map((hymn) => ({
+                  id: hymn.id,
+                  number: hymn.numero,
+                  title: hymn.titulo,
+                  composer_name: hymn.compositor_nome || undefined,
+                  category_name: hymn.categoria || undefined,
+                  cover_url: hymn.cover_url || undefined,
+                  audio_url: hymn.audio_url || undefined,
+                  youtube_source: hymn.youtube_source || undefined,
+                  matchScore: 0,
+                }))
+              );
+            }
+          }
+        } finally {
+          if (isMounted) setIsLoading(false);
+        }
+      }
+
       if (activeFilter === 'artists' && catalogComposers.length === 0) {
         setIsLoading(true);
         try {
           const { data, error } = await publicSupabase
             .from('composers')
-            .select('id, name, artistic_name, photo_url, avatar_url, total_hymns')
+            .select('id, name, artistic_name, photo_url, avatar_url')
             .or('verified.eq.true,status.eq.approved')
             .order('name', { ascending: true })
             .limit(1000);
 
-          if (!error && data && isMounted) {
+          if (isRestrictedSupabaseError(error)) {
+            const emergency = await getEmergencyDiscoveryData();
+            if (isMounted) {
+              setCatalogComposers(emergency.composers.map(mapComposerDiscovery));
+            }
+          } else if (!error && data && isMounted) {
             setCatalogComposers(data.map(mapComposerDiscovery));
           }
         } catch (error) {
           console.error('Erro ao carregar catálogo de compositores:', error);
+          if (isRestrictedSupabaseError(error)) {
+            const emergency = await getEmergencyDiscoveryData();
+            if (isMounted) {
+              setCatalogComposers(emergency.composers.map(mapComposerDiscovery));
+            }
+          }
         } finally {
           if (isMounted) setIsLoading(false);
         }
@@ -274,7 +412,12 @@ const SearchPage: React.FC = () => {
             .order('title', { ascending: true })
             .limit(1000);
 
-          if (!error && data && isMounted) {
+          if (isRestrictedSupabaseError(error)) {
+            const emergency = await getEmergencyDiscoveryData();
+            if (isMounted) {
+              setCatalogAlbums(emergency.albums.map(mapAlbumDiscovery));
+            }
+          } else if (!error && data && isMounted) {
             setCatalogAlbums(
               data
                 .filter((album: any) => album.active !== false)
@@ -283,6 +426,12 @@ const SearchPage: React.FC = () => {
           }
         } catch (error) {
           console.error('Erro ao carregar catálogo de álbuns:', error);
+          if (isRestrictedSupabaseError(error)) {
+            const emergency = await getEmergencyDiscoveryData();
+            if (isMounted) {
+              setCatalogAlbums(emergency.albums.map(mapAlbumDiscovery));
+            }
+          }
         } finally {
           if (isMounted) setIsLoading(false);
         }
@@ -298,11 +447,22 @@ const SearchPage: React.FC = () => {
             .order('name', { ascending: true })
             .limit(1000);
 
-          if (!error && data && isMounted) {
+          if (isRestrictedSupabaseError(error)) {
+            const emergency = await getEmergencyDiscoveryData();
+            if (isMounted) {
+              setCatalogPlaylists(emergency.playlists.map(mapPlaylistDiscovery));
+            }
+          } else if (!error && data && isMounted) {
             setCatalogPlaylists(data.map(mapPlaylistDiscovery));
           }
         } catch (error) {
           console.error('Erro ao carregar catálogo de playlists:', error);
+          if (isRestrictedSupabaseError(error)) {
+            const emergency = await getEmergencyDiscoveryData();
+            if (isMounted) {
+              setCatalogPlaylists(emergency.playlists.map(mapPlaylistDiscovery));
+            }
+          }
         } finally {
           if (isMounted) setIsLoading(false);
         }
@@ -317,6 +477,7 @@ const SearchPage: React.FC = () => {
   }, [
     activeFilter,
     searchQuery,
+    catalogHymns.length,
     catalogAlbums.length,
     catalogComposers.length,
     catalogPlaylists.length,
@@ -357,6 +518,9 @@ const SearchPage: React.FC = () => {
   const showArtistsFilter = showAllFilters || activeFilter === 'artists';
   const showAlbumsFilter = showAllFilters || activeFilter === 'albums';
   const showPlaylistsFilter = showAllFilters || activeFilter === 'playlists';
+  const displayedHymns = !hasSearchQuery && activeFilter === 'songs' && catalogHymns.length > 0
+    ? catalogHymns
+    : [];
   const displayedComposers = !hasSearchQuery && activeFilter === 'artists' && catalogComposers.length > 0
     ? catalogComposers
     : discoveryComposers;
@@ -385,7 +549,7 @@ const SearchPage: React.FC = () => {
             <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-text-muted w-5 h-5" />
             <input
               type="text"
-              placeholder="Digite um título, número, compositor, álbum ou playlist"
+              placeholder="Digite um hino, número, compositor, álbum, instrumento ou playlist"
               value={searchQuery}
               onChange={(e) => handleSearch(e.target.value)}
               className="w-full pl-12 pr-20 py-3 bg-background-tertiary border border-gray-700 rounded-full text-text-primary placeholder-text-muted focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
@@ -478,9 +642,7 @@ const SearchPage: React.FC = () => {
                             onClick={(e) => {
                               e.preventDefault();
                               e.stopPropagation();
-                              const fallback = 'https://commondatastorage.googleapis.com/codeskulptor-demos/DDR_assets/Sevish_-__nbsp_.mp3';
-                              const ytSrc = (song as any).youtube_source || undefined;
-                              play({ id: song.id, title: song.title, artist: song.composer_name || 'Coral CCB', coverUrl: song.cover_url || '', audioUrl: ytSrc ? '' : (song.audio_url || fallback), youtubeSource: ytSrc } as any)
+                              playSearchResult(song);
                             }}
                           >
                             <Play className="w-5 h-5 text-white" />
@@ -505,7 +667,7 @@ const SearchPage: React.FC = () => {
                           </div>
                           <div className="flex-1">
                             <div className="text-white font-medium">{artist.name}</div>
-                            <div className="text-text-muted text-sm">{artist.total_hymns ? `${artist.total_hymns} hinos` : 'Compositor'}</div>
+                            <div className="text-text-muted text-sm">Compositor</div>
                           </div>
                         </Link>
                       ))}
@@ -562,6 +724,50 @@ const SearchPage: React.FC = () => {
           </div>
         ) : (
           <div className="space-y-12">
+            {activeFilter === 'songs' && !hasSearchQuery && displayedHymns.length > 0 && (
+              <section>
+                <div className="mb-6">
+                  <h2 className="text-2xl md:text-3xl font-bold text-white">Todos os hinos</h2>
+                  <p className="text-gray-400 text-sm mt-1">
+                    {displayedHymns.length} hinos públicos encontrados. Use a busca acima para filtrar por nome, número, compositor, álbum, instrumento ou playlist.
+                  </p>
+                </div>
+                <div className="space-y-2">
+                  {displayedHymns.map((song) => (
+                    <Link
+                      key={song.id}
+                      to={buildHinoUrl(song.id, song.title, song.number)}
+                      className="flex items-center gap-4 p-3 rounded-lg hover:bg-background-hover transition-colors group w-full"
+                    >
+                      <img
+                        src={song.cover_url || `https://picsum.photos/seed/search-song-${song.id}/100/100`}
+                        alt={song.title}
+                        className="w-12 h-12 rounded object-cover"
+                      />
+                      <div className="flex-1 min-w-0">
+                        <div className="text-white font-medium truncate">
+                          {song.number > 0 ? `${song.number} - ${song.title}` : song.title}
+                        </div>
+                        <div className="text-text-muted text-sm truncate">
+                          {song.composer_name || song.category_name || 'Hino'}
+                        </div>
+                      </div>
+                      <button
+                        className="opacity-0 group-hover:opacity-100 transition-opacity p-2 rounded-full hover:bg-background-tertiary"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          playSearchResult(song);
+                        }}
+                      >
+                        <Play className="w-5 h-5 text-white" />
+                      </button>
+                    </Link>
+                  ))}
+                </div>
+              </section>
+            )}
+
             {showAllFilters && recentSearches.length > 0 && (
               <section>
                 <h2 className="text-2xl font-bold text-white mb-6">Buscas recentes</h2>

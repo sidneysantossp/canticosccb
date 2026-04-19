@@ -47,14 +47,19 @@ const LikedSongsPage: React.FC = () => {
   };
 
   const handlePlaySong = (song: any) => {
-    // Converter para o formato esperado pelo player
     const trackData = {
       id: song.id.toString(), // Converter para string para consistência
       title: song.title,
       artist: song.artist,
       coverUrl: song.coverUrl,
-      audioUrl: `https://example.com/audio/${song.id}.mp3`, // URL de exemplo
-      duration: song.duration
+      audioUrl: song.audioUrl,
+      youtubeSource: song.youtubeSource,
+      duration: song.duration,
+      number: song.number || 0,
+      category: song.category || song.album || 'favoritos',
+      plays: 0,
+      isLiked: true,
+      createdAt: song.likedAt || new Date().toISOString(),
     };
     play(trackData as any);
   };
@@ -65,7 +70,7 @@ const LikedSongsPage: React.FC = () => {
     }
   };
 
-  const handleRemoveLike = (id: number) => {
+  const handleRemoveLike = (id: string | number) => {
     removeFavorite(id, user?.id);
   };
 
@@ -212,21 +217,6 @@ const LikedSongsPage: React.FC = () => {
               <p className="text-text-muted">Carregando favoritos...</p>
             </div>
           </div>
-        ) : likedSongs.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-12 text-center">
-            <Heart className="w-16 h-16 text-gray-600 mb-4" />
-            <h3 className="text-xl font-semibold text-white mb-2">Nenhum hino favorito</h3>
-            <p className="text-text-muted mb-6 max-w-md">
-              Você ainda não adicionou nenhum hino aos seus favoritos.
-              Explore nossa biblioteca e clique no coração para salvar seus hinos preferidos.
-            </p>
-            <button
-              onClick={() => window.history.back()}
-              className="px-6 py-3 bg-primary-500 text-black font-semibold rounded-full hover:bg-primary-400 transition-colors"
-            >
-              Explorar Hinos
-            </button>
-          </div>
         ) : error ? (
           <div className="flex flex-col items-center justify-center py-12 text-center">
             <Heart className="w-16 h-16 text-red-600 mb-4" />
@@ -247,6 +237,21 @@ const LikedSongsPage: React.FC = () => {
               className="px-6 py-3 bg-gray-700 text-white font-semibold rounded-full hover:bg-gray-600 transition-colors"
             >
               Voltar
+            </button>
+          </div>
+        ) : likedSongs.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-12 text-center">
+            <Heart className="w-16 h-16 text-gray-600 mb-4" />
+            <h3 className="text-xl font-semibold text-white mb-2">Nenhum hino favorito</h3>
+            <p className="text-text-muted mb-6 max-w-md">
+              Você ainda não adicionou nenhum hino aos seus favoritos.
+              Explore nossa biblioteca e clique no coração para salvar seus hinos preferidos.
+            </p>
+            <button
+              onClick={() => window.history.back()}
+              className="px-6 py-3 bg-primary-500 text-black font-semibold rounded-full hover:bg-primary-400 transition-colors"
+            >
+              Explorar Hinos
             </button>
           </div>
         ) : filteredSongs.length > 0 ? (

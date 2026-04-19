@@ -5,6 +5,21 @@ import usePlaylistsStore from '@/stores/playlistsStore';
 import { useAuth } from '@/contexts/AuthContext';
 import * as playlistsApi from '@/lib/playlistsApi';
 
+const mapPlaylistTrack = (track: playlistsApi.PlaylistDTOTrack) => ({
+  id: String(track.id),
+  title: track.title,
+  artist: track.artist,
+  coverUrl: track.cover_url || '',
+  duration: track.duration || '0:00',
+  backendTrackId: String(track.id),
+  audioUrl: track.audio_url || undefined,
+  youtubeSource: track.youtube_source || undefined,
+  number: track.number,
+  category: track.category,
+  position: track.position ?? undefined,
+  createdAt: track.created_at,
+});
+
 const CreatePlaylistPage: React.FC = () => {
   const navigate = useNavigate();
   
@@ -39,7 +54,7 @@ const CreatePlaylistPage: React.FC = () => {
     try {
       if (!user?.id) throw new Error('Usuário não autenticado');
       const created = await playlistsApi.create({
-        userId: Number(user.id),
+        userId: user.id,
         name: formData.name,
         description: formData.description,
         coverUrl: '',
@@ -52,13 +67,7 @@ const CreatePlaylistPage: React.FC = () => {
         name: created.name,
         description: created.description || undefined,
         coverUrl: created.cover_url || `https://picsum.photos/seed/${created.id}/300/300`,
-        tracks: (created.tracks || []).map(t => ({
-          id: isNaN(parseInt(String(t.id))) ? Date.now() : parseInt(String(t.id)),
-          title: t.title,
-          artist: t.artist,
-          coverUrl: t.cover_url || '',
-          duration: t.duration || '0:00'
-        })),
+        tracks: (created.tracks || []).map(mapPlaylistTrack),
         createdAt: created.created_at,
         updatedAt: created.updated_at
       };

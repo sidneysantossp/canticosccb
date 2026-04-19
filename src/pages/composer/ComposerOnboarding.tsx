@@ -4,6 +4,7 @@ import { categoriasApi, compositorGerentesApi } from '@/lib/api-client';
 import { useAuth } from '@/contexts/AuthContext';
 import { validateDocument, checkEmailAvailability, registerComposer, uploadDocumentImage, createComposerProfile } from '@/lib/composerOnboardingApi';
 import { supabase } from '@/lib/supabase-auth';
+import { DEFAULT_SITE_URL, normalizeSiteUrl } from '@/utils/siteUrl';
 import {
   Music,
   Users,
@@ -591,6 +592,7 @@ const ComposerOnboarding: React.FC = () => {
       // 3. Criar conta via Supabase Auth para novos usuários
       let userId = user?.id || null;
       let shouldVerifyEmail = false;
+      const redirectBase = normalizeSiteUrl(import.meta.env.VITE_APP_URL || window.location.origin, DEFAULT_SITE_URL);
 
       if (!isExistingUser) {
         console.log('🚀 Criando conta via Supabase Auth...');
@@ -599,7 +601,7 @@ const ComposerOnboarding: React.FC = () => {
           password: formData.password,
           options: {
             data: { name: formData.name },
-            emailRedirectTo: `${import.meta.env.VITE_APP_URL || window.location.origin}/auth/callback?type=email_verification`,
+            emailRedirectTo: `${redirectBase}/auth/callback?type=email_verification`,
           },
         });
 

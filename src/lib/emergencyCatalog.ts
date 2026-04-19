@@ -1,6 +1,7 @@
 import { DEFAULT_COVER_URL } from '@/lib/config';
 import { DEFAULT_SITE_URL, normalizeSiteUrl } from '@/utils/siteUrl';
 import { extractUUID, slugifyText } from '@/utils/slugUrl';
+import publicCatalogSnapshot from '@/data/publicCatalogSnapshot.json';
 
 export interface EmergencyHymn {
   id: string;
@@ -208,6 +209,35 @@ const INSTRUMENT_KEYWORDS = [
 ];
 
 let catalogPromise: Promise<EmergencyCatalog> | null = null;
+
+function getSnapshotCatalog(): EmergencyCatalog | null {
+  const snapshot = publicCatalogSnapshot as Partial<EmergencyCatalog> | null;
+  if (!snapshot) return null;
+
+  const hymns = Array.isArray(snapshot.hymns) ? snapshot.hymns : [];
+  const albums = Array.isArray(snapshot.albums) ? snapshot.albums : [];
+  const composers = Array.isArray(snapshot.composers) ? snapshot.composers : [];
+  const playlists = Array.isArray(snapshot.playlists) ? snapshot.playlists : [];
+  const categories = Array.isArray(snapshot.categories) ? snapshot.categories : [];
+  const albumHymns = Array.isArray(snapshot.albumHymns) ? snapshot.albumHymns : [];
+  const hymnCategories = Array.isArray(snapshot.hymnCategories) ? snapshot.hymnCategories : [];
+  const hinario = Array.isArray(snapshot.hinario) ? snapshot.hinario : [];
+
+  if (hymns.length === 0 && albums.length === 0 && categories.length === 0) {
+    return null;
+  }
+
+  return {
+    hymns: hymns as EmergencyHymn[],
+    albums: albums as EmergencyAlbum[],
+    composers: composers as EmergencyComposer[],
+    playlists: playlists as EmergencyPlaylist[],
+    categories: categories as EmergencyCategory[],
+    albumHymns: albumHymns as EmergencyCatalog['albumHymns'],
+    hymnCategories: hymnCategories as EmergencyCatalog['hymnCategories'],
+    hinario: hinario as EmergencyHinario[],
+  };
+}
 
 function normalizeText(value?: string | number | null): string {
   return String(value || '')
@@ -655,6 +685,11 @@ function buildRelations(
 }
 
 async function buildCatalog(): Promise<EmergencyCatalog> {
+  const snapshotCatalog = getSnapshotCatalog();
+  if (snapshotCatalog) {
+    return snapshotCatalog;
+  }
+
   const response = await fetch(getSitemapUrl(), { cache: 'force-cache' });
   if (!response.ok) {
     throw new Error(`Falha ao carregar sitemap para contingência: ${response.status}`);
@@ -686,11 +721,18 @@ export function isSupabaseQuotaRestrictionErrorMessage(message?: string | null):
   const text = normalizeText(message);
   return (
     text.includes('402') ||
+    text.includes('503') ||
     text.includes('payment required') ||
+    text.includes('service unavailable') ||
     text.includes('service for this project is restricted') ||
     text.includes('exceed_egress_quota') ||
     text.includes('exceed_cached_egress_quota') ||
     text.includes('exceed_storage_size_quota') ||
+    text.includes('upstream connect error') ||
+    text.includes('connection timeout') ||
+    text.includes('request timeout') ||
+    text.includes('the latest reset reason') ||
+    text.includes('failed to fetch') ||
     text.includes('pgrst205') ||
     text.includes('schema cache') ||
     text.includes('could not find the table') ||
@@ -846,7 +888,17 @@ export async function getEmergencyRowsForTable(table: string, params: Record<str
   if (normalized === 'hinario') {
     return applyParams(catalog.hinario, params);
   }
-  if (normalized === 'user_follows' || normalized === 'historico' || normalized === 'playlist_tracks' || normalized === 'playlist_songs') {
+  if (
+    normalized === 'user_follows' ||
+    normalized === 'historico' ||
+    normalized === 'playlist_tracks' ||
+    normalized === 'playlist_songs' ||
+    normalized === 'banners' ||
+    normalized === 'site_config' ||
+    normalized === 'cifras' ||
+    normalized === 'cifra_public_catalog' ||
+    normalized === 'bible_narrated'
+  ) {
     return [];
   }
 

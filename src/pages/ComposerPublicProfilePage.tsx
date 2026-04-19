@@ -347,7 +347,7 @@ export default function ComposerPublicProfilePage() {
         category: h.categoria || 'Cantados',
         artist: composer?.name || h.compositor || 'Compositor',
         duration: toMMSS(h.duracao),
-        audioUrl: buildHinoAudioUrl({ id: String(h.id), audio_url: h.audio_url }),
+        audioUrl: h.audio_url || '',
         coverUrl: h.cover_url || album.cover_url || albumCover || DEFAULT_COVER_URL,
         album: album.title,
         lyrics: h.letra || h.lyrics || '',
@@ -469,14 +469,11 @@ export default function ComposerPublicProfilePage() {
     // Se não tem audio_url válido, usar o primeiro MP3 disponível como fallback
     let audioUrl = '';
     if (song.audio_url && song.audio_url.trim() !== '') {
-      audioUrl = buildHinoAudioUrl({ id: song.id, audio_url: song.audio_url });
+      audioUrl = song.audio_url;
     } else {
       // Fallback: usar um MP3 real do servidor
       console.warn('⚠️ Hino sem audio_url, usando fallback');
-      audioUrl = buildHinoAudioUrl({
-        id: song.id,
-        audio_url: 'a-capelacantados-o-deus-bendito-www-canticosccb-com-br-1761280811.mp3'
-      });
+      audioUrl = 'a-capelacantados-o-deus-bendito-www-canticosccb-com-br-1761280811.mp3';
     }
 
     const coverUrlResolved = song.cover_url
@@ -484,7 +481,7 @@ export default function ComposerPublicProfilePage() {
       : `https://ui-avatars.com/api/?name=${encodeURIComponent(song.title)}&background=1f2937&color=ffffff`;
 
     const ytSrc = (song as any).youtube_source || undefined;
-    play({
+    const started = play({
       id: song.id,
       title: song.title,
       number: song.number || 0,
@@ -498,6 +495,7 @@ export default function ComposerPublicProfilePage() {
       createdAt: song.created_at,
       youtubeSource: ytSrc,
     } as any);
+    if (started === false) return;
     openFullScreen();
   };
 
@@ -744,7 +742,7 @@ export default function ComposerPublicProfilePage() {
                             </button>
                             <button
                               type="button"
-                              className={`hidden md:inline-flex items-center justify-center w-8 h-8 rounded-full transition-colors ${user && isFavorite(parseInt(song.id))
+                              className={`hidden md:inline-flex items-center justify-center w-8 h-8 rounded-full transition-colors ${user && isFavorite(String(song.id))
                                   ? 'text-red-500 hover:text-red-400'
                                   : 'text-gray-500 hover:text-primary-400'
                                 }`}
@@ -758,8 +756,8 @@ export default function ComposerPublicProfilePage() {
                                   return;
                                 }
 
-                                const songId = parseInt(song.id);
-                                const uid = user?.id ? Number(user.id) : undefined;
+                                const songId = String(song.id);
+                                const uid = user?.id;
                                 if (isFavorite(songId)) {
                                   removeFavorite(songId, uid);
                                 } else {
@@ -769,7 +767,11 @@ export default function ComposerPublicProfilePage() {
                                     artist: composer?.name || 'Compositor',
                                     album: 'Hinos CCB',
                                     duration: formatDuration(song.duration),
-                                    coverUrl: song.cover_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(song.title)}&background=1f2937&color=ffffff`
+                                    coverUrl: song.cover_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(song.title)}&background=1f2937&color=ffffff`,
+                                    audioUrl: song.audio_url || undefined,
+                                    youtubeSource: song.youtube_source || undefined,
+                                    number: Number(song.number) || 0,
+                                    category: song.category || 'compositor',
                                   }, uid);
 
                                   // Enviar notificação para o compositor
@@ -785,7 +787,7 @@ export default function ComposerPublicProfilePage() {
                               }}
                               title={user ? 'Favoritar hino' : 'Faça login para favoritar'}
                             >
-                              <Heart className={`w-4 h-4 ${user && isFavorite(parseInt(song.id)) ? 'fill-current' : ''}`} />
+                              <Heart className={`w-4 h-4 ${user && isFavorite(String(song.id)) ? 'fill-current' : ''}`} />
                             </button>
                           </div>
                         </div>
@@ -1093,11 +1095,15 @@ export default function ComposerPublicProfilePage() {
                       key={playlist.id}
                       onClick={() => {
                         addTrackToPlaylist(playlist.id, {
-                          id: parseInt(selectedSongForPlaylist.id),
+                          id: selectedSongForPlaylist.id,
                           title: selectedSongForPlaylist.title,
                           artist: composer?.name || 'Compositor',
                           duration: formatDuration(selectedSongForPlaylist.duration),
-                          coverUrl: selectedSongForPlaylist.cover_url || ''
+                          coverUrl: selectedSongForPlaylist.cover_url || '',
+                          audioUrl: selectedSongForPlaylist.audio_url || undefined,
+                          youtubeSource: selectedSongForPlaylist.youtube_source || undefined,
+                          number: Number(selectedSongForPlaylist.number || 0),
+                          category: selectedSongForPlaylist.category || undefined
                         });
                         setShowPlaylistModal(false);
                         alert(`"${selectedSongForPlaylist.title}" adicionada à playlist "${playlist.name}"!`);
