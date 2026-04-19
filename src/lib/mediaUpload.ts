@@ -8,6 +8,7 @@ export const MEDIA_UPLOAD_FOLDER_BY_TYPE = {
   banners: 'banners',
   imports: 'imports',
   exports: 'exports',
+  logos: 'logos',
 } as const;
 
 export type MediaUploadType = keyof typeof MEDIA_UPLOAD_FOLDER_BY_TYPE;

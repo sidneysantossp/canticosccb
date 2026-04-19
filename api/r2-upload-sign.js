@@ -11,6 +11,7 @@ const MEDIA_UPLOAD_FOLDER_BY_TYPE = {
   banners: 'banners',
   imports: 'imports',
   exports: 'exports',
+  logos: 'logos',
 };
 
 function cleanEnvValue(value) {
@@ -36,6 +37,7 @@ const MAX_UPLOAD_SIZE_MB = {
   imports: 25,
   exports: 25,
   hinos: 500,
+  logos: 5,
 };
 
 function sanitizeBearerToken(value) {

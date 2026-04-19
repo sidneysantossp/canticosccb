@@ -1,4 +1,5 @@
-import { supabaseFetch, supabaseInsert, supabaseUpdate, supabaseDelete, isSupabaseConfigured, getSupabaseStorageUrl, supabaseUploadFile } from '@/lib/supabaseRest';
+import { supabaseFetch, supabaseInsert, supabaseUpdate, supabaseDelete, isSupabaseConfigured } from '@/lib/supabaseRest';
+import { uploadFile } from '@/lib/supabase-upload';
 
 export type BannerType = 'hero' | 'promotional' | 'contextual' | 'announcement' | 'featured';
 
@@ -122,17 +123,7 @@ export const toggleBannerActive = async (id: string, newStatus: boolean): Promis
 };
 
 export const uploadBannerImage = async (file: File): Promise<string> => {
-  if (!isSupabaseConfigured) throw new Error('Supabase not configured');
-
-  const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
-  const fileName = `banner-${Date.now()}-${safeName}`;
-  
-  const uploadedPath = await supabaseUploadFile('banners', fileName, file);
-  if (!uploadedPath) {
-    throw new Error('Falha ao fazer upload da imagem do banner');
-  }
-  
-  return getSupabaseStorageUrl('banners', uploadedPath);
+  return uploadFile(file, 'banners');
 };
 
 export const getAll = getAllBanners;

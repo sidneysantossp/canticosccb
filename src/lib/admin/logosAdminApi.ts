@@ -1,6 +1,6 @@
-// Logos Management — Supabase REST + Storage
-import { supabase } from '@/lib/supabase-auth';
+// Logos Management — Supabase REST (metadata) + R2 (binário via uploadFile)
 import { supabaseFetch, supabaseUpdate, supabaseInsert } from '@/lib/supabaseRest';
+import { uploadFile } from '@/lib/supabase-upload';
 import { normalizeAssetUrl } from '@/utils/siteUrl';
 
 export type LogoType = 'favicon' | 'primary' | 'secondary' | 'social';
@@ -85,39 +85,9 @@ export const updateLogo = async (
   }
 };
 
-export const uploadLogoImage = async (file: File, logoType: LogoType): Promise<string> => {
-  const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
-  const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
-  if (!SUPABASE_URL || !SUPABASE_ANON_KEY) throw new Error('Supabase não configurado');
-
-  // Get auth token
-  let accessToken = SUPABASE_ANON_KEY;
-  try {
-    const { data } = await supabase.auth.getSession();
-    if (data?.session?.access_token) accessToken = data.session.access_token;
-  } catch { /* use anon */ }
-
-  const ext = file.name.split('.').pop() || 'png';
-  const path = `logos/${logoType}-${Date.now()}.${ext}`;
-  const uploadUrl = `${SUPABASE_URL}/storage/v1/object/logos/${path}`;
-
-  const response = await fetch(uploadUrl, {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${accessToken}`,
-      'apikey': SUPABASE_ANON_KEY,
-      'Content-Type': file.type,
-      'x-upsert': 'true',
-    },
-    body: file,
-  });
-
-  if (!response.ok) {
-    const errText = await response.text().catch(() => '');
-    throw new Error(`Upload falhou: ${response.status} - ${errText}`);
-  }
-
-  return normalizeAssetUrl(`${SUPABASE_URL}/storage/v1/object/public/logos/${path}`);
+export const uploadLogoImage = async (file: File, _logoType: LogoType): Promise<string> => {
+  const url = await uploadFile(file, 'logos');
+  return normalizeAssetUrl(url);
 };
 
 export const getImageDimensions = (file: File): Promise<{ width: number; height: number }> => {
