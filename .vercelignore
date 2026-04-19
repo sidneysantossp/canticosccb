@@ -1,0 +1,54 @@
+# Dependencies
+node_modules/
+
+# Build outputs
+dist/
+build/
+*.tsbuildinfo
+.output
+
+# Environment
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# PHP legacy e backend antigo
+*.php.bak
+/php-old/
+vendor/
+
+# Backend/PHP e media (não subir para Vercel)
+/api/*
+!/api/ssr.ts
+!/api/archive-proxy.ts
+!/api/_emergencyAudioArchives.js
+!/api/_emergencyAudioIndex.js
+!/api/emergency-audio-track.ts
+!/api/emergency-audio-archive.ts
+!/api/hino-audio-fallback.ts
+
+# Media e uploads
+media/
+media_protegida/
+uploads/
+tmp/
+public/media/
+public/uploads/
+
+# Supabase local
+.supabase/
+
+# Credenciais
+.vps-config.local
+**/credentials.*
+**/secrets.*
+
+# OS/IDE
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.swp
+*.swo
