@@ -66,6 +66,10 @@ export function buildBannerUrl(banner: { image_url?: string } | string): string 
 
   const storageObject = extractSupabasePublicObject(raw);
   if (storageObject?.bucket === 'banners') {
+    if (raw.startsWith('http://') || raw.startsWith('https://')) {
+      return raw;
+    }
+
     return getStorageObjectUrl('banners', storageObject.objectPath);
   }
 

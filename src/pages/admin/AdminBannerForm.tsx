@@ -174,6 +174,10 @@ const AdminBannerForm: React.FC = () => {
         if (uploaded) imageUrl = uploaded;
       }
 
+      if (!imageUrl) {
+        throw new Error('Envie uma imagem ou vídeo antes de salvar o banner.');
+      }
+
       const bannerData: CreateBannerData = {
         title: formData.title.trim(),
         description: formData.description.trim() || undefined,

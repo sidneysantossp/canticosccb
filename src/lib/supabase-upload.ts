@@ -340,7 +340,15 @@ export async function uploadFile(
   const hasR2MediaBase = Boolean(import.meta.env.VITE_MEDIA_PUBLIC_BASE_URL);
 
   if (hasR2MediaBase) {
-    return uploadViaR2(file, normalizedType);
+    try {
+      return await uploadViaR2(file, normalizedType);
+    } catch (error) {
+      if (!import.meta.env.DEV) {
+        throw error;
+      }
+
+      console.warn('[uploadFile] Upload R2 indisponível no dev local, usando Supabase Storage:', error);
+    }
   }
 
   return uploadViaSupabaseStorage(file, normalizedType);

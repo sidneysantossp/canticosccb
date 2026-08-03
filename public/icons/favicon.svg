@@ -5,11 +5,14 @@
       <stop offset="100%" style="stop-color:#059669;stop-opacity:1" />
     </linearGradient>
   </defs>
-  <rect width="32" height="32" rx="4" fill="url(#bg)"/>
-  <g transform="translate(6.4, 6.4)">
-    <rect x="11.2" y="3.2" width="0.64" height="12.8" fill="white"/>
-    <ellipse cx="9.6" cy="14.4" rx="1.28" ry="0.8" fill="white"/>
-    <line x1="3.2" y1="8" x2="16" y2="8" stroke="white" stroke-width="0.096" opacity="0.7"/><line x1="3.2" y1="9.6" x2="16" y2="9.6" stroke="white" stroke-width="0.096" opacity="0.7"/><line x1="3.2" y1="11.2" x2="16" y2="11.2" stroke="white" stroke-width="0.096" opacity="0.7"/><line x1="3.2" y1="12.8" x2="16" y2="12.8" stroke="white" stroke-width="0.096" opacity="0.7"/><line x1="3.2" y1="14.4" x2="16" y2="14.4" stroke="white" stroke-width="0.096" opacity="0.7"/>
+  <rect width="32" height="32" rx="6" fill="url(#bg)"/>
+  <g transform="translate(6, 5)">
+    <line x1="2" y1="9" x2="12" y2="9" stroke="white" stroke-width="1" opacity="0.75"/>
+    <line x1="2" y1="11" x2="12" y2="11" stroke="white" stroke-width="1" opacity="0.75"/>
+    <line x1="2" y1="13" x2="12" y2="13" stroke="white" stroke-width="1" opacity="0.75"/>
+    <line x1="2" y1="15" x2="12" y2="15" stroke="white" stroke-width="1" opacity="0.75"/>
+    <line x1="2" y1="17" x2="12" y2="17" stroke="white" stroke-width="1" opacity="0.75"/>
+    <rect x="11.5" y="5" width="1.5" height="10" fill="white"/>
+    <ellipse cx="10.5" cy="16" rx="2.1" ry="1.4" fill="white"/>
   </g>
-  <text x="16" y="25.6" text-anchor="middle" fill="white" font-family="Arial, sans-serif" font-size="3.84" font-weight="bold">CCB</text>
 </svg>

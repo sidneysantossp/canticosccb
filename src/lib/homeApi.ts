@@ -326,6 +326,7 @@ function diversifyByComposer<T extends { composer_name?: string }>(items: T[], m
 async function getHomePageDataFromSupabase(): Promise<HomePageData> {
   const heroBanners = supabaseFetch<SupabaseBannerRow>('banners', {
     select: 'id,title,description,image_url,link_url,link_id,gradient_overlay,button_text,type',
+    type: 'eq.hero',
     is_active: 'eq.true',
     order: 'position.asc',
     limit: '6',

@@ -25,6 +25,7 @@ const AdminBanners: React.FC = () => {
   const [editingBanner, setEditingBanner] = useState<Banner | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const [formData, setFormData] = useState<CreateBannerData>({
     title: '',
@@ -155,15 +156,18 @@ const AdminBanners: React.FC = () => {
   };
 
   const handleMediaUpload = async (file: File) => {
+    setError(null);
     const isImage = file.type.startsWith('image/');
     const isVideo = file.type.startsWith('video/');
 
     if (!isImage && !isVideo) {
+      setError('Use uma imagem ou vídeo válido para o banner.');
       return;
     }
 
     const maxSize = isVideo ? 50 : 10; // 50MB para vídeo, 10MB para imagem
     if (file.size > maxSize * 1024 * 1024) {
+      setError(`Arquivo muito grande. O limite é ${maxSize}MB.`);
       return;
     }
 
@@ -182,6 +186,7 @@ const AdminBanners: React.FC = () => {
       setFormData(prev => ({ ...prev, image_url: mediaUrl }));
     } catch (error) {
       console.error('Error uploading media:', error);
+      setError(error instanceof Error ? error.message : 'Erro ao enviar mídia do banner.');
     } finally {
       setIsUploading(false);
     }
@@ -198,9 +203,11 @@ const AdminBanners: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError(null);
     console.log('💾 [AdminBanners] handleSubmit formData:', formData);
     if (!formData.title.trim() || !formData.image_url) {
       console.warn('⚠️ [AdminBanners] Submit bloqueado - title:', formData.title, 'image_url:', formData.image_url);
+      setError('Preencha o título e envie uma mídia antes de salvar.');
       return;
     }
 
@@ -219,6 +226,7 @@ const AdminBanners: React.FC = () => {
       handleCloseModal();
     } catch (error) {
       console.error('❌ [AdminBanners] Error saving banner:', error);
+      setError(error instanceof Error ? error.message : 'Erro ao salvar banner.');
     } finally {
       setIsSaving(false);
     }
@@ -311,6 +319,12 @@ const AdminBanners: React.FC = () => {
           <strong>{tabs.find(t => t.id === activeTab)?.label}:</strong> {tabs.find(t => t.id === activeTab)?.description}
         </p>
       </div>
+
+      {error && (
+        <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-4">
+          <p className="text-red-300 text-sm">{error}</p>
+        </div>
+      )}
 
       {/* Stats */}
       <BannersStatsCards

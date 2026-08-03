@@ -35,6 +35,11 @@ const AdminLogos: React.FC = () => {
         sessionStorage.setItem('primaryLogoUrl', primary.url);
         localStorage.setItem('primaryLogoUrl', primary.url);
       }
+      const favicon = logos.find(l => l.type === 'favicon');
+      if (favicon?.url) {
+        sessionStorage.setItem('faviconLogoUrl', favicon.url);
+        localStorage.setItem('faviconLogoUrl', favicon.url);
+      }
     } catch {}
   }, [logos]);
 

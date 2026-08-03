@@ -1,4 +1,4 @@
-import { supabaseFetch, supabaseInsert, supabaseUpdate, supabaseDelete, isSupabaseConfigured } from '@/lib/supabaseRest';
+import { supabaseFetch, supabaseInsert, supabaseUpdate, supabaseDelete, isSupabaseConfigured, invalidateSupabaseCache } from '@/lib/supabaseRest';
 import { uploadFile } from '@/lib/supabase-upload';
 
 export type BannerType = 'hero' | 'promotional' | 'contextual' | 'announcement' | 'featured';
@@ -100,6 +100,7 @@ export const createBanner = async (data: CreateBannerData): Promise<Banner> => {
 
   const result = await supabaseInsert<any>('banners', data);
   if (!result) throw new Error('Failed to create banner');
+  invalidateSupabaseCache('banners');
   return result as Banner;
 };
 
@@ -108,6 +109,7 @@ export const updateBanner = async (id: string, data: Partial<CreateBannerData>):
 
   const results = await supabaseUpdate<any>('banners', { id: `eq.${id}` }, data);
   if (results.length === 0) throw new Error('Failed to update banner');
+  invalidateSupabaseCache('banners');
   return results[0] as Banner;
 };
 
@@ -115,6 +117,7 @@ export const deleteBanner = async (id: string): Promise<{ success: boolean }> =>
   if (!isSupabaseConfigured) return { success: false };
 
   const success = await supabaseDelete('banners', { id: `eq.${id}` });
+  if (success) invalidateSupabaseCache('banners');
   return { success };
 };
 
