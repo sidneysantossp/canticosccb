@@ -35,7 +35,7 @@ const MAX_UPLOAD_SIZE_MB: Record<MediaUploadFolder, number> = {
   albuns: 10,
   covers: 10,
   avatars: 5,
-  banners: 10,
+  banners: 50,
   imports: 25,
   exports: 25,
   logos: 5,

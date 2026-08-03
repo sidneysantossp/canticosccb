@@ -31,7 +31,7 @@ const R2_PUBLIC_URL = cleanEnvValue(
 
 const MAX_UPLOAD_SIZE_MB = {
   avatars: 5,
-  banners: 10,
+  banners: 50,
   covers: 10,
   albuns: 10,
   imports: 25,

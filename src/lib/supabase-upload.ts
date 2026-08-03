@@ -246,7 +246,7 @@ async function uploadViaSupabaseStorage(
     const maxSizes: Record<string, number> = {
       avatars: 5,   // 5 MB
       covers: 10,   // 10 MB
-      banners: 10,  // 10 MB
+      banners: 50,  // 50 MB
       albuns: 10,   // 10 MB
       imports: 25,  // 25 MB
       exports: 25,  // 25 MB
