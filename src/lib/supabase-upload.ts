@@ -273,7 +273,7 @@ async function uploadViaSupabaseStorage(
     const uniqueName = `${timestamp}_${Math.random().toString(36).substring(7)}.${ext}`;
     
     // Definir bucket e path baseado no tipo
-    const bucket = 'images';
+    const bucket = folder === 'banners' ? 'banners' : 'images';
     const path = `${folder}/${uniqueName}`;
     
     // Upload via REST API com timeout
