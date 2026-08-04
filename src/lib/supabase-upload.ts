@@ -273,13 +273,13 @@ async function uploadViaSupabaseStorage(
     const uniqueName = `${timestamp}_${Math.random().toString(36).substring(7)}.${ext}`;
     
     // Definir bucket e path baseado no tipo
-    const bucket = folder === 'banners' ? 'banners' : 'images';
+    const primaryBucket = folder === 'banners' ? 'banners' : 'images';
+    const fallbackBucket = folder === 'banners' ? 'images' : '';
     const path = `${folder}/${uniqueName}`;
-    
+
     // Upload via REST API com timeout
-    const uploadUrl = `${SUPABASE_URL}/storage/v1/object/${bucket}/${path}`;
-    
-    const doUpload = async (token: string): Promise<Response> => {
+    const doUpload = async (token: string, bucket: string): Promise<Response> => {
+      const uploadUrl = `${SUPABASE_URL}/storage/v1/object/${bucket}/${path}`;
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 30000); // 30s timeout
       try {
@@ -303,12 +303,25 @@ async function uploadViaSupabaseStorage(
     };
 
     try {
-      let response = await doUpload(accessToken);
+      let bucket = primaryBucket;
+      let response = await doUpload(accessToken, bucket);
       
       // Se falhar com token do usuário, tentar com anon key
       if (!response.ok && accessToken !== SUPABASE_ANON_KEY) {
         console.warn(`⚠️ Upload falhou com user token (${response.status}), tentando com anon key...`);
-        response = await doUpload(SUPABASE_ANON_KEY);
+        response = await doUpload(SUPABASE_ANON_KEY, bucket);
+      }
+
+      if (!response.ok && fallbackBucket && [400, 403].includes(response.status)) {
+        const primaryErrorText = await response.text().catch(() => '');
+        console.warn(`⚠️ Upload no bucket ${bucket} falhou (${response.status}), tentando bucket ${fallbackBucket}...`, primaryErrorText);
+        bucket = fallbackBucket;
+        response = await doUpload(accessToken, bucket);
+
+        if (!response.ok && accessToken !== SUPABASE_ANON_KEY) {
+          console.warn(`⚠️ Upload fallback falhou com user token (${response.status}), tentando com anon key...`);
+          response = await doUpload(SUPABASE_ANON_KEY, bucket);
+        }
       }
       
       if (!response.ok) {
