@@ -152,9 +152,9 @@ const AdminBannerForm: React.FC = () => {
       setIsUploading(true);
       const imageUrl = await uploadBannerImage(file);
       return imageUrl;
-    } catch (error) {
+    } catch (error: any) {
       console.error('Erro ao fazer upload da imagem:', error);
-      return null;
+      throw new Error(error?.message || 'Erro ao fazer upload da mídia do banner');
     } finally {
       setIsUploading(false);
     }
@@ -171,7 +171,10 @@ const AdminBannerForm: React.FC = () => {
       // Upload de imagem se houver
       if (imageFile) {
         const uploaded = await uploadImage(imageFile);
-        if (uploaded) imageUrl = uploaded;
+        if (!uploaded) {
+          throw new Error('Upload da mídia falhou. Tente novamente antes de salvar.');
+        }
+        imageUrl = uploaded;
       }
 
       if (!imageUrl) {

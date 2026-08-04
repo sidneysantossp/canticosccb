@@ -67,6 +67,9 @@ const BannerListItem: React.FC<Props> = ({ banner, onToggleActive, onDelete }) =
             </div>
             {banner.description && <p className="text-gray-400 text-sm mb-2">{banner.description}</p>}
             {banner.link_url && <p className="text-blue-400 text-sm">Link: {banner.link_url}</p>}
+            {banner.image_url && (
+              <p className="text-gray-500 text-xs break-all">Mídia: {banner.image_url}</p>
+            )}
           </div>
 
           <div className="flex gap-2">
