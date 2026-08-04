@@ -343,11 +343,11 @@ export async function uploadFile(
     try {
       return await uploadViaR2(file, normalizedType);
     } catch (error) {
-      if (!import.meta.env.DEV) {
+      if (!import.meta.env.DEV && normalizedType !== 'banners') {
         throw error;
       }
 
-      console.warn('[uploadFile] Upload R2 indisponível no dev local, usando Supabase Storage:', error);
+      console.warn('[uploadFile] Upload R2 indisponível, usando Supabase Storage:', error);
     }
   }
 
