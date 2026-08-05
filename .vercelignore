@@ -23,6 +23,7 @@ vendor/
 /api/*
 !/api/ssr.ts
 !/api/archive-proxy.ts
+!/api/r2-upload-sign.js
 !/api/_emergencyAudioArchives.js
 !/api/_emergencyAudioIndex.js
 !/api/emergency-audio-track.ts

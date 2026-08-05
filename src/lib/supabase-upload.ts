@@ -3,6 +3,7 @@
  */
 import { supabase } from './supabase-auth';
 import { normalizeMediaUploadType, resolveMediaUploadFolder, type MediaUploadType } from './mediaUpload';
+import { DEFAULT_SITE_URL } from '@/utils/siteUrl';
 
 export interface UploadResult {
   fileName: string;
@@ -21,11 +22,52 @@ export interface SignedR2UploadPayload {
   folder?: string;
 }
 
+const R2_SIGN_PATH = '/api/r2-upload-sign';
+
 function sanitizeBearerToken(value: string): string {
   return String(value || '')
     .trim()
     .replace(/^Bearer\s+/i, '')
     .replace(/[^A-Za-z0-9._-]/g, '');
+}
+
+function isLocalHost(hostname: string): boolean {
+  return /^(localhost|127\.0\.0\.1|0\.0\.0\.0|\[::1\])$/i.test(hostname);
+}
+
+/**
+ * Em produção usa o path relativo da própria app (Vercel).
+ * Em localhost o Vite não serve /api/r2-upload-sign — aponta para a API publicada.
+ * Preferência: VITE_R2_SIGN_URL > VITE_DEPLOY_ORIGIN + path > DEFAULT_SITE_URL em local.
+ */
+function resolveR2SignUrl(): string {
+  const explicit = String(import.meta.env.VITE_R2_SIGN_URL || '').trim();
+  if (explicit) return explicit;
+
+  const runningOnLocalhost =
+    import.meta.env.DEV ||
+    (typeof window !== 'undefined' && isLocalHost(window.location.hostname));
+
+  if (!runningOnLocalhost) {
+    return R2_SIGN_PATH;
+  }
+
+  const deployOrigin = String(import.meta.env.VITE_DEPLOY_ORIGIN || '')
+    .trim()
+    .replace(/\/+$/, '');
+
+  if (deployOrigin) {
+    try {
+      const parsed = new URL(deployOrigin);
+      if (!isLocalHost(parsed.hostname)) {
+        return `${parsed.origin}${R2_SIGN_PATH}`;
+      }
+    } catch {
+      // Ignorar e usar o site publicado abaixo.
+    }
+  }
+
+  return `${DEFAULT_SITE_URL}${R2_SIGN_PATH}`;
 }
 
 export async function extractAudioDuration(file: File, timeoutMs: number = 10000): Promise<string> {
@@ -162,24 +204,37 @@ async function signR2Upload(file: File, type: MediaUploadType) {
     throw new Error('Sua sessão expirou. Faça login novamente para enviar arquivos.');
   }
 
-  const response = await fetch('/api/r2-upload-sign', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${accessToken}`,
-    },
-    body: JSON.stringify({
-      type,
-      fileName: file.name,
-      contentType: file.type || 'application/octet-stream',
-      size: file.size,
-    }),
-  });
+  const signUrl = resolveR2SignUrl();
+  let response: Response;
+
+  try {
+    response = await fetch(signUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${accessToken}`,
+      },
+      body: JSON.stringify({
+        type,
+        fileName: file.name,
+        contentType: file.type || 'application/octet-stream',
+        size: file.size,
+      }),
+    });
+  } catch (error: any) {
+    const message = String(error?.message || error || '');
+    if (/failed to fetch|networkerror|load failed/i.test(message)) {
+      throw new Error(
+        `Não foi possível contatar o assinador R2 (${signUrl}). Em localhost isso usa a API da Vercel — confira deploy de /api/r2-upload-sign e CORS.`
+      );
+    }
+    throw error;
+  }
 
   const payload = await response.json().catch(() => ({}));
 
   if (!response.ok) {
-    throw new Error(payload?.error || 'Falha ao preparar o upload no R2');
+    throw new Error(payload?.error || `Falha ao preparar o upload no R2 (${response.status})`);
   }
 
   return payload as {
@@ -213,7 +268,9 @@ export async function uploadFileWithSignedR2Url(
       throw new Error('Timeout ao enviar a faixa para o armazenamento de mídia.');
     }
     if (/failed to fetch|networkerror|load failed/i.test(message)) {
-      throw new Error('Upload bloqueado pelo navegador. Configure a política de CORS do bucket canticos-media para permitir PUT do domínio canticosccb.com.br.');
+      throw new Error(
+        'Upload bloqueado pelo navegador. Configure a política de CORS do bucket canticos-media para permitir PUT de canticosccb.com.br e, em dev, de http://localhost:5173.'
+      );
     }
     throw error;
   } finally {
@@ -350,18 +407,11 @@ export async function uploadFile(
   type: MediaUploadType
 ): Promise<string> {
   const normalizedType = normalizeMediaUploadType(type);
-  const hasR2MediaBase = Boolean(import.meta.env.VITE_MEDIA_PUBLIC_BASE_URL);
+  const hasR2MediaBase = Boolean(String(import.meta.env.VITE_MEDIA_PUBLIC_BASE_URL || '').trim());
 
+  // Com R2 configurado, não cair no Supabase Storage (RLS sem policy de insert).
   if (hasR2MediaBase) {
-    try {
-      return await uploadViaR2(file, normalizedType);
-    } catch (error) {
-      if (!import.meta.env.DEV && normalizedType !== 'banners') {
-        throw error;
-      }
-
-      console.warn('[uploadFile] Upload R2 indisponível, usando Supabase Storage:', error);
-    }
+    return uploadViaR2(file, normalizedType);
   }
 
   return uploadViaSupabaseStorage(file, normalizedType);

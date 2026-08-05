@@ -91,8 +91,16 @@ function getR2Client() {
   return r2Client;
 }
 
+function setCorsHeaders(res) {
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  res.setHeader('Access-Control-Max-Age', '86400');
+}
+
 function json(res, status, payload) {
   res.statusCode = status;
+  setCorsHeaders(res);
   res.setHeader('Content-Type', 'application/json; charset=utf-8');
   res.setHeader('Cache-Control', 'no-store');
   res.end(JSON.stringify(payload));
@@ -190,9 +198,7 @@ export async function createSignedUploadPayload({ type, fileName, contentType, s
 export default async function handler(req, res) {
   if (req.method === 'OPTIONS') {
     res.statusCode = 204;
-    res.setHeader('Access-Control-Allow-Origin', '*');
-    res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+    setCorsHeaders(res);
     return res.end();
   }
 
