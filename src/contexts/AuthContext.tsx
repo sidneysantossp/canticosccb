@@ -60,6 +60,56 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [managingComposerId, setManagingComposerId] = useState<string | null>(null);
   const [managingComposerName, setManagingComposerName] = useState<string | null>(null);
 
+  const applyUser = (usuario: Partial<Usuario> & { id: string; email: string }) => {
+    const { resolvedIsAdmin, resolvedIsComposer, resolvedTipo } = resolveUserFlags(
+      usuario.email,
+      usuario.is_admin,
+      usuario.is_composer,
+      usuario.tipo
+    );
+
+    const userCompat: User = {
+      id: String(usuario.id),
+      email: usuario.email,
+      nome: usuario.nome || usuario.name || usuario.email.split('@')[0] || 'Usuário',
+      avatar_url: usuario.avatar_url,
+      tipo: resolvedTipo,
+      ativo: usuario.ativo ?? (usuario.status !== 'inactive' && !usuario.is_blocked),
+    };
+
+    authClient.cacheCurrentUser({
+      ...usuario,
+      ...userCompat,
+      is_admin: resolvedIsAdmin,
+      is_composer: resolvedIsComposer,
+    });
+    setUser(userCompat);
+    setProfile({
+      ...userCompat,
+      plan: usuario.plan === 'premium' || usuario.plano === 'premium' ? 'premium' : 'free',
+      is_admin: resolvedIsAdmin,
+      is_composer: resolvedIsComposer,
+    });
+  };
+
+  const applySessionUser = (session: any) => {
+    if (!session?.user) return false;
+
+    applyUser({
+      id: String(session.user.id),
+      email: session.user.email!,
+      name: session.user.user_metadata?.name || session.user.email?.split('@')[0] || 'Usuário',
+      avatar_url: session.user.user_metadata?.avatar_url || session.user.user_metadata?.picture,
+      plan: 'free',
+      status: 'active',
+      is_admin: false,
+      is_composer: false,
+      is_blocked: false,
+      email_verified: !!session.user.email_confirmed_at,
+    });
+    return true;
+  };
+
   useEffect(() => {
     const clearStoredUser = () => {
       setUser(null);
@@ -282,10 +332,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     
     // Listener para mudanças de autenticação do Supabase
     const { data: { subscription } } = authClient.supabase.auth.onAuthStateChange(
-      async (event, session) => {
+      (event, session) => {
+        const run = async () => {
         if (event === 'SIGNED_IN' && session?.user) {
-          // Sincronizar usuário do banco
-          await syncUserFromSession(session);
+          applySessionUser(session);
+          void syncUserFromSession(session);
           setLoading(false);
         } else if (event === 'INITIAL_SESSION') {
           // Sessão inicial - verificar se há usuário
@@ -293,7 +344,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             // Tentar carregar do localStorage primeiro
             if (!loadUser()) {
               // Se não encontrou, sincronizar do banco
-              await syncUserFromSession(session);
+              applySessionUser(session);
+              void syncUserFromSession(session);
             }
           } else if (!hasFallbackAuth) {
             clearStoredUser();
@@ -306,6 +358,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           // Token atualizado, recarregar usuário
           loadUser();
         }
+        };
+
+        setTimeout(() => {
+          void run();
+        }, 0);
       }
     );
     
@@ -392,6 +449,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         );
       }
       localStorage.removeItem('auth_fallback');
+      if (data.session?.user) {
+        applySessionUser(data.session);
+        void syncUserFromSession(data.session);
+        setLoading(false);
+      }
     } catch (error: any) {
       console.error('Sign-in error:', error?.message || error);
       throw error;
