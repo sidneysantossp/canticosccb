@@ -2,7 +2,12 @@
 > Plataforma de hinos da Congregação Cristã no Brasil
 
 ## Sobre
-Cânticos CCB é a plataforma digital mais completa para ouvir, ler e estudar hinos da Congregação Cristã no Brasil (CCB). O site oferece acesso gratuito a hinos cantados e tocados do Hinário 5 (Hinos de Louvores e Súplicas a Deus), cifras musicais, perfis de compositores, letras do hinário e playlists temáticas.
+Cânticos CCB é uma plataforma digital independente para ouvir, ler e estudar hinos relacionados à Congregação Cristã no Brasil (CCB). O site oferece acesso a hinos cantados e tocados do Hinário 5 (Hinos de Louvores e Súplicas a Deus), cifras musicais, perfis de compositores, letras do hinário e playlists temáticas.
+
+## Natureza Editorial
+- Projeto independente, sem vínculo institucional, endosso, patrocínio ou parceria com a Congregação Cristã no Brasil.
+- Uso de “CCB” em sentido referencial e descritivo para organizar repertórios pesquisados pela comunidade.
+- Conteúdos enviados por usuários podem ser revisados, ajustados ou removidos mediante solicitação válida de direitos.
 
 ## Conteúdo Principal
 

@@ -6,43 +6,43 @@ const AboutPage: React.FC = () => {
   const schema = generateOrganizationSchema();
 
   const stats = [
-    { icon: Users, label: 'Usuários Ativos', value: '2.5M+' },
-    { icon: Music, label: 'Hinos Disponíveis', value: '1.200+' },
-    { icon: Globe, label: 'Países', value: '50+' },
-    { icon: Heart, label: 'Hinos Curtidos', value: '100M+' }
+    { icon: Music, label: 'Acervo de hinos, letras e cifras', value: 'Público' },
+    { icon: Users, label: 'Conteúdo revisado e organizado', value: 'Moderado' },
+    { icon: Globe, label: 'Idioma principal da plataforma', value: 'pt-BR' },
+    { icon: Heart, label: 'Projeto sem vínculo institucional', value: 'Independente' }
   ];
 
   const values = [
     {
       icon: Target,
-      description: 'Levar a mensagem dos hinos sagrados a todos os corações, preservando a tradição e facilitando o acesso à adoração musical.'
+      title: 'Nossa Missão',
+      description: 'Organizar hinos, letras, cifras, álbuns e playlists em páginas públicas fáceis de encontrar, com navegação clara e respeito aos direitos de autores, intérpretes e titulares.'
     },
     {
       icon: Heart,
       title: 'Nossa Visão',
-      description: 'Ser a plataforma referência para hinos cristãos, unindo tradição e tecnologia para edificar vidas através dos hinos.'
+      description: 'Ser uma referência digital de descoberta e estudo musical para quem busca repertório relacionado à Congregação Cristã no Brasil.'
     },
     {
       icon: Award,
       title: 'Nossos Valores',
-      description: 'Excelência, respeito à tradição, inovação tecnológica, acessibilidade e compromisso com a irmandade.'
+      description: 'Clareza editorial, respeito à tradição, boa-fé com titulares de direitos, acessibilidade e melhoria contínua da experiência.'
     }
   ];
 
   const timeline = [
-    { year: '2020', title: 'Fundação', description: 'Início do projeto com o objetivo de digitalizar os hinos' },
-    { year: '2021', title: 'Lançamento', description: 'Primeira versão da plataforma com 500 hinos' },
-    { year: '2022', title: 'Expansão', description: 'Alcançamos 1 milhão de usuários' },
-    { year: '2023', title: 'Inovação', description: 'Lançamento do app mobile e dos recursos de cadastro e estudo' },
-    { year: '2024', title: 'Presente', description: 'Mais de 2.5 milhões de usuários em 50 países' }
+    { year: 'Base', title: 'Organização do acervo', description: 'Estruturação de páginas para hinos, letras, cifras, álbuns, compositores e categorias.' },
+    { year: 'SEO', title: 'Páginas canônicas', description: 'Padronização de URLs públicas, metadados, sitemap e dados estruturados para mecanismos de busca.' },
+    { year: 'IA', title: 'Descoberta por assistentes', description: 'Preparação de robots, llms.txt e conteúdo rastreável para sistemas de busca e resposta generativa.' },
+    { year: 'Hoje', title: 'Melhoria contínua', description: 'Evolução de performance, moderação, qualidade editorial e clareza sobre a natureza independente do projeto.' }
   ];
 
   return (
     <>
       <SEOHead
         title="Sobre Nós"
-        description="Conheça a história da plataforma Cânticos CCB. Mais de 2.5 milhões de usuários ouvindo 1.200+ hinos em 50 países ao redor do mundo."
-        keywords="sobre ccb, história ccb, missão ccb, valores ccb, plataforma religiosa"
+        description="Conheça a plataforma Cânticos CCB, um projeto independente para organizar hinos, letras, cifras, álbuns e playlists relacionados à CCB."
+        keywords="sobre Cânticos CCB, hinos CCB, cifras CCB, hinário CCB, plataforma independente"
         canonical="/about"
         schemaData={schema}
       />
@@ -55,7 +55,7 @@ const AboutPage: React.FC = () => {
             Sobre Nós
           </h1>
           <p className="text-xl text-text-muted max-w-2xl mx-auto">
-            Conectando corações através dos hinos sagrados desde 2020
+            Projeto independente para organizar e facilitar a descoberta de hinos, letras, cifras e repertórios relacionados à CCB
           </p>
         </div>
       </div>
@@ -82,13 +82,13 @@ const AboutPage: React.FC = () => {
           <h2 className="text-3xl font-bold text-white mb-6">Nossa História</h2>
           <div className="space-y-4 text-text-muted leading-relaxed">
             <p>
-              O Cânticos CCB nasceu da visão de tornar os hinos sagrados acessíveis a todos, em qualquer lugar e a qualquer momento. Fundado em 2020, começamos com um simples objetivo: preservar e compartilhar a rica tradição musical da Congregação Cristã no Brasil.
+              O Cânticos CCB organiza conteúdo musical relacionado à Congregação Cristã no Brasil em uma experiência digital pública, com páginas para hinos, letras, cifras, álbuns, compositores, categorias e playlists.
             </p>
             <p>
-              Ao longo dos anos, evoluímos de uma simples coleção digital para uma plataforma completa de streaming, oferecendo recursos como playlists personalizadas, modo offline, letras sincronizadas e muito mais. Hoje, servimos milhões de usuários ao redor do mundo.
+              A plataforma busca facilitar a descoberta do repertório, criar conexões entre páginas relacionadas e manter metadados claros para usuários, mecanismos de busca e assistentes de IA.
             </p>
             <p>
-              Nossa missão vai além da tecnologia. Buscamos criar uma irmandade unida pela fé e pelos hinos, onde cada hino conta uma história e toca corações. Continuamos inovando, mas sempre com respeito à tradição que nos inspira.
+              O projeto é independente e não possui vínculo, endosso, patrocínio ou relação institucional com a Congregação Cristã no Brasil. Conteúdos enviados pela comunidade passam por organização e podem ser revisados ou removidos mediante solicitação válida de direitos.
             </p>
           </div>
         </div>
@@ -143,7 +143,7 @@ const AboutPage: React.FC = () => {
             Faça Parte da Nossa História
           </h2>
           <p className="text-white/90 text-lg mb-8">
-            Junte-se a milhões de pessoas que compartilham a fé através dos hinos
+            Explore o acervo público, encontre hinos por número, título, compositor ou categoria e acompanhe as melhorias da plataforma.
           </p>
           <button className="px-8 py-4 bg-white text-primary-600 font-bold rounded-full hover:bg-gray-100 transition-all transform hover:scale-105">
             Começar Agora
