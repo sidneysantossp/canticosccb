@@ -51,7 +51,7 @@
       "destination": "/api/ssr?path=/:path"
     },
     {
-      "source": "/((?!api(?:/|$))(?!.*\\.(?:png|jpg|jpeg|gif|svg|ico|css|js|woff|woff2|ttf|eot|pdf|zip|mp3|mp4|webm|ogg)$).*)",
+      "source": "/((?!api(?:/|$))(?!.*\\.(?:png|jpg|jpeg|gif|svg|ico|css|js|webmanifest|json|woff|woff2|ttf|eot|pdf|zip|mp3|mp4|webm|ogg)$).*)",
       "destination": "/index.html"
     }
   ],
@@ -74,6 +74,13 @@
       "source": "/llms.txt",
       "headers": [
         { "key": "Content-Type", "value": "text/plain; charset=utf-8" },
+        { "key": "Cache-Control", "value": "public, max-age=86400" }
+      ]
+    },
+    {
+      "source": "/manifest.webmanifest",
+      "headers": [
+        { "key": "Content-Type", "value": "application/manifest+json; charset=utf-8" },
         { "key": "Cache-Control", "value": "public, max-age=86400" }
       ]
     },
