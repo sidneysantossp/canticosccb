@@ -318,6 +318,23 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       return false;
     };
 
+    const syncSessionWithFallback = async (session: any) => {
+      if (!session?.user) return false;
+
+      const synced = await Promise.race([
+        syncUserFromSession(session),
+        new Promise<boolean>((resolve) => {
+          window.setTimeout(() => resolve(false), 4000);
+        }),
+      ]);
+
+      if (!synced) {
+        applySessionUser(session);
+      }
+
+      return true;
+    };
+
     // Carregar usuário imediatamente
     const hasUser = loadUser();
     const hasFallbackAuth = localStorage.getItem('auth_fallback') === 'true';
@@ -335,8 +352,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       (event, session) => {
         const run = async () => {
         if (event === 'SIGNED_IN' && session?.user) {
-          applySessionUser(session);
-          void syncUserFromSession(session);
+          await syncSessionWithFallback(session);
           setLoading(false);
         } else if (event === 'INITIAL_SESSION') {
           // Sessão inicial - verificar se há usuário
@@ -344,8 +360,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             // Tentar carregar do localStorage primeiro
             if (!loadUser()) {
               // Se não encontrou, sincronizar do banco
-              applySessionUser(session);
-              void syncUserFromSession(session);
+              await syncSessionWithFallback(session);
             }
           } else if (!hasFallbackAuth) {
             clearStoredUser();
@@ -450,8 +465,27 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
       localStorage.removeItem('auth_fallback');
       if (data.session?.user) {
-        applySessionUser(data.session);
-        void syncUserFromSession(data.session);
+        const profileSynced = await Promise.race([
+          authClient.supabase
+            .from('users')
+            .select('*')
+            .eq('id', data.session.user.id)
+            .single()
+            .then(({ data: dbUser }) => {
+              if (!dbUser) return false;
+              applyUser(dbUser);
+              return true;
+            })
+            .catch(() => false),
+          new Promise<boolean>((resolve) => {
+            window.setTimeout(() => resolve(false), 4000);
+          }),
+        ]);
+
+        if (!profileSynced) {
+          applySessionUser(data.session);
+        }
+
         setLoading(false);
       }
     } catch (error: any) {
