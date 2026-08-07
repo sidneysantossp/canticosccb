@@ -29,6 +29,12 @@ type HubHymn = {
   categoria?: string;
 };
 
+type HubSongCandidate = {
+  numero?: number | null;
+  titulo?: string | null;
+  categoria?: string | null;
+};
+
 const HUBS: Record<HymnHubType, HubConfig> = {
   cantados: {
     path: '/hinos-cantados-ccb',
@@ -99,18 +105,22 @@ const normalizeText = (value: string) =>
     .toLowerCase()
     .trim();
 
-const isTraditionalHinarioSong = (song: { numero?: number | null; categoria?: string }) => {
-  const numero = Number(song.numero || 0);
-  if (numero >= 1 && numero <= 480) return true;
+const shouldIncludeHubSong = (song: HubSongCandidate, hub: HymnHubType) => {
+  const normalizedCategory = normalizeText(song.categoria || '');
+  const normalizedTitle = normalizeText(song.titulo || '');
 
-  const normalizedCategory = normalizeText(String(song.categoria || ''));
-  return normalizedCategory === 'hinario5' || normalizedCategory === 'hinario 5' || normalizedCategory.includes('hinario');
-};
-
-const shouldIncludeHubSong = (song: { numero?: number | null; categoria?: string }, hub: HymnHubType) => {
   if (hub === 'avulsos') {
-    return !isTraditionalHinarioSong(song);
+    return normalizedCategory.includes('avulso') || normalizedTitle.includes('avulso');
   }
+
+  if (hub === 'tocados') {
+    return normalizedCategory.includes('tocado') || normalizedCategory.includes('instrument');
+  }
+
+  if (hub === 'cantados') {
+    return normalizedCategory.includes('cantado');
+  }
+
   return true;
 };
 
@@ -146,8 +156,9 @@ async function fetchHubHymns(hub: HymnHubType): Promise<HubHymn[]> {
     }
   }
 
+  const fallbackTerm = hub === 'avulsos' ? 'avulso' : hub.slice(0, -1);
   const fallbackSongs = await supabaseFetch<any>('hinos', {
-    categoria: `ilike.%${hub}%`,
+    categoria: `ilike.%${fallbackTerm}%`,
     or: '(ativo.eq.true,ativo.eq.1)',
     select: 'id,numero,titulo,compositor_nome,categoria',
     order: 'numero.asc',
