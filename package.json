@@ -10,6 +10,7 @@
     "build": "vite build && node scripts/generate-sitemap.js && node scripts/generate-robots.js",
     "build:check": "tsc && vite build",
     "generate-sitemap": "node scripts/generate-sitemap.js",
+    "audit:seo": "node scripts/validate-seo-assets.js",
     "build:seo": "vite build && node scripts/generate-sitemap.js && node scripts/generate-robots.js",
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
     "preview": "vite preview",
