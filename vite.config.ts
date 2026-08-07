@@ -26,7 +26,7 @@ function splitVendorChunks(moduleId: string) {
     return 'vendor-charts';
   }
 
-  if (moduleId.includes('/react-quill/') || moduleId.includes('/quill/') || moduleId.includes('/@tinymce/')) {
+  if (moduleId.includes('/@tinymce/')) {
     return 'vendor-editors';
   }
 

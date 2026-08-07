@@ -4,9 +4,7 @@ import { ArrowLeft, Save, Music, Upload, Clock, Search } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { hinosApi, uploadApi, categoriasApi, compositoresApi, type Categoria } from '@/lib/api-client'
 import YoutubeImportForm from '@/components/admin/YoutubeImportForm'
-import ReactQuill from 'react-quill'
-import 'react-quill/dist/quill.snow.css'
-import '@/styles/quill-custom.css'
+import SafeRichTextEditor from '@/components/ui/SafeRichTextEditor'
 
 interface YoutubeMetadata {
   videoId: string
@@ -48,26 +46,6 @@ const AdminYoutubeImport: React.FC = () => {
   const [error, setError] = useState<string | null>(null)
   const [categories, setCategories] = useState<Categoria[]>([])
   const [loadingCategories, setLoadingCategories] = useState<boolean>(false)
-
-  // Configuração do editor Quill
-  const modules = {
-    toolbar: [
-      [{ 'header': [1, 2, 3, false] }],
-      ['bold', 'italic', 'underline', 'strike'],
-      [{ 'list': 'ordered'}, { 'list': 'bullet' }],
-      [{ 'align': [] }],
-      ['link'],
-      ['clean']
-    ],
-  }
-
-  const formats = [
-    'header',
-    'bold', 'italic', 'underline', 'strike',
-    'list', 'bullet',
-    'align',
-    'link'
-  ]
 
   React.useEffect(() => {
     loadCategories()
@@ -576,12 +554,9 @@ const AdminYoutubeImport: React.FC = () => {
             <div>
               <label className="block text-gray-400 text-sm font-semibold mb-2">Letra Completa</label>
               <div className="bg-white rounded-lg overflow-hidden">
-                <ReactQuill
-                  theme="snow"
+                <SafeRichTextEditor
                   value={formData.letra}
                   onChange={(content) => setFormData({ ...formData, letra: content })}
-                  modules={modules}
-                  formats={formats}
                   placeholder="Cole a letra completa do hino aqui..."
                   className="h-96"
                 />

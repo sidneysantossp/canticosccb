@@ -1,0 +1,41 @@
+.safe-rich-text-editor {
+  display: flex;
+  flex-direction: column;
+  min-height: 24rem;
+  background: #ffffff;
+  color: #111827;
+}
+
+.safe-rich-text-editor__toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.625rem 0.875rem;
+  border-bottom: 1px solid #e5e7eb;
+  background: #f9fafb;
+  color: #4b5563;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.safe-rich-text-editor__input {
+  flex: 1;
+  min-height: 20rem;
+  width: 100%;
+  resize: vertical;
+  border: 0;
+  outline: 0;
+  padding: 1rem;
+  color: #111827;
+  background: #ffffff;
+  font-family: "Courier New", Consolas, "Liberation Mono", Menlo, Monaco, monospace;
+  font-size: 1rem;
+  line-height: 1.75;
+  white-space: pre-wrap;
+}
+
+.safe-rich-text-editor__input::placeholder {
+  color: #9ca3af;
+  font-style: italic;
+}

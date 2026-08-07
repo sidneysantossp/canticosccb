@@ -1,14 +1,12 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { ArrowLeft, Upload, Music, Image as ImageIcon, Save, X, FileAudio, Clock } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { uploadApi, hinosApi, type Hino } from '@/lib/api-client';
 import { supabase } from '@/lib/supabase-auth';
 import { getSignedSupabaseUrl } from '@/lib/supabaseMedia';
-import ReactQuill from 'react-quill';
-import 'react-quill/dist/quill.snow.css';
-import '@/styles/quill-custom.css';
 import { useActiveComposer } from '@/hooks/useActiveComposer';
+import SafeRichTextEditor from '@/components/ui/SafeRichTextEditor';
 
 // Helper: garante que a URL de áudio utiliza Supabase Storage assinado
 const getSignedPreviewUrl = async (original: string): Promise<string> => {
@@ -74,26 +72,6 @@ const ComposerCreateSong: React.FC = () => {
   const [loadingAlbums, setLoadingAlbums] = useState(false);
   const [loadingCategories, setLoadingCategories] = useState(false);
   const [error, setError] = useState<string>('');
-
-  // Configuração do editor Quill (igual ao Admin)
-  const modules = useMemo(() => ({
-    toolbar: [
-      [{ 'header': [1, 2, 3, false] }],
-      ['bold', 'italic', 'underline', 'strike'],
-      [{ 'list': 'ordered'}, { 'list': 'bullet' }],
-      [{ 'align': [] }],
-      ['link'],
-      ['clean']
-    ],
-  }), []);
-
-  const formats = [
-    'header',
-    'bold', 'italic', 'underline', 'strike',
-    'list', 'bullet',
-    'align',
-    'link'
-  ];
 
   useEffect(() => {
     if (!user?.id || loadingComposer) return; // aguarda usuário carregar
@@ -568,12 +546,9 @@ const ComposerCreateSong: React.FC = () => {
           <h2 className="text-xl font-bold text-white mb-2">Letra do Hino</h2>
           <label className="block text-gray-400 text-sm font-semibold mb-2">Letra Completa</label>
           <div className="bg-white rounded-lg overflow-hidden">
-            <ReactQuill
-              theme="snow"
+            <SafeRichTextEditor
               value={formData.lyrics}
               onChange={(content) => setFormData(prev => ({ ...prev, lyrics: content }))}
-              modules={modules}
-              formats={formats}
               placeholder="Cole a letra completa do hino aqui..."
               className="h-96"
             />

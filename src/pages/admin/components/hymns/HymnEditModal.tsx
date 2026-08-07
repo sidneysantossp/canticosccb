@@ -1,9 +1,7 @@
-import React, { useEffect, useMemo, useState } from 'react';
-import ReactQuill from 'react-quill';
-import 'react-quill/dist/quill.snow.css';
-import '@/styles/quill-custom.css';
+import React, { useEffect, useState } from 'react';
 import { Music, XCircle, Image, FileAudio, Clock, Download } from 'lucide-react';
 import MediaDropzone from '@/components/ui/MediaDropzone';
+import SafeRichTextEditor from '@/components/ui/SafeRichTextEditor';
 import { getHinoUrl, getAlbumCoverUrl } from '@/lib/config';
 import { uploadApi, compositoresApi } from '@/lib/api-client';
 
@@ -36,25 +34,6 @@ interface Props {
 }
 
 const HymnEditModal: React.FC<Props> = ({ isOpen, hymn, editForm, setEditForm, onClose, onSave }) => {
-  const quillModules = useMemo(() => ({
-    toolbar: [
-      [{ header: [1, 2, 3, false] }],
-      ['bold', 'italic', 'underline', 'strike'],
-      [{ list: 'ordered' }, { list: 'bullet' }],
-      [{ align: [] }],
-      ['link'],
-      ['clean']
-    ]
-  }), []);
-
-  const quillFormats = [
-    'header',
-    'bold', 'italic', 'underline', 'strike',
-    'list', 'bullet',
-    'align',
-    'link'
-  ];
-
   const [uploadingCover, setUploadingCover] = useState(false);
   const [uploadingAudio, setUploadingAudio] = useState(false);
   const [composers, setComposers] = useState<{ id: string; name: string; artistic_name?: string }[]>([]);
@@ -447,12 +426,9 @@ const HymnEditModal: React.FC<Props> = ({ isOpen, hymn, editForm, setEditForm, o
             <div>
               <label className="text-white text-sm font-medium mb-2 block">Letra Completa</label>
               <div className="bg-white rounded-lg overflow-hidden" style={{ minHeight: '350px' }}>
-                <ReactQuill
-                  theme="snow"
+                <SafeRichTextEditor
                   value={editForm.lyrics}
                   onChange={(content) => setEditForm({ ...editForm, lyrics: content })}
-                  modules={quillModules}
-                  formats={quillFormats}
                   placeholder="Cole a letra completa do hino aqui..."
                   style={{ height: '300px' }}
                 />

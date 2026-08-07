@@ -1,10 +1,8 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams, Link } from 'react-router-dom';
-import ReactQuill from 'react-quill';
-import 'react-quill/dist/quill.snow.css';
-import '@/styles/quill-custom.css';
 import { ArrowLeft, Save, Music, Upload, Image as ImageIcon, FileAudio, Clock, Search } from 'lucide-react';
 import { hinosApi, uploadApi, categoriasApi, compositoresApi, type Categoria } from '@/lib/api-client';
+import SafeRichTextEditor from '@/components/ui/SafeRichTextEditor';
 
 const AdminHymnForm: React.FC = () => {
   const navigate = useNavigate();
@@ -40,26 +38,6 @@ const AdminHymnForm: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [categories, setCategories] = useState<Categoria[]>([]);
   const [loadingCategories, setLoadingCategories] = useState<boolean>(false);
-
-  // Configuração do editor Quill
-  const modules = useMemo(() => ({
-    toolbar: [
-      [{ 'header': [1, 2, 3, false] }],
-      ['bold', 'italic', 'underline', 'strike'],
-      [{ 'list': 'ordered'}, { 'list': 'bullet' }],
-      [{ 'align': [] }],
-      ['link'],
-      ['clean']
-    ],
-  }), []);
-
-  const formats = [
-    'header',
-    'bold', 'italic', 'underline', 'strike',
-    'list', 'bullet',
-    'align',
-    'link'
-  ];
 
   useEffect(() => {
     if (isEditing && id) {
@@ -583,12 +561,9 @@ const AdminHymnForm: React.FC = () => {
             <div>
               <label className="block text-gray-400 text-sm font-semibold mb-2">Letra Completa</label>
               <div className="bg-white rounded-lg overflow-hidden">
-                <ReactQuill
-                  theme="snow"
+                <SafeRichTextEditor
                   value={formData.letra}
                   onChange={(content) => setFormData({ ...formData, letra: content })}
-                  modules={modules}
-                  formats={formats}
                   placeholder="Cole a letra completa do hino aqui..."
                   className="h-96"
                 />
