@@ -217,50 +217,59 @@ const HeroSection: React.FC<HeroSectionProps> = ({ banners = [] }) => {
       onTouchEnd={handleTouchEnd}
     >
       {/* Slides Container - Usando CSS transitions */}
-      {displaySlides.map((s, index) => (
-        <div
-          key={s.id}
-          className={`absolute inset-0 transition-opacity duration-1000 ease-in-out ${
-            index === safeIndex ? 'opacity-100 z-10' : 'opacity-0 z-0'
-          }`}
-        >
-          {/* Background Image */}
-          {isVideoUrl(s.image) && !failedSlides[s.id] ? (
-            <video
-              src={s.image}
-              className="w-full h-full object-cover"
-              autoPlay
-              muted
-              loop
-              playsInline
-              preload="auto"
-              controls={false}
-              onError={() => markSlideAsFailed(s.id)}
+      {displaySlides.map((s, index) => {
+        const isActive = index === safeIndex;
+
+        return (
+          <div
+            key={s.id}
+            className={`absolute inset-0 transition-opacity duration-1000 ease-in-out ${
+              isActive ? 'opacity-100 z-10' : 'opacity-0 z-0'
+            }`}
+          >
+            {isActive && (
+              <>
+                {isVideoUrl(s.image) && !failedSlides[s.id] ? (
+                  <video
+                    src={s.image}
+                    className="w-full h-full object-cover"
+                    autoPlay
+                    muted
+                    loop
+                    playsInline
+                    preload="metadata"
+                    controls={false}
+                    onError={() => markSlideAsFailed(s.id)}
+                  />
+                ) : failedSlides[s.id] ? (
+                  <div className="w-full h-full flex items-center justify-center bg-neutral-950">
+                    <img
+                      src="/logo-canticos-ccb.png"
+                      alt="Cânticos CCB"
+                      className="w-full h-full object-contain p-8 md:p-12 opacity-90"
+                    />
+                  </div>
+                ) : (
+                  <img
+                    src={s.image}
+                    alt={s.title}
+                    className="w-full h-full object-cover"
+                    loading="eager"
+                    decoding="async"
+                    onError={() => markSlideAsFailed(s.id)}
+                  />
+                )}
+              </>
+            )}
+
+            {/* Gradient Overlay */}
+            <div
+              className={`absolute inset-0 ${String(s.color)}`}
+              style={{ background: getGradientStyle(s.color) }}
             />
-          ) : failedSlides[s.id] ? (
-            <div className="w-full h-full flex items-center justify-center bg-neutral-950">
-              <img
-                src="/logo-canticos-ccb.png"
-                alt="Cânticos CCB"
-                className="w-full h-full object-contain p-8 md:p-12 opacity-90"
-              />
-            </div>
-          ) : (
-            <img 
-              src={s.image}
-              alt={s.title}
-              className="w-full h-full object-cover"
-              loading={index === 0 ? "eager" : "lazy"}
-              onError={() => markSlideAsFailed(s.id)}
-            />
-          )}
-          {/* Gradient Overlay */}
-          <div 
-            className={`absolute inset-0 ${String(s.color)}`}
-            style={{ background: getGradientStyle(s.color) }}
-          />
-        </div>
-      ))}
+          </div>
+        );
+      })}
 
       {/* Content - Transição suave */}
       <div className="relative z-10 flex items-center h-full px-6 md:px-12">
