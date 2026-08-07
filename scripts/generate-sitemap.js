@@ -145,10 +145,9 @@ function escapeXml(str) {
 }
 
 function urlEntry(loc, lastmod, changefreq, priority) {
-  const today = new Date().toISOString().split('T')[0];
+  const lastmodXml = lastmod ? `\n    <lastmod>${lastmod}</lastmod>` : '';
   return `  <url>
-    <loc>${escapeXml(SITE_URL + loc)}</loc>
-    <lastmod>${lastmod || today}</lastmod>
+    <loc>${escapeXml(SITE_URL + loc)}</loc>${lastmodXml}
     <changefreq>${changefreq}</changefreq>
     <priority>${priority}</priority>
   </url>`;
@@ -157,46 +156,46 @@ function urlEntry(loc, lastmod, changefreq, priority) {
 async function main() {
   console.log('🗺️  Generating sitemap.xml...');
   const today = new Date().toISOString().split('T')[0];
+  const staticLastmod = process.env.SITEMAP_STATIC_LASTMOD || '';
   const urls = [];
 
   // Static pages
-  urls.push(urlEntry('/', today, 'daily', '1.0'));
-  urls.push(urlEntry('/search', today, 'daily', '0.9'));
-  urls.push(urlEntry('/cifras', today, 'daily', '0.9'));
-  urls.push(urlEntry('/cifras-hinos-ccb', today, 'weekly', '0.8'));
-  urls.push(urlEntry('/hinario', today, 'daily', '0.9'));
-  urls.push(urlEntry('/hinos-ccb', today, 'weekly', '0.9'));
-  urls.push(urlEntry('/hinos-1-a-120-ccb', today, 'weekly', '0.8'));
-  urls.push(urlEntry('/hinos-121-a-240-ccb', today, 'weekly', '0.8'));
-  urls.push(urlEntry('/hinos-241-a-360-ccb', today, 'weekly', '0.8'));
-  urls.push(urlEntry('/hinos-361-a-480-ccb', today, 'weekly', '0.8'));
-  urls.push(urlEntry('/hinario-5-ccb', today, 'weekly', '0.9'));
-  urls.push(urlEntry('/letras-hinos-ccb', today, 'weekly', '0.9'));
-  urls.push(urlEntry('/hinos-cantados-ccb', today, 'weekly', '0.8'));
-  urls.push(urlEntry('/hinos-tocados-ccb', today, 'weekly', '0.8'));
-  urls.push(urlEntry('/hinos-avulsos-ccb', today, 'weekly', '0.8'));
-  urls.push(urlEntry('/instrumentais', today, 'weekly', '0.8'));
-  urls.push(urlEntry('/biblia-ccb', today, 'weekly', '0.8'));
-  urls.push(urlEntry('/biblia-narrada', today, 'weekly', '0.8'));
-  urls.push(urlEntry('/trends', today, 'daily', '0.8'));
-  urls.push(urlEntry('/about', today, 'monthly', '0.5'));
-  urls.push(urlEntry('/termos', today, 'yearly', '0.3'));
-  urls.push(urlEntry('/categorias', today, 'weekly', '0.8'));
-  urls.push(urlEntry('/compositores', today, 'weekly', '0.8'));
-  urls.push(urlEntry('/albuns', today, 'weekly', '0.8'));
-  urls.push(urlEntry('/playlists', today, 'weekly', '0.7'));
-  urls.push(urlEntry('/cifras-violao-ccb', today, 'weekly', '0.7'));
-  urls.push(urlEntry('/cifras-ukulele-ccb', today, 'weekly', '0.7'));
-  urls.push(urlEntry('/cifras-teclado-ccb', today, 'weekly', '0.7'));
-  urls.push(urlEntry('/baixar-hinos-ccb', today, 'monthly', '0.6'));
-  urls.push(urlEntry('/baixar-albuns-ccb', today, 'monthly', '0.6'));
-  urls.push(urlEntry('/baixar-cds-ccb', today, 'monthly', '0.6'));
-  urls.push(urlEntry('/privacidade', today, 'yearly', '0.3'));
-  urls.push(urlEntry('/premium', today, 'weekly', '0.6'));
-  urls.push(urlEntry('/avisos', today, 'daily', '0.6'));
-  urls.push(urlEntry('/ajuda', today, 'monthly', '0.4'));
-  urls.push(urlEntry('/contato', today, 'monthly', '0.4'));
-  urls.push(urlEntry('/reivindicacao-de-conteudo', today, 'monthly', '0.4'));
+  urls.push(urlEntry('/', staticLastmod, 'daily', '1.0'));
+  urls.push(urlEntry('/search', staticLastmod, 'daily', '0.9'));
+  urls.push(urlEntry('/cifras', staticLastmod, 'daily', '0.9'));
+  urls.push(urlEntry('/cifras-hinos-ccb', staticLastmod, 'weekly', '0.8'));
+  urls.push(urlEntry('/hinario', staticLastmod, 'daily', '0.9'));
+  urls.push(urlEntry('/hinos-ccb', staticLastmod, 'weekly', '0.9'));
+  urls.push(urlEntry('/hinos-1-a-120-ccb', staticLastmod, 'weekly', '0.8'));
+  urls.push(urlEntry('/hinos-121-a-240-ccb', staticLastmod, 'weekly', '0.8'));
+  urls.push(urlEntry('/hinos-241-a-360-ccb', staticLastmod, 'weekly', '0.8'));
+  urls.push(urlEntry('/hinos-361-a-480-ccb', staticLastmod, 'weekly', '0.8'));
+  urls.push(urlEntry('/hinario-5-ccb', staticLastmod, 'weekly', '0.9'));
+  urls.push(urlEntry('/letras-hinos-ccb', staticLastmod, 'weekly', '0.9'));
+  urls.push(urlEntry('/hinos-cantados-ccb', staticLastmod, 'weekly', '0.8'));
+  urls.push(urlEntry('/hinos-tocados-ccb', staticLastmod, 'weekly', '0.8'));
+  urls.push(urlEntry('/hinos-avulsos-ccb', staticLastmod, 'weekly', '0.8'));
+  urls.push(urlEntry('/instrumentais', staticLastmod, 'weekly', '0.8'));
+  urls.push(urlEntry('/biblia-ccb', staticLastmod, 'weekly', '0.8'));
+  urls.push(urlEntry('/biblia-narrada', staticLastmod, 'weekly', '0.8'));
+  urls.push(urlEntry('/trends', staticLastmod, 'daily', '0.8'));
+  urls.push(urlEntry('/about', staticLastmod, 'monthly', '0.5'));
+  urls.push(urlEntry('/termos', staticLastmod, 'yearly', '0.3'));
+  urls.push(urlEntry('/categorias', staticLastmod, 'weekly', '0.8'));
+  urls.push(urlEntry('/compositores', staticLastmod, 'weekly', '0.8'));
+  urls.push(urlEntry('/albuns', staticLastmod, 'weekly', '0.8'));
+  urls.push(urlEntry('/playlists', staticLastmod, 'weekly', '0.7'));
+  urls.push(urlEntry('/cifras-violao-ccb', staticLastmod, 'weekly', '0.7'));
+  urls.push(urlEntry('/cifras-ukulele-ccb', staticLastmod, 'weekly', '0.7'));
+  urls.push(urlEntry('/cifras-teclado-ccb', staticLastmod, 'weekly', '0.7'));
+  urls.push(urlEntry('/baixar-hinos-ccb', staticLastmod, 'monthly', '0.6'));
+  urls.push(urlEntry('/baixar-albuns-ccb', staticLastmod, 'monthly', '0.6'));
+  urls.push(urlEntry('/baixar-cds-ccb', staticLastmod, 'monthly', '0.6'));
+  urls.push(urlEntry('/privacidade', staticLastmod, 'yearly', '0.3'));
+  urls.push(urlEntry('/avisos', staticLastmod, 'daily', '0.6'));
+  urls.push(urlEntry('/ajuda', staticLastmod, 'monthly', '0.4'));
+  urls.push(urlEntry('/contato', staticLastmod, 'monthly', '0.4'));
+  urls.push(urlEntry('/reivindicacao-de-conteudo', staticLastmod, 'monthly', '0.4'));
   const staticUrlCount = urls.length;
 
   // Hinos
