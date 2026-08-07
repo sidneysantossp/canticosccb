@@ -2,6 +2,7 @@ import React, { useEffect, useState, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { Megaphone, ChevronLeft, ChevronRight, Calendar, Check } from 'lucide-react';
 import { noticesApi, PlatformNotice } from '@/lib/noticesApi';
+import SEOHead from '@/components/SEO/SEOHead';
 
 const ITEMS_PER_PAGE = 15;
 const READ_NOTICES_KEY = 'canticos_read_notices';
@@ -74,6 +75,13 @@ const AvisosPage: React.FC = () => {
 
   return (
     <div className="max-w-4xl mx-auto py-8">
+      <SEOHead
+        title="Avisos - Cânticos CCB"
+        description="Comunicados, novidades e atualizações oficiais da plataforma Cânticos CCB."
+        keywords="avisos Cânticos CCB, comunicados CCB, novidades Cânticos CCB"
+        canonical="/avisos"
+      />
+
       {/* Header */}
       <div className="flex items-center gap-3 mb-8">
         <div className="p-3 bg-green-500/10 rounded-xl">

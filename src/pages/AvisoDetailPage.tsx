@@ -2,6 +2,13 @@ import React, { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { Megaphone, ChevronRight, Calendar, ArrowLeft } from 'lucide-react';
 import { noticesApi, PlatformNotice } from '@/lib/noticesApi';
+import SEOHead from '@/components/SEO/SEOHead';
+
+const stripText = (value: string, maxLength = 155) => {
+  const normalized = value.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
+  if (normalized.length <= maxLength) return normalized;
+  return `${normalized.slice(0, maxLength - 1).trim()}…`;
+};
 
 const AvisoDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -69,6 +76,14 @@ const AvisoDetailPage: React.FC = () => {
   if (notFound || !notice) {
     return (
       <div className="max-w-3xl mx-auto py-16 text-center">
+        <SEOHead
+          title="Aviso não encontrado - Cânticos CCB"
+          description="O aviso solicitado não foi encontrado."
+          canonical={id ? `/avisos/${id}` : '/avisos'}
+          noindex
+          nofollow
+        />
+
         <Megaphone className="w-16 h-16 text-gray-600 mx-auto mb-4" />
         <h2 className="text-xl font-semibold text-white mb-2">Aviso não encontrado</h2>
         <p className="text-text-muted mb-6">Este aviso pode ter sido removido ou não existe.</p>
@@ -85,6 +100,30 @@ const AvisoDetailPage: React.FC = () => {
 
   return (
     <div className="max-w-3xl mx-auto py-8">
+      <SEOHead
+        title={`${notice.title} - Avisos`}
+        description={stripText(notice.content)}
+        canonical={`/avisos/${notice.id}`}
+        ogType="website"
+        schemaData={{
+          '@context': 'https://schema.org',
+          '@type': 'Article',
+          headline: notice.title,
+          description: stripText(notice.content),
+          datePublished: notice.published_at,
+          dateModified: notice.updated_at || notice.published_at,
+          author: {
+            '@type': 'Organization',
+            name: 'Cânticos CCB',
+          },
+          publisher: {
+            '@type': 'Organization',
+            name: 'Cânticos CCB',
+          },
+          inLanguage: 'pt-BR',
+        }}
+      />
+
       {/* Breadcrumb */}
       <nav className="flex items-center gap-2 text-sm text-text-muted mb-8">
         <Link to="/" className="hover:text-white transition-colors">Início</Link>

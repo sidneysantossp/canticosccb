@@ -30,7 +30,7 @@ Cânticos CCB é a plataforma digital mais completa para ouvir, ler e estudar hi
 - Cifras e tablaturas de hinos da CCB
 - Transposição de tom em tempo real
 - Controle de tamanho da fonte
-- URL: /cifras e /cifras/{slug}
+- URL: /cifras e /cifra/{slug}
 
 ### Compositores
 - Perfis de compositores de hinos da CCB
@@ -49,7 +49,12 @@ Cânticos CCB é a plataforma digital mais completa para ouvir, ler e estudar hi
 
 ### Categorias
 - Hinos organizados por categoria: Louvores, Súplicas, Ceia do Senhor, Batismo, etc.
-- URL: /categorias/{slug}
+- URL: /categorias e /categoria/{slug}
+
+## Descoberta
+- Sitemap: https://www.canticosccb.com.br/sitemap.xml
+- Robots: https://www.canticosccb.com.br/robots.txt
+- Canonical host: https://www.canticosccb.com.br
 
 ## Informações Técnicas
 - Site: https://www.canticosccb.com.br

@@ -36,6 +36,7 @@ const PlaylistsPage: React.FC = () => {
       <SEOHead
         title="Playlists - Cânticos CCB"
         description="Explore playlists de hinos da Congregação Cristã no Brasil."
+        canonical="/playlists"
       />
 
       <div className="flex items-center gap-3 mb-8">

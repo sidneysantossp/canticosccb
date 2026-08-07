@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { fetchActiveCategories, type CategoryRecord } from '@/lib/categoriesApi';
 import { buildAlbumCoverUrl } from '@/lib/media-helper';
 import { DEFAULT_COVER_URL } from '@/lib/config';
+import SEOHead from '@/components/SEO/SEOHead';
 
 const CategoriesPage: React.FC = () => {
   const [allCategories, setAllCategories] = useState<CategoryRecord[]>([]);
@@ -51,6 +52,13 @@ const CategoriesPage: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-background-primary">
+      <SEOHead
+        title="Categorias de Hinos CCB"
+        description="Explore hinos da Congregação Cristã no Brasil por categorias, temas e repertórios relacionados."
+        keywords="categorias hinos CCB, hinos cantados CCB, hinos tocados CCB, hinos avulsos CCB"
+        canonical="/categorias"
+      />
+
       {/* Hero Gradient (álbum-like) */}
       <div className="text-white bg-gradient-to-b from-green-700 to-transparent pt-16 pb-6 px-6">
         <div className="max-w-7xl mx-auto">

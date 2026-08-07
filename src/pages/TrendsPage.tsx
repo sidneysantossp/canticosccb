@@ -224,6 +224,7 @@ const TrendsPage: React.FC = () => {
         title="Recém chegados - Últimos hinos adicionados"
         description="Ouça os hinos adicionados mais recentemente, com métricas de reproduções."
         keywords="recém chegados, últimos hinos, novos, CCB"
+        canonical="/trends"
       />
 
       <div className="min-h-screen bg-gradient-to-br from-background-primary via-background-secondary to-background-primary pb-24">
