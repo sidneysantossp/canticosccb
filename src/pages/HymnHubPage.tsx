@@ -107,10 +107,9 @@ const normalizeText = (value: string) =>
 
 const shouldIncludeHubSong = (song: HubSongCandidate, hub: HymnHubType) => {
   const normalizedCategory = normalizeText(song.categoria || '');
-  const normalizedTitle = normalizeText(song.titulo || '');
 
   if (hub === 'avulsos') {
-    return normalizedCategory.includes('avulso') || normalizedTitle.includes('avulso');
+    return true;
   }
 
   if (hub === 'tocados') {
@@ -156,22 +155,25 @@ async function fetchHubHymns(hub: HymnHubType): Promise<HubHymn[]> {
     }
   }
 
-  const fallbackTerm = hub === 'avulsos' ? 'avulso' : hub.slice(0, -1);
-  const fallbackSongs = await supabaseFetch<any>('hinos', {
-    categoria: `ilike.%${fallbackTerm}%`,
-    or: '(ativo.eq.true,ativo.eq.1)',
-    select: 'id,numero,titulo,compositor_nome,categoria',
-    order: 'numero.asc',
-    limit: '500',
-  });
-
   const merged = [...songs];
-  const seen = new Set(merged.map((song) => String(song.id)));
-  for (const song of fallbackSongs) {
-    const key = String(song.id);
-    if (!seen.has(key)) {
-      merged.push(song);
-      seen.add(key);
+
+  if (hub !== 'avulsos') {
+    const fallbackTerm = hub.slice(0, -1);
+    const fallbackSongs = await supabaseFetch<any>('hinos', {
+      categoria: `ilike.%${fallbackTerm}%`,
+      or: '(ativo.eq.true,ativo.eq.1)',
+      select: 'id,numero,titulo,compositor_nome,categoria',
+      order: 'numero.asc',
+      limit: '500',
+    });
+
+    const seen = new Set(merged.map((song) => String(song.id)));
+    for (const song of fallbackSongs) {
+      const key = String(song.id);
+      if (!seen.has(key)) {
+        merged.push(song);
+        seen.add(key);
+      }
     }
   }
 
