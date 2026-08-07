@@ -2,7 +2,9 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowLeft, Headphones, Music2, Music4, Mic2 } from 'lucide-react';
 import SEOHead from '@/components/SEO/SEOHead';
+import AlbumsSection from '@/components/home/AlbumsSection';
 import { getAll as getAllCategories } from '@/lib/categoriesApi';
+import { buildAlbumCoverUrl } from '@/lib/media-helper';
 import { supabaseFetch } from '@/lib/supabaseRest';
 import { generateBreadcrumbSchema, generateFAQSchema, generateItemListSchema } from '@/utils/schemaGenerator';
 import { buildHinoUrl } from '@/utils/slugUrl';
@@ -33,6 +35,13 @@ type HubSongCandidate = {
   numero?: number | null;
   titulo?: string | null;
   categoria?: string | null;
+};
+
+type HubAlbum = {
+  id: string;
+  title: string;
+  artist: string;
+  coverUrl: string;
 };
 
 const HUBS: Record<HymnHubType, HubConfig> = {
@@ -123,6 +132,20 @@ const shouldIncludeHubSong = (song: HubSongCandidate, hub: HymnHubType) => {
   return true;
 };
 
+const isAvulsosAlbum = (album: any, relatedAvulsoAlbumIds: Set<string>) => {
+  const albumId = String(album?.id || '');
+  const title = normalizeText(album?.title || album?.titulo || '');
+  const genre = normalizeText(album?.genre || album?.genero || '');
+  const type = normalizeText(album?.type || album?.tipo || '');
+
+  return (
+    relatedAvulsoAlbumIds.has(albumId) ||
+    title.includes('avulso') ||
+    genre.includes('avulso') ||
+    type.includes('avulso')
+  );
+};
+
 async function fetchHubHymns(hub: HymnHubType): Promise<HubHymn[]> {
   const categories = await getAllCategories({ limit: 1000 });
   const matchingCategories = categories.filter((category) => {
@@ -194,6 +217,62 @@ async function fetchHubHymns(hub: HymnHubType): Promise<HubHymn[]> {
     });
 }
 
+async function fetchHubAlbums(hub: HymnHubType): Promise<HubAlbum[]> {
+  if (hub !== 'avulsos') return [];
+
+  const categories = await getAllCategories({ limit: 1000 });
+  const avulsosCategoryIds = categories
+    .filter((category) => {
+      const slug = normalizeText(category.slug);
+      const name = normalizeText(category.name);
+      return slug.includes('avulso') || name.includes('avulso');
+    })
+    .map((category) => String(category.id));
+
+  let relatedAvulsoAlbumIds = new Set<string>();
+
+  if (avulsosCategoryIds.length > 0) {
+    const hymnRelations = await supabaseFetch<any>('hino_categorias', {
+      categoria_id: `in.(${avulsosCategoryIds.join(',')})`,
+      select: 'hino_id',
+      limit: '5000',
+    });
+
+    const avulsoHymnIds = Array.from(
+      new Set(hymnRelations.map((relation) => String(relation.hino_id || '')).filter(Boolean))
+    );
+
+    if (avulsoHymnIds.length > 0) {
+      const albumRelations = await supabaseFetch<any>('album_hinos', {
+        hino_id: `in.(${avulsoHymnIds.join(',')})`,
+        select: 'album_id',
+        limit: '5000',
+      });
+
+      relatedAvulsoAlbumIds = new Set(
+        albumRelations.map((relation) => String(relation.album_id || '')).filter(Boolean)
+      );
+    }
+  }
+
+  const albums = await supabaseFetch<any>('albums', {
+    select: '*',
+    order: 'created_at.desc',
+    limit: '1000',
+  });
+
+  return albums
+    .filter((album) => album?.is_published !== false && album?.active !== false)
+    .filter((album) => isAvulsosAlbum(album, relatedAvulsoAlbumIds))
+    .slice(0, 24)
+    .map((album) => ({
+      id: String(album.id),
+      title: String(album.title || album.titulo || 'Álbum de Hinos Avulsos'),
+      artist: String(album.artist || 'Cânticos CCB'),
+      coverUrl: buildAlbumCoverUrl({ id: String(album.id), cover_url: album.cover_url || '' }),
+    }));
+}
+
 interface HymnHubPageProps {
   hub: HymnHubType;
 }
@@ -202,6 +281,7 @@ const HymnHubPage: React.FC<HymnHubPageProps> = ({ hub }) => {
   const config = HUBS[hub];
   const Icon = config.icon;
   const [items, setItems] = useState<HubHymn[]>([]);
+  const [albums, setAlbums] = useState<HubAlbum[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -210,11 +290,20 @@ const HymnHubPage: React.FC<HymnHubPageProps> = ({ hub }) => {
     const load = async () => {
       try {
         setIsLoading(true);
-        const data = await fetchHubHymns(hub);
-        if (!cancelled) setItems(data);
+        const [hymnsData, albumsData] = await Promise.all([
+          fetchHubHymns(hub),
+          fetchHubAlbums(hub),
+        ]);
+        if (!cancelled) {
+          setItems(hymnsData);
+          setAlbums(albumsData);
+        }
       } catch (error) {
         console.error(`Erro ao carregar hub ${hub}:`, error);
-        if (!cancelled) setItems([]);
+        if (!cancelled) {
+          setItems([]);
+          setAlbums([]);
+        }
       } finally {
         if (!cancelled) setIsLoading(false);
       }
@@ -280,60 +369,71 @@ const HymnHubPage: React.FC<HymnHubPageProps> = ({ hub }) => {
 
       <div className="max-w-6xl mx-auto px-6 py-8">
         <div className="grid gap-6 lg:grid-cols-[1.5fr,0.9fr]">
-          <section className="rounded-3xl border border-white/10 bg-background-secondary p-6">
-            <div className="flex items-center justify-between gap-4 mb-5">
-              <div>
-                <h2 className="text-2xl font-semibold text-white">Repertorio indexavel</h2>
-                <p className="text-text-muted mt-1">Selecao navegavel com links para paginas individuais e letras do hinario quando houver numero.</p>
+          <div className="space-y-8">
+            <section className="rounded-3xl border border-white/10 bg-background-secondary p-6">
+              <div className="flex items-center justify-between gap-4 mb-5">
+                <div>
+                  <h2 className="text-2xl font-semibold text-white">Repertorio indexavel</h2>
+                  <p className="text-text-muted mt-1">Selecao navegavel com links para paginas individuais e letras do hinario quando houver numero.</p>
+                </div>
+                <Headphones className="w-6 h-6 text-primary-400" />
               </div>
-              <Headphones className="w-6 h-6 text-primary-400" />
-            </div>
 
-            {isLoading ? (
-              <div className="space-y-3">
-                {Array.from({ length: 8 }).map((_, index) => (
-                  <div key={index} className="h-16 rounded-2xl bg-white/5 animate-pulse" />
-                ))}
-              </div>
-            ) : items.length === 0 ? (
-              <div className="rounded-2xl border border-white/10 bg-white/5 p-6 text-text-muted">
-                Nenhum hino publicado foi encontrado para este hub ainda.
-              </div>
-            ) : (
-              <div className="space-y-3">
-                {items.map((item) => (
-                  <article key={item.id} className="rounded-2xl border border-white/10 bg-white/5 p-4 hover:border-primary-500/30 transition-colors">
-                    <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
-                      <div>
-                        <h3 className="text-white font-semibold">
-                          <Link to={buildHinoUrl(item.id, item.titulo, item.numero)} className="hover:text-primary-400 transition-colors">
-                            {item.numero > 0 ? `Hino ${item.numero} - ${item.titulo}` : item.titulo}
-                          </Link>
-                        </h3>
-                        <p className="text-text-muted text-sm mt-1">{item.compositor_nome}</p>
-                      </div>
-                      <div className="flex flex-wrap gap-2">
-                        <Link
-                          to={buildHinoUrl(item.id, item.titulo, item.numero)}
-                          className="px-3 py-2 rounded-full bg-primary-500 text-black text-sm font-semibold hover:bg-primary-400 transition-colors"
-                        >
-                          Ouvir hino
-                        </Link>
-                        {item.numero > 0 && (
+              {isLoading ? (
+                <div className="space-y-3">
+                  {Array.from({ length: 8 }).map((_, index) => (
+                    <div key={index} className="h-16 rounded-2xl bg-white/5 animate-pulse" />
+                  ))}
+                </div>
+              ) : items.length === 0 ? (
+                <div className="rounded-2xl border border-white/10 bg-white/5 p-6 text-text-muted">
+                  Nenhum hino publicado foi encontrado para este hub ainda.
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {items.map((item) => (
+                    <article key={item.id} className="rounded-2xl border border-white/10 bg-white/5 p-4 hover:border-primary-500/30 transition-colors">
+                      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+                        <div>
+                          <h3 className="text-white font-semibold">
+                            <Link to={buildHinoUrl(item.id, item.titulo, item.numero)} className="hover:text-primary-400 transition-colors">
+                              {item.numero > 0 ? `Hino ${item.numero} - ${item.titulo}` : item.titulo}
+                            </Link>
+                          </h3>
+                          <p className="text-text-muted text-sm mt-1">{item.compositor_nome}</p>
+                        </div>
+                        <div className="flex flex-wrap gap-2">
                           <Link
-                            to={`/hinario/${item.numero}`}
-                            className="px-3 py-2 rounded-full border border-white/15 text-white text-sm hover:border-primary-500/40 hover:text-primary-300 transition-colors"
+                            to={buildHinoUrl(item.id, item.titulo, item.numero)}
+                            className="px-3 py-2 rounded-full bg-primary-500 text-black text-sm font-semibold hover:bg-primary-400 transition-colors"
                           >
-                            Ver letra
+                            Ouvir hino
                           </Link>
-                        )}
+                          {item.numero > 0 && (
+                            <Link
+                              to={`/hinario/${item.numero}`}
+                              className="px-3 py-2 rounded-full border border-white/15 text-white text-sm hover:border-primary-500/40 hover:text-primary-300 transition-colors"
+                            >
+                              Ver letra
+                            </Link>
+                          )}
+                        </div>
                       </div>
-                    </div>
-                  </article>
-                ))}
-              </div>
+                    </article>
+                  ))}
+                </div>
+              )}
+            </section>
+
+            {hub === 'avulsos' && albums.length > 0 && (
+              <AlbumsSection
+                albums={albums}
+                title={<>Álbuns<br />de Hinos Avulsos</>}
+                viewAllHref="/albuns"
+                className="px-0 mb-0"
+              />
             )}
-          </section>
+          </div>
 
           <aside className="space-y-6">
             <section className="rounded-3xl border border-white/10 bg-background-secondary p-6">

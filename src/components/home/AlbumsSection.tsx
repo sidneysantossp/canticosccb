@@ -13,9 +13,17 @@ interface Album {
 
 interface AlbumsSectionProps {
   albums: Album[];
+  title?: React.ReactNode;
+  viewAllHref?: string;
+  className?: string;
 }
 
-const AlbumsSection: React.FC<AlbumsSectionProps> = ({ albums }) => {
+const AlbumsSection: React.FC<AlbumsSectionProps> = ({
+  albums,
+  title = <>Álbuns<br />Recomendados</>,
+  viewAllHref = '/albuns',
+  className = 'px-6 mb-8',
+}) => {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
 
@@ -38,15 +46,15 @@ const AlbumsSection: React.FC<AlbumsSectionProps> = ({ albums }) => {
   };
 
   return (
-    <section className="px-6 mb-8">
+    <section className={className}>
       <div className="flex items-center justify-between mb-6">
         <div>
           <h2 className="text-2xl md:text-3xl font-bold text-white leading-tight">
-            Álbuns<br />Recomendados
+            {title}
           </h2>
         </div>
         <Link
-          to="/albuns"
+          to={viewAllHref}
           className="text-primary-400 hover:text-primary-300 font-medium transition-colors"
         >
           Ver todos
