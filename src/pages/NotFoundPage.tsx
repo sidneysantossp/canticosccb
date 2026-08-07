@@ -9,6 +9,8 @@ const NotFoundPage: React.FC = () => {
       <SEOHead
         title="Página não encontrada - Cânticos CCB"
         description="A página que você está procurando não foi encontrada."
+        noindex
+        nofollow
       />
 
       <div className="flex flex-col items-center justify-center py-20 text-center">

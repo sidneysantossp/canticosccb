@@ -9,8 +9,8 @@ const BOT_UA_PATTERNS = [
   'googlebot', 'bingbot', 'yandexbot', 'duckduckbot', 'slurp', 'baiduspider',
   'facebookexternalhit', 'twitterbot', 'linkedinbot', 'whatsapp', 'telegrambot',
   'discordbot', 'applebot', 'pinterest', 'redditbot',
-  'gptbot', 'claudebot', 'google-extended', 'applebot-extended',
-  'perplexitybot', 'bytespider', 'ccbot', 'amazonbot', 'meta-externalagent',
+  'gptbot', 'oai-searchbot', 'chatgpt-user', 'claudebot', 'google-extended', 'applebot-extended',
+  'perplexitybot', 'perplexity-user', 'bytespider', 'ccbot', 'amazonbot', 'meta-externalagent',
   'petalbot', 'semrushbot', 'ahrefsbot', 'mj12bot', 'dotbot',
   'embedly', 'quora link preview', 'showyoubot', 'outbrain', 'rogerbot',
   'screaming frog',
@@ -24,7 +24,7 @@ function isBot(ua: string): boolean {
 // ─── Supabase Config ─────────────────────────────────────────────────────────
 const SUPABASE_URL = (process.env.VITE_SUPABASE_URL || '').replace(/\/+$/, '');
 const SUPABASE_ANON_KEY = process.env.VITE_SUPABASE_ANON_KEY || '';
-const SITE_URL = 'https://canticosccb.com.br';
+const SITE_URL = 'https://www.canticosccb.com.br';
 
 async function supaFetch(table: string, params: Record<string, string>): Promise<any[]> {
   if (!SUPABASE_URL || !SUPABASE_ANON_KEY) return [];
@@ -337,6 +337,7 @@ interface PageMeta {
   schemas?: object[];
   bodyHtml: string;
   noindex?: boolean;
+  status?: number;
 }
 
 function buildFullHtml(meta: PageMeta): string {
@@ -1743,16 +1744,18 @@ export default async function handler(req: Request): Promise<Response> {
     console.error('[SSR] Error:', e);
   }
 
-  // If no page meta found, return a basic page
+  // If no page meta found, return an actual 404/noindex page to avoid soft 404 indexing.
   if (!pageMeta) {
     pageMeta = {
-      title: 'Cânticos CCB — Hinos da Congregação Cristã no Brasil',
-      description: 'Ouça hinos da CCB online grátis. Hinário 5 completo, cifras, compositores e playlists.',
+      title: 'Página não encontrada | Cânticos CCB',
+      description: 'A página solicitada não foi encontrada no Cânticos CCB.',
       canonical: `${SITE_URL}${pathname}`,
       schemas: [],
+      noindex: true,
+      status: 404,
       bodyHtml: `
-        <h1>Cânticos CCB</h1>
-        <p>Plataforma de hinos da Congregação Cristã no Brasil.</p>
+        <h1>Página não encontrada</h1>
+        <p>A página solicitada não existe ou foi movida.</p>
         <nav>
           <ul>
             <li><a href="${SITE_URL}/">Início</a></li>
@@ -1770,7 +1773,7 @@ export default async function handler(req: Request): Promise<Response> {
 
   const html = buildFullHtml(pageMeta);
   return new Response(html, {
-    status: 200,
+    status: pageMeta.status || 200,
     headers: {
       'Content-Type': 'text/html; charset=utf-8',
       'Cache-Control': 'public, s-maxage=3600, stale-while-revalidate=86400',
