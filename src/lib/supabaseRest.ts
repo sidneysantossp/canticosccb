@@ -16,7 +16,6 @@ const EMERGENCY_FIRST_TABLES = new Set([
   'album_hinos',
   'hino_categorias',
   'hinario',
-  'banners',
   'site_config',
   'cifras',
   'cifra_public_catalog',

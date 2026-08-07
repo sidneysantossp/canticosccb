@@ -20,6 +20,22 @@ const ensureImage = (seed: string, width: number = 800, height: number = 400) =>
   return `https://picsum.photos/seed/${normalizedSeed}/${width}/${height}`;
 };
 
+const BROKEN_LEGACY_SUPABASE_HOSTS = new Set([
+  'rdogsfrplohxnemvtetn.supabase.co',
+]);
+
+const hasUsableBannerMedia = (value?: string | null) => {
+  const raw = String(value || '').trim();
+  if (!raw) return false;
+
+  try {
+    const parsed = new URL(raw);
+    return !BROKEN_LEGACY_SUPABASE_HOSTS.has(parsed.hostname.toLowerCase());
+  } catch {
+    return true;
+  }
+};
+
 export interface HomeBanner {
   id: string;
   title: string;
@@ -440,7 +456,7 @@ async function getHomePageDataFromSupabase(): Promise<HomePageData> {
   };
 
   return {
-    banners: bannersData.map(mapSupabaseBanner),
+    banners: bannersData.filter((banner) => hasUsableBannerMedia(banner.image_url)).map(mapSupabaseBanner),
     featured: diversifyByComposer(hymns, 6),
     albums: prioritizeFeaturedAlbums(albumsData, composerNameById),
     hymnsCantados: grouped.cantados,
