@@ -2,7 +2,7 @@ import { supabase } from './supabase-auth';
 
 export type ComposerNotification = {
   id: string;
-  type: 'favorite_song' | 'favorite_album' | 'follow' | 'admin' | 'comment';
+  type: 'favorite_song' | 'favorite_album' | 'follow' | 'admin' | 'comment' | 'support_chat';
   title: string;
   message: string;
   user_id?: string;

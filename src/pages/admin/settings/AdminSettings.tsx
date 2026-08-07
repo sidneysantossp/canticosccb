@@ -74,7 +74,7 @@ const AdminSettings: React.FC = () => {
               <label className="text-white text-sm font-medium mb-2 block">Descrição</label>
               <textarea
                 rows={3}
-                defaultValue="Plataforma completa para hinos da CCB"
+                defaultValue="Plataforma independente de hinos, cifras, compositores e playlists relacionados à CCB"
                 className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg text-white focus:outline-none focus:border-red-600 resize-none"
               />
             </div>
@@ -201,7 +201,7 @@ const AdminSettings: React.FC = () => {
               </div>
               <div>
                 <label className="text-white text-sm font-medium mb-2 block">URL (opcional)</label>
-                <input type="text" placeholder="https://canticosccb.com.br/..." className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg text-white focus:outline-none focus:border-red-600" />
+                <input type="text" placeholder="https://www.canticosccb.com.br/..." className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg text-white focus:outline-none focus:border-red-600" />
               </div>
             </div>
 

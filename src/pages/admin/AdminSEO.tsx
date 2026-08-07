@@ -17,14 +17,14 @@ const AdminSEO: React.FC = () => {
   const [settings, setSettings] = useState({
     // Meta Tags
     site_title: 'Cânticos CCB',
-    site_description: 'Plataforma completa de hinos e cânticos da Congregação Cristã no Brasil',
+    site_description: 'Plataforma independente de hinos, cifras, compositores e playlists relacionados à CCB',
     site_keywords: 'hinos ccb, cânticos ccb, hinário ccb, congregação cristã',
     site_url: DEFAULT_SITE_URL,
     
     // Open Graph
     og_title: 'Cânticos CCB',
-    og_description: 'Plataforma completa de hinos e cânticos da Congregação Cristã no Brasil',
-    og_image: `${DEFAULT_SITE_URL}/og-image.jpg`,
+    og_description: 'Plataforma independente de hinos, cifras, compositores e playlists relacionados à CCB',
+    og_image: `${DEFAULT_SITE_URL}/logo-canticos-ccb.png`,
     
     // Twitter
     twitter_card: 'summary_large_image',

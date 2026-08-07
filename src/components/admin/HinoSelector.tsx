@@ -26,11 +26,12 @@ const HinoSelector: React.FC<HinoSelectorProps> = ({ selectedHinos, onSelectionC
       const response = await hinosApi.list({ search: searchQuery, limit: 20 });
       
       if (response.data) {
-        const hinos = response.data.hinos || response.data.data || response.data;
+        const responseData = response.data as any;
+        const hinos = responseData.hinos || responseData.data || responseData;
         if (Array.isArray(hinos)) {
           // Filtrar hinos já selecionados
-          const selectedIds = selectedHinos.map(h => h.id);
-          const filtered = hinos.filter(h => !selectedIds.includes(h.id));
+          const selectedIds = selectedHinos.map(h => String(h.id));
+          const filtered = hinos.filter((h: Hino) => !selectedIds.includes(String(h.id)));
           setAvailableHinos(filtered);
           setShowDropdown(true);
         }
@@ -49,8 +50,8 @@ const HinoSelector: React.FC<HinoSelectorProps> = ({ selectedHinos, onSelectionC
     setAvailableHinos(prev => prev.filter(h => h.id !== hino.id));
   };
 
-  const handleRemoveHino = (hinoId: number) => {
-    onSelectionChange(selectedHinos.filter(h => h.id !== hinoId));
+  const handleRemoveHino = (hinoId: string | number) => {
+    onSelectionChange(selectedHinos.filter(h => String(h.id) !== String(hinoId)));
   };
 
   const handleMoveUp = (index: number) => {

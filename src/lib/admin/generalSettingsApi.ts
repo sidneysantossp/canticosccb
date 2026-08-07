@@ -27,7 +27,7 @@ export interface GeneralSettings {
 
 const defaultSettings: GeneralSettings = {
   site_name: 'Cânticos CCB',
-  site_description: 'Plataforma completa de hinos e cânticos da Congregação Cristã no Brasil',
+  site_description: 'Plataforma independente de hinos, cifras, compositores e playlists relacionados à CCB',
   site_url: DEFAULT_SITE_URL,
   admin_email: 'admin@canticosccb.com.br',
   support_email: 'suporte@canticosccb.com.br',

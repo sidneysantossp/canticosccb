@@ -466,11 +466,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       localStorage.removeItem('auth_fallback');
       if (data.session?.user) {
         const profileSynced = await Promise.race([
-          authClient.supabase
-            .from('users')
-            .select('*')
-            .eq('id', data.session.user.id)
-            .single()
+          Promise.resolve(
+            authClient.supabase
+              .from('users')
+              .select('*')
+              .eq('id', data.session.user.id)
+              .single()
+          )
             .then(({ data: dbUser }) => {
               if (!dbUser) return false;
               applyUser(dbUser);

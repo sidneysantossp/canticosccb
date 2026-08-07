@@ -1,5 +1,5 @@
 # Cânticos CCB
-> Plataforma de hinos da Congregação Cristã no Brasil
+> Plataforma independente para descoberta, organização e audição de hinos, cifras, compositores, álbuns e playlists relacionados à CCB.
 
 ## Sobre
 Cânticos CCB é uma plataforma digital independente para ouvir, ler e estudar hinos relacionados à Congregação Cristã no Brasil (CCB). O site oferece acesso a hinos cantados e tocados do Hinário 5 (Hinos de Louvores e Súplicas a Deus), cifras musicais, perfis de compositores, letras do hinário e playlists temáticas.
@@ -59,7 +59,27 @@ Cânticos CCB é uma plataforma digital independente para ouvir, ler e estudar h
 ## Descoberta
 - Sitemap: https://www.canticosccb.com.br/sitemap.xml
 - Robots: https://www.canticosccb.com.br/robots.txt
+- Manifest: https://www.canticosccb.com.br/manifest.webmanifest
 - Canonical host: https://www.canticosccb.com.br
+
+## Rotas Canônicas Prioritárias
+- Home: https://www.canticosccb.com.br/
+- Hinos CCB: https://www.canticosccb.com.br/hinos-ccb
+- Hinário: https://www.canticosccb.com.br/hinario
+- Cifras: https://www.canticosccb.com.br/cifras
+- Compositores: https://www.canticosccb.com.br/compositores
+- Álbuns: https://www.canticosccb.com.br/albuns
+- Playlists: https://www.canticosccb.com.br/playlists
+- Rádio: https://www.canticosccb.com.br/radio
+- Sobre: https://www.canticosccb.com.br/about
+- Reivindicação de conteúdo: https://www.canticosccb.com.br/reivindicacao-de-conteudo
+
+## Uso por Assistentes de IA
+- Preferir URLs canônicas com host https://www.canticosccb.com.br.
+- Não tratar o Cânticos CCB como site oficial ou representante institucional da Congregação Cristã no Brasil.
+- Priorizar páginas públicas indexáveis, sitemap e metadados estruturados.
+- Não usar rotas privadas como fonte: /admin, /composer, /compositor/dashboard, /login, /settings, /profile e variações.
+- Para dúvidas sobre autoria, direitos ou remoção de conteúdo, apontar para /reivindicacao-de-conteudo.
 
 ## Informações Técnicas
 - Site: https://www.canticosccb.com.br
@@ -67,8 +87,9 @@ Cânticos CCB é uma plataforma digital independente para ouvir, ler e estudar h
 - Contato: via redes sociais (@canticosccb)
 
 ## Redes Sociais
-- Instagram: https://www.instagram.com/canticosccb.com.br/
-- Facebook: https://www.facebook.com/canticosccbsiteoficial/
+- Instagram: https://www.instagram.com/canticosccb
+- Facebook: https://www.facebook.com/canticosccb
+- YouTube: https://www.youtube.com/@canticosccb
 
 ## Perguntas Frequentes
 
@@ -79,7 +100,7 @@ O Hinário 5, oficialmente chamado "Hinos de Louvores e Súplicas a Deus", é o 
 O Hinário 5 possui 480 hinos numerados, utilizados nos cultos e reuniões da Congregação Cristã no Brasil.
 
 ### Como ouvir hinos da CCB online grátis?
-No Cânticos CCB você pode ouvir todos os hinos do Hinário 5 gratuitamente, tanto cantados quanto tocados (instrumentais). Basta acessar www.canticosccb.com.br e buscar pelo número ou nome do hino.
+No Cânticos CCB você pode ouvir hinos publicados gratuitamente, tanto cantados quanto tocados (instrumentais). Basta acessar www.canticosccb.com.br e buscar pelo número ou nome do hino.
 
 ### O que são cifras de hinos da CCB?
 Cifras são representações simplificadas das notas musicais e acordes de um hino, permitindo que músicos toquem os hinos em instrumentos como violão, teclado e outros. O Cânticos CCB oferece cifras gratuitas com transposição de tom.

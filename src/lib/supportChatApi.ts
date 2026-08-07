@@ -98,12 +98,12 @@ interface SupportMeta {
   thread_status: SupportThreadStatus;
 }
 
-async function withTimeout<T>(promise: Promise<T>, message: string, timeoutMs = 15000): Promise<T> {
+async function withTimeout<T>(promise: PromiseLike<T>, message: string, timeoutMs = 15000): Promise<T> {
   let timer: ReturnType<typeof setTimeout> | null = null;
 
   try {
     return await Promise.race([
-      promise,
+      Promise.resolve(promise),
       new Promise<T>((_, reject) => {
         timer = setTimeout(() => reject(new Error(message)), timeoutMs);
       }),

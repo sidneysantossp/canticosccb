@@ -47,7 +47,7 @@ const AdminSettingsGeneral: React.FC = () => {
 
   const [settings, setSettings] = useState<GeneralSettings>({
     site_name: 'Cânticos CCB',
-    site_description: 'Plataforma completa de hinos e cânticos da Congregação Cristã no Brasil',
+    site_description: 'Plataforma independente de hinos, cifras, compositores e playlists relacionados à CCB',
     site_url: DEFAULT_SITE_URL,
     admin_email: 'admin@canticosccb.com.br',
     support_email: 'suporte@canticosccb.com.br',
@@ -519,7 +519,7 @@ const AdminSettingsGeneral: React.FC = () => {
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-300 mb-2">URL (opcional)</label>
-                    <input type="text" value={pushUrl} onChange={(e) => setPushUrl(e.target.value)} placeholder="https://canticosccb.com.br/..." className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-primary-600" />
+                    <input type="text" value={pushUrl} onChange={(e) => setPushUrl(e.target.value)} placeholder={`${DEFAULT_SITE_URL}/...`} className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-primary-600" />
                   </div>
                 </div>
                 <div>

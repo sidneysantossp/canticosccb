@@ -35,7 +35,7 @@ export const publicSupabase = createSupabaseClient({
 export interface Usuario {
   id: string; // UUID
   email: string;
-  name: string;
+  name?: string;
   nome?: string; // Alias para compatibilidade
   avatar_url?: string;
   phone?: string;

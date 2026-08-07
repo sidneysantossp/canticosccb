@@ -291,7 +291,7 @@ const HomePage: React.FC = () => {
   const homeFAQs = [
     {
       question: 'Como ouvir hinos da CCB online grátis?',
-      answer: 'No Cânticos CCB você pode ouvir todos os hinos do Hinário 5 gratuitamente, tanto cantados quanto tocados (instrumentais). Basta acessar canticosccb.com.br e buscar pelo número ou nome do hino.'
+      answer: 'No Cânticos CCB você pode ouvir hinos publicados gratuitamente, tanto cantados quanto tocados (instrumentais). Basta acessar www.canticosccb.com.br e buscar pelo número ou nome do hino.'
     },
     {
       question: 'O que é o Hinário 5 da CCB?',

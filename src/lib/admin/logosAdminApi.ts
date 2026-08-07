@@ -1,7 +1,7 @@
 // Logos Management — Supabase REST (metadata) + R2 (binário via uploadFile)
 import { supabaseFetch, supabaseUpdate, supabaseInsert } from '@/lib/supabaseRest';
 import { uploadFile } from '@/lib/supabase-upload';
-import { normalizeAssetUrl } from '@/utils/siteUrl';
+import { DEFAULT_SITE_URL, normalizeAssetUrl } from '@/utils/siteUrl';
 
 export type LogoType = 'favicon' | 'primary' | 'secondary' | 'social';
 
@@ -18,10 +18,10 @@ export interface Logo {
 
 // Fallback data when table doesn't exist yet
 const FALLBACK_LOGOS: Logo[] = [
-  { id: '0', type: 'primary', name: 'Logo Principal (Claro)', url: 'https://canticosccb.com.br/logo-canticos-ccb.png', width: 300, height: 80, updated_at: new Date().toISOString() },
+  { id: '0', type: 'primary', name: 'Logo Principal (Claro)', url: `${DEFAULT_SITE_URL}/logo-canticos-ccb.png`, width: 300, height: 80, updated_at: new Date().toISOString() },
   { id: '0', type: 'secondary', name: 'Logo Alternativo (Escuro)', url: '', width: 0, height: 0, updated_at: new Date().toISOString() },
   { id: '0', type: 'favicon', name: 'Favicon', url: '/icons/favicon.svg', width: 32, height: 32, updated_at: new Date().toISOString() },
-  { id: '0', type: 'social', name: 'Imagem para Redes Sociais', url: 'https://canticosccb.com.br/logo-canticos-ccb.png', width: 1200, height: 630, updated_at: new Date().toISOString() },
+  { id: '0', type: 'social', name: 'Imagem para Redes Sociais', url: `${DEFAULT_SITE_URL}/logo-canticos-ccb.png`, width: 1200, height: 630, updated_at: new Date().toISOString() },
 ];
 
 const mapRow = (r: any): Logo => ({

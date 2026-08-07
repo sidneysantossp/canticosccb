@@ -51,7 +51,7 @@ const AdminSidebar: React.FC = () => {
   const [approvalsCount, setApprovalsCount] = useState(0);
   const [openReportsCount, setOpenReportsCount] = useState(0);
   const [supportUnreadCount, setSupportUnreadCount] = useState(0);
-  const [logoSrc, setLogoSrc] = useState<string>('https://canticosccb.com.br/logo-canticos-ccb.png');
+  const [logoSrc, setLogoSrc] = useState<string>('/logo-canticos-ccb.png');
 
   useEffect(() => {
     void loadClaims();
@@ -288,7 +288,7 @@ const AdminSidebar: React.FC = () => {
             className="h-10 w-auto object-contain"
             referrerPolicy="no-referrer"
             onError={() => {
-              if (logoSrc !== 'https://canticosccb.com.br/logo-canticos-ccb.png') setLogoSrc('https://canticosccb.com.br/logo-canticos-ccb.png');
+              if (logoSrc !== '/logo-canticos-ccb.png') setLogoSrc('/logo-canticos-ccb.png');
             }}
           />
         </Link>

@@ -65,6 +65,11 @@ export {
   updateCifraReportStatus,
   type CifraEngagementSnapshot,
 } from '@/lib/cifras-v2/cifraEngagementApi';
+import {
+  saveCifraVersionDraft,
+  publishCifraVersion,
+  type CifraVersionSectionDraft,
+} from '@/lib/cifras-v2/cifraPublicationService';
 export {
   saveCifraVersionDraft,
   submitCifraVersionForReview,

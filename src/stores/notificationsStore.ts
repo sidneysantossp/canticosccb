@@ -11,7 +11,7 @@ import {
 
 export interface Notification {
   id: string;
-  type: 'favorite_song' | 'favorite_album' | 'follow' | 'admin' | 'comment';
+  type: 'favorite_song' | 'favorite_album' | 'follow' | 'admin' | 'comment' | 'support_chat';
   title: string;
   message: string;
   userId?: string;
