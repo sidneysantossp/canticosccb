@@ -43,7 +43,7 @@ const CategoryCard: React.FC<Props> = ({ category, onEdit, onDelete }) => {
                 <Edit className="w-4 h-4" />
               </Link>
               <button
-                onClick={() => onDelete(category.id, category.nome)}
+                onClick={() => onDelete(Number(category.id), category.nome)}
                 className="p-1.5 rounded-lg bg-white/20 backdrop-blur-sm hover:bg-red-500 text-white transition-colors"
               >
                 <Trash2 className="w-4 h-4" />

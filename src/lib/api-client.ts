@@ -268,6 +268,8 @@ export const hinosApi = {
       return { success: false, error: error.message };
     }
   },
+  approve: async (id: string | number) => hinosApi.update(id, { status: 'published', ativo: true }),
+  reject: async (id: string | number, reason?: string) => hinosApi.update(id, { status: 'rejected', rejection_reason: reason || null, ativo: false }),
 };
 
 export const compositoresApi = {
@@ -693,7 +695,7 @@ function applyAlbumTipoFilterLocally(rows: any[], tipo?: string) {
 }
 
 export const albunsApi = {
-  list: async (params?: { page?: number; limit?: number; search?: string; compositor_id?: string; tipo?: string }) => {
+  list: async (params?: { page?: number; limit?: number; search?: string; compositor_id?: string; usuario_id?: string; tipo?: string }) => {
     try {
       const pageSize = params?.limit || 12;
       const page = params?.page || 1;

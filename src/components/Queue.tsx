@@ -253,7 +253,7 @@ const Queue: React.FC<QueueProps> = ({ isOpen, onClose }) => {
                         className="w-12 h-12 rounded opacity-80"
                       />
                       <button
-                        onClick={() => play(item)}
+                        onClick={() => play({ ...item, id: String(item.id), number: 0, category: 'Hinos', plays: 0, isLiked: false, createdAt: item.playedAt })}
                         className="absolute inset-0 bg-black/50 rounded flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
                       >
                         <Play className="w-5 h-5 text-white ml-0.5" />

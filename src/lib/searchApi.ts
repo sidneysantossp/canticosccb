@@ -7,6 +7,8 @@ export interface HymnSearchResult {
   title: string;
   composer_name?: string;
   category_name?: string;
+  category?: string;
+  duration?: string;
   cover_url?: string;
   audio_url?: string;
   youtube_source?: string;

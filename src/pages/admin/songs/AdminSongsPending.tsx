@@ -91,7 +91,8 @@ const AdminSongsPending: React.FC = () => {
         throw new Error(res.error);
       }
       
-      setPendingSongs(res.data?.hinos || []);
+      const responseData = res.data as any;
+      setPendingSongs(responseData?.hinos || responseData?.data || responseData || []);
     } catch (err: any) {
       console.error('Erro ao carregar hinos pendentes:', err);
       setError(err.message || 'Erro ao carregar hinos pendentes');

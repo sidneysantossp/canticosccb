@@ -235,7 +235,7 @@ const useNotificationsStore = create<NotificationsState>()(
 // Helper functions for creating specific notification types
 export const createFavoriteNotification = (userName: string, userAvatar: string, songTitle: string, songId: string) => {
   return {
-    type: 'favorite' as const,
+    type: 'favorite_song' as const,
     title: 'Novo favorito',
     message: `${userName} favoritou "${songTitle}"`,
     userName,

@@ -133,7 +133,7 @@ function mapPublicCifraPageData(
 ): PublicCifraPageData {
   return {
     id: version.id,
-    source: 'v2',
+    source: 'v2' as const,
     song_id: catalog.song_id,
     title: catalog.song_title || version.title,
     artist: catalog.composer_name || '',
@@ -213,7 +213,7 @@ export async function fetchMergedPublicCifrasList(): Promise<Array<Cifra | Publi
     }
   });
 
-  const v2Items = Array.from(groupedByVersion.values()).map((item) => ({
+  const v2Items: PublicCifraPageData[] = Array.from(groupedByVersion.values()).map((item) => ({
     id: item.version_id,
     source: 'v2',
     song_id: item.song_id,

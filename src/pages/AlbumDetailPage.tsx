@@ -25,6 +25,7 @@ interface AlbumTrack {
   createdAt: string;
   category: string;
   lyrics?: string;
+  youtubeSource?: string;
 }
 
 interface AlbumDetails {

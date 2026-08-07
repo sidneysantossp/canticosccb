@@ -1,10 +1,25 @@
 // STUB temporário - Substituir com implementação real quando backend estiver pronto
+export type SiteSettings = {
+  site_name?: string;
+  site_description?: string;
+  contact_email?: string;
+  contact_phone?: string;
+  social_facebook?: string;
+  social_instagram?: string;
+  social_youtube?: string;
+  social_twitter?: string;
+  terms_of_use?: string;
+  privacy_policy?: string;
+  about_us?: string;
+};
+export type UpdateSettingsData = Partial<SiteSettings>;
+
 export const getAll = async (...args: any[]) => [];
 export const getById = async (...args: any[]) => null;
 export const create = async (...args: any[]) => ({ success: true });
 export const update = async (...args: any[]) => ({ success: true });
 export const deleteItem = async (...args: any[]) => ({ success: true });
-export const getSiteSettings = async (...args: any[]) => ({});
+export const getSiteSettings = async (...args: any[]): Promise<SiteSettings> => ({});
 export const updateSiteSettings = async (...args: any[]) => ({ success: true });
 export const getComments = async (...args: any[]) => [];
 export const deleteComment = async (...args: any[]) => ({ success: true });
@@ -18,7 +33,6 @@ export const getAllPlaylists = async (...args: any[]) => [];
 export const createPlaylist = async (...args: any[]) => ({ success: true });
 export const updatePlaylist = async (...args: any[]) => ({ success: true });
 export const deletePlaylist = async (...args: any[]) => ({ success: true });
-export type SiteSettings = any;
 export type Comment = any;
 export type Claim = any;
 export type CopyrightClaim = any;

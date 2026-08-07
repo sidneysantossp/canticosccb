@@ -54,7 +54,9 @@ const AdminComposerDetail: React.FC = () => {
                 <div className="flex items-center gap-3 mb-2">
                   <h2 className="text-2xl font-bold text-white">{composer.artisticName}</h2>
                   {composer.verified && (
-                    <Shield className="w-6 h-6 text-blue-400" title="Verificado" />
+                    <span title="Verificado">
+                      <Shield className="w-6 h-6 text-blue-400" />
+                    </span>
                   )}
                   <span className="px-2 py-1 bg-purple-500/20 text-purple-400 text-xs font-semibold rounded-full">
                     {composer.type}

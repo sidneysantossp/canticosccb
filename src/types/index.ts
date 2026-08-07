@@ -12,17 +12,19 @@ export interface User {
 export interface Hino {
   id: string;
   title: string;
-  number: number;
-  category: string;
+  number?: number;
+  category?: string;
   artist: string;
   duration: string;
   audioUrl?: string;
   coverUrl?: string;
   lyrics?: string;
-  plays: number;
-  isLiked: boolean;
-  createdAt: string;
+  plays?: number;
+  isLiked?: boolean;
+  createdAt?: string;
   youtubeSource?: string;
+  isOffline?: boolean;
+  playedAt?: string;
 }
 
 export interface Playlist {
@@ -50,6 +52,8 @@ export interface Artist {
 export interface Album {
   id: string;
   title: string;
+  titulo?: string;
+  descricao?: string;
   artistId: string;
   coverUrl?: string;
   releaseDate: string;

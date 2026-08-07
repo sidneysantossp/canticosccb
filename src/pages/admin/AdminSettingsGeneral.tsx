@@ -551,7 +551,7 @@ const AdminSettingsGeneral: React.FC = () => {
                           includeMilestones: segMilestones,
                           targetType,
                           targetId: (targetType === 'user' || targetType === 'composer') ? (Number(targetId) || undefined) : undefined
-                        });
+                        }) as any;
 
                         if (result?.success) {
                           if (typeof result.sent === 'number' || typeof result.failed === 'number') {

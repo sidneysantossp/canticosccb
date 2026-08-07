@@ -27,7 +27,8 @@ const AdminCategories: React.FC = () => {
       
       if (response.data) {
         // A API pode retornar response.data.categorias, response.data.data ou response.data diretamente
-        const categoriasData = response.data.categorias || response.data.data || response.data;
+        const responseData = response.data as any;
+        const categoriasData = responseData.categorias || responseData.data || responseData;
         
         if (Array.isArray(categoriasData)) {
           setCategories(categoriasData);

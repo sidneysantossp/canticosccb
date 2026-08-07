@@ -46,7 +46,8 @@ const AdminAlbumForm: React.FC = () => {
           compositoresApi.list({ limit: 500 }),
           categoriasApi.list({ limit: 500 }),
         ]);
-        const compList = compResult?.data?.compositores || compResult?.data?.data || [];
+        const compData = compResult?.data as any;
+        const compList = compData?.compositores || compData?.data || compData || [];
         setComposers(
           (Array.isArray(compList) ? compList : []).map((c: any) => ({
             id: String(c.id),

@@ -150,6 +150,7 @@ export interface CifraVersionSection {
   loop_start_seconds?: number | null;
   loop_end_seconds?: number | null;
   content_ast: CifraLineNode[];
+  section?: { section_label?: string } | null;
   plain_text: string;
   chords_index: string[];
   created_at: string;

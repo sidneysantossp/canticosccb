@@ -6,6 +6,7 @@ import { normalizeYoutubeSource } from '@/lib/youtubeSource';
 type TrackLike = {
   id?: string | number | null;
   title?: string;
+  artist?: string | null;
   audioUrl?: string | null;
   youtubeSource?: string | null;
   number?: number | string | null;

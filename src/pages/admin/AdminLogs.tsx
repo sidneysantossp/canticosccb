@@ -53,8 +53,8 @@ const AdminLogs: React.FC = () => {
       setError(null);
       
       const filters: LogFilters = {
-        level: selectedLevel !== 'all' ? selectedLevel : undefined,
-        category: selectedCategory !== 'all' ? selectedCategory : undefined,
+        level: selectedLevel !== 'all' ? selectedLevel as LogFilters['level'] : undefined,
+        category: selectedCategory !== 'all' ? selectedCategory as LogFilters['category'] : undefined,
         search: searchQuery || undefined,
         limit: 100
       };
@@ -104,8 +104,8 @@ const AdminLogs: React.FC = () => {
   const handleExportLogs = async () => {
     try {
       const filters: LogFilters = {
-        level: selectedLevel !== 'all' ? selectedLevel : undefined,
-        category: selectedCategory !== 'all' ? selectedCategory : undefined,
+        level: selectedLevel !== 'all' ? selectedLevel as LogFilters['level'] : undefined,
+        category: selectedCategory !== 'all' ? selectedCategory as LogFilters['category'] : undefined,
         search: searchQuery || undefined
       };
 

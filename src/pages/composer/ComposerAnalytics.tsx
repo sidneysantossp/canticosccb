@@ -77,7 +77,7 @@ const ComposerAnalytics: React.FC = () => {
       const start = new Date(); start.setDate(end.getDate() - days);
       const prevEnd = new Date(start); // início do atual
       const prevStart = new Date(start); prevStart.setDate(prevStart.getDate() - days);
-      const ePrev = await getEngagementCountsWindow(user.id, prevStart.toISOString(), prevEnd.toISOString());
+      const ePrev = await getEngagementCountsWindow(composerId, prevStart.toISOString(), prevEnd.toISOString());
       setEngagementPrev(ePrev);
 
       // público (países e devices)

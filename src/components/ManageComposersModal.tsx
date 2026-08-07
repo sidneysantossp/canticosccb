@@ -7,8 +7,8 @@ import { compositorGerentesApi, type CompositorGerente } from '@/lib/api-client'
 interface ManageComposersModalProps {
   isOpen: boolean;
   onClose: () => void;
-  userId?: number;
-  onSelectComposer?: (composerId: number, composerName: string) => void;
+  userId?: string | number;
+  onSelectComposer?: (composerId: string | number, composerName: string) => void;
 }
 
 const ManageComposersModal: React.FC<ManageComposersModalProps> = ({

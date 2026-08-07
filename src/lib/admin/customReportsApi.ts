@@ -5,15 +5,21 @@ import { getAnalyticsSummary, getTopSongs } from '@/lib/admin/analyticsAdminApi'
 export interface ReportData {
   title: string;
   type: 'table' | 'chart' | 'summary';
+  generatedAt?: string;
   dateRange: {
     start: string;
     end: string;
   };
   data: any[];
+  headers?: string[];
+  rows?: any[][];
   summary?: {
     total: number;
     average: number;
     growth: number;
+    totalRecords?: number;
+    dateRange?: string;
+    generatedAt?: string;
   };
 }
 

@@ -2,6 +2,7 @@ import { supabaseFetch, supabaseInsert, supabaseUpdate, supabaseDelete } from '@
 
 export interface Song {
   id: string;
+  number?: number;
   title: string;
   artist: string;
   album?: string;

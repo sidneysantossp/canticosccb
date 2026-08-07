@@ -39,7 +39,8 @@ const AdminHymns: React.FC = () => {
       }
       
       if (response.data) {
-        const hinosData = response.data.hinos || response.data.data || response.data;
+        const responseData = response.data as any;
+        const hinosData = responseData.hinos || responseData.data || responseData;
         if (Array.isArray(hinosData)) {
           setHymns(hinosData);
         } else {

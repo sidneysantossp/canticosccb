@@ -82,7 +82,7 @@ const AdminCifras: React.FC = () => {
       await loadCifras();
     } catch (err) {
       console.error('Erro ao deletar cifra:', err);
-      alert('Erro ao deletar cifra.');
+      window.alert('Erro ao deletar cifra.');
     }
   };
 

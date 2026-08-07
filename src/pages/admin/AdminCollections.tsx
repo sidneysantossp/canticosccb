@@ -118,7 +118,7 @@ const AdminCollections: React.FC = () => {
             <div className="relative aspect-square">
               <img
                 src={collection.cover_url || `https://ui-avatars.com/api/?name=${encodeURIComponent((collection as any).title || 'C')}&background=1f2937&color=9ca3af&size=300`}
-                alt={collection.title || collection.titulo}
+                alt={collection.title || (collection as any).titulo}
                 className="w-full h-full object-cover"
               />
               <div className="absolute top-2 right-2 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -140,7 +140,7 @@ const AdminCollections: React.FC = () => {
                   <Edit className="w-4 h-4" />
                 </Link>
                 <button
-                  onClick={() => handleDelete(collection.id, collection.title || collection.titulo)}
+                  onClick={() => handleDelete(collection.id, collection.title || (collection as any).titulo)}
                   className="p-2 rounded-lg bg-red-500/90 text-white hover:bg-red-600 transition-colors"
                 >
                   <Trash2 className="w-4 h-4" />
@@ -149,10 +149,10 @@ const AdminCollections: React.FC = () => {
             </div>
             <div className="p-4">
               <h3 className="text-white font-bold text-lg mb-1 truncate">
-                {collection.title || collection.titulo}
+                {collection.title || (collection as any).titulo}
               </h3>
               <p className="text-gray-400 text-sm line-clamp-2">
-                {collection.description || collection.descricao || 'Sem descrição'}
+                {collection.description || (collection as any).descricao || 'Sem descrição'}
               </p>
               <p className="text-gray-500 text-xs mt-2">
                 {collection.total_tracks || 0} hinos

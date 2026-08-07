@@ -25,6 +25,9 @@ interface TrendItem {
   previousRank: number;
   trending: 'up' | 'down' | 'stable';
   albumTitle?: string;
+  audioUrl?: string;
+  youtubeSource?: string;
+  category?: string;
 }
 
 const TrendsPage: React.FC = () => {

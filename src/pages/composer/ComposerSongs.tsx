@@ -31,7 +31,7 @@ import { useActiveComposer } from '@/hooks/useActiveComposer';
 
 // Tipos locais para exibição
 type ComposerSong = {
-  id: number;
+  id: string;
   title: string;
   cover_url?: string;
   duration?: string;
@@ -328,7 +328,7 @@ const ComposerSongs: React.FC = () => {
                     </div>
                   </div>
                   <button
-                    onClick={() => { setDeleteConfirmId(song.id); setDeleteConfirmTitle(song.title); }}
+                    onClick={() => { setDeleteConfirmId(String(song.id)); setDeleteConfirmTitle(song.title); }}
                     className="p-2 text-text-muted hover:text-red-400 transition-colors"
                     title="Excluir"
                   >
@@ -372,7 +372,7 @@ const ComposerSongs: React.FC = () => {
                     Publicar
                   </button>
                   <button
-                    onClick={() => { setDeleteConfirmId(song.id); setDeleteConfirmTitle(song.title); }}
+                    onClick={() => { setDeleteConfirmId(String(song.id)); setDeleteConfirmTitle(song.title); }}
                     className="p-2 text-text-muted hover:text-red-400 transition-colors"
                     title="Excluir"
                   >
@@ -474,7 +474,7 @@ const ComposerSongs: React.FC = () => {
               </Link>
 
               <button
-                onClick={() => { setDeleteConfirmId(song.id); setDeleteConfirmTitle(song.title); }}
+                onClick={() => { setDeleteConfirmId(String(song.id)); setDeleteConfirmTitle(song.title); }}
                 className="p-2 text-text-muted hover:text-red-400 transition-colors"
                 title="Excluir"
               >

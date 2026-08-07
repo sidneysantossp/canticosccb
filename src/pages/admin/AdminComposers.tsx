@@ -362,7 +362,7 @@ const AdminComposers: React.FC = () => {
         message={`Tem certeza que deseja excluir o compositor "${confirmModal.composerName}"? Todo o conteúdo (hinos e álbuns) será desabilitado da plataforma até que o admin exclua manualmente.`}
         confirmText="Excluir"
         cancelText="Cancelar"
-        confirmColor="red"
+        confirmColor="amber"
       />
 
       {/* Alert Modal */}

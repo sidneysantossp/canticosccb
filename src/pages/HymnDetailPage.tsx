@@ -228,7 +228,7 @@ const HymnDetailPage: React.FC = () => {
           });
           const composerUserId = composerRows?.[0]?.user_id;
           if (composerUserId) {
-            const followerName = user.user_metadata?.name || user.email || 'Alguém';
+            const followerName = (user as any).user_metadata?.name || user.email || 'Alguém';
             await supabaseInsert('notifications', {
               user_id: composerUserId,
               composer_id: hymn.compositor_id,

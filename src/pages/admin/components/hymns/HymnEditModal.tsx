@@ -89,7 +89,8 @@ const HymnEditModal: React.FC<Props> = ({ isOpen, hymn, editForm, setEditForm, o
       try {
         setLoadingComposers(true);
         const res = await compositoresApi.list({ limit: 200 });
-        const arr = (res.data?.data || []) as any[];
+        const responseData = res.data as any;
+        const arr = (responseData?.data || responseData?.compositores || responseData || []) as any[];
         setComposers(arr.map((c: any) => ({ id: String(c.id), name: c.nome, artistic_name: c.nome_artistico })));
       } catch (e) {
         console.error('Erro ao carregar compositores:', e);

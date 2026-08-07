@@ -33,6 +33,8 @@ interface ComposerSong {
   plays?: number;
   cover_url?: string;
   audio_url?: string;
+  youtube_source?: string;
+  category?: string;
   number?: number;
   lyrics?: string;
   created_at?: string;
@@ -239,7 +241,7 @@ export default function ComposerPublicProfilePage() {
             });
             const composerUserId = composerRows?.[0]?.user_id;
             if (composerUserId) {
-              const followerName = user.user_metadata?.name || user.email || 'Alguém';
+              const followerName = (user as any).user_metadata?.name || user.email || 'Alguém';
               await supabaseInsert('notifications', {
                 user_id: composerUserId,
                 composer_id: id,

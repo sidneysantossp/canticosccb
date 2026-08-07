@@ -15,6 +15,8 @@ export interface Composer {
   songs_count: number;
   followers_count: number;
   plays_count: number;
+  total_plays?: number;
+  royalties_earned?: number;
   created_at: string;
   approved_at?: string;
   location?: string;
@@ -43,6 +45,8 @@ const mapRow = (r: any): Composer => ({
   songs_count: 0,
   followers_count: r.followers_count || 0,
   plays_count: 0,
+  total_plays: r.total_plays || r.plays_count || 0,
+  royalties_earned: r.royalties_earned || 0,
   created_at: r.created_at || new Date().toISOString(),
   approved_at: r.status === 'approved' ? (r.updated_at || r.created_at) : undefined,
   location: r.location || undefined,
