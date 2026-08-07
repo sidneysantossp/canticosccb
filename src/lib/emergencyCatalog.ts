@@ -1,7 +1,6 @@
 import { DEFAULT_COVER_URL } from '@/lib/config';
 import { DEFAULT_SITE_URL, normalizeSiteUrl } from '@/utils/siteUrl';
 import { extractUUID, slugifyText } from '@/utils/slugUrl';
-import publicCatalogSnapshot from '@/data/publicCatalogSnapshot.json';
 
 export interface EmergencyHymn {
   id: string;
@@ -210,7 +209,9 @@ const INSTRUMENT_KEYWORDS = [
 
 let catalogPromise: Promise<EmergencyCatalog> | null = null;
 
-function getSnapshotCatalog(): EmergencyCatalog | null {
+async function getSnapshotCatalog(): Promise<EmergencyCatalog | null> {
+  const snapshotModule = await import('@/data/publicCatalogSnapshot.json');
+  const publicCatalogSnapshot = snapshotModule.default;
   const snapshot = publicCatalogSnapshot as Partial<EmergencyCatalog> | null;
   if (!snapshot) return null;
 
@@ -685,7 +686,7 @@ function buildRelations(
 }
 
 async function buildCatalog(): Promise<EmergencyCatalog> {
-  const snapshotCatalog = getSnapshotCatalog();
+  const snapshotCatalog = await getSnapshotCatalog();
   if (snapshotCatalog) {
     return snapshotCatalog;
   }

@@ -12,7 +12,7 @@ const root = document.getElementById('root')
 if (root) {
   ReactDOM.createRoot(root).render(
     <React.StrictMode>
-      <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+      <Router>
         <App />
       </Router>
     </React.StrictMode>,

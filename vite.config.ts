@@ -3,6 +3,40 @@ import react from '@vitejs/plugin-react'
 import { resolve } from 'path'
 import fs from 'fs'
 
+function splitVendorChunks(moduleId: string) {
+  if (!moduleId.includes('node_modules')) return undefined;
+
+  if (moduleId.includes('/react/') || moduleId.includes('/react-dom/') || moduleId.includes('/react-router-dom/')) {
+    return 'vendor-react';
+  }
+
+  if (moduleId.includes('/@supabase/') || moduleId.includes('/@tanstack/')) {
+    return 'vendor-data';
+  }
+
+  if (moduleId.includes('/lucide-react/')) {
+    return 'vendor-icons';
+  }
+
+  if (moduleId.includes('/framer-motion/')) {
+    return 'vendor-motion';
+  }
+
+  if (moduleId.includes('/recharts/')) {
+    return 'vendor-charts';
+  }
+
+  if (moduleId.includes('/react-quill/') || moduleId.includes('/quill/') || moduleId.includes('/@tinymce/')) {
+    return 'vendor-editors';
+  }
+
+  if (moduleId.includes('/@aws-sdk/') || moduleId.includes('/jszip/') || moduleId.includes('/howler/')) {
+    return 'vendor-media';
+  }
+
+  return undefined;
+}
+
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '');
@@ -86,9 +120,10 @@ export default defineConfig(({ mode }) => {
     build: {
       outDir: 'dist',
       sourcemap: false,
+      chunkSizeWarningLimit: 1000,
       rollupOptions: {
         output: {
-          // manualChunks removed - was causing circular dependency crashes on Vercel
+          manualChunks: splitVendorChunks
         }
       }
     },

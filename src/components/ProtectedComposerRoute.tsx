@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Navigate, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
-import { compositoresApi, compositorGerentesApi } from '@/lib/api-client';
 import { AlertCircle } from 'lucide-react';
 
 interface ProtectedComposerRouteProps {
@@ -23,6 +22,7 @@ export const ProtectedComposerRoute: React.FC<ProtectedComposerRouteProps> = ({ 
     }
 
     try {
+      const { compositoresApi, compositorGerentesApi } = await import('@/lib/api-client');
       let compositor: any = null;
 
       if (managingComposerId) {
