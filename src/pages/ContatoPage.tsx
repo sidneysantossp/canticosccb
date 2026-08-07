@@ -20,7 +20,7 @@ const ContatoPage: React.FC = () => {
   if (enviado) {
     return (
       <div className="px-6 py-8 max-w-5xl mx-auto">
-        <SEOHead title="Contato - Cânticos CCB" description="Entre em contato com a equipe Cânticos CCB." />
+        <SEOHead title="Contato - Cânticos CCB" description="Entre em contato com a equipe Cânticos CCB." canonical="/contato" />
         <div className="flex flex-col items-center justify-center py-20 text-center">
           <div className="w-16 h-16 bg-green-500/20 rounded-full flex items-center justify-center mb-6">
             <CheckCircle className="w-8 h-8 text-green-400" />
@@ -45,6 +45,7 @@ const ContatoPage: React.FC = () => {
       <SEOHead
         title="Contato - Cânticos CCB"
         description="Entre em contato com a equipe Cânticos CCB para suporte, dúvidas ou sugestões."
+        canonical="/contato"
       />
 
       <div className="flex items-center gap-3 mb-8">

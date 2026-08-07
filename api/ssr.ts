@@ -1657,11 +1657,10 @@ function handleStaticPage(path: string): PageMeta | null {
       body: '<p>A biblioteca de Bíblia narrada do Canticos CCB reúne conteúdo publicado com organização por livro e título, permitindo ouvir online e navegar por diferentes itens do acervo.</p><p><a href="https://www.canticosccb.com.br/biblia-ccb">Biblia CCB</a> · <a href="https://www.canticosccb.com.br/instrumentais">Instrumentais</a> · <a href="https://www.canticosccb.com.br/playlists">Playlists</a></p>',
     },
     '/radio': {
-      title: 'Rádio Cânticos CCB',
-      desc: 'Página em preparação para a rádio da plataforma Cânticos CCB.',
-      h1: 'Rádio Cânticos CCB',
-      body: '<p>Esta área ainda está em preparação e será publicada quando houver conteúdo navegável.</p>',
-      noindex: true,
+      title: 'Rádio CCB - Seleção Contínua de Hinos | Cânticos CCB',
+      desc: 'Ouça uma programação contínua com hinos cantados, tocados, álbuns e seleções da plataforma Cânticos CCB.',
+      h1: 'Rádio CCB',
+      body: '<p>Ouça uma seleção contínua de hinos cantados, tocados, lançamentos e destaques organizados pela plataforma Cânticos CCB.</p><p><a href="https://www.canticosccb.com.br/playlists">Ver Playlists</a> · <a href="https://www.canticosccb.com.br/hinos-cantados-ccb">Hinos Cantados</a> · <a href="https://www.canticosccb.com.br/hinos-tocados-ccb">Hinos Tocados</a></p>',
     },
   };
   const page = pages[path];

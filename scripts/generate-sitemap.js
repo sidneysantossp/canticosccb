@@ -185,6 +185,7 @@ async function main() {
   urls.push(urlEntry('/compositores', staticLastmod, 'weekly', '0.8'));
   urls.push(urlEntry('/albuns', staticLastmod, 'weekly', '0.8'));
   urls.push(urlEntry('/playlists', staticLastmod, 'weekly', '0.7'));
+  urls.push(urlEntry('/radio', staticLastmod, 'weekly', '0.6'));
   urls.push(urlEntry('/cifras-violao-ccb', staticLastmod, 'weekly', '0.7'));
   urls.push(urlEntry('/cifras-ukulele-ccb', staticLastmod, 'weekly', '0.7'));
   urls.push(urlEntry('/cifras-teclado-ccb', staticLastmod, 'weekly', '0.7'));

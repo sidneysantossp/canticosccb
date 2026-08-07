@@ -447,6 +447,8 @@ const HomeAlternativePage: React.FC = () => {
         keywords="ccb, congregação cristã, hinos, hinos religiosos, louvor, adoração, playlist gospel"
         canonical="/home-alt"
         ogImage="/images/og-home.jpg"
+        noindex
+        nofollow
         schemaData={schemas}
       />
       

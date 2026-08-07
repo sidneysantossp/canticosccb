@@ -24,6 +24,7 @@ const AjudaPage: React.FC = () => {
       <SEOHead
         title="Central de Ajuda - Cânticos CCB"
         description="Central de ajuda da plataforma Cânticos CCB. Encontre respostas para suas dúvidas."
+        canonical="/ajuda"
       />
 
       <div className="flex items-center gap-3 mb-8">

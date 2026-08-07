@@ -116,6 +116,7 @@ const RadioPage: React.FC = () => {
       <SEOHead
         title="Rádio CCB - Seleção Contínua de Hinos | Cânticos CCB"
         description="Ouça uma programação contínua com hinos cantados, tocados, álbuns e seleções da plataforma Cânticos CCB."
+        canonical="/radio"
       />
 
       <div className="flex items-center gap-3">

@@ -25,6 +25,7 @@ const CompositorPublicarPage: React.FC = () => {
       <SEOHead
         title="Publicar Composição - Cânticos CCB"
         description="Publique suas composições na plataforma Cânticos CCB."
+        canonical="/compositor/publicar"
       />
 
       <div className="flex items-center gap-3 mb-8">

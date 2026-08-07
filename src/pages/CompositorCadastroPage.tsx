@@ -31,6 +31,7 @@ const CompositorCadastroPage: React.FC = () => {
       <SEOHead
         title="Cadastro de Compositor - Cânticos CCB"
         description="Cadastre-se como compositor na plataforma Cânticos CCB e publique suas composições."
+        canonical="/compositor/cadastro"
       />
 
       <div className="flex items-center gap-3 mb-8">
