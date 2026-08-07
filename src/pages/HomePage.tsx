@@ -222,6 +222,21 @@ const buildStableHomeSelections = (catalog: EmergencyCatalog) => {
       return rightDate - leftDate;
     });
 
+  const avulsosCategoryIds = new Set(
+    catalog.categories
+      .filter((category) => {
+        const slug = normalizeHomeCategory(category.slug);
+        const name = normalizeHomeCategory(category.nome);
+        return slug.includes('avulso') || name.includes('avulso');
+      })
+      .map((category) => String(category.id))
+  );
+  const avulsosHymnIds = new Set(
+    catalog.hymnCategories
+      .filter((relation) => avulsosCategoryIds.has(String(relation.categoria_id)))
+      .map((relation) => String(relation.hino_id))
+  );
+
   const directPlayable = activeHymns.filter((hymn) =>
     hasHomeReadyTrackSource({
       id: hymn.id,
@@ -250,7 +265,12 @@ const buildStableHomeSelections = (catalog: EmergencyCatalog) => {
         .map((hymn) => mapEmergencyHymnToHomeSectionCard(hymn, 'Hino Tocado')),
       12
     ),
-    avulsos: diversifyByArtist(byCategory('avulso', 'Hino Avulso'), 12),
+    avulsos: diversifyByArtist(
+      directPlayable
+        .filter((hymn) => avulsosHymnIds.has(String(hymn.id)))
+        .map((hymn) => mapEmergencyHymnToHomeSectionCard(hymn, 'Hino Avulso')),
+      12
+    ),
   };
 };
 
