@@ -35,7 +35,7 @@ const ComposerSidebar: React.FC = () => {
   }, [composerId, loadClaims]);
 
   // Carregar logo oficial configurada no painel (cache em sessionStorage)
-  const [logoSrc, setLogoSrc] = useState<string>('https://canticosccb.com.br/logo-canticos-ccb.png');
+  const [logoSrc, setLogoSrc] = useState<string>('/logo-canticos-ccb.png');
   useEffect(() => {
     let isMounted = true;
     (async () => {
@@ -159,7 +159,7 @@ const ComposerSidebar: React.FC = () => {
             referrerPolicy="no-referrer"
             onError={(e) => {
               // Alterna entre PNG e SVG para evitar loop se um deles não existir
-              setLogoSrc(prev => prev.endsWith('.png') ? 'https://canticosccb.com.br/logo-canticos-ccb.png' : 'https://canticosccb.com.br/logo-canticos-ccb.png');
+              setLogoSrc(prev => prev.endsWith('.png') ? '/logo-canticos-ccb.png' : '/logo-canticos-ccb.png');
             }}
           />
         </Link>

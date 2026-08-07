@@ -102,7 +102,7 @@ const CACHE_TTL_MS = 60 * 1000;
 
 const defaultSeoSettings: RuntimeSeoSettings = {
   site_title: 'Cânticos CCB',
-  site_description: 'Plataforma completa de hinos e cânticos da Congregação Cristã no Brasil',
+  site_description: 'Plataforma independente de hinos, cifras, compositores e playlists relacionados à CCB',
   site_keywords: 'hinos CCB, hinário 5, congregação cristã no brasil',
   site_url: DEFAULT_SITE_URL,
   og_image: `${DEFAULT_SITE_URL}/logo-canticos-ccb.png`,

@@ -1,7 +1,7 @@
 import { getCurrentUser, publicSupabase } from './supabase-auth';
 
 const SUPPORT_TABLE = 'notifications';
-const DEFAULT_SUPPORT_COVER = 'https://canticosccb.com.br/logo-canticos-ccb.png';
+const DEFAULT_SUPPORT_COVER = 'https://www.canticosccb.com.br/logo-canticos-ccb.png';
 const SUPPORT_NOTIFICATION_TYPE = 'support_chat';
 const SUPPORT_LINK = '/chat';
 const SUPPORT_THREAD_MARKER = 'support';

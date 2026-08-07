@@ -7,7 +7,7 @@ export const API_URLS = {
 
 // Asset URLs
 export const ASSETS = {
-  LOGO_URL: 'https://canticosccb.com.br/logo-canticos-ccb.png',
+  LOGO_URL: 'https://www.canticosccb.com.br/logo-canticos-ccb.png',
   DEFAULT_AVATAR: 'https://i.pravatar.cc/150?img=1',
   PLACEHOLDER_IMAGE: 'https://picsum.photos/seed/placeholder/300/300',
 } as const;
@@ -15,9 +15,9 @@ export const ASSETS = {
 // App Configuration
 export const APP_CONFIG = {
   NAME: 'Cânticos CCB',
-  DESCRIPTION: 'Plataforma de Cânticos da Congregação Cristã no Brasil',
+  DESCRIPTION: 'Plataforma independente de hinos, cifras, compositores e playlists relacionados à CCB',
   VERSION: '1.0.0',
-  AUTHOR: 'Congregação Cristã no Brasil',
+  AUTHOR: 'Cânticos CCB',
   COPYRIGHT_YEAR: new Date().getFullYear(),
 } as const;
 
@@ -69,10 +69,10 @@ export const BREAKPOINTS = {
 
 // Social Media Links
 export const SOCIAL_LINKS = {
-  INSTAGRAM: 'https://instagram.com/ccb_oficial',
-  FACEBOOK: 'https://facebook.com/ccb.oficial',
-  YOUTUBE: 'https://youtube.com/c/CCBOficial',
-  WEBSITE: 'https://ccb.org.br',
+  INSTAGRAM: 'https://www.instagram.com/canticosccb',
+  FACEBOOK: 'https://www.facebook.com/canticosccb',
+  YOUTUBE: 'https://www.youtube.com/@canticosccb',
+  WEBSITE: 'https://www.canticosccb.com.br',
 } as const;
 
 // Audio Formats

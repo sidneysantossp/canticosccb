@@ -22,7 +22,7 @@ const RegisterPage: React.FC = () => {
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [emailStatus, setEmailStatus] = useState<'idle' | 'checking' | 'available' | 'taken'>('idle');
-  const logoSrc = 'https://canticosccb.com.br/logo-canticos-ccb.png';
+  const logoSrc = '/logo-canticos-ccb.png';
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const googleAuthEnabled = isGoogleAuthEnabled();
   const cameFromGate = (location.state as any)?.reason === 'continue-listening';

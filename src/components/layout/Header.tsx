@@ -237,7 +237,7 @@ const Header: React.FC = () => {
         {/* Logo */}
         <Link to="/" className="flex items-center lg:w-[240px] lg:shrink-0">
           <img
-            src="https://canticosccb.com.br/logo-canticos-ccb.png"
+            src="/logo-canticos-ccb.png"
             alt="Cânticos CCB"
             className="h-10 md:h-10 w-auto object-contain"
             referrerPolicy="no-referrer"

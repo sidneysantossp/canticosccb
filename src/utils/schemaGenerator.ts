@@ -22,14 +22,17 @@ export const generateOrganizationSchema = () => {
   return {
     '@context': 'https://schema.org',
     '@type': 'Organization',
+    '@id': `${BASE_URL}/#organization`,
     name: 'Cânticos CCB',
     url: BASE_URL,
     logo: `${BASE_URL}/logo-canticos-ccb.png`,
-    description: 'Plataforma de hinos da Congregação Cristã no Brasil',
+    description: 'Projeto independente de organização e descoberta de hinos, cifras, álbuns, compositores e playlists relacionados à CCB.',
+    disambiguatingDescription: 'O Cânticos CCB é uma plataforma independente, sem vínculo institucional, endosso, patrocínio ou representação oficial da Congregação Cristã no Brasil.',
     inLanguage: 'pt-BR',
     sameAs: [
-      'https://www.instagram.com/canticosccb.com.br/',
-      'https://www.facebook.com/canticosccbsiteoficial/'
+      'https://www.instagram.com/canticosccb',
+      'https://www.facebook.com/canticosccb',
+      'https://www.youtube.com/@canticosccb'
     ]
   };
 };
@@ -42,9 +45,14 @@ export const generateWebsiteSchema = () => {
   return {
     '@context': 'https://schema.org',
     '@type': 'WebSite',
+    '@id': `${BASE_URL}/#website`,
     name: 'Cânticos CCB',
     url: BASE_URL,
     inLanguage: 'pt-BR',
+    isAccessibleForFree: true,
+    publisher: {
+      '@id': `${BASE_URL}/#organization`,
+    },
     potentialAction: {
       '@type': 'SearchAction',
       target: {
