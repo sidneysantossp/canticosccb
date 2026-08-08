@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { FileText, Search, Filter, Download, AlertTriangle, Info, CheckCircle, XCircle, Clock, User, Activity, Trash2 } from 'lucide-react';
+import { FileText, Search, Download, AlertTriangle, Info, CheckCircle, XCircle, Clock, User, Activity, Trash2 } from 'lucide-react';
 import {
   getLogs,
   getLogStats,

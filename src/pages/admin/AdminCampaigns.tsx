@@ -17,7 +17,7 @@ const AdminCampaigns: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showModal, setShowModal] = useState(false);
-  const [editingCampaign, setEditingCampaign] = useState<CampaignModel | null>(null);
+  const [editingCampaign] = useState<CampaignModel | null>(null);
   const [formData, setFormData] = useState({
     name: '',
     description: '',
@@ -89,34 +89,6 @@ const AdminCampaigns: React.FC = () => {
     }
   };
   
-  const handleOpenModal = (campaign?: CampaignModel) => {
-    if (campaign) {
-      setEditingCampaign(campaign);
-      setFormData({
-        name: campaign.name,
-        description: campaign.description || '',
-        campaign_type: campaign.campaign_type,
-        target_audience: campaign.target_audience,
-        subject: campaign.subject || '',
-        scheduled_at: campaign.scheduled_at ? campaign.scheduled_at.split('T')[0] : '',
-        budget: campaign.budget || 0,
-        tags: campaign.tags
-      });
-    } else {
-      setEditingCampaign(null);
-      setFormData({
-        name: '',
-        description: '',
-        campaign_type: 'email',
-        target_audience: 'all',
-        subject: '',
-        scheduled_at: '',
-        budget: 0,
-        tags: []
-      });
-    }
-    setShowModal(true);
-  };
 
   const handleSave = async () => {
     const trimmedName = formData.name.trim();

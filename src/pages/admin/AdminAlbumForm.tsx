@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { ArrowLeft, Save, Upload, Disc, Trash2, X, Star } from 'lucide-react';
-import { albunsApi, uploadApi, compositoresApi, categoriasApi, Album, Hino } from '@/lib/api-client';
+import { albunsApi, uploadApi, compositoresApi, categoriasApi, Hino } from '@/lib/api-client';
 import { supabaseDelete, supabaseFetch } from '@/lib/supabaseRest';
 import HinoSelector from '@/components/admin/HinoSelector';
 

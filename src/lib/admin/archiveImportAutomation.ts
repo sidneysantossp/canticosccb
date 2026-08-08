@@ -261,7 +261,7 @@ const getArchiveTrackParts = (
     .replace(/\s*-\s*/g, ' - ')
     .trim();
 
-  let segments = working.split(' - ').map((segment) => segment.trim()).filter(Boolean);
+  const segments = working.split(' - ').map((segment) => segment.trim()).filter(Boolean);
 
   while (segments.length > 1 && looksLikeAlbumInfoSegment(segments[0], context.albumTitle, context.albumSlug)) {
     segments.shift();

@@ -4,16 +4,13 @@ import {
   Music,
   Plus,
   Search,
-  Filter,
-  Eye,
   Edit,
   Trash2,
   CheckCircle,
   XCircle,
   Star,
   Play,
-  Heart,
-  MoreVertical
+  Heart
 } from 'lucide-react';
 import {
   getAllSongs,

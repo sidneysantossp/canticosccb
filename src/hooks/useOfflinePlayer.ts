@@ -29,7 +29,7 @@ export interface PlayerState {
 }
 
 export const useOfflinePlayer = () => {
-  const { downloads, getDownloadedHymn } = useOfflineDownloads();
+  const {  getDownloadedHymn } = useOfflineDownloads();
   const { isOnline } = usePWA();
   const audioRef = useRef<HTMLAudioElement | null>(null);
   

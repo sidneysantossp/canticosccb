@@ -2,13 +2,12 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { categoriasApi, compositorGerentesApi } from '@/lib/api-client';
 import { useAuth } from '@/contexts/AuthContext';
-import { validateDocument, checkEmailAvailability, registerComposer, uploadDocumentImage, createComposerProfile } from '@/lib/composerOnboardingApi';
+import { checkEmailAvailability, uploadDocumentImage, createComposerProfile } from '@/lib/composerOnboardingApi';
 import { supabase } from '@/lib/supabase-auth';
 import { DEFAULT_SITE_URL, normalizeSiteUrl } from '@/utils/siteUrl';
 import {
   Music,
   Users,
-  Image as ImageIcon,
   CheckCircle,
   ArrowRight,
   ArrowLeft,
@@ -16,7 +15,6 @@ import {
   Upload,
   User,
   Mail,
-  MapPin,
   Globe,
   Instagram,
   Facebook,
@@ -106,7 +104,7 @@ const ComposerOnboarding: React.FC = () => {
   const [dragActiveBack, setDragActiveBack] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showPasswordConfirm, setShowPasswordConfirm] = useState(false);
-  const [validatingDocument, setValidatingDocument] = useState(false);
+  const [validatingDocument] = useState(false);
   const [documentValidation, setDocumentValidation] = useState<{
     valid: boolean;
     extracted_name?: string;
@@ -342,7 +340,7 @@ const ComposerOnboarding: React.FC = () => {
       }, 100);
 
       setLoadingCep(false);
-    } catch (error) {
+    } catch  {
       setCepError('Erro ao buscar CEP');
       setLoadingCep(false);
       setCepFilled(false);
@@ -427,43 +425,6 @@ const ComposerOnboarding: React.FC = () => {
     }
   };
 
-  const validateDocumentWithOCR = async (file: File) => {
-    if (!formData.name || !formData.documentType) {
-      console.log('Nome ou tipo de documento não definido, pulando validação OCR');
-      return;
-    }
-
-    setValidatingDocument(true);
-    setDocumentValidation(null);
-
-    try {
-      console.log('📝 Validating document via Supabase...');
-
-      const result = await validateDocument(
-        formData.documentType,
-        formData.documentNumber || '',
-        file
-      );
-
-      console.log('✅ Validation result:', result);
-      setDocumentValidation(result);
-
-      if (!result.valid && result.message) {
-        alert(
-          `⚠️ ATENÇÃO: ${result.message}\n\n` +
-          `Verifique se os dados estão corretos ou envie outro documento.`
-        );
-      }
-    } catch (error: any) {
-      console.error('❌ Erro na validação:', error);
-      setDocumentValidation({
-        valid: false,
-        error: error.message || 'Não foi possível validar o documento automaticamente. Será revisado manualmente.'
-      });
-    } finally {
-      setValidatingDocument(false);
-    }
-  };
 
   const handleDrop = (e: React.DragEvent<HTMLDivElement>, type: 'front' | 'back') => {
     e.preventDefault();
@@ -757,7 +718,7 @@ const ComposerOnboarding: React.FC = () => {
         return formData.composerType !== '';
       case 2:
         return formData.name && formData.artisticName && formData.bio;
-      case 3:
+      case 3: {
         // Validar email, senha e endereço
         const normalizedCurrentUserEmail = user?.email?.trim().toLowerCase();
         const normalizedFormEmail = formData.email.trim().toLowerCase();
@@ -774,6 +735,7 @@ const ComposerOnboarding: React.FC = () => {
           return false;
         }
         return true;
+      }
       case 5:
         return formData.documentType !== '' && formData.documentFront !== null && (!requiresDocumentBack || formData.documentBack !== null) && formData.acceptedTerms;
       default:

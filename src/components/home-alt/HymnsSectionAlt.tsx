@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Play, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Play } from 'lucide-react';
 import { buildHinoUrl } from '@/utils/slugUrl';
 import { DEFAULT_COVER_URL } from '@/lib/config';
 import { hasPlayableTrackSource } from '@/lib/playerFeedback';
@@ -20,8 +20,8 @@ const HymnsSectionAlt: React.FC<HymnsSectionAltProps> = ({
   viewAllHref,
   items,
   onPlay,
-  onScrollLeft,
-  onScrollRight,
+  onScrollLeft: _onScrollLeft,
+  onScrollRight: _onScrollRight,
   isDarkMode
 }) => {
   if (!items || items.length === 0) return null;

@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Edit, Gift, Plus, RefreshCw, Tag, Trash2, AlertTriangle } from 'lucide-react';
+import { Edit, Plus, RefreshCw, Tag, Trash2, AlertTriangle } from 'lucide-react';
 import PromotionsStatsCards from '@/pages/admin/components/promotions/PromotionsStatsCards';
 import {
   deletePromotion,

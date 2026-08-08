@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { Eye, EyeOff, Mail, Lock, User, ArrowLeft, Check, AlertCircle } from 'lucide-react';
+import { Eye, EyeOff, ArrowLeft, Check, AlertCircle } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { checkEmailExists } from '@/lib/auth-client';
 import { googleOAuthLogin, isGoogleAuthEnabled } from '@/lib/supabase-auth';

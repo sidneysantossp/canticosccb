@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Play, Pause, Heart, MoreVertical, Clock, Music, ArrowLeft, Share2, ListPlus, Info, X } from 'lucide-react';
+import { Play, Pause, Heart, MoreVertical, Clock, Music, ArrowLeft, Share2, ListPlus, X } from 'lucide-react';
 import { usePlayerStore } from '@/stores/playerStore';
 import useFavoritesStore from '@/stores/favoritesStore';
 import usePlaylistsStore from '@/stores/playlistsStore';

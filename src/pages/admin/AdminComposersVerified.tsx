@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { CheckCircle, Search, Eye, Edit, Ban, Music, Award } from 'lucide-react';
+import { CheckCircle, Search, Edit, Ban, Music, Award } from 'lucide-react';
 import { compositoresApi } from '@/lib/api-client';
 import { Link } from 'react-router-dom';
 
@@ -14,7 +14,7 @@ interface Composer {
 
 const AdminComposersVerified: React.FC = () => {
   const [composers, setComposers] = useState<Composer[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {

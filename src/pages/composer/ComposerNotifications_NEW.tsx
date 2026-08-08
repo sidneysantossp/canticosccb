@@ -1,9 +1,7 @@
 import React, { useEffect, useState } from 'react';
-import { useAuth } from '@/contexts/AuthContext';
 import { Bell, Construction } from 'lucide-react';
 
 const ComposerNotifications: React.FC = () => {
-  const { user } = useAuth();
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {

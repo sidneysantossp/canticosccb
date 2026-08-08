@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useParams, Link } from 'react-router-dom';
 import { ArrowLeft, Save, Upload, User as UserIcon, Mail, Shield, Ban, AlertTriangle } from 'lucide-react';
-import { getUserById, updateUser, createUser, User } from '@/lib/admin/usersAdminApi';
+import { getUserById, updateUser, createUser } from '@/lib/admin/usersAdminApi';
 import { uploadApi } from '@/lib/api-client';
 import { buildAvatarUrl } from '@/lib/media-helper';
 

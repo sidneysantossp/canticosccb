@@ -9,7 +9,7 @@ interface Props {
   onDelete: (id: number, name: string) => void;
 }
 
-const CategoryCard: React.FC<Props> = ({ category, onEdit, onDelete }) => {
+const CategoryCard: React.FC<Props> = ({ category, onEdit: _onEdit, onDelete }) => {
   return (
     <div
       className="relative bg-gray-900/50 border border-gray-800 rounded-xl overflow-hidden hover:border-gray-700 transition-colors"

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import {
   ArrowLeft,
   Camera,
@@ -22,8 +22,7 @@ import { buildAvatarUrl } from '@/lib/media-helper';
 const EditProfilePage: React.FC = () => {
   const navigate = useNavigate();
   const { user, profile } = useAuth();
-  const [composerId, setComposerId] = useState<string | null>(null);
-  const [isLoadingData, setIsLoadingData] = useState(true);
+  const [, setIsLoadingData] = useState(true);
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
   const avatarInputRef = useRef<HTMLInputElement>(null);
   const [avatarPreviewUrl, setAvatarPreviewUrl] = useState<string | null>(null);

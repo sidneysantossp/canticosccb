@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Shield, Lock, AlertTriangle, Eye, Ban, RefreshCw, CheckCircle, XCircle, Save } from 'lucide-react';
+import { Shield, AlertTriangle, Eye, Ban, RefreshCw, XCircle, Save } from 'lucide-react';
 import {
   getBlockedIps,
   getSecurityLogs,

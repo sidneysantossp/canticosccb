@@ -25,8 +25,8 @@ const TrendsSectionAlt: React.FC<TrendsSectionAltProps> = ({
   isFavorited,
   onToggleFavorite,
   getTrendingArrow,
-  getRankChange,
-  getTrendingIcon,
+  getRankChange: _getRankChange,
+  getTrendingIcon: _getTrendingIcon,
   isDarkMode
 }) => {
   if (!items || items.length === 0) return null;

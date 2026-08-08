@@ -20,7 +20,7 @@ import { buildBannerUrl } from '@/lib/media-helper';
 const AdminBanners: React.FC = () => {
   const [activeTab, setActiveTab] = useState<BannerType>('hero');
   const [banners, setBanners] = useState<Banner[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [, setIsLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingBanner, setEditingBanner] = useState<Banner | null>(null);
   const [isSaving, setIsSaving] = useState(false);

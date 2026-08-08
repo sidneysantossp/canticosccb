@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Bell, Send, Users, Music, Crown, Calendar } from 'lucide-react';
+import { Bell, Send } from 'lucide-react';
 
 const AdminNotifications: React.FC = () => {
   const [formData, setFormData] = useState({

@@ -1,6 +1,6 @@
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Heart, Shuffle, SkipBack, Play, Pause, SkipForward, Repeat, Repeat1, Share2, FileText, ChevronUp, Music, Plus, Copyright } from 'lucide-react';
+import { X, Heart, Pause, FileText, ChevronUp, Music } from 'lucide-react';
 import { usePlayerStore } from '@/stores/playerStore';
 import useFavoritesStore from '@/stores/favoritesStore';
 import usePlaylistsStore from '@/stores/playlistsStore';
@@ -8,7 +8,6 @@ import useCopyrightClaimsStore from '@/stores/copyrightClaimsStore';
 import { usePlayerContext } from '@/contexts/PlayerContext';
 import ConfirmModal from '@/components/ui/ConfirmModal';
 import AlertModal from '@/components/ui/AlertModal';
-import LoginRequiredModal from '@/components/modals/LoginRequiredModal';
 import AlbumTrackList from '@/components/player/AlbumTrackList';
 import FSPHeaderMenu from '@/components/player/FSPHeaderMenu';
 import LyricsOverlay from '@/components/player/LyricsOverlay';
@@ -35,7 +34,6 @@ export default function FullScreenPlayer({ isOpen, onClose }: FullScreenPlayerPr
   const {
     currentTrack,
     isPlaying,
-    volume,
     currentTime,
     duration,
     queue,
@@ -44,14 +42,12 @@ export default function FullScreenPlayer({ isOpen, onClose }: FullScreenPlayerPr
     resume,
     next,
     previous,
-    setVolume,
     setCurrentTime,
     repeat: storeRepeat,
     setRepeat,
     shuffle: storeShuffle,
     toggleShuffle,
     playNext,
-    setOnTrackEnd,
     playbackContext,
   } = usePlayerStore();
 
@@ -124,78 +120,6 @@ export default function FullScreenPlayer({ isOpen, onClose }: FullScreenPlayerPr
   };
 
   // Mock data para faixas do álbum com letras (substituir por dados reais)
-  const mockAlbumTracks = [
-    { 
-      id: '1', 
-      title: 'Hino 1 - Deus Eterno', 
-      artist: 'Coral CCB', 
-      duration: '4:33',
-      lyrics: `Deus eterno, Deus bendito\nTeu poder é infinito\nTua glória resplandece\nE jamais se escurece\n\nRefrão:\nGlória, glória, aleluia\nGlória ao Rei dos reis\nGlória, glória, aleluia\nPara sempre cantarei`
-    },
-    { 
-      id: '2', 
-      title: 'Hino 2 - Vem Pecador', 
-      artist: 'Coral CCB', 
-      duration: '4:57',
-      lyrics: `Vem pecador, Jesus te chama\nVem sem temor, Ele te ama\nVem encontrar a salvação\nEm Cristo há perdão\n\nRefrão:\nVem, vem, vem\nJesus te quer\nVem, vem, vem\nEle é teu amigo fiel`
-    },
-    { 
-      id: '3', 
-      title: 'Hino 3 - Ao Deus de Abraão', 
-      artist: 'Coral CCB', 
-      duration: '4:39',
-      lyrics: `Ao Deus de Abraão louvai\nO Deus de Isaque exaltai\nO Deus de Jacó cantai\nEle é o Senhor\n\nRefrão:\nSanto, santo, santo\nÉ o Senhor dos senhores\nSanto, santo, santo\nRei dos reis e Senhor`
-    },
-    { 
-      id: '4', 
-      title: 'Hino 4 - Saudosa Lembrança', 
-      artist: 'Coral CCB', 
-      duration: '3:47',
-      lyrics: `Saudosa lembrança\nDo tempo que passou\nQuando em oração\nMeu coração se alegrou\n\nRefrão:\nDoce lembrança\nDaqueles dias\nQuando sentia\nAs bênçãos de Deus`
-    },
-    { 
-      id: '5', 
-      title: 'Hino 5 - Jerusalém Celeste', 
-      artist: 'Coral CCB', 
-      duration: '4:27',
-      lyrics: `Jerusalém celeste\nCidade do grande Rei\nLá não há tristeza\nNem dor, nem lei\n\nRefrão:\nQuero ir, quero ir\nPara aquela cidade\nQuero ir, quero ir\nOnde há felicidade`
-    },
-    { 
-      id: '6', 
-      title: 'Hino 6 - Deus Eterno', 
-      artist: 'Coral CCB', 
-      duration: '4:25',
-      lyrics: `Deus eterno, Deus bendito\nTeu poder é infinito\nTua glória resplandece\nE jamais se escurece`
-    },
-    { 
-      id: '7', 
-      title: 'Hino 7 - Vem Pecador', 
-      artist: 'Coral CCB', 
-      duration: '4:23',
-      lyrics: `Vem pecador, Jesus te chama\nVem sem temor, Ele te ama\nVem encontrar a salvação\nEm Cristo há perdão`
-    },
-    { 
-      id: '8', 
-      title: 'Hino 8 - Ao Deus de Abraão', 
-      artist: 'Coral CCB', 
-      duration: '3:35',
-      lyrics: `Ao Deus de Abraão louvai\nO Deus de Isaque exaltai\nO Deus de Jacó cantai\nEle é o Senhor`
-    },
-    { 
-      id: '9', 
-      title: 'Hino 9 - Saudosa Lembrança', 
-      artist: 'Coral CCB', 
-      duration: '4:12',
-      lyrics: `Saudosa lembrança\nDo tempo que passou\nQuando em oração\nMeu coração se alegrou`
-    },
-    { 
-      id: '10', 
-      title: 'Hino 10 - Jerusalém Celeste', 
-      artist: 'Coral CCB', 
-      duration: '3:58',
-      lyrics: `Jerusalém celeste\nCidade do grande Rei\nLá não há tristeza\nNem dor, nem lei`
-    },
-  ];
   
   const [showLyrics, setShowLyrics] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
@@ -262,8 +186,6 @@ export default function FullScreenPlayer({ isOpen, onClose }: FullScreenPlayerPr
       document.removeEventListener('mousedown', handleClickOutside);
     };
   }, [showMenu]);
-
-  if (!currentTrack) return null;
 
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
@@ -577,27 +499,6 @@ export default function FullScreenPlayer({ isOpen, onClose }: FullScreenPlayerPr
   };
 
   // Função para favoritar faixa da lista
-  const handleToggleFavoriteTrack = (trackId: string) => {
-    const track = albumTracks.find(t => String(t.id) === String(trackId));
-    
-    const uid = user?.id;
-    if (isFavorite(String(trackId))) {
-      removeFavorite(String(trackId), uid);
-    } else if (track) {
-      addFavorite({
-        id: String(trackId),
-        title: track.title,
-        artist: track.artist,
-        album: (currentTrack as any)?.album || 'Hinário 5 - Completo',
-        duration: track.duration,
-        coverUrl: currentTrack?.coverUrl || 'https://picsum.photos/400/400',
-        audioUrl: track.audioUrl || track.audio_url,
-        youtubeSource: track.youtubeSource || track.youtube_source,
-        number: track.number || 0,
-        category: track.category || 'album',
-      }, uid);
-    }
-  };
 
 
   // Função para próxima faixa (integrada com controles)
@@ -665,6 +566,8 @@ export default function FullScreenPlayer({ isOpen, onClose }: FullScreenPlayerPr
       return `https://ui-avatars.com/api/?name=${encodeURIComponent(currentTrack.title)}&background=1f2937&color=ffffff`;
     }
   })();
+
+  if (!currentTrack) return null;
 
   return (
     <>

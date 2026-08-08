@@ -1,6 +1,6 @@
 import { isSupabaseConfigured, supabaseGetSignedUrl } from './supabaseRest';
 
-const STORAGE_URL_REGEX = /storage\/v1\/object\/public\/([^\/]+)/i;
+const STORAGE_URL_REGEX = /storage\/v1\/object\/public\/([^/]+)/i;
 
 export async function getSignedSupabaseUrl(value: string, fallbackBucket = 'hinos'): Promise<string> {
   if (!value) return value;

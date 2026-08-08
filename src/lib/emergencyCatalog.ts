@@ -1,6 +1,6 @@
 import { DEFAULT_COVER_URL } from '@/lib/config';
 import { DEFAULT_SITE_URL, normalizeSiteUrl } from '@/utils/siteUrl';
-import { extractUUID, slugifyText } from '@/utils/slugUrl';
+import { extractUUID } from '@/utils/slugUrl';
 
 export interface EmergencyHymn {
   id: string;
@@ -367,9 +367,6 @@ function getSitemapUrl(): string {
   return `${appUrl}/sitemap.xml`;
 }
 
-function isLikelyUuid(value: string): boolean {
-  return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(String(value || ''));
-}
 
 function parseComposerNameFromSlug(slugWithoutId: string): { slug: string; name: string } {
   return {

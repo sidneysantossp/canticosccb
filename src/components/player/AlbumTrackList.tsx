@@ -1,5 +1,5 @@
 import React from 'react';
-import { Play, Trash2, Music } from 'lucide-react';
+import { Trash2, Music } from 'lucide-react';
 
 interface TrackLike {
   id: string | number;
@@ -19,7 +19,7 @@ interface Props {
   onRemoveFromPlaylist: (t: any) => void;
 }
 
-const AlbumTrackList: React.FC<Props> = ({ tracks, currentTrack, isPlaying, onSelect, playbackContext, onRemoveFromPlaylist }) => {
+const AlbumTrackList: React.FC<Props> = ({ tracks, currentTrack, isPlaying: _isPlaying, onSelect, playbackContext, onRemoveFromPlaylist }) => {
   if (!tracks || tracks.length === 0) return null;
   return (
     <div className="mt-6 bg-purple-500/10 p-4 rounded-lg">
@@ -28,7 +28,7 @@ const AlbumTrackList: React.FC<Props> = ({ tracks, currentTrack, isPlaying, onSe
         <h3 className="text-sm font-bold text-white">Faixas do Álbum</h3>
       </div>
       <div className="space-y-1">
-        {tracks.map((t, idx) => (
+        {tracks.map((t, _idx) => (
           <div
             key={String(t.id)}
             className={`group flex items-center justify-between gap-3 p-2 rounded-md transition-colors cursor-pointer ${

@@ -1,5 +1,5 @@
 import React from 'react';
-import { X, Music, Play, Pause } from 'lucide-react';
+import { X, Music, Play } from 'lucide-react';
 import { usePlayerStore } from '@/stores/playerStore';
 
 interface QueueSidebarProps {

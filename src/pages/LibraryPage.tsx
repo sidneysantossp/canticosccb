@@ -4,7 +4,6 @@ import { Play, Heart, Plus, Search, Grid, List, MoreHorizontal } from 'lucide-re
 import { usePlayerStore } from '@/stores/playerStore';
 import { usePlayerContext } from '@/contexts/PlayerContext';
 import { Hino } from '@/types';
-import SEOHead from '@/components/SEO/SEOHead';
 import usePlaylistsStore from '@/stores/playlistsStore';
 import { useAuth } from '@/contexts/AuthContext';
 import * as playlistsApi from '@/lib/playlistsApi';
@@ -175,7 +174,7 @@ const LibraryPage: React.FC = () => {
         </div>
       ) : (
         <div className="space-y-2">
-          {filteredPlaylists.map((playlist, index) => (
+          {filteredPlaylists.map((playlist, _index) => (
             <div
               key={playlist.id}
               className="flex items-center gap-4 p-3 rounded-lg hover:bg-background-hover transition-colors group"

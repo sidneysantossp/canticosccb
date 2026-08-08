@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { Mail, Edit, Eye, Copy } from 'lucide-react';
 
 const AdminEmailTemplates: React.FC = () => {

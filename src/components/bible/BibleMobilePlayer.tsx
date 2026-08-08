@@ -18,7 +18,7 @@ interface BibleMobilePlayerProps {
 }
 
 const BibleMobilePlayer: React.FC<BibleMobilePlayerProps> = ({
-  id,
+  id: _id,
   title,
   bookName,
   description,
@@ -32,7 +32,7 @@ const BibleMobilePlayer: React.FC<BibleMobilePlayerProps> = ({
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
-  const [volume, setVolume] = useState(1);
+  const [volume] = useState(1);
   const [isMuted, setIsMuted] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [showContent, setShowContent] = useState(false);

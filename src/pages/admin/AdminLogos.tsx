@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Image as ImageIcon, Upload, X, Save, Eye, AlertTriangle } from 'lucide-react';
+import { Image as ImageIcon, Upload, X, Eye } from 'lucide-react';
 import {
   getAllLogos,
   updateLogo,
@@ -12,8 +12,7 @@ import { debugStorageTest } from '@/lib/admin/debugStorageTest';
 
 const AdminLogos: React.FC = () => {
   const [logos, setLogos] = useState<Logo[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [, setIsLoading] = useState(true);
   const [isUploading, setIsUploading] = useState(false);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 

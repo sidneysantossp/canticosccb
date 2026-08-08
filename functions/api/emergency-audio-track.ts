@@ -516,7 +516,7 @@ async function handler(req: Request) {
           'Cache-Control': 'public, max-age=86400, stale-while-revalidate=604800',
           'Access-Control-Allow-Origin': '*',
           'Accept-Ranges': 'none',
-          'Content-Disposition': `inline; filename=\"${encodeURIComponent(selected.name.split('/').pop() || 'hino.mp3')}\"`,
+          'Content-Disposition': `inline; filename="${encodeURIComponent(selected.name.split('/').pop() || 'hino.mp3')}"`,
         },
       });
     }
@@ -533,7 +533,7 @@ async function handler(req: Request) {
           'Cache-Control': 'public, max-age=86400, stale-while-revalidate=604800',
           'Access-Control-Allow-Origin': '*',
           'Accept-Ranges': 'none',
-          'Content-Disposition': `inline; filename=\"${encodeURIComponent(selected.name.split('/').pop() || 'hino.mp3')}\"`,
+          'Content-Disposition': `inline; filename="${encodeURIComponent(selected.name.split('/').pop() || 'hino.mp3')}"`,
         },
       });
     }
@@ -546,7 +546,7 @@ async function handler(req: Request) {
         'Content-Length': String(body.byteLength),
         'Cache-Control': 'public, max-age=31536000, immutable',
         'Access-Control-Allow-Origin': '*',
-        'Content-Disposition': `inline; filename=\"${encodeURIComponent(selected.name.split('/').pop() || 'hino.mp3')}\"`,
+        'Content-Disposition': `inline; filename="${encodeURIComponent(selected.name.split('/').pop() || 'hino.mp3')}"`,
       },
     });
   } catch (error: any) {

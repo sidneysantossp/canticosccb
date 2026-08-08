@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
-import { Search, Shield, Ban, Trash2, Users, UserCheck, UserX, Edit, AlertTriangle } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { Search, Shield, Trash2, Users, UserCheck, UserX, Edit, AlertTriangle } from 'lucide-react';
 import { usuariosApi, type Usuario } from '@/lib/api-client';
 import { useRealtimeUsers } from '@/hooks/useRealtimeUsers';
 import ConfirmModal from '@/components/ConfirmModal';
@@ -12,7 +12,6 @@ interface UsersFilters {
   status: string;
 }
 const AdminUsers: React.FC = () => {
-  const navigate = useNavigate();
   const [users, setUsers] = useState<Usuario[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -29,7 +28,7 @@ const AdminUsers: React.FC = () => {
   const [searchInput, setSearchInput] = useState('');
   const [deleteModal, setDeleteModal] = useState<{ isOpen: boolean; userId: string; email: string }>({ isOpen: false, userId: '', email: '' });
   const [alertModal, setAlertModal] = useState<{ isOpen: boolean; title: string; message: string; type: 'success' | 'error' }>({ isOpen: false, title: '', message: '', type: 'success' });
-  const [isDeleting, setIsDeleting] = useState(false);
+  const [, setIsDeleting] = useState(false);
 
   useEffect(() => {
     loadUsers();
@@ -95,30 +94,14 @@ const AdminUsers: React.FC = () => {
     setCurrentPage(1);
   };
 
-  const handleToggleBlock = async (id: string, currentBlocked: boolean) => {
-    try {
-      await usuariosApi.update(id, { ativo: currentBlocked ? 1 : 0 });
-      loadUsers();
-    } catch (error) {
-      console.error('Error toggling block:', error);
-    }
-  };
 
-  const handleToggleAdmin = async (id: string, currentAdmin: boolean) => {
-    try {
-      await usuariosApi.update(id, { tipo: currentAdmin ? 'usuario' : 'admin' });
-      loadUsers();
-    } catch (error) {
-      console.error('Error toggling admin:', error);
-    }
-  };
 
   const handleDelete = (id: string, email: string) => {
     setDeleteModal({ isOpen: true, userId: id, email });
   };
 
   const confirmDelete = async () => {
-    const { userId, email } = deleteModal;
+    const { userId } = deleteModal;
     setDeleteModal({ isOpen: false, userId: '', email: '' });
     setIsDeleting(true);
     try {
@@ -137,9 +120,6 @@ const AdminUsers: React.FC = () => {
     }
   };
 
-  const handleEditUser = (userId: string) => {
-    navigate(`/admin/users/edit/${encodeURIComponent(userId)}`);
-  };
 
   const renderRow = (user: Usuario) => {
     const displayName = user.nome || user.email || 'Usuário';

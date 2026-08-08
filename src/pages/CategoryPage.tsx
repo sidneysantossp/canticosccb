@@ -756,7 +756,7 @@ const CategoryPage: React.FC = () => {
             </div>
           ) : (
             <div className="space-y-2">
-              {filteredSongs.map((song, index) => (
+              {filteredSongs.map((song, _index) => (
                 <div
                   key={song.id}
                   className="group bg-background-secondary hover:bg-background-tertiary rounded-lg p-4 transition-colors flex items-center gap-4"

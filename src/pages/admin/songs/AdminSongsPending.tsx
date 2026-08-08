@@ -5,7 +5,6 @@ import { apiFetch } from '@/lib/api-helper';
 import ConfirmModal from '@/components/ui/ConfirmModal';
 import Toast, { ToastProps } from '@/components/ui/Toast';
 import {
-  Music,
   CheckCircle,
   XCircle,
   Eye,
@@ -102,50 +101,6 @@ const AdminSongsPending: React.FC = () => {
   };
 
   // Mock data removido - agora usa dados reais
-  const mockPendingSongs = [
-    {
-      id: 1,
-      thumbnail: 'https://picsum.photos/seed/p1/200',
-      title: 'Hino Novo - Glória Eterna',
-      composer: 'João Silva',
-      composerEmail: 'joao@email.com',
-      category: 'Adoração',
-      genre: 'Contemporâneo',
-      duration: '4:32',
-      uploadDate: '2024-01-20',
-      composerHistory: { approved: 8, rejected: 1, total: 9 },
-      audioUrl: '#',
-      lyrics: 'Glória eterna ao Senhor...'
-    },
-    {
-      id: 2,
-      thumbnail: 'https://picsum.photos/seed/p2/200',
-      title: 'Cântico de Louvor',
-      composer: 'Maria Santos',
-      composerEmail: 'maria@email.com',
-      category: 'Louvor',
-      genre: 'Coral',
-      duration: '3:45',
-      uploadDate: '2024-01-21',
-      composerHistory: { approved: 15, rejected: 0, total: 15 },
-      audioUrl: '#',
-      lyrics: 'Louvai ao Senhor...'
-    },
-    {
-      id: 3,
-      thumbnail: 'https://picsum.photos/seed/p3/200',
-      title: 'Paz do Senhor',
-      composer: 'Pedro Costa',
-      composerEmail: 'pedro@email.com',
-      category: 'Paz',
-      genre: 'Hino',
-      duration: '5:12',
-      uploadDate: '2024-01-22',
-      composerHistory: { approved: 3, rejected: 2, total: 5 },
-      audioUrl: '#',
-      lyrics: 'A paz do Senhor...'
-    }
-  ];
 
   const handleApprove = (songId: number) => {
     // Encontrar o hino para pegar título e capa
@@ -196,7 +151,7 @@ const AdminSongsPending: React.FC = () => {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload)
         });
-      } catch (e) {
+      } catch  {
         console.warn('Falha ao enviar notificação ao compositor');
       }
 

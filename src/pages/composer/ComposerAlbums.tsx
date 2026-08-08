@@ -1,11 +1,9 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import {
   Plus,
   Search,
-  MoreVertical,
   Music,
-  Calendar,
   Play,
   Edit,
   Trash2,
@@ -25,7 +23,6 @@ const ComposerAlbums: React.FC = () => {
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [albums, setAlbums] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const lastNonEmptyAlbumsRef = useRef<any[]>([]);
 
   const togglePublish = async (albumId: string, currentStatus: string) => {
     const newPublished = currentStatus !== 'published';
@@ -92,68 +89,6 @@ const ComposerAlbums: React.FC = () => {
   }, [composerId, loadingComposer, user?.id]);
   
   // Mock data (removido)
-  const albumsMock = [
-    {
-      id: 1,
-      title: 'Hinos de Louvor - Vol. 1',
-      coverUrl: 'https://picsum.photos/seed/album1/300/300',
-      songCount: 15,
-      releaseDate: '2024-01-15',
-      status: 'published',
-      plays: 125430,
-      likes: 8920
-    },
-    {
-      id: 2,
-      title: 'Adoração e Gratidão',
-      coverUrl: 'https://picsum.photos/seed/album2/300/300',
-      songCount: 12,
-      releaseDate: '2023-11-20',
-      status: 'published',
-      plays: 98234,
-      likes: 6543
-    },
-    {
-      id: 3,
-      title: 'Hinos Instrumentais',
-      coverUrl: 'https://picsum.photos/seed/album3/300/300',
-      songCount: 10,
-      releaseDate: '2023-08-10',
-      status: 'published',
-      plays: 76543,
-      likes: 5432
-    },
-    {
-      id: 4,
-      title: 'Cânticos de Esperança',
-      coverUrl: 'https://picsum.photos/seed/album4/300/300',
-      songCount: 8,
-      releaseDate: '2024-03-05',
-      status: 'draft',
-      plays: 0,
-      likes: 0
-    },
-    {
-      id: 5,
-      title: 'Hinos Clássicos Renovados',
-      coverUrl: 'https://picsum.photos/seed/album5/300/300',
-      songCount: 20,
-      releaseDate: '2023-05-15',
-      status: 'published',
-      plays: 154320,
-      likes: 12340
-    },
-    {
-      id: 6,
-      title: 'Mensagens de Fé',
-      coverUrl: 'https://picsum.photos/seed/album6/300/300',
-      songCount: 14,
-      releaseDate: '2023-12-01',
-      status: 'published',
-      plays: 87650,
-      likes: 7890
-    }
-  ];
 
   const filteredAlbums = albums.filter(album =>
     album.title.toLowerCase().includes(searchQuery.toLowerCase())

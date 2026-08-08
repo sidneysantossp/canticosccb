@@ -63,7 +63,7 @@ const AdminCouponForm: React.FC = () => {
     }
   }, [id, isEditing]);
 
-  const loadCoupon = async (couponId: string) => {
+  const loadCoupon = async (_couponId: string) => {
     try {
       setIsLoading(true);
       // TODO: Implementar getCouponById quando backend estiver pronto
@@ -103,21 +103,6 @@ const AdminCouponForm: React.FC = () => {
     setError(null);
 
     try {
-      const couponData = {
-        code: formData.code.trim().toUpperCase(),
-        description: formData.description.trim() || undefined,
-        discount_type: formData.discount_type,
-        discount_value: formData.discount_value,
-        applies_to: formData.applies_to,
-        minimum_purchase: formData.minimum_purchase || undefined,
-        max_uses: formData.max_uses || undefined,
-        max_uses_per_user: formData.max_uses_per_user,
-        is_single_use: formData.is_single_use,
-        is_active: formData.is_active,
-        is_public: formData.is_public,
-        first_purchase_only: formData.first_purchase_only,
-        tags: formData.tags
-      };
 
       if (isEditing && id) {
         // await updateCoupon(id, couponData);

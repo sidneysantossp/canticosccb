@@ -8,12 +8,10 @@ import {
   BarChart3,
   Users,
   User,
-  Settings,
   LogOut,
   Plus,
   TrendingUp,
   Heart,
-  Clock,
   Copyright,
   Bell
 } from 'lucide-react';
@@ -157,7 +155,7 @@ const ComposerSidebar: React.FC = () => {
             alt="Cânticos CCB"
             className="h-10 w-auto object-contain"
             referrerPolicy="no-referrer"
-            onError={(e) => {
+            onError={(_e) => {
               // Alterna entre PNG e SVG para evitar loop se um deles não existir
               setLogoSrc(prev => prev.endsWith('.png') ? '/logo-canticos-ccb.png' : '/logo-canticos-ccb.png');
             }}

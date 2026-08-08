@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Settings, Save, RefreshCw, Globe, Mail, Shield, Database, Server, Download, Upload, AlertTriangle, Bell } from 'lucide-react';
+import { Settings, Save, RefreshCw, Globe, Shield, Server, Download, Upload, AlertTriangle, Bell } from 'lucide-react';
 import { sendTestPush, sendCampaign } from '@/lib/admin/pushSettingsApi';
 import { supabaseFetch, supabaseUpdate, supabaseInsert } from '@/lib/supabaseRest';
 import SuccessModal from '@/components/SuccessModal';
@@ -24,8 +24,8 @@ const AdminSettingsGeneral: React.FC = () => {
   const [pushMessage, setPushMessage] = useState('');
   const [pushUrl, setPushUrl] = useState('');
   const [pushTopic, setPushTopic] = useState('canticosccb-compositores');
-  const [segNewFollowers, setSegNewFollowers] = useState(true);
-  const [segMilestones, setSegMilestones] = useState(true);
+  const [segNewFollowers] = useState(true);
+  const [segMilestones] = useState(true);
   const [isSendingPush, setIsSendingPush] = useState(false);
   const [targetType, setTargetType] = useState<'all' | 'users' | 'user' | 'composers' | 'composer'>('composers');
   const [targetId, setTargetId] = useState<string>('');

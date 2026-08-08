@@ -32,8 +32,8 @@ const getComposerSong = async (id: string) => ({
   tempo: '120', 
   status: 'draft' as const 
 });
-const updateSong = async (id: string, data: any) => ({ success: true });
-const deleteSong = async (id: string) => ({ success: true });
+const updateSong = async (_id: string, _data: any) => ({ success: true });
+const deleteSong = async (_id: string) => ({ success: true });
 
 const ComposerEditSong: React.FC = () => {
   const { user } = useAuth();

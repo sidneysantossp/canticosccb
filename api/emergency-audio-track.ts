@@ -1,9 +1,9 @@
+// Cloudflare Pages Function — extrai MP3 de ZIP do archive.org
+// Requer nodejs_compat flag para node:stream e node:zlib
 import { Readable } from 'node:stream';
 import { createInflateRaw, inflateRawSync } from 'node:zlib';
 import { getEmergencyArchiveZipSegmentById } from './_emergencyAudioArchives.js';
 import { getEmergencyAudioIndexBySegment } from './_emergencyAudioIndex.js';
-
-export const maxDuration = 60;
 
 interface EmergencyArchiveZipSegment {
   id: string;
@@ -414,7 +414,7 @@ function selectArchiveEntry(
   return scored[0] && scored[0].score > 0 ? scored[0].entry : undefined;
 }
 
-export default async function handler(req: Request) {
+async function handler(req: Request) {
   const requestUrl = new URL(req.url, 'http://127.0.0.1');
   const { searchParams } = requestUrl;
   const segmentId = String(searchParams.get('segment') || '').trim();
@@ -516,7 +516,7 @@ export default async function handler(req: Request) {
           'Cache-Control': 'public, max-age=86400, stale-while-revalidate=604800',
           'Access-Control-Allow-Origin': '*',
           'Accept-Ranges': 'none',
-          'Content-Disposition': `inline; filename=\"${encodeURIComponent(selected.name.split('/').pop() || 'hino.mp3')}\"`,
+          'Content-Disposition': `inline; filename="${encodeURIComponent(selected.name.split('/').pop() || 'hino.mp3')}"`,
         },
       });
     }
@@ -533,7 +533,7 @@ export default async function handler(req: Request) {
           'Cache-Control': 'public, max-age=86400, stale-while-revalidate=604800',
           'Access-Control-Allow-Origin': '*',
           'Accept-Ranges': 'none',
-          'Content-Disposition': `inline; filename=\"${encodeURIComponent(selected.name.split('/').pop() || 'hino.mp3')}\"`,
+          'Content-Disposition': `inline; filename="${encodeURIComponent(selected.name.split('/').pop() || 'hino.mp3')}"`,
         },
       });
     }
@@ -546,7 +546,7 @@ export default async function handler(req: Request) {
         'Content-Length': String(body.byteLength),
         'Cache-Control': 'public, max-age=31536000, immutable',
         'Access-Control-Allow-Origin': '*',
-        'Content-Disposition': `inline; filename=\"${encodeURIComponent(selected.name.split('/').pop() || 'hino.mp3')}\"`,
+        'Content-Disposition': `inline; filename="${encodeURIComponent(selected.name.split('/').pop() || 'hino.mp3')}"`,
       },
     });
   } catch (error: any) {
@@ -563,3 +563,5 @@ export default async function handler(req: Request) {
     );
   }
 }
+
+export const onRequest: PagesFunction = async ({ request }) => handler(request);

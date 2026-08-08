@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Music, Users, Play, Pause, Heart, TrendingUp, Clock, Share2, ListPlus } from 'lucide-react';
 import SEOHead from '@/components/SEO/SEOHead';
 import { generatePersonSchema, generateProfilePageSchema, generateBreadcrumbSchema, generateItemListSchema } from '@/utils/schemaGenerator';
@@ -11,7 +11,7 @@ import useNotificationsStore, { createFavoriteNotification } from '@/stores/noti
 import { useAuth } from '@/contexts/AuthContext';
 import { useNotifications } from '@/contexts/NotificationsContext';
 import { usePlayerContext } from '@/contexts/PlayerContext';
-import { buildHinoUrl as buildHinoAudioUrl, buildAlbumCoverUrl } from '@/lib/media-helper';
+import { buildAlbumCoverUrl } from '@/lib/media-helper';
 import { DEFAULT_COVER_URL } from '@/lib/config';
 import { supabaseFetch, supabaseInsert, supabaseDelete, isSupabaseConfigured } from '@/lib/supabaseRest';
 
@@ -69,7 +69,7 @@ export default function ComposerPublicProfilePage() {
   const [isFollowing, setIsFollowing] = useState(false);
   const [activeTab, setActiveTab] = useState<'hinos' | 'albuns' | 'sobre'>('hinos');
   const [isBioExpanded, setIsBioExpanded] = useState(false);
-  const [isMobile, setIsMobile] = useState(false);
+  const [, setIsMobile] = useState(false);
   const [followersCount, setFollowersCount] = useState<number | null>(null);
   const [publishedSongsCount, setPublishedSongsCount] = useState<number | null>(null);
   const [showSongInfoModal, setShowSongInfoModal] = useState(false);
@@ -165,7 +165,7 @@ export default function ComposerPublicProfilePage() {
         });
         setSongs(mapped);
         setPublishedSongsCount(mapped.length);
-      } catch (e) {
+      } catch  {
         setSongs([]);
         setPublishedSongsCount(0);
       }

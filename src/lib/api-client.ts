@@ -532,7 +532,6 @@ export const compositoresApi = {
     try {
       // 1. Buscar dados do compositor antes de desativar
       let composerEmail: string | null = null;
-      let composerName: string | null = null;
       try {
         const rows = await supabaseFetch<any>('composers', {
           id: `eq.${id}`,
@@ -540,7 +539,6 @@ export const compositoresApi = {
           limit: '1',
         });
         composerEmail = rows?.[0]?.email || null;
-        composerName = rows?.[0]?.name || rows?.[0]?.artistic_name || null;
       } catch (e) {
         console.warn('⚠️ [compositoresApi.delete] Could not fetch composer data:', e);
       }
@@ -719,7 +717,7 @@ export const albunsApi = {
 
       // Buscar contagem real de hinos por álbum
       const albumIds = rows.map((r: any) => r.id);
-      let trackCounts: Record<string, number> = {};
+      const trackCounts: Record<string, number> = {};
       if (albumIds.length > 0) {
         try {
           const albumHinos = await supabaseFetch<any>('album_hinos', {

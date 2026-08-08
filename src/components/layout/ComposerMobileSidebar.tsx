@@ -12,7 +12,6 @@ import {
   Plus,
   TrendingUp,
   Heart,
-  Clock,
   X
 } from 'lucide-react';
 

@@ -1,8 +1,8 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { Download, Trash2, Play, Pause, Search, Filter, Wifi, WifiOff, HardDrive, Clock, CheckCircle, AlertCircle, RefreshCw } from 'lucide-react';
+import { Download, Trash2, Play, Pause, Search, Wifi, WifiOff, HardDrive, Clock, CheckCircle, AlertCircle, RefreshCw } from 'lucide-react';
 import { useOfflineDownloads, DownloadedHymn } from '@/hooks/useOfflineDownloads';
 import { usePlayerStore } from '@/stores/playerStore';
-import { formatDuration, formatFileSize } from '@/utils/formatters';
+import { formatFileSize } from '@/utils/formatters';
 
 type FilterType = 'all' | 'completed' | 'downloading' | 'error';
 type SortType = 'recent' | 'title' | 'size' | 'category';

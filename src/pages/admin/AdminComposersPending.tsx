@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { CheckCircle, XCircle, Eye, Mail, Calendar, Mic2 } from 'lucide-react';
+import { CheckCircle, Eye, Mail, Calendar, Mic2 } from 'lucide-react';
 import { compositoresApi, documentReviewsApi } from '@/lib/api-client';
 import { Link } from 'react-router-dom';
 

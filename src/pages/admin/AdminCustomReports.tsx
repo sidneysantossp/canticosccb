@@ -28,7 +28,7 @@ interface ReportConfig {
 
 const AdminCustomReports: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [error] = useState<string | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
   const [selectedTemplate, setSelectedTemplate] = useState<string>('');
   const [lastGeneratedReport, setLastGeneratedReport] = useState<ReportData | null>(null);

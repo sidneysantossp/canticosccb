@@ -3,16 +3,6 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import { ArrowLeft, Save, Upload, Grid } from 'lucide-react';
 import { categoriasApi, uploadApi } from '@/lib/api-client';
 
-const COLORS = [
-  { value: '#ef4444', label: 'Vermelho' },
-  { value: '#f59e0b', label: 'Laranja' },
-  { value: '#eab308', label: 'Amarelo' },
-  { value: '#22c55e', label: 'Verde' },
-  { value: '#3b82f6', label: 'Azul' },
-  { value: '#8b5cf6', label: 'Roxo' },
-  { value: '#ec4899', label: 'Rosa' },
-  { value: '#6b7280', label: 'Cinza' }
-];
 
 const AdminCategoryForm: React.FC = () => {
   const { id } = useParams<{ id: string }>();

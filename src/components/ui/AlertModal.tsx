@@ -18,7 +18,7 @@ export default function AlertModal({
   onClose,
   title,
   message,
-  type = 'info',
+  type: _type = 'info',
   buttonText = 'Fechar',
   buttonColor = 'green',
   imageUrl,

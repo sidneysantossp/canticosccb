@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, Edit, Trash2, Play, Heart, Share2, Download, Music } from 'lucide-react';
+import { ArrowLeft, Edit, Play, Heart, Music } from 'lucide-react';
 import { getSongById, Song } from '@/lib/admin/songsAdminApi';
 
 const AdminSongDetail: React.FC = () => {

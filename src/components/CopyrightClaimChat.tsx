@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { Send, Paperclip, Image as ImageIcon, Video, FileText, Music, X, Download, Check, CheckCheck } from 'lucide-react';
 import useCopyrightClaimsStore, { CopyrightClaim, ChatMessage } from '@/stores/copyrightClaimsStore';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 
 interface CopyrightClaimChatProps {
   claim: CopyrightClaim;

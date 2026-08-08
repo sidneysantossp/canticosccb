@@ -136,7 +136,7 @@ export function useVoiceSearch(options: UseVoiceSearchOptions = {}) {
       setTranscript('');
       recognitionRef.current.start();
       setIsListening(true);
-    } catch (err) {
+    } catch  {
       setError('Não foi possível iniciar a busca por voz.');
       setIsListening(false);
     }

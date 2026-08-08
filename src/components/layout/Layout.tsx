@@ -47,7 +47,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   const { currentTrack } = usePlayerStore();
   const { isMenuOpen, closeMenu } = useMobileMenu();
   const location = useLocation();
-  const { user, isAdmin, isComposer } = useAuth();
+  const { user } = useAuth();
 
   // Fechar menu mobile ao mudar de rota
   React.useEffect(() => {

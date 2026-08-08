@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useState } from 'react';
 import MediaDropzone from '@/components/ui/MediaDropzone';
 import { XCircle, Music, CheckCircle, AlertTriangle } from 'lucide-react';
 import { uploadApi, hinosApi } from '@/lib/api-client';
@@ -100,7 +100,7 @@ const BulkHymnUploadModal: React.FC<Props> = ({ isOpen, onClose, onCompleted }) 
         
         const titleFromFile = curr.file.name
           .replace(/\.[^.]+$/, '') // Remove extensão
-          .replace(/[\-_]+/g, ' ') // Troca - e _ por espaço
+          .replace(/[-_]+/g, ' ') // Troca - e _ por espaço
           .replace(/\s+/g, ' ') // Remove espaços duplos
           .trim();
         

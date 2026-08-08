@@ -83,7 +83,6 @@ const PlaylistDetailPage: React.FC = () => {
     play(toHino(track));
   };
 
-  const formatNumber = (num: number) => new Intl.NumberFormat('pt-BR').format(num);
 
   // Buscar playlist no backend se não estiver no store.
   useEffect(() => {

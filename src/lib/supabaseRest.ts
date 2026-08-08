@@ -106,7 +106,7 @@ function getStoredToken(): string {
         break;
       }
     }
-  } catch (e) {
+  } catch  {
     // fallback
   }
   return sanitizeBearerToken(SUPABASE_ANON_KEY);

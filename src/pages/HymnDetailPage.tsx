@@ -326,7 +326,7 @@ const HymnDetailPage: React.FC = () => {
     if (navigator.share) {
       try {
         await navigator.share({ title: text, url });
-      } catch (err) {
+      } catch  {
         // Usuário cancelou o compartilhamento
       }
     } else {

@@ -1,10 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Users, Search, Filter, Edit, Trash2, Shield, Mail, Calendar, MoreVertical, Plus, UserPlus, AlertTriangle } from 'lucide-react';
+import { Users, Search, Edit, Trash2, Shield, Mail, Calendar, AlertTriangle } from 'lucide-react';
 import {
   getUsers,
   getUserStats,
-  updateUser,
   deleteUsers,
   updateUsersStatus,
   sendVerificationEmail,

@@ -2,7 +2,6 @@ import React, { useState, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { 
   User, 
-  Shield, 
   Volume2, 
   Download,
   Play,

@@ -147,7 +147,7 @@ export function buildHinoUrl(hino: { id: string; audio_url?: string } | string):
 /**
  * Gera URL de capa de álbum com fallback
  */
-export function buildAlbumCoverUrl(album: { id: string; cover_url?: string } | string, withFallback = true): string {
+export function buildAlbumCoverUrl(album: { id: string; cover_url?: string } | string, _withFallback = true): string {
   if (typeof album === 'string') {
     return getAlbumCoverUrl(album);
   }

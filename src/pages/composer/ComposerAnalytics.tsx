@@ -9,7 +9,6 @@ import {
   Download,
   Clock,
   MapPin,
-  Calendar,
   Music,
   BarChart3
 } from 'lucide-react';

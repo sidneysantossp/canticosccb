@@ -98,8 +98,7 @@ export const useFavorites = () => {
         ok = wasRemoving ? await removeFavorite(uid, hid) : await addFavorite(uid, hid);
       }
 
-      if (ok) {
-      } else {
+      if (!ok) {
         console.error('❌ Erro ao atualizar favorito no backend');
         // Reverter UI em caso de erro
         setFavorites(prev => {

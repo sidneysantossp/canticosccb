@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, Save, Eye, BookOpen } from 'lucide-react';
+import { ArrowLeft, Save, Eye } from 'lucide-react';
 import { fetchHinarioById, parseVerses, HINARIO_CATEGORIES } from '@/api/hinario';
 import { supabaseInsert, supabaseUpdate } from '@/lib/supabaseRest';
 

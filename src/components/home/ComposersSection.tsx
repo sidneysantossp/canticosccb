@@ -95,6 +95,7 @@ const ComposersSection: React.FC = () => {
   const [composers, setComposers] = useState<Composer[]>([]);
   const [isLoading, setIsLoading] = useState(true); // ComeÃ§ar com loading
   const [currentCompositorIndex, setCurrentCompositorIndex] = useState(0);
+  const cachedComposers = useCachedData('featuredComposers') as Composer[] | undefined;
   
   // Touch/Swipe controls
   const touchStartX = useRef<number>(0);
@@ -111,7 +112,6 @@ const ComposersSection: React.FC = () => {
       setIsLoading(true);
       
       // 1) Mostrar cache imediatamente (se existir)
-      const cachedComposers = useCachedData('featuredComposers') as Composer[] | undefined;
       if (cachedComposers && cachedComposers.length > 0) {
         setComposers(cachedComposers);
       }

@@ -110,7 +110,7 @@ const AdminCategories: React.FC = () => {
           <CategoryCard
             key={category.id}
             category={category}
-            onEdit={(cat) => {}} // Não usado mais, removido do card
+            onEdit={(_cat) => {}} // Não usado mais, removido do card
             onDelete={handleDelete}
           />
         ))}

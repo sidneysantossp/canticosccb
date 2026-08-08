@@ -1,7 +1,6 @@
 import { create } from 'zustand';
 import {
   createCopyrightClaim,
-  getCopyrightClaimById,
   listCopyrightClaims,
   markCopyrightClaimMessagesAsRead,
   sendCopyrightClaimMessage,

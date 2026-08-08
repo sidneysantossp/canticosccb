@@ -1,5 +1,5 @@
 import React, { useState, useRef, useCallback } from 'react';
-import { Upload, X, Image, Video, FileText, Music } from 'lucide-react';
+import { Upload, X, Image, Video, Music } from 'lucide-react';
 
 interface MediaDropzoneProps {
   onFileSelect: (file: File) => void;

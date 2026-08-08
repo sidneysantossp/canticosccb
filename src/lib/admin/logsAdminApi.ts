@@ -86,7 +86,6 @@ const inferSecurityCategory = (eventType?: string | null, description?: string |
   return 'system';
 };
 
-const normalizeString = (value: unknown) => String(value ?? '').trim().toLowerCase();
 
 const matchesFilters = (log: LogEntry, filters: LogFilters) => {
   if (filters.level && log.level !== filters.level) return false;

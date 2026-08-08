@@ -2,9 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { 
   ArrowLeft, 
-  Upload, 
   Image as ImageIcon, 
-  CheckCircle, 
   X,
   AlertCircle,
   Music,
@@ -12,8 +10,7 @@ import {
   GripVertical,
   Trash2
 } from 'lucide-react';
-import { albunsApi, hinosApi, uploadApi, compositoresApi } from '../../lib/api-client';
-import { useAuth } from '@/contexts/AuthContext';
+import { albunsApi, hinosApi, uploadApi } from '../../lib/api-client';
 import { useActiveComposer } from '@/hooks/useActiveComposer';
 
 interface AlbumFormData {
@@ -31,8 +28,7 @@ interface AlbumFormData {
 }
 
 const ComposerEditAlbum: React.FC = () => {
-  const { user } = useAuth();
-  const { composer, composerId: activeComposerId } = useActiveComposer();
+  const {  composerId: activeComposerId } = useActiveComposer();
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const imageInputRef = useRef<HTMLInputElement>(null);
@@ -74,7 +70,6 @@ const ComposerEditAlbum: React.FC = () => {
   }, []);
 
   // Resolver compositor atual do usuário logado
-  const composerName = composer?.nome_artistico || composer?.nome || '';
 
   // Carregar todos os hinos disponíveis (apenas do compositor atual)
   useEffect(() => {

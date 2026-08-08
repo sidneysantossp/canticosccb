@@ -13,7 +13,6 @@ import {
   AlertCircle,
   CheckCircle,
   Music,
-  Edit3,
   MoreVertical,
   Share2,
   ExternalLink,
@@ -366,7 +365,7 @@ const ComposerProfile: React.FC = () => {
       setIsRepositioningBanner(false);
       setMessage({ type: 'success', text: 'Posição do banner salva!' });
       setTimeout(() => setMessage(null), 3000);
-    } catch (error: any) {
+    } catch  {
       setMessage({ type: 'error', text: 'Erro ao salvar posição do banner' });
     }
   };
@@ -421,13 +420,6 @@ const ComposerProfile: React.FC = () => {
       }
 
       // Persistir preferências de notificações no compositor (fonte única de verdade)
-      const notifResult = await compositoresApi.update(composerId, {
-        notif_email_followers: formData.notifications.emailFollowers ? 1 : 0,
-        notif_email_comments: formData.notifications.emailComments ? 1 : 0,
-        notif_email_analytics: formData.notifications.emailAnalytics ? 1 : 0,
-        notif_push_new_followers: formData.notifications.pushNewFollowers ? 1 : 0,
-        notif_push_milestones: formData.notifications.pushMilestones ? 1 : 0,
-      } as any);
 
       setMessage({ type: 'success', text: 'Perfil atualizado com sucesso!' });
       

@@ -20,8 +20,7 @@ const AdminDashboard: React.FC = () => {
   // Cache de stats do dashboard - atualiza a cada 1 minuto
   const { 
     data: stats, 
-    isLoading: loadingStats,
-    refetch: refetchStats 
+    isLoading: loadingStats 
   } = useApiCache<AdminStats>({
     key: 'admin-dashboard-stats',
     fetcher: () => getAdminStats(),

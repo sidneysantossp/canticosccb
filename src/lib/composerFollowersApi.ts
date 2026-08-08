@@ -34,7 +34,6 @@ export type TopFan = {
 export type FollowerGrowthPoint = { date: string; count: number };
 
 async function getFollowerStatsInternal(compositorId: string | number): Promise<FollowerStats> {
-  const empty: FollowerStats = { total: 0, thisMonth: 0, growth: 0, engagement: 0, averagePlays: 0 };
   const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
 
   const [allFollowers, recentFollowers] = await Promise.all([

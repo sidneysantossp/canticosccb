@@ -105,7 +105,7 @@ export async function getProfileDashboardData(userId: string, _isComposer: boole
     const recentPlaysRaw = await listHistory(userId, 12);
 
     const playlistIds = (playlists || []).map((item: any) => String(item.id));
-    let playlistTrackCountMap: Record<string, number> = {};
+    const playlistTrackCountMap: Record<string, number> = {};
 
     if (playlistIds.length > 0) {
       const [playlistHinosRows, playlistSongsRows, playlistTracksRows] = await Promise.all([
@@ -153,8 +153,8 @@ export async function getProfileDashboardData(userId: string, _isComposer: boole
       )
     );
 
-    let followedComposerMap: Record<string, any> = {};
-    let composerSongCountMap: Record<string, number> = {};
+    const followedComposerMap: Record<string, any> = {};
+    const composerSongCountMap: Record<string, number> = {};
 
     if (followedIds.length > 0) {
       const [composerRows, hymnRows] = await Promise.all([

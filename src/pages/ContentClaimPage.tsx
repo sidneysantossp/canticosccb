@@ -66,7 +66,7 @@ const ContentClaimPage: React.FC = () => {
         priority: 'medium'
       });
       setProtocol(created.id);
-    } catch (err) {
+    } catch  {
       setError('Não foi possível enviar sua reivindicação agora. Tente novamente em instantes.');
     } finally {
       setSubmitting(false);

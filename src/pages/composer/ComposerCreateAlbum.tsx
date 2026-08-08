@@ -2,9 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { 
   ArrowLeft, 
-  Upload, 
   Image as ImageIcon, 
-  CheckCircle, 
   X,
   AlertCircle,
   Music,

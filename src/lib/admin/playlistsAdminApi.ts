@@ -351,16 +351,16 @@ export const deleteItem = async (id: string): Promise<{ success: boolean }> => {
 };
 
 export const deletePlaylist = deleteItem;
-export const getSiteSettings = async (...args: any[]) => ({});
-export const updateSiteSettings = async (...args: any[]) => ({ success: true });
-export const getComments = async (...args: any[]) => [];
-export const deleteComment = async (...args: any[]) => ({ success: true });
-export const approveComment = async (...args: any[]) => ({ success: true });
-export const getClaims = async (...args: any[]) => [];
-export const getCopyrightClaims = async (...args: any[]) => [];
-export const updateClaim = async (...args: any[]) => ({ success: true });
-export const getRoyalties = async (...args: any[]) => [];
-export const processPayment = async (...args: any[]) => ({ success: true });
+export const getSiteSettings = async (..._args: any[]) => ({});
+export const updateSiteSettings = async (..._args: any[]) => ({ success: true });
+export const getComments = async (..._args: any[]) => [];
+export const deleteComment = async (..._args: any[]) => ({ success: true });
+export const approveComment = async (..._args: any[]) => ({ success: true });
+export const getClaims = async (..._args: any[]) => [];
+export const getCopyrightClaims = async (..._args: any[]) => [];
+export const updateClaim = async (..._args: any[]) => ({ success: true });
+export const getRoyalties = async (..._args: any[]) => [];
+export const processPayment = async (..._args: any[]) => ({ success: true });
 export type SiteSettings = any;
 export type Comment = any;
 export type Claim = any;

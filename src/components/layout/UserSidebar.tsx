@@ -14,7 +14,6 @@ import {
   FileText,
   BookOpen
 } from 'lucide-react';
-import { getLogoByType } from '@/lib/mockApis';
 import { useAuth } from '@/contexts/AuthContext';
 import { compositorGerentesApi } from '@/lib/api-client';
 import { getSupportInboxStats } from '@/lib/supportChatApi';

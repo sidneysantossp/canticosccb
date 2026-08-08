@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { useParams, Link, useNavigate, useLocation } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { hinosApi } from '@/lib/api-client';
 import { ArrowLeft, FileAudio, Image as ImageIcon } from 'lucide-react';
 
@@ -20,7 +20,6 @@ interface Hino {
 const AdminSongDetails: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const location = useLocation();
   const [song, setSong] = useState<Hino | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);

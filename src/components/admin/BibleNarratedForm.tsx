@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Editor } from '@tinymce/tinymce-react';
-import { extractYouTubeVideoId, fetchYouTubeVideoData, getYouTubeThumbnail } from '@/utils/youtubeApi';
+import { extractYouTubeVideoId, fetchYouTubeVideoData } from '@/utils/youtubeApi';
 import { Save, Loader2, Youtube, Image, Book, FileText } from 'lucide-react';
 
 interface BibleNarratedData {

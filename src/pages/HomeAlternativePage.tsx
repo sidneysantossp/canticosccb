@@ -8,7 +8,6 @@ import BannerCTAAlt from '@/components/home-alt/BannerCTAAlt';
 import BibleSectionAlt from '@/components/home-alt/BibleSectionAlt';
 import { getBibleNarratedSectionEnabled } from '@/api/bibleNarrated';
 import { usePlayerStore } from '@/stores/playerStore';
-import usePlaylistsStore from '@/stores/playlistsStore';
 import { usePlayerContext } from '@/contexts/PlayerContext';
 import { useTouchScroll } from '@/hooks/useTouchScroll';
 import { useFavorites } from '@/hooks/useFavorites';
@@ -87,12 +86,9 @@ const HomeAlternativePage: React.FC = () => {
   
   const { play, pause, currentTrack, isPlaying } = usePlayerStore();
   const { openFullScreen } = usePlayerContext();
-  const { favorites, toggleFavorite, isFavorited } = useFavorites();
-  const { playlists, addTrackToPlaylist } = usePlaylistsStore();
+  const {  toggleFavorite, isFavorited } = useFavorites();
   const scrollContainerRef = useTouchScroll<HTMLDivElement>();
   
-  const [showPlaylistModal, setShowPlaylistModal] = useState(false);
-  const [selectedTrackForPlaylist, setSelectedTrackForPlaylist] = useState<any>(null);
   
   const [homeData, setHomeData] = useState<HomePageData>({
     banners: [],
@@ -209,7 +205,7 @@ const HomeAlternativePage: React.FC = () => {
       try {
         const data = await getPersonalizedHomeData(String(user.id));
         setPersonalized(data);
-      } catch (e) {
+      } catch  {
         setPersonalized({ byCategories: [], byFollowedComposers: [], mix: [] });
       }
     };
@@ -228,7 +224,7 @@ const HomeAlternativePage: React.FC = () => {
           limit: '12',
         }).then(rows => rows.map(mapSupabasePopularHino));
         setHomepageTrends(normalized);
-      } catch (error) {
+      } catch  {
         setHomepageTrends([]);
       }
     };
@@ -245,7 +241,7 @@ const HomeAlternativePage: React.FC = () => {
     return 6;
   };
 
-  const [itemsToShow, setItemsToShow] = useState(6);
+  const [, setItemsToShow] = useState(6);
 
   useEffect(() => {
     const handleResize = () => {

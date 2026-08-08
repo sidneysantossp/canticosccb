@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Music, Eye, ArrowRight, FileText } from 'lucide-react';
+import { Music, Eye } from 'lucide-react';
 import { Cifra, INSTRUMENTS } from '@/api/cifras';
 import { fetchMergedPublicCifrasList, type PublicCifraPageData } from '@/lib/cifras-v2';
 import { CIFRA_V2_INSTRUMENTS } from '@/types/cifras-v2';

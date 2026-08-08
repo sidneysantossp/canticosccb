@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, Upload, Music, Image as ImageIcon, Save, X } from 'lucide-react';
+import { ArrowLeft, Music, Image as ImageIcon, Save, X } from 'lucide-react';
 import { compositoresApi, albunsApi, uploadApi, hinosApi, type Compositor } from '@/lib/api-client';
 
 interface FormData {
@@ -45,7 +45,7 @@ const AdminSongForm: React.FC = () => {
   const [audioPreview, setAudioPreview] = useState<string>('');
 
   const [isLoading, setIsLoading] = useState(false);
-  const [isLoadingData, setIsLoadingData] = useState(true);
+  const [, setIsLoadingData] = useState(true);
   const [error, setError] = useState<string>('');
 
   useEffect(() => {

@@ -22,8 +22,7 @@ const DownloadButton: React.FC<DownloadButtonProps> = ({
     downloadHymn, 
     removeDownload, 
     pauseDownload, 
-    resumeDownload,
-    isDownloaded 
+    resumeDownload 
   } = useOfflineDownloads();
   
   const [isOnline, setIsOnline] = useState(navigator.onLine);

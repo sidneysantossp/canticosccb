@@ -1,8 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Play, Pause, Heart, Download, MoreHorizontal, Search, SlidersHorizontal, Clock, HeartOff, Plus } from 'lucide-react';
+import { Play, Pause, Heart, Download, MoreHorizontal, Search, SlidersHorizontal, Clock, Plus } from 'lucide-react';
 import { usePlayerStore } from '@/stores/playerStore';
 import useFavoritesStore, { updateFavoritesDaysAgo } from '@/stores/favoritesStore';
-import SEOHead from '@/components/SEO/SEOHead';
 import { useAuth } from '@/contexts/AuthContext';
 
 const LikedSongsPage: React.FC = () => {
@@ -10,11 +9,9 @@ const LikedSongsPage: React.FC = () => {
   const { favorites, removeFavorite, loadFavorites, isLoading, error } = useFavoritesStore();
   const { user } = useAuth();
   const [searchQuery, setSearchQuery] = useState('');
-  const [sortBy, setSortBy] = useState<'recent' | 'artist' | 'title'>('recent');
   const [showDownloadPopup, setShowDownloadPopup] = useState(false);
   const downloadPopupTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const seoDescription = 'Seus hinos favoritos em um só lugar. Acesse rapidamente seus favoritos salvos.';
 
   // Load favorites on component mount
   useEffect(() => {

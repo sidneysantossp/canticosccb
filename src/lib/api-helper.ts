@@ -9,7 +9,7 @@ export function getApiUrl(endpoint: string): string {
 }
 
 // Função de fetch que retorna resposta vazia (Supabase é a fonte principal agora)
-export async function apiFetch(endpoint: string, options?: RequestInit): Promise<Response> {
+export async function apiFetch(_endpoint: string, _options?: RequestInit): Promise<Response> {
   // Retorna resposta OK com array/objeto vazio para não quebrar o código
   // O Supabase é a fonte principal de dados agora
   return new Response(JSON.stringify([]), {

@@ -26,7 +26,7 @@ const AdminCoupons: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showModal, setShowModal] = useState(false);
-  const [editingCoupon, setEditingCoupon] = useState<Coupon | null>(null);
+  const [editingCoupon] = useState<Coupon | null>(null);
   const [formData, setFormData] = useState({
     code: '',
     description: '',
@@ -89,44 +89,6 @@ const AdminCoupons: React.FC = () => {
     }
   };
 
-  const handleOpenModal = (coupon?: Coupon) => {
-    if (coupon) {
-      setEditingCoupon(coupon);
-      setFormData({
-        code: coupon.code,
-        description: coupon.description || '',
-        discount_type: coupon.discount_type,
-        discount_value: coupon.discount_value,
-        applies_to: coupon.applies_to,
-        minimum_purchase: coupon.minimum_purchase || 0,
-        max_uses: coupon.max_uses || 0,
-        max_uses_per_user: coupon.max_uses_per_user,
-        is_single_use: coupon.is_single_use,
-        is_active: coupon.is_active,
-        is_public: coupon.is_public,
-        first_purchase_only: coupon.first_purchase_only,
-        tags: coupon.tags
-      });
-    } else {
-      setEditingCoupon(null);
-      setFormData({
-        code: '',
-        description: '',
-        discount_type: 'percentage',
-        discount_value: 0,
-        applies_to: 'premium',
-        minimum_purchase: 0,
-        max_uses: 0,
-        max_uses_per_user: 1,
-        is_single_use: false,
-        is_active: true,
-        is_public: true,
-        first_purchase_only: false,
-        tags: []
-      });
-    }
-    setShowModal(true);
-  };
 
   const handleSave = async () => {
     try {
@@ -141,7 +103,7 @@ const AdminCoupons: React.FC = () => {
     }
   };
 
-  const handleToggleStatus = async (id: string) => {
+  const handleToggleStatus = async (_id: string) => {
     try {
       await new Promise(resolve => setTimeout(resolve, 500));
       loadData();
@@ -150,7 +112,7 @@ const AdminCoupons: React.FC = () => {
     }
   };
 
-  const handleDelete = async (id: string) => {
+  const handleDelete = async (_id: string) => {
     try {
       if (!confirm('Deseja realmente excluir este cupom?')) return;
       await new Promise(resolve => setTimeout(resolve, 500));

@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { Music2, Check, Music, Download, Heart } from 'lucide-react';
+import { Check, Music, Download, Heart } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 
 const OnboardingPage: React.FC = () => {

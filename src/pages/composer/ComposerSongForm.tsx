@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, Upload, Music, Image as ImageIcon, Save, X } from 'lucide-react';
+import { ArrowLeft, Music, Image as ImageIcon, Save, X } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { albunsApi, uploadApi, hinosApi, compositoresApi } from '@/lib/api-client';
 import { getSignedSupabaseUrl } from '@/lib/supabaseMedia';

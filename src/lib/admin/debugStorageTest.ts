@@ -12,10 +12,10 @@ export const testStorage = async () => {
   return { success: true };
 };
 
-export const checkBucket = async (...args: any[]) => {
+export const checkBucket = async (..._args: any[]) => {
   return { exists: true };
 };
 
-export const uploadTestFile = async (...args: any[]) => {
+export const uploadTestFile = async (..._args: any[]) => {
   return { success: true, url: 'mock-url' };
 };

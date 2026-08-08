@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Palette, Eye } from 'lucide-react';
+import { Eye } from 'lucide-react';
 
 interface GradientColorPickerProps {
   value: string;

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Star, Plus, Edit, Trash2, Eye, MousePointer, RefreshCw, Image, Calendar, AlertTriangle } from 'lucide-react';
+import { Star, Plus, Edit, Trash2, Eye, MousePointer, RefreshCw, AlertTriangle } from 'lucide-react';
 import { getFeaturedItems, getFeaturedStats, toggleFeaturedStatus, deleteFeaturedItem } from '@/lib/admin/featuredAdminApi';
 
 interface FeaturedItem {
@@ -28,7 +28,7 @@ const AdminFeatured: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [selectedSection, setSelectedSection] = useState<string>('all');
   const [showModal, setShowModal] = useState(false);
-  const [editingItem, setEditingItem] = useState<FeaturedItem | null>(null);
+  const [editingItem] = useState<FeaturedItem | null>(null);
   const [formData, setFormData] = useState({
     title: '',
     subtitle: '',
@@ -112,40 +112,6 @@ const AdminFeatured: React.FC = () => {
     }
   };
 
-  const handleOpenModal = (item?: FeaturedItem) => {
-    if (item) {
-      setEditingItem(item);
-      setFormData({
-        title: item.title,
-        subtitle: item.subtitle || '',
-        description: item.description || '',
-        content_type: item.content_type,
-        image_url: item.image_url,
-        section: item.section,
-        position: item.position,
-        priority: item.priority,
-        cta_text: item.cta_text,
-        start_date: item.start_date || '',
-        end_date: item.end_date || ''
-      });
-    } else {
-      setEditingItem(null);
-      setFormData({
-        title: '',
-        subtitle: '',
-        description: '',
-        content_type: 'hymn',
-        image_url: '',
-        section: 'hero',
-        position: 0,
-        priority: 50,
-        cta_text: 'Ver Mais',
-        start_date: '',
-        end_date: ''
-      });
-    }
-    setShowModal(true);
-  };
 
   const handleSave = async () => {
     try {

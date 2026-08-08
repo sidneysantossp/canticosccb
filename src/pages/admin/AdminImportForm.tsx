@@ -1,6 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { ArrowLeft, Save, Upload, FileText, AlertCircle } from 'lucide-react';
+import { ArrowLeft, Upload, FileText, AlertCircle } from 'lucide-react';
 import { createImport } from '@/lib/admin/importAdminApi';
 
 const IMPORT_TYPES = [

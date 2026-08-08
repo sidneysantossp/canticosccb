@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { TrendingUp, Music, Users, Heart, BarChart3, Wifi } from 'lucide-react';
+import { Music, Users, Heart, BarChart3, Wifi } from 'lucide-react';
 import {
   LineChart,
   Line,

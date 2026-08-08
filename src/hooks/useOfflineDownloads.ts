@@ -31,7 +31,7 @@ export interface DownloadProgress {
 
 export const useOfflineDownloads = () => {
   const [downloads, setDownloads] = useState<DownloadedHymn[]>([]);
-  const [activeDownloads, setActiveDownloads] = useState<Map<string, DownloadProgress>>(new Map());
+  const [activeDownloads] = useState<Map<string, DownloadProgress>>(new Map());
   const [isLoading, setIsLoading] = useState(true);
   const [totalStorage, setTotalStorage] = useState(0);
   const [availableStorage, setAvailableStorage] = useState(0);
@@ -94,7 +94,7 @@ export const useOfflineDownloads = () => {
         const estimate = await navigator.storage.estimate();
         setTotalStorage(estimate.quota || 0);
         setAvailableStorage((estimate.quota || 0) - (estimate.usage || 0));
-      } catch (error) {
+      } catch  {
         console.warn('⚠️ Could not estimate storage');
       }
     }

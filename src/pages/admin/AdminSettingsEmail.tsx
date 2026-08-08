@@ -10,8 +10,6 @@ import {
   updateEmailTemplate,
   deleteEmailTemplate,
   type EmailSettings as EmailSettingsDB,
-  type EmailTemplate as EmailTemplateDB,
-  type EmailLog as EmailLogDB,
 } from '@/lib/admin/emailAdminApi';
 
 interface EmailSettings {

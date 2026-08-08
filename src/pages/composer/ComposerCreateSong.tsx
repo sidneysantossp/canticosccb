@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, Upload, Music, Image as ImageIcon, Save, X, FileAudio, Clock } from 'lucide-react';
+import { Upload, Image as ImageIcon, Save, FileAudio, Clock } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
-import { uploadApi, hinosApi, type Hino } from '@/lib/api-client';
+import { uploadApi, hinosApi } from '@/lib/api-client';
 import { supabase } from '@/lib/supabase-auth';
 import { getSignedSupabaseUrl } from '@/lib/supabaseMedia';
 import { useActiveComposer } from '@/hooks/useActiveComposer';
@@ -68,10 +68,10 @@ const ComposerCreateSong: React.FC = () => {
 
   const [loading, setLoading] = useState(false);
   const [myComposerId, setMyComposerId] = useState<string | null>(null);
-  const [isLoadingData, setIsLoadingData] = useState(true);
-  const [loadingAlbums, setLoadingAlbums] = useState(false);
-  const [loadingCategories, setLoadingCategories] = useState(false);
-  const [error, setError] = useState<string>('');
+  const [, setIsLoadingData] = useState(true);
+  const [, setLoadingAlbums] = useState(false);
+  const [, setLoadingCategories] = useState(false);
+  const [, setError] = useState<string>('');
 
   useEffect(() => {
     if (!user?.id || loadingComposer) return; // aguarda usuário carregar

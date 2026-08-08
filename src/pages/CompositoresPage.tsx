@@ -37,8 +37,8 @@ export default function CompositoresPage() {
 
       if (dbComposers && dbComposers.length > 0) {
         // Buscar contagem real de seguidores da tabela user_follows
-        let followCounts: Record<string, number> = {};
-        let popularHymnsByComposerId: Record<string, string> = {};
+        const followCounts: Record<string, number> = {};
+        const popularHymnsByComposerId: Record<string, string> = {};
         try {
           const composerIds = dbComposers.map((c: any) => String(c.id));
           const [followRows, hymnRows] = await Promise.all([

@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Play, Book, Clock } from 'lucide-react';
 import { usePlayerStore } from '@/stores/playerStore';
-import BibleAudioPlayer from '@/components/bible/BibleAudioPlayer';
 import BibleMobilePlayer from '@/components/bible/BibleMobilePlayer';
 import { getYouTubeAudioUrl } from '@/utils/youtubeApi';
 import { fetchActiveBibleNarrated, type BibleNarrated } from '@/api/bibleNarrated';

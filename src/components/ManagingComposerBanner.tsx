@@ -35,7 +35,7 @@ const ManagingComposerBanner: React.FC = () => {
             }
           }
         }
-      } catch (_) {
+      } catch  {
         // silencioso
       }
     };
@@ -68,7 +68,7 @@ const ManagingComposerBanner: React.FC = () => {
             }
           }
         }
-      } catch (_) {
+      } catch  {
         // silencioso
       }
     };

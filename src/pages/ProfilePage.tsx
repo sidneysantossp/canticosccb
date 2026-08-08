@@ -37,7 +37,7 @@ const ProfilePage: React.FC = () => {
   const [activeTab, setActiveTab] = useState('overview');
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
   const [composerData, setComposerData] = useState<any>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [, setIsLoading] = useState(true);
   const [stats, setStats] = useState({
     playlistsCount: 0,
     favoritesCount: 0,

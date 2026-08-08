@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Save, Globe, Mail, Phone, Facebook, Instagram, Youtube, Twitter, FileText } from 'lucide-react';
+import { Save, Globe, Mail, Facebook, Instagram, Youtube, Twitter, FileText } from 'lucide-react';
 import {
   getSiteSettings,
   updateSiteSettings,
@@ -9,9 +9,9 @@ import {
  
 
 const AdminSettings: React.FC = () => {
-  const [isLoading, setIsLoading] = useState(true);
+  const [, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
-  const [settings, setSettings] = useState<SiteSettings | null>(null);
+  const [, setSettings] = useState<SiteSettings | null>(null);
   
   const [formData, setFormData] = useState({
     site_name: '',

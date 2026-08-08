@@ -6,11 +6,10 @@ import useFavoritesStore from '@/stores/favoritesStore';
 import { useAuth } from '@/contexts/AuthContext';
 import SEOHead from '@/components/SEO/SEOHead';
 import { apiFetch } from '@/lib/api-helper';
-import { buildHinoUrl } from '@/lib/media-helper';
 import { DEFAULT_COVER_URL } from '@/lib/config';
 import { usePlayerContext } from '@/contexts/PlayerContext';
 import { isSupabaseConfigured, supabaseFetch } from '@/lib/supabaseRest';
-import { buildAlbumUrl, buildHinoUrl as buildHinoSlugUrl } from '@/utils/slugUrl';
+import { buildHinoUrl as buildHinoSlugUrl } from '@/utils/slugUrl';
 
 interface TrendItem {
   id: string;

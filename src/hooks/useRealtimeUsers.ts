@@ -1,10 +1,10 @@
 // STUB temporário - Substituir com implementação real quando backend estiver pronto
 import { useState, useEffect } from 'react';
 
-export const useRealtimeUsers = (options?: any) => {
-  const [users, setUsers] = useState([]);
+export const useRealtimeUsers = (_options?: any) => {
+  const [users] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [error] = useState(null);
 
   useEffect(() => {
     setLoading(false);

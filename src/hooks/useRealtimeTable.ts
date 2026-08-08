@@ -1,10 +1,10 @@
 // STUB temporário - Substituir com implementação real quando backend estiver pronto
 import { useState, useEffect } from 'react';
 
-export const useRealtimeTable = (tableName: string, options?: any) => {
-  const [data, setData] = useState([]);
+export const useRealtimeTable = (tableName: string, _options?: any) => {
+  const [data] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [error] = useState(null);
 
   useEffect(() => {
     // Simular carregamento

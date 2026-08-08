@@ -90,7 +90,7 @@ function injectFacebookPixel(pixelId: string) {
 }
 
 const AnalyticsScripts: React.FC = () => {
-  const [loaded, setLoaded] = useState(false);
+  const [, setLoaded] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -145,7 +145,7 @@ const AnalyticsScripts: React.FC = () => {
         } catch (e) { console.warn('Pixel injection failed', e); }
 
         setLoaded(true);
-      } catch (err) {
+      } catch  {
         // Silently fail after timeout or error
         console.warn('[AnalyticsScripts] Config load skipped/failed');
         setLoaded(true);

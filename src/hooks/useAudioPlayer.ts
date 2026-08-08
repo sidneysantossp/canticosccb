@@ -40,10 +40,7 @@ export const useAudioPlayer = () => {
     volume,
     currentTime,
     setCurrentTime,
-    pause,
-    resume,
-    setOnTrackEnd,
-    playNext
+    pause
   } = usePlayerStore();
 
   const SETTINGS_STORAGE_KEY = 'user_settings_prefs_v1';
@@ -567,7 +564,6 @@ export const useAudioPlayer = () => {
         }
       };
 
-      // eslint-disable-next-line @typescript-eslint/no-floating-promises
       prepareAndLoad();
 
     }

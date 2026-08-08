@@ -11,7 +11,7 @@ interface PieChartProps {
 
 const COLORS = ['#DC2626', '#F59E0B', '#10B981', '#3B82F6', '#8B5CF6', '#EC4899'];
 
-const PieChart: React.FC<PieChartProps> = ({ data, dataKey, nameKey, colors = COLORS, title }) => {
+const PieChart: React.FC<PieChartProps> = ({ data, dataKey, nameKey: _nameKey, colors = COLORS, title }) => {
   return (
     <div className="w-full h-full">
       {title && <h3 className="text-white font-semibold mb-4">{title}</h3>}

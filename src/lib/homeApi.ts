@@ -1,4 +1,3 @@
-import { apiFetch } from '@/lib/api-helper';
 import { ASSETS } from '@/constants/index';
 import { isSupabaseConfigured, supabaseFetch } from '@/lib/supabaseRest';
 import { buildAlbumCoverUrl, buildAvatarUrl, buildBannerUrl, buildHinoUrl } from '@/lib/media-helper';
@@ -205,7 +204,7 @@ const mapSupabaseComposer = (row: SupabaseComposerRow): HomeComposer => {
 const mapSupabaseAlbum = (
   row: SupabaseAlbumRow,
   index: number,
-  composerNames: Record<string, string>
+  _composerNames: Record<string, string>
 ): HomeAlbum => {
   return {
     id: String(row.id ?? `album-${index}`),
@@ -464,7 +463,7 @@ async function getHomePageDataFromSupabase(): Promise<HomePageData> {
 }
 
 
-async function tryGetCollection<T>(collectionName: string): Promise<T[]> {
+async function tryGetCollection<T>(_collectionName: string): Promise<T[]> {
   // Firebase disabled - using mock data only
   // if (!isFirebaseConfigured) return [];
   // try {
@@ -477,7 +476,6 @@ async function tryGetCollection<T>(collectionName: string): Promise<T[]> {
 }
 
 const mapHymn = (hymn: any, fallbackId: string, index: number): HomeHymn => {
-  const id = String(hymn.id ?? hymn.documentId ?? `${fallbackId}-${index}`);
   const title = hymn.title ?? hymn.name ?? `Hino ${index + 1}`;
   const cover = hymn.cover_url ?? hymn.coverUrl ?? '';
   const hymnId = String(hymn.id ?? hymn.documentId ?? `${fallbackId}-${index}`);
@@ -556,7 +554,7 @@ export async function getHomePageData(): Promise<HomePageData> {
   }
 
   const [
-    bannersDocs,
+    ,
     featuredDocs,
     albumsDocs,
     cantadosDocs,
@@ -639,7 +637,6 @@ export async function getHomePageData(): Promise<HomePageData> {
     avulsosApi = [];
   }
 
-  const fallbackSortedHymns: any[] = [];
   // Não usar mocks para hinos; manter vazio quando API não retornar
 
   const banners = (apiBanners || []).map((banner: any, index: number) => ({

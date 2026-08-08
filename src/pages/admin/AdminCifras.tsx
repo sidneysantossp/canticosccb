@@ -169,7 +169,6 @@ const AdminCifras: React.FC = () => {
   const catalogVisibleCount = cifras.filter((cifra) => migrationStatuses[cifra.id]?.publicCatalogVisible).length;
   const promotableCount = cifras.filter((cifra) => isPromotableStatus(migrationStatuses[cifra.id])).length;
   const rebuildableCount = cifras.filter((cifra) => canRebuildSections(migrationStatuses[cifra.id])).length;
-  const studyDefaultableCount = cifras.filter((cifra) => canApplyStudyDefaults(migrationStatuses[cifra.id])).length;
   const missingSectionsCount = cifras.filter((cifra) => {
     const status = migrationStatuses[cifra.id];
     return Boolean(status?.versionId) && (status?.sectionsCount ?? 0) <= 0;

@@ -8,7 +8,7 @@ import { Link } from 'react-router-dom';
 
 const ComposerCopyrightClaims = () => {
   const { user } = useAuth();
-  const { claims, error, getClaimById, getClaimsByComposer, isLoading, loadClaims } = useCopyrightClaimsStore();
+  const {  error, getClaimById, getClaimsByComposer, isLoading, loadClaims } = useCopyrightClaimsStore();
   const { composerId, composerName, loading: loadingComposer } = useActiveComposer();
   const [selectedClaim, setSelectedClaim] = useState<CopyrightClaim | null>(null);
   const [showChat, setShowChat] = useState(false);

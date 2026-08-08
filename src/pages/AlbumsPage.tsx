@@ -6,7 +6,6 @@ import { buildAlbumUrl } from '@/utils/slugUrl';
 import { generateItemListSchema } from '@/utils/schemaGenerator';
 import { getAlbums } from '@/lib/supabase-api';
 import useFavoritesStore from '@/stores/favoritesStore';
-import { usePlayerStore } from '@/stores/playerStore';
 import { useAuth } from '@/contexts/AuthContext';
 
 interface Album {
@@ -27,7 +26,6 @@ const AlbumsPage: React.FC = () => {
   const menuRef = useRef<HTMLDivElement>(null);
   
   const { isFavorite, addFavorite, removeFavorite } = useFavoritesStore();
-  const { play } = usePlayerStore();
   const { user } = useAuth();
 
   useEffect(() => {

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { Search, X, Play, Music, Mic, Disc, List, BookOpen, Heart, Music2, Mic2, Sparkles } from 'lucide-react';
+import { Search, X, Play, Music, Mic, Disc, List, Mic2, Sparkles } from 'lucide-react';
 import { usePlayerStore } from '@/stores/playerStore';
 import SEOHead from '@/components/SEO/SEOHead';
 import { generateWebsiteSchema } from '@/utils/schemaGenerator';

@@ -9,9 +9,7 @@ import {
   Heart,
   Download,
   UserPlus,
-  Calendar,
   Eye,
-  Share2,
   Award,
   Clock,
   Plus
@@ -124,7 +122,7 @@ const fetchRecentActivities = async (params: { composerId?: string | number; usu
 const ComposerDashboard: React.FC = () => {
   const { user } = useAuth();
   const { composerId, loading: loadingComposer } = useActiveComposer();
-  const [followToast, setFollowToast] = useState<{ visible: boolean; name: string }>(() => ({ visible: false, name: '' }));
+  const [followToast] = useState<{ visible: boolean; name: string }>(() => ({ visible: false, name: '' }));
   const [timeRange, setTimeRange] = useState<'7d' | '30d' | '90d' | '1y'>('30d');
   const [isLoading, setIsLoading] = useState(true);
   const [stats, setStats] = useState<ComposerStats | null>(null);

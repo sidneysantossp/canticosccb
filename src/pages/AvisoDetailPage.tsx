@@ -37,13 +37,6 @@ const AvisoDetailPage: React.FC = () => {
     }
   };
 
-  const formatDate = (dateStr: string) => {
-    return new Date(dateStr).toLocaleDateString('pt-BR', {
-      day: '2-digit',
-      month: 'long',
-      year: 'numeric',
-    });
-  };
 
   const formatDateTime = (dateStr: string) => {
     return new Date(dateStr).toLocaleDateString('pt-BR', {

@@ -126,7 +126,7 @@ export async function getPlaysSeries(usuarioId: string | number, days: number): 
     const compositorId = await getComposerIdForUser(usuarioId);
     if (!compositorId) return [];
     return await getPlaysSeriesByComposerId(compositorId, days);
-  } catch (error) {
+  } catch  {
     return [];
   }
 }
@@ -138,7 +138,7 @@ export async function getEngagementCounts(usuarioId: string | number, days: numb
     const compositorId = await getComposerIdForUser(usuarioId);
     if (!compositorId) return { likes: 0, shares: 0, downloads: 0 };
     return await getEngagementCountsByComposerId(compositorId, days);
-  } catch (error) {
+  } catch  {
     return { likes: 0, shares: 0, downloads: 0 };
   }
 }
@@ -183,7 +183,7 @@ export async function getPlaysSeriesByComposerId(compositorId: string | number, 
       p_days: days
     });
     return data || [];
-  } catch (error) {
+  } catch  {
     return [];
   }
 }

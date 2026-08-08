@@ -49,7 +49,7 @@ const AdminBibleNarrated: React.FC = () => {
     setSectionSaving(true);
     try {
       await setBibleNarratedSectionEnabled(newValue);
-    } catch (e) {
+    } catch  {
       // rollback em caso de erro
       setSectionEnabled(!newValue);
       alert('Falha ao salvar preferência.');

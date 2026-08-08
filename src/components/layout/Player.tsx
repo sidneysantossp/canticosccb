@@ -20,7 +20,6 @@ const Player: React.FC<PlayerProps> = ({ isHidden = false }) => {
     volume,
     currentTime,
     duration,
-    play,
     pause,
     resume,
     next,
@@ -29,7 +28,6 @@ const Player: React.FC<PlayerProps> = ({ isHidden = false }) => {
     setCurrentTime,
     repeat,
     setRepeat,
-    playNext,
     stop
   } = usePlayerStore();
 
@@ -68,10 +66,6 @@ const Player: React.FC<PlayerProps> = ({ isHidden = false }) => {
       }
     }
   }, [currentTrack?.id, isPlaying, user?.id]);
-
-  if (!currentTrack) {
-    return null;
-  }
 
   const handlePlayPause = () => {
     if (isPlaying) {
@@ -184,6 +178,10 @@ const Player: React.FC<PlayerProps> = ({ isHidden = false }) => {
   };
 
   const progressPercentage = duration > 0 ? (currentTime / duration) * 100 : 0;
+
+  if (!currentTrack) {
+    return null;
+  }
 
   return (
     <>

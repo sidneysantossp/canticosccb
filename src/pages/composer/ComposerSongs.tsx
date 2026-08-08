@@ -3,14 +3,10 @@ import { Link } from 'react-router-dom';
 import {
   Plus,
   Search,
-  Filter,
   Music,
   Play,
   BarChart3,
   Edit,
-  Eye,
-  MoreVertical,
-  Download,
   Info,
   Trash2
 } from 'lucide-react';
@@ -198,10 +194,6 @@ const ComposerSongs: React.FC = () => {
     return num.toString();
   };
 
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' });
-  };
 
   // Calculate trends for display
   const getTrendForSong = (songId: string | number): string => {
@@ -363,7 +355,7 @@ const ComposerSongs: React.FC = () => {
                         await hinosApi.update(song.id, { ativo: 1 });
                         setSongs(prev => prev.map(s => s.id === song.id ? { ...s, status: 'published' } : s));
                         setReloadTick(t => t + 1);
-                      } catch (e) {
+                      } catch  {
                         setAlertTitle('Erro'); setAlertMessage('Falha ao publicar.'); setAlertType('error'); setAlertOpen(true);
                       }
                     }}

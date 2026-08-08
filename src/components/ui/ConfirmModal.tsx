@@ -20,7 +20,7 @@ export default function ConfirmModal({
   isOpen,
   onClose,
   onConfirm,
-  title,
+  title: _title,
   message,
   confirmText = 'OK',
   cancelText = 'Cancelar',

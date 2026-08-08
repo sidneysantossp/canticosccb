@@ -1,7 +1,5 @@
-import React, { useEffect, useRef } from 'react';
 import { useAudioPlayer } from '@/hooks/useAudioPlayer';
 import { useYoutubePlayer } from '@/hooks/useYoutubePlayer';
-import { usePlayerStore } from '@/stores/playerStore';
 
 /**
  * Componente global e sem renderização que inicializa o hook de áudio.

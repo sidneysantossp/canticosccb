@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, Save, Upload, X, AlertTriangle } from 'lucide-react';
-import { usuariosApi, uploadApi, type Usuario } from '@/lib/api-client';
+import { ArrowLeft, Save, Upload, AlertTriangle } from 'lucide-react';
+import { usuariosApi, uploadApi } from '@/lib/api-client';
 import { buildAvatarUrl } from '@/lib/media-helper';
 
 const AdminUserEdit: React.FC = () => {

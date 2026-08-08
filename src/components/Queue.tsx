@@ -8,7 +8,7 @@ interface QueueProps {
 }
 
 const Queue: React.FC<QueueProps> = ({ isOpen, onClose }) => {
-  const { currentTrack, play } = usePlayerStore();
+  const {  play } = usePlayerStore();
   const [activeTab, setActiveTab] = useState<'queue' | 'history'>('queue');
 
   // Mock queue data
@@ -82,7 +82,7 @@ const Queue: React.FC<QueueProps> = ({ isOpen, onClose }) => {
     }
   ];
 
-  const handleRemoveFromQueue = (id: number) => {
+  const handleRemoveFromQueue = (_id: number) => {
     // TODO: Implement remove from queue
     // console.log('Remove from queue:', id);
   };
@@ -175,7 +175,7 @@ const Queue: React.FC<QueueProps> = ({ isOpen, onClose }) => {
             /* Queue Items */
             queueItems.length > 0 ? (
               <div className="p-2">
-                {queueItems.map((item, index) => (
+                {queueItems.map((item, _index) => (
                   <div
                     key={item.id}
                     className={`group flex items-center gap-3 p-2 rounded-lg hover:bg-background-hover transition-colors ${

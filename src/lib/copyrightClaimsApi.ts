@@ -266,7 +266,7 @@ async function insertClaimAttachments(rows: Record<string, any>[]) {
   }
 
   if (String(error?.code || '') === '42703' && /claim_id/i.test(String(error?.message || ''))) {
-    const fallbackRows = rows.map(({ claim_id, ...rest }) => rest);
+    const fallbackRows = rows.map(({ _claim_id, ...rest }) => rest);
     const { error: fallbackError } = await supabase
       .from(attachmentsTable)
       .insert(fallbackRows);

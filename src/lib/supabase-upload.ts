@@ -160,7 +160,7 @@ async function getAccessToken(timeoutMs: number = 10000): Promise<string> {
     return Promise.race([promise, timeoutPromise]);
   };
 
-  let accessToken = sanitizeBearerToken(readStoredToken());
+  const accessToken = sanitizeBearerToken(readStoredToken());
 
   if (accessToken && accessToken !== SUPABASE_ANON_KEY && !isExpired(accessToken)) {
     return accessToken;
@@ -322,7 +322,7 @@ async function uploadViaSupabaseStorage(
     }
     
     // Pegar token via getSession com timeout de 3s
-    let accessToken = (await getAccessToken()) || SUPABASE_ANON_KEY;
+    const accessToken = (await getAccessToken()) || SUPABASE_ANON_KEY;
     
     // Gerar nome único para o arquivo
     const timestamp = Date.now();

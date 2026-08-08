@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { X, Home, Search, Library, Music, Mic, User, Heart, LogOut, Shield, Star, Grid, List, FileText, BookOpen } from 'lucide-react';
+import { X, Home, Search, Library, Music, Mic, User, Heart, LogOut, Shield, Grid, List, FileText, BookOpen } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { clearAuthStorage } from '@/lib/supabase-auth';
 

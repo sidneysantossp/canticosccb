@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import SEOHead from '@/components/SEO/SEOHead';
 import HeroSection from '@/components/home/HeroSection';
 import CategoryGrid from '@/components/home/CategoryGrid';
@@ -8,7 +8,6 @@ import BannerCTA from '@/components/home/BannerCTA';
 import BibleSection from '@/components/home/BibleSection';
 import { getBibleNarratedSectionEnabled } from '@/api/bibleNarrated';
 import { usePlayerStore } from '@/stores/playerStore';
-import usePlaylistsStore from '@/stores/playlistsStore';
 import { usePlayerContext } from '@/contexts/PlayerContext';
 import { useTouchScroll } from '@/hooks/useTouchScroll';
 import { useFavorites } from '@/hooks/useFavorites';
@@ -18,7 +17,6 @@ import { getPersonalizedHomeData, type PersonalizedData, type RecTrack } from '@
 import LoginRequiredModal from '@/components/modals/LoginRequiredModal';
 import { useAuth } from '@/contexts/AuthContext';
 import PersonalizedSection from '@/components/home/PersonalizedSection';
-import { apiFetch } from '@/lib/api-helper';
 import TrendsSection from '@/components/home/TrendsSection';
 import AlbumsSection from '@/components/home/AlbumsSection';
 import HymnsSection from '@/components/home/HymnsSection';
@@ -347,13 +345,10 @@ const HomePage: React.FC = () => {
   ];
   const { play, pause, currentTrack, isPlaying } = usePlayerStore();
   const { openFullScreen } = usePlayerContext();
-  const { favorites, toggleFavorite, isFavorited } = useFavorites();
-  const { playlists, addTrackToPlaylist } = usePlaylistsStore();
+  const {  toggleFavorite, isFavorited } = useFavorites();
   const scrollContainerRef = useTouchScroll<HTMLDivElement>();
   
   // Estados para playlist modal
-  const [showPlaylistModal, setShowPlaylistModal] = useState(false);
-  const [selectedTrackForPlaylist, setSelectedTrackForPlaylist] = useState<any>(null);
   
   // Estados para dados do backend
   const [homeData, setHomeData] = useState<HomePageData>(EMPTY_HOME_DATA);
@@ -616,7 +611,7 @@ const HomePage: React.FC = () => {
     return 6; // Default fallback for mobile
   };
 
-  const [itemsToShow, setItemsToShow] = useState(6); // Start with 6 for mobile
+  const [, setItemsToShow] = useState(6); // Start with 6 for mobile
 
   // Update items to show on window resize and initial load
   useEffect(() => {
@@ -753,56 +748,10 @@ const HomePage: React.FC = () => {
       );
 
   // FunÃ§Ã£o para calcular mudanÃ§a de ranking
-  const getRankChange = (hino: any) => {
-    if (!hino.previousRank || !hino.rank) return null;
-    const change = hino.previousRank - hino.rank;
-    
-    if (change > 0) {
-      return <span className="text-green-400 text-xs font-semibold ml-1">â†‘{change}</span>;
-    } else if (change < 0) {
-      return <span className="text-red-400 text-xs font-semibold ml-1">â†“{Math.abs(change)}</span>;
-    } else {
-      return <span className="text-gray-500 text-xs ml-1">âˆ’</span>;
-    }
-  };
   
   // FunÃ§Ã£o para obter apenas o Ã­cone de trending (para mobile)
-  const getTrendingIcon = (hino: any) => {
-    if (!hino.previousRank || !hino.rank) return null;
-    const change = hino.previousRank - hino.rank;
-    
-    if (change > 0) {
-      return (
-        <div className="flex items-center gap-1 text-green-400">
-          <span className="text-xs">â†‘</span>
-          <span className="text-xs font-semibold">{change}</span>
-        </div>
-      );
-    } else if (change < 0) {
-      return (
-        <div className="flex items-center gap-1 text-red-400">
-          <span className="text-xs">â†“</span>
-          <span className="text-xs font-semibold">{Math.abs(change)}</span>
-        </div>
-      );
-    } else {
-      return <span className="text-gray-500 text-xs">âˆ’</span>;
-    }
-  };
   
   // FunÃ§Ã£o para obter apenas a seta (acima do nÃºmero)
-  const getTrendingArrow = (hino: any) => {
-    if (!hino.previousRank || !hino.rank) return null;
-    const change = hino.previousRank - hino.rank;
-    
-    if (change > 0) {
-      return <span className="text-green-400 text-xs">â†‘</span>;
-    } else if (change < 0) {
-      return <span className="text-red-400 text-xs">â†“</span>;
-    } else {
-      return <span className="text-gray-500 text-xs">âˆ’</span>;
-    }
-  };
   
   const handleTogglePlay = (hino: any) => {
     const track = resolveHomeTrackForPlayback(hino);
