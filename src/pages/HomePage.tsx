@@ -236,6 +236,20 @@ const buildStableHomeSelections = (catalog: EmergencyCatalog) => {
       .filter((relation) => avulsosCategoryIds.has(String(relation.categoria_id)))
       .map((relation) => String(relation.hino_id))
   );
+  const avulsosAlbumIds = new Set(
+    catalog.albums
+      .filter((album) => {
+        const title = normalizeHomeCategory(album.title);
+        const slug = normalizeHomeCategory(album.slug);
+        return title.includes('avulso') || slug.includes('avulso');
+      })
+      .map((album) => String(album.id))
+  );
+  const avulsosAlbumHymnIds = new Set(
+    catalog.albumHymns
+      .filter((relation) => avulsosAlbumIds.has(String(relation.album_id)))
+      .map((relation) => String(relation.hino_id))
+  );
 
   const directPlayable = activeHymns.filter((hymn) =>
     hasHomeReadyTrackSource({
@@ -267,7 +281,11 @@ const buildStableHomeSelections = (catalog: EmergencyCatalog) => {
     ),
     avulsos: diversifyByArtist(
       directPlayable
-        .filter((hymn) => avulsosHymnIds.has(String(hymn.id)))
+        .filter((hymn) => (
+          avulsosHymnIds.has(String(hymn.id)) ||
+          avulsosAlbumHymnIds.has(String(hymn.id)) ||
+          normalizeHomeCategory(hymn.titulo).includes('avulso')
+        ))
         .map((hymn) => mapEmergencyHymnToHomeSectionCard(hymn, 'Hino Avulso')),
       12
     ),

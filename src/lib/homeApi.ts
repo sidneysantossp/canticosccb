@@ -144,6 +144,7 @@ type SupabaseAlbumRow = {
   id?: number | string;
   title?: string;
   description?: string;
+  slug?: string;
   cover_url?: string;
   artist?: string;
   composer_id?: string | number;
@@ -337,7 +338,7 @@ async function getHomePageDataFromSupabase(): Promise<HomePageData> {
     limit: '20',
   });
   const albumRows = supabaseFetch<SupabaseAlbumRow>('albums', {
-    select: 'id,title,description,cover_url,artist,composer_id,created_at,is_published,active,featured,featured_order',
+    select: 'id,title,description,slug,cover_url,artist,composer_id,created_at,is_published,active,featured,featured_order',
     is_published: 'eq.true',
     active: 'eq.true',
     order: 'created_at.desc',
@@ -358,13 +359,18 @@ async function getHomePageDataFromSupabase(): Promise<HomePageData> {
   const hinoCatRows = supabaseFetch<{ hino_id: string; categoria_id: string }>('hino_categorias', {
     select: 'hino_id,categoria_id',
   }).catch(() => [] as { hino_id: string; categoria_id: string }[]);
-  const [bannersData, composersData, albumsData, categoriesData, hymnsData, hinoCategorias] = await Promise.all([
+  const albumHinoRows = supabaseFetch<{ album_id: string; hino_id: string }>('album_hinos', {
+    select: 'album_id,hino_id',
+    limit: '5000',
+  }).catch(() => [] as { album_id: string; hino_id: string }[]);
+  const [bannersData, composersData, albumsData, categoriesData, hymnsData, hinoCategorias, albumHinos] = await Promise.all([
     heroBanners,
     composerRows,
     albumRows,
     categoryRows,
     hymnRows,
     hinoCatRows,
+    albumHinoRows,
   ]);
 
   const composerNameById = composersData.reduce<Record<string, string>>((acc, row) => {
@@ -405,6 +411,20 @@ async function getHomePageDataFromSupabase(): Promise<HomePageData> {
       .filter((relation) => avulsosCategoryIds.has(String(relation.categoria_id)))
       .map((relation) => String(relation.hino_id))
   );
+  const avulsosAlbumIds = new Set(
+    albumsData
+      .filter((album) => {
+        const title = normalizeHomeCategory(album.title);
+        const slug = normalizeHomeCategory(album.slug);
+        return title.includes('avulso') || slug.includes('avulso');
+      })
+      .map((album) => String(album.id))
+  );
+  const avulsosAlbumHymnIds = new Set(
+    albumHinos
+      .filter((relation) => avulsosAlbumIds.has(String(relation.album_id)))
+      .map((relation) => String(relation.hino_id))
+  );
 
   const hymns = hymnsData.map(mapSupabaseHymn);
 
@@ -413,7 +433,11 @@ async function getHomePageDataFromSupabase(): Promise<HomePageData> {
   const hymnMatchesCategory = (h: HomeHymn, keyword: string): boolean => {
     const allCats = hinoAllCategories[String(h.id)];
     if (keyword === 'avulsos') {
-      return avulsosHymnIds.has(String(h.id));
+      return (
+        avulsosHymnIds.has(String(h.id)) ||
+        avulsosAlbumHymnIds.has(String(h.id)) ||
+        normalizeHomeCategory(h.title).includes('avulso')
+      );
     }
     if (allCats && allCats.length > 0) {
       return allCats.some(c => normalizeHomeCategory(c).includes(keyword));
@@ -621,6 +645,31 @@ export async function getHomePageData(): Promise<HomePageData> {
       const avulsosHymnIds = new Set(
         hinoCategorias.map((relation) => String(relation.hino_id))
       );
+      const avulsosAlbums = await supabaseFetch<any>('albums', {
+        select: 'id,title,slug,is_published,active',
+        is_published: 'eq.true',
+        active: 'eq.true',
+        limit: '1000',
+      }).catch(() => [] as any[]);
+      const avulsosAlbumIds = new Set(
+        avulsosAlbums
+          .filter((album: any) => {
+            const title = normalizeHomeCategory(album.title);
+            const slug = normalizeHomeCategory(album.slug);
+            return title.includes('avulso') || slug.includes('avulso');
+          })
+          .map((album: any) => String(album.id))
+      );
+      const avulsosAlbumRelations = avulsosAlbumIds.size > 0
+        ? await supabaseFetch<{ album_id: string; hino_id: string }>('album_hinos', {
+            select: 'album_id,hino_id',
+            album_id: `in.(${Array.from(avulsosAlbumIds).join(',')})`,
+            limit: '5000',
+          }).catch(() => [] as { album_id: string; hino_id: string }[])
+        : [];
+      const avulsosAlbumHymnIds = new Set(
+        avulsosAlbumRelations.map((relation) => String(relation.hino_id))
+      );
       const categoryByHymnId = new Map<string, string>();
       for (const relation of hinoCategorias) {
         categoryByHymnId.set(String(relation.hino_id), 'Avulsos');
@@ -644,7 +693,11 @@ export async function getHomePageData(): Promise<HomePageData> {
       tocadosApi = allHymns.filter(h => 
         normalizeHomeCategory(categoryByHymnId.get(String(h.id)) || h.categoria).includes('tocad')
       );
-      avulsosApi = allHymns.filter((h) => avulsosHymnIds.has(String(h.id)));
+      avulsosApi = allHymns.filter((h) => (
+        avulsosHymnIds.has(String(h.id)) ||
+        avulsosAlbumHymnIds.has(String(h.id)) ||
+        normalizeHomeCategory(h.titulo).includes('avulso')
+      ));
     } catch (e) {
       console.warn('Supabase error loading hinos by category:', e);
       cantadosApi = [];
