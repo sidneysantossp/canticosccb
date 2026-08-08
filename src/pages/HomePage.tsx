@@ -213,6 +213,11 @@ const normalizeHomeCategory = (value: string | undefined | null) =>
     .replace(/[\u0300-\u036f]/g, '')
     .toLowerCase();
 
+const matchesAvulsoTitle = (value: string | undefined | null) => {
+  const normalized = normalizeHomeCategory(value);
+  return normalized.includes('hino avulso') || normalized.includes('hinos avulso');
+};
+
 const buildStableHomeSelections = (catalog: EmergencyCatalog) => {
   const activeHymns = catalog.hymns
     .filter((hymn) => hymn.ativo !== false)
@@ -221,35 +226,6 @@ const buildStableHomeSelections = (catalog: EmergencyCatalog) => {
       const rightDate = right.created_at ? new Date(right.created_at).getTime() : 0;
       return rightDate - leftDate;
     });
-
-  const avulsosCategoryIds = new Set(
-    catalog.categories
-      .filter((category) => {
-        const slug = normalizeHomeCategory(category.slug);
-        const name = normalizeHomeCategory(category.nome);
-        return slug.includes('avulso') || name.includes('avulso');
-      })
-      .map((category) => String(category.id))
-  );
-  const avulsosHymnIds = new Set(
-    catalog.hymnCategories
-      .filter((relation) => avulsosCategoryIds.has(String(relation.categoria_id)))
-      .map((relation) => String(relation.hino_id))
-  );
-  const avulsosAlbumIds = new Set(
-    catalog.albums
-      .filter((album) => {
-        const title = normalizeHomeCategory(album.title);
-        const slug = normalizeHomeCategory(album.slug);
-        return title.includes('avulso') || slug.includes('avulso');
-      })
-      .map((album) => String(album.id))
-  );
-  const avulsosAlbumHymnIds = new Set(
-    catalog.albumHymns
-      .filter((relation) => avulsosAlbumIds.has(String(relation.album_id)))
-      .map((relation) => String(relation.hino_id))
-  );
 
   const directPlayable = activeHymns.filter((hymn) =>
     hasHomeReadyTrackSource({
@@ -281,10 +257,7 @@ const buildStableHomeSelections = (catalog: EmergencyCatalog) => {
     ),
     avulsos: diversifyByArtist(
       directPlayable
-        .filter((hymn) => (
-          avulsosHymnIds.has(String(hymn.id)) ||
-          avulsosAlbumHymnIds.has(String(hymn.id))
-        ))
+        .filter((hymn) => matchesAvulsoTitle(hymn.titulo))
         .map((hymn) => mapEmergencyHymnToHomeSectionCard(hymn, 'Hino Avulso')),
       12
     ),
