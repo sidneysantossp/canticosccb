@@ -69,6 +69,69 @@ const REPORT_TYPE_OPTIONS: Array<{ value: CifraReportType; label: string }> = [
   { value: 'other', label: 'Outro problema' },
 ];
 
+const DEMO_CIFRA_SLUG = 'demo-hoje-deus-te-abraca';
+
+const DEMO_CIFRA: Cifra = {
+  id: -1,
+  title: 'Hoje Deus Te Abraça',
+  artist: 'Hinos Avulsos CCB',
+  slug: DEMO_CIFRA_SLUG,
+  original_key: 'A',
+  instrument: 'violao',
+  capo: 4,
+  cover_url: null,
+  hino_id: null,
+  category: 'avulsos',
+  views_count: 0,
+  is_active: true,
+  created_by: null,
+  created_at: '2026-08-08T00:00:00.000Z',
+  updated_at: '2026-08-08T00:00:00.000Z',
+  content: `[Intro] A  D  E  A  C#7
+        F#m  Bm  E  A  D  A
+
+[Primeira Parte]
+
+                 Bm    Bm/A   E/G#
+Hoje você orou chorando
+              A    C#7   F#m
+A sua alma perguntando
+                   Bm   Bm/A  E
+O porque de tantas lutas
+                      A   D   A
+Provas que vem pra derrubar
+                 Bm   Bm/A   E/G#
+Querido irmão fique sabendo
+                      A   C#7   F#m
+O que Deus falou não caiu no chão
+             Bm   Bm/A   E/G#
+Ó alma se alegra
+                   A   D   A
+Suas promessas cumprirão
+
+[Refrão]
+
+              D              E
+Hoje Deus te abraça nesta oração
+          A   C#7        F#m
+E vai passear no seu coração
+                 Bm
+Vai dando glória a Deus
+                    E
+Sinta as portas se abrindo
+              A
+E uma obra tu verás
+       E/G#    F#m
+Ah, as, ah, as
+          D           A
+E uma obra tu verás
+       E/G#    F#m
+Ah, as, ah, as
+
+( A  D  E  A  C#7 )
+( F#m  Bm  E  A  D  A )`,
+};
+
 function buildInitialEngagement(cifra: PublicCifraPageData): CifraEngagementSnapshot {
   return {
     versionId: cifra.id,
@@ -755,6 +818,15 @@ const CifraPage: React.FC = () => {
       setLoopFocusedSection(false);
       setUseTwoColumnLayout(false);
       setMetronomeEnabled(false);
+      if (slug === DEMO_CIFRA_SLUG) {
+        setCifra(DEMO_CIFRA);
+        setEngagement(null);
+        setSelectedKey(DEMO_CIFRA.original_key);
+        setSelectedInstrument(DEMO_CIFRA.instrument);
+        setMetronomeBpm(72);
+        return;
+      }
+
       const publicData = await fetchPublicCifraPageBySlug(slug);
       if (publicData) {
         const defaultStudySectionIndex = resolveDefaultStudySectionIndex(
