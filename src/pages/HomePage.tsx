@@ -207,6 +207,9 @@ const hasHomeReadyTrackSource = (track?: {
   return Boolean(resolvedUrl);
 };
 
+const hasHomeVisibleTrackSource = (track?: Parameters<typeof hasHomeReadyTrackSource>[0]) =>
+  Boolean(normalizeYoutubeSource(track?.youtubeSource)) || hasHomeReadyTrackSource(track);
+
 const normalizeHomeCategory = (value: string | undefined | null) =>
   String(value ?? '')
     .normalize('NFD')
@@ -256,7 +259,17 @@ const buildStableHomeSelections = (catalog: EmergencyCatalog) => {
       12
     ),
     avulsos: diversifyByArtist(
-      directPlayable
+      activeHymns
+        .filter((hymn) =>
+          hasHomeVisibleTrackSource({
+            id: hymn.id,
+            number: hymn.numero,
+            title: hymn.titulo,
+            artist: hymn.compositor_nome,
+            audioUrl: hymn.audio_url || '',
+            youtubeSource: hymn.youtube_source || '',
+          })
+        )
         .filter((hymn) => matchesAvulsoTitle(hymn.titulo))
         .map((hymn) => mapEmergencyHymnToHomeSectionCard(hymn, 'Hino Avulso')),
       12
@@ -726,7 +739,7 @@ const HomePage: React.FC = () => {
     ? stableHomeSelections.avulsos
     : prioritizeRealCovers(
         hinosAvulsos.filter((hino) =>
-          hasHomeReadyTrackSource({
+          hasHomeVisibleTrackSource({
             id: hino.id,
             number: hino.number,
             title: hino.title,
