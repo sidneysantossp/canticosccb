@@ -74,19 +74,20 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
     .some(route => location.pathname.startsWith(route));
   
   const isAuthPage = ['/login', '/register', '/onboarding', '/composer/onboarding'].includes(location.pathname);
+  const isImmersiveCifraPage = location.pathname.startsWith('/cifra/');
   
   // Área pública = home, search, library, etc (usa sidebar apropriada ao tipo de usuário)
-  const isPublicArea = !isAdminPanel && !isComposerPanel && !isUserDashboard && !isAuthPage;
+  const isPublicArea = !isAdminPanel && !isComposerPanel && !isUserDashboard && !isAuthPage && !isImmersiveCifraPage;
 
   return (
     <ToastProvider>
     <PlayerFeedbackBridge />
     <div className="min-h-screen bg-background-primary flex flex-col">
       {/* Header - Ocultar em páginas de auth */}
-      {!isAuthPage && <Header />}
+      {!isAuthPage && !isImmersiveCifraPage && <Header />}
       
       {/* Sidebars Fixas - Desktop Only */}
-      {!isAuthPage && (
+      {!isAuthPage && !isImmersiveCifraPage && (
         <>
           {isAdminPanel && <AdminSidebar />}
           {isComposerPanel && user && <ComposerSidebar />}
@@ -100,23 +101,23 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
       )}
       
       {/* Main Content Area */}
-      <div className={`flex-1 ${isAuthPage ? '' : 'lg:pl-64'} pb-20 ${currentTrack ? 'pb-32' : 'lg:pb-0'} pt-5 md:pt-0`}>
+      <div className={`flex-1 ${isAuthPage || isImmersiveCifraPage ? '' : 'lg:pl-64'} ${isImmersiveCifraPage ? 'pb-0 pt-0' : `pb-20 ${currentTrack ? 'pb-32' : 'lg:pb-0'} pt-5 md:pt-0`}`}>
         {/* Tarja de gerenciamento: apenas no painel do compositor */}
         {!isAuthPage && isComposerPanel && <ManagingComposerBanner />}
 
-        <main className="bg-background-primary px-4 sm:px-6 lg:px-8">
+        <main className={isImmersiveCifraPage ? 'bg-background-primary' : 'bg-background-primary px-4 sm:px-6 lg:px-8'}>
           {children || <Outlet />}
         </main>
         
         {/* Footer Global - Ocultar em páginas de auth */}
-        {!isAuthPage && <Footer />}
+        {!isAuthPage && !isImmersiveCifraPage && <Footer />}
       </div>
       
       {/* Mobile Navigation - Mobile Only */}
-      <MobileNav />
+      {!isImmersiveCifraPage && <MobileNav />}
       
       {/* Audio Player - Always visible when track is playing */}
-      {currentTrack && !isAdminPanel && <Player isHidden={isMenuOpen} />}
+      {currentTrack && !isAdminPanel && !isImmersiveCifraPage && <Player isHidden={isMenuOpen} />}
       
       {/* Toast Notifications removed for silent UX */}
       
