@@ -283,8 +283,7 @@ const buildStableHomeSelections = (catalog: EmergencyCatalog) => {
       directPlayable
         .filter((hymn) => (
           avulsosHymnIds.has(String(hymn.id)) ||
-          avulsosAlbumHymnIds.has(String(hymn.id)) ||
-          normalizeHomeCategory(hymn.titulo).includes('avulso')
+          avulsosAlbumHymnIds.has(String(hymn.id))
         ))
         .map((hymn) => mapEmergencyHymnToHomeSectionCard(hymn, 'Hino Avulso')),
       12

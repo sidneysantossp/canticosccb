@@ -435,8 +435,7 @@ async function getHomePageDataFromSupabase(): Promise<HomePageData> {
     if (keyword === 'avulsos') {
       return (
         avulsosHymnIds.has(String(h.id)) ||
-        avulsosAlbumHymnIds.has(String(h.id)) ||
-        normalizeHomeCategory(h.title).includes('avulso')
+        avulsosAlbumHymnIds.has(String(h.id))
       );
     }
     if (allCats && allCats.length > 0) {
@@ -695,8 +694,7 @@ export async function getHomePageData(): Promise<HomePageData> {
       );
       avulsosApi = allHymns.filter((h) => (
         avulsosHymnIds.has(String(h.id)) ||
-        avulsosAlbumHymnIds.has(String(h.id)) ||
-        normalizeHomeCategory(h.titulo).includes('avulso')
+        avulsosAlbumHymnIds.has(String(h.id))
       ));
     } catch (e) {
       console.warn('Supabase error loading hinos by category:', e);
