@@ -9,6 +9,27 @@ import { CIFRA_V2_INSTRUMENTS } from '@/types/cifras-v2';
 
 type DisplayCifra = Cifra | PublicCifraPageData;
 
+const DEMO_CIFRA_SLUG = 'demo-hoje-deus-te-abraca';
+
+const DEMO_LIST_CIFRA: Cifra = {
+  id: -1,
+  title: 'Hoje Deus Te Abraça',
+  artist: 'Hinos Avulsos CCB',
+  slug: DEMO_CIFRA_SLUG,
+  content: '',
+  original_key: 'A',
+  instrument: 'violao',
+  capo: 4,
+  cover_url: null,
+  hino_id: null,
+  category: 'avulsos',
+  views_count: 0,
+  is_active: true,
+  created_by: null,
+  created_at: '2026-08-08T00:00:00.000Z',
+  updated_at: '2026-08-08T00:00:00.000Z',
+};
+
 const PUBLIC_INSTRUMENTS = [
   ...INSTRUMENTS,
   ...CIFRA_V2_INSTRUMENTS.filter((entry) => !INSTRUMENTS.some((legacy) => legacy.value === entry.value)),
@@ -33,9 +54,13 @@ const CifrasListPage: React.FC = () => {
     try {
       setIsLoading(true);
       const data = await fetchMergedPublicCifrasList();
-      setCifras(data);
+      setCifras([
+        DEMO_LIST_CIFRA,
+        ...data.filter((cifra) => cifra.slug !== DEMO_CIFRA_SLUG),
+      ]);
     } catch (err) {
       console.error('Erro ao carregar cifras:', err);
+      setCifras([DEMO_LIST_CIFRA]);
     } finally {
       setIsLoading(false);
     }
@@ -149,7 +174,11 @@ const CifrasListPage: React.FC = () => {
             <Link
               key={cifra.id}
               to={`/cifra/${cifra.slug}`}
-              className="group bg-gray-800/40 hover:bg-gray-800/70 border border-gray-700/50 hover:border-gray-600 rounded-xl p-4 transition-all"
+              className={`group rounded-xl border p-4 transition-all ${
+                cifra.slug === DEMO_CIFRA_SLUG
+                  ? 'border-primary-500/40 bg-primary-500/10 hover:border-primary-400/70 hover:bg-primary-500/15'
+                  : 'border-gray-700/50 bg-gray-800/40 hover:border-gray-600 hover:bg-gray-800/70'
+              }`}
             >
               <div className="flex items-start gap-3">
                 {cifra.cover_url ? (
@@ -165,6 +194,11 @@ const CifrasListPage: React.FC = () => {
                   </h3>
                   <p className="text-gray-400 text-sm line-clamp-1">{cifra.artist}</p>
                   <div className="flex items-center gap-2 mt-2">
+                    {cifra.slug === DEMO_CIFRA_SLUG ? (
+                      <span className="px-2 py-0.5 bg-primary-500 text-black text-xs rounded-md font-bold">
+                        Demo
+                      </span>
+                    ) : null}
                     <span className="px-2 py-0.5 bg-primary-500/15 text-primary-400 text-xs rounded-md font-medium">
                       {cifra.original_key}
                     </span>

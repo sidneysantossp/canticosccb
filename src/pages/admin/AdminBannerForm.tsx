@@ -19,6 +19,7 @@ const BANNER_TYPES: { value: BannerType; label: string }[] = [
 ];
 
 const GRADIENT_OPTIONS = [
+  { value: '', label: 'Sem Efeito' },
   { value: 'bg-gradient-to-br from-[#3b82f6]/80 to-[#8b5cf6]/80', label: 'Azul → Roxo' },
   { value: 'bg-gradient-to-br from-[#10b981]/80 to-[#3b82f6]/80', label: 'Verde → Azul' },
   { value: 'bg-gradient-to-br from-[#f59e0b]/80 to-[#ef4444]/80', label: 'Laranja → Vermelho' },
@@ -41,7 +42,7 @@ const AdminBannerForm: React.FC = () => {
     type: 'hero',
     position: 1,
     is_active: true,
-    gradient_overlay: 'bg-gradient-to-br from-[#3b82f6]/80 to-[#8b5cf6]/80'
+    gradient_overlay: ''
   });
 
   const [imagePreview, setImagePreview] = useState('');
@@ -73,7 +74,7 @@ const AdminBannerForm: React.FC = () => {
           type: banner.type,
           position: banner.position,
           is_active: banner.is_active,
-          gradient_overlay: banner.gradient_overlay || 'bg-gradient-to-br from-[#3b82f6]/80 to-[#8b5cf6]/80'
+          gradient_overlay: banner.gradient_overlay || ''
         });
         // Normalizar URL antiga pública /media/banners/ -> stream seguro
         const resolveBannerUrl = (value: string) => {

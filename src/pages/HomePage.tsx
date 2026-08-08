@@ -22,6 +22,7 @@ import { apiFetch } from '@/lib/api-helper';
 import TrendsSection from '@/components/home/TrendsSection';
 import AlbumsSection from '@/components/home/AlbumsSection';
 import HymnsSection from '@/components/home/HymnsSection';
+import CifrasFeatureBanner from '@/components/home/CifrasFeatureBanner';
 import { DEFAULT_COVER_IDENTIFIER } from '@/lib/config';
 import { prewarmEmergencyPlaybackUrl } from '@/lib/emergencyAudioPlayback';
 import { resolveTrackAudioUrl } from '@/lib/playableAudio';
@@ -934,6 +935,8 @@ const HomePage: React.FC = () => {
         onScrollLeft={scrollLeft}
         onScrollRight={scrollRight}
       />
+
+      <CifrasFeatureBanner />
 
       {/* Category Grid */}
       <div className="px-6">

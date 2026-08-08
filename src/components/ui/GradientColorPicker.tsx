@@ -19,6 +19,7 @@ const GradientColorPicker: React.FC<GradientColorPickerProps> = ({
   onChange,
   className = ""
 }) => {
+  const hasNoEffect = !value.trim();
   // Cores predefinidas populares
   const presetColors = [
     '#ef4444', '#f97316', '#f59e0b', '#eab308', '#84cc16', '#22c55e',
@@ -99,8 +100,21 @@ const GradientColorPicker: React.FC<GradientColorPickerProps> = ({
 
   return (
     <div className={`space-y-4 ${className}`}>
+      <button
+        type="button"
+        onClick={() => onChange('')}
+        className={`flex w-full items-center justify-between rounded-lg border px-4 py-3 text-left transition-colors ${
+          hasNoEffect
+            ? 'border-primary-500 bg-primary-500/10 text-primary-300'
+            : 'border-gray-700 bg-gray-800 text-gray-300 hover:border-primary-600 hover:text-white'
+        }`}
+      >
+        <span className="font-medium">Sem Efeito</span>
+        <span className="text-xs text-gray-500">Não aplicar overlay sobre o banner</span>
+      </button>
+
       {/* Preview */}
-      <div className="space-y-2">
+      <div className={`space-y-2 ${hasNoEffect ? 'opacity-50' : ''}`}>
         <label className="block text-sm font-medium text-gray-300">
           Preview do Gradiente
         </label>

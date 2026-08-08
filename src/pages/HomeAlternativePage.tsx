@@ -21,6 +21,7 @@ import PersonalizedSectionAlt from '@/components/home-alt/PersonalizedSectionAlt
 import TrendsSectionAlt from '@/components/home-alt/TrendsSectionAlt';
 import AlbumsSectionAlt from '@/components/home-alt/AlbumsSectionAlt';
 import HymnsSectionAlt from '@/components/home-alt/HymnsSectionAlt';
+import CifrasFeatureBanner from '@/components/home/CifrasFeatureBanner';
 import { supabaseFetch } from '@/lib/supabaseRest';
 import { hasPlayableTrackSource } from '@/lib/playerFeedback';
 import { resolveEmergencyArchiveTrack } from '@/lib/emergencyAudioResolver';
@@ -543,6 +544,8 @@ const HomeAlternativePage: React.FC = () => {
             onScrollRight={scrollRight}
             isDarkMode={isDarkMode}
           />
+
+          <CifrasFeatureBanner />
 
           {/* Category Grid */}
           <div className="px-6">

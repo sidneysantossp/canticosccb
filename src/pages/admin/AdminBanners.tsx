@@ -35,7 +35,7 @@ const AdminBanners: React.FC = () => {
     type: 'hero',
     position: 1,
     is_active: true,
-    gradient_overlay: 'bg-gradient-to-br from-[#3b82f6]/80 to-[#8b5cf6]/80'
+    gradient_overlay: ''
   });
 
   const [previewUrl, setPreviewUrl] = useState<string>('');
@@ -108,7 +108,7 @@ const AdminBanners: React.FC = () => {
         type: banner.type,
         position: banner.position,
         is_active: banner.is_active,
-        gradient_overlay: banner.gradient_overlay || 'bg-gradient-to-br from-[#3b82f6]/80 to-[#8b5cf6]/80'
+        gradient_overlay: banner.gradient_overlay || ''
       });
       // Prepara preview a partir da URL existente
       const url = buildBannerUrl(banner);
@@ -128,7 +128,7 @@ const AdminBanners: React.FC = () => {
         type: activeTab,
         position: nextPosition,
         is_active: true,
-        gradient_overlay: 'bg-gradient-to-br from-[#3b82f6]/80 to-[#8b5cf6]/80'
+        gradient_overlay: ''
       });
       setPreviewUrl('');
       setPreviewType('image');
