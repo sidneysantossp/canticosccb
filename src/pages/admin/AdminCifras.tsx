@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Plus, Edit, Trash2, Eye, EyeOff, Search, Music, FileText, Sparkles, PenSquare, Wand2, ExternalLink, Rocket } from 'lucide-react';
+import { Plus, Edit, Trash2, Eye, EyeOff, Search, Music, FileText, Sparkles, PenSquare, Wand2, ExternalLink, Rocket, CheckCircle2 } from 'lucide-react';
 import { fetchCifras, deleteCifra, toggleCifraActive, Cifra, INSTRUMENTS, CATEGORIES } from '@/api/cifras';
 import ConfirmModal from '@/components/ConfirmModal';
 import AlertModal from '@/components/ui/AlertModal';
@@ -699,6 +699,13 @@ const AdminCifras: React.FC = () => {
           >
             <Music className="w-5 h-5 text-primary-400" />
             Shapes
+          </Link>
+          <Link
+            to="/admin/cifras-v2/revisao"
+            className="inline-flex items-center gap-2 px-5 py-3 bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-200 font-semibold rounded-xl transition-colors border border-emerald-500/30"
+          >
+            <CheckCircle2 className="w-5 h-5" />
+            Revisão V2
           </Link>
           <button
             type="button"

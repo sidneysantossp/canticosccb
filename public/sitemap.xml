@@ -7656,6 +7656,12 @@
     <priority>0.7</priority>
   </url>
   <url>
+    <loc>https://www.canticosccb.com.br/compositor/samela-helene-0ed44ca4-ec54-4f68-8d88-09f7653f6401</loc>
+    <lastmod>2026-08-07</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
     <loc>https://www.canticosccb.com.br/compositor/stella-meireles-ae7ea9cd-c554-44db-930b-acb72ebdd9d3</loc>
     <lastmod>2026-02-25</lastmod>
     <changefreq>monthly</changefreq>
@@ -9734,6 +9740,30 @@
   <url>
     <loc>https://www.canticosccb.com.br/categoria/violinos</loc>
     <lastmod>2026-01-26</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://www.canticosccb.com.br/playlist/31c9e116-85fe-4025-b370-946911a3ed43</loc>
+    <lastmod>2026-08-08</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://www.canticosccb.com.br/playlist/81ceece3-26f0-44f5-9e3b-7d474763d0b6</loc>
+    <lastmod>2026-08-07</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://www.canticosccb.com.br/playlist/2552a4e1-42f5-476c-b4d6-1535568549dd</loc>
+    <lastmod>2026-08-07</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://www.canticosccb.com.br/playlist/1ff2a997-4000-40f5-a0f0-d1ac6fae16aa</loc>
+    <lastmod>2026-08-07</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.6</priority>
   </url>

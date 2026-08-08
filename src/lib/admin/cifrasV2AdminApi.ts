@@ -81,6 +81,8 @@ import { parseLegacyCifraContent } from '@/lib/cifras-v2/legacyCifraParser';
 
 export { createCifraSong, createCifraVersion, type FetchCifraVersionChordOverridesOptions };
 
+export { fetchAllCifraSongs, fetchAllCifraVersions };
+
 export interface CifraV2RolloutStats {
   songsTotal: number;
   versionsTotal: number;

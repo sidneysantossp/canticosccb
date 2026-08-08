@@ -85,5 +85,6 @@ export const AdminCifraForm = lazyWithChunkRecovery(() => import('./AdminCifraFo
 export const AdminCifraMigrationPage = lazyWithChunkRecovery(() => import('./AdminCifraMigrationPage'));
 export const AdminCifraV2Editor = lazyWithChunkRecovery(() => import('./AdminCifraV2Editor'));
 export const AdminCifraChordShapes = lazyWithChunkRecovery(() => import('./AdminCifraChordShapes'));
+export const AdminCifraReview = lazyWithChunkRecovery(() => import('./AdminCifraReview'));
 export const AdminHinario = lazyWithChunkRecovery(() => import('./AdminHinario'));
 export const AdminHinarioForm = lazyWithChunkRecovery(() => import('./AdminHinarioForm'));

@@ -113,6 +113,7 @@ import {
   AdminCifraForm,
   AdminCifraChordShapes,
   AdminCifraMigrationPage,
+  AdminCifraReview,
   AdminCifraV2Editor,
   AdminCifras,
   AdminCollectionForm,
@@ -610,6 +611,7 @@ const AppContent: React.FC = () => {
           <Route path="admin/cifras/new" element={<ProtectedRoute requireAdmin><AdminCifraForm /></ProtectedRoute>} />
           <Route path="admin/cifras/:id/edit" element={<ProtectedRoute requireAdmin><AdminCifraForm /></ProtectedRoute>} />
           <Route path="admin/cifras/:id/migrate" element={<ProtectedRoute requireAdmin><AdminCifraMigrationPage /></ProtectedRoute>} />
+          <Route path="admin/cifras-v2/revisao" element={<ProtectedRoute requireAdmin><AdminCifraReview /></ProtectedRoute>} />
           <Route path="admin/cifras-v2/new" element={<ProtectedRoute requireAdmin><AdminCifraV2Editor /></ProtectedRoute>} />
           <Route path="admin/cifras-v2/versions/:versionId/edit" element={<ProtectedRoute requireAdmin><AdminCifraV2Editor /></ProtectedRoute>} />
           <Route path="admin/cifras-v2/shapes" element={<ProtectedRoute requireAdmin><AdminCifraChordShapes /></ProtectedRoute>} />
