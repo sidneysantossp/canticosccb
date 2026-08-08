@@ -1160,14 +1160,14 @@ const CifraPage: React.FC = () => {
   const renderLine = (line: string, idx: React.Key) => {
     if (isSectionLine(line)) {
       return (
-        <div key={idx} className="mt-8 mb-3 text-base font-medium text-[#252525] sm:font-bold sm:text-white">
+        <div key={idx} className="mt-8 mb-3 text-base font-medium text-[#252525] sm:font-bold sm:text-white print:font-medium print:text-[#252525]">
           {line}
         </div>
       );
     }
     if (isChordLine(line) && showChords) {
       return (
-        <div key={idx} className="whitespace-pre font-bold text-[#ff6a00] sm:text-primary-400">
+        <div key={idx} className="whitespace-pre font-bold text-[#ff6a00] sm:text-primary-400 print:text-[#ff6a00]">
           {line}
         </div>
       );
@@ -1176,7 +1176,7 @@ const CifraPage: React.FC = () => {
       return null;
     }
     return (
-      <div key={idx} className="whitespace-pre-wrap text-[#252525] sm:text-gray-200">
+      <div key={idx} className="whitespace-pre-wrap text-[#252525] sm:text-gray-200 print:text-[#252525]">
         {line || '\u00A0'}
       </div>
     );
@@ -1283,7 +1283,28 @@ const CifraPage: React.FC = () => {
         ]),
       ]}
     />
-    <div className="min-h-screen bg-[#f8f7f2] px-5 pt-8 pb-36 text-[#252525] sm:mx-auto sm:min-h-0 sm:max-w-4xl sm:bg-transparent sm:px-4 sm:py-6 sm:pb-6 sm:text-inherit print:px-0 print:py-0">
+    <div className="min-h-screen bg-[#f8f7f2] px-5 pt-8 pb-36 text-[#252525] sm:mx-auto sm:min-h-0 sm:max-w-4xl sm:bg-transparent sm:px-4 sm:py-6 sm:pb-6 sm:text-inherit print:max-w-none print:bg-white print:px-12 print:py-10 print:pb-0 print:text-[#252525]">
+      <div className="mb-14 hidden print:block">
+        <div className="flex items-start justify-between gap-8">
+          <div>
+            <h1 className="text-[34px] font-black leading-tight tracking-[-0.03em] text-[#202124]">{cifra.title}</h1>
+            {cifra.artist ? (
+              <p className="mt-1 text-[29px] font-black leading-tight text-[#ff6a00]">{cifra.artist}</p>
+            ) : null}
+          </div>
+          <div className="text-right text-2xl font-black text-[#202124]">Cânticos CCB</div>
+        </div>
+        <div className="mt-10 space-y-6 font-mono text-[17px] leading-relaxed text-[#252525]">
+          <p className="font-bold">Tom: <span className="text-[#ff6a00]">{selectedKey}</span>{selectedKey !== cifra.original_key ? ` (forma dos acordes no tom de ${cifra.original_key})` : ''}</p>
+          {isCifraV2(cifra) && cifra.tuning ? (
+            <p>Afinação: <span className="font-bold text-[#ff6a00]">{cifra.tuning}</span></p>
+          ) : null}
+          {cifra.capo > 0 ? (
+            <p>Capotraste na <span className="font-bold text-[#ff6a00]">{cifra.capo}ª casa</span></p>
+          ) : null}
+        </div>
+      </div>
+
       {/* Mobile stage header */}
       <div className="mb-7 sm:hidden print:hidden">
         <div className="flex items-start justify-between gap-4">
@@ -1341,7 +1362,7 @@ const CifraPage: React.FC = () => {
       </div>
 
       {/* Header */}
-      <div className="mb-6 hidden sm:block">
+      <div className="mb-6 hidden sm:block print:hidden">
         <Link to="/cifras" className="inline-flex items-center gap-2 text-gray-400 hover:text-white mb-4 transition-colors print:hidden">
           <ArrowLeft className="w-4 h-4" />
           Voltar
@@ -2133,7 +2154,7 @@ const CifraPage: React.FC = () => {
 
       {/* Chord Diagrams */}
       {showChords && visibleChordCards.length > 0 && (
-        <div className="mb-7 -mx-1 hidden print:mb-4 sm:mx-0 sm:mb-6 sm:block">
+        <div className="mb-7 -mx-1 hidden print:hidden sm:mx-0 sm:mb-6 sm:block">
           <div className="mb-3 hidden items-center justify-between gap-3 sm:flex">
             <div>
               <h2 className="text-base font-semibold text-white">Dicionário de acordes</h2>
@@ -2172,7 +2193,7 @@ const CifraPage: React.FC = () => {
       {/* Cifra Content */}
       <div
         ref={contentRef}
-        className="font-mono leading-[1.62] tracking-[-0.01em] sm:leading-relaxed sm:tracking-normal"
+        className="font-mono leading-[1.62] tracking-[-0.01em] sm:leading-relaxed sm:tracking-normal print:text-[17px] print:leading-[1.6]"
         style={{ fontSize: `${fontSize}px` }}
       >
         {/* Key info */}
@@ -2205,7 +2226,7 @@ const CifraPage: React.FC = () => {
                   style={shouldRenderTwoColumns ? { breakInside: 'avoid-column' } : undefined}
                 >
                   {section.section_label ? (
-                    <div className="mb-3 text-base font-medium text-[#252525] sm:font-bold sm:text-white">
+                    <div className="mb-3 text-base font-medium text-[#252525] sm:font-bold sm:text-white print:font-medium print:text-[#252525]">
                       {section.section_label}
                     </div>
                   ) : null}
