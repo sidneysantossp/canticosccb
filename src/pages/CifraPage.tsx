@@ -1160,14 +1160,14 @@ const CifraPage: React.FC = () => {
   const renderLine = (line: string, idx: React.Key) => {
     if (isSectionLine(line)) {
       return (
-        <div key={idx} className="mt-8 mb-3 text-base font-bold text-gray-500 sm:text-white">
+        <div key={idx} className="mt-8 mb-3 text-base font-medium text-[#252525] sm:font-bold sm:text-white">
           {line}
         </div>
       );
     }
     if (isChordLine(line) && showChords) {
       return (
-        <div key={idx} className="whitespace-pre font-bold text-orange-400 sm:text-primary-400">
+        <div key={idx} className="whitespace-pre font-bold text-[#ff6a00] sm:text-primary-400">
           {line}
         </div>
       );
@@ -1176,7 +1176,7 @@ const CifraPage: React.FC = () => {
       return null;
     }
     return (
-      <div key={idx} className="whitespace-pre-wrap text-gray-100 sm:text-gray-200">
+      <div key={idx} className="whitespace-pre-wrap text-[#252525] sm:text-gray-200">
         {line || '\u00A0'}
       </div>
     );
@@ -1283,56 +1283,56 @@ const CifraPage: React.FC = () => {
         ]),
       ]}
     />
-    <div className="min-h-screen bg-[#070808] px-5 pt-5 pb-36 sm:mx-auto sm:min-h-0 sm:max-w-4xl sm:bg-transparent sm:px-4 sm:py-6 sm:pb-6 print:px-0 print:py-0">
+    <div className="min-h-screen bg-[#f8f7f2] px-5 pt-8 pb-36 text-[#252525] sm:mx-auto sm:min-h-0 sm:max-w-4xl sm:bg-transparent sm:px-4 sm:py-6 sm:pb-6 sm:text-inherit print:px-0 print:py-0">
       {/* Mobile stage header */}
       <div className="mb-7 sm:hidden print:hidden">
         <div className="flex items-start justify-between gap-4">
           <Link
             to="/cifras"
             aria-label="Voltar para cifras"
-            className="mt-1 inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-full border border-white/10 bg-white/[0.06] text-white shadow-lg shadow-black/20 backdrop-blur transition-colors active:scale-95"
+            className="mt-1 inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-black/10 bg-white text-[#252525] shadow-sm transition-colors active:scale-95"
           >
             <ArrowLeft className="h-6 w-6" />
           </Link>
           <div className="min-w-0 flex-1">
-            <h1 className="text-[28px] font-black leading-[1.03] tracking-[-0.04em] text-white">{cifra.title}</h1>
+            <h1 className="text-[34px] font-black leading-[0.98] tracking-[-0.05em] text-[#202124]">{cifra.title}</h1>
             {cifra.artist ? (
-              <p className="mt-2 text-lg font-bold leading-tight text-orange-400">{cifra.artist}</p>
+              <p className="mt-2 text-[25px] font-black leading-tight text-[#ff6a00]">{cifra.artist}</p>
             ) : null}
           </div>
           <button
             type="button"
             onClick={() => setShowOptions(true)}
             aria-label="Abrir opções da cifra"
-            className="mt-1 inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-full border border-white/10 bg-white/[0.06] text-white shadow-lg shadow-black/20 backdrop-blur transition-colors active:scale-95"
+            className="mt-1 inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-black/10 bg-white text-[#252525] shadow-sm transition-colors active:scale-95"
           >
             <Settings2 className="h-5 w-5" />
           </button>
         </div>
-        <div className="mt-5 flex flex-wrap items-center gap-2 pl-16">
+        <div className="mt-8 space-y-4 font-mono text-[17px]">
           <button
             type="button"
             onClick={() => setShowOptions(true)}
-            className="rounded-full border border-white/10 bg-white/[0.06] px-4 py-2 text-sm font-semibold text-white shadow-inner shadow-white/5"
+            className="block text-left font-bold text-[#252525]"
           >
-            Tom <span className="text-primary-400">{selectedKey}</span>
+            Tom: <span className="text-[#ff6a00]">{selectedKey}</span>
           </button>
           {cifra.capo > 0 ? (
             <button
               type="button"
               onClick={() => setShowOptions(true)}
-              className="rounded-full border border-white/10 bg-white/[0.06] px-4 py-2 text-sm font-semibold text-white shadow-inner shadow-white/5"
+              className="block text-left font-normal text-[#252525]"
             >
-              Capo <span className="text-primary-400">{cifra.capo}ª casa</span>
+              Capotraste na <span className="font-bold text-[#ff6a00]">{cifra.capo}ª casa</span>
             </button>
           ) : null}
           <button
             type="button"
             onClick={() => setMetronomeEnabled((current) => !current)}
-            className={`rounded-full border px-4 py-2 text-sm font-semibold shadow-inner shadow-white/5 ${
+            className={`hidden text-left font-bold ${
               metronomeEnabled
-                ? 'border-primary-500/50 bg-primary-500/15 text-primary-300'
-                : 'border-white/10 bg-white/[0.06] text-white'
+                ? 'text-[#118a42]'
+                : 'text-[#252525]'
             }`}
           >
             {metronomeEnabled ? `${metronomeBpm} BPM` : 'Metrônomo'}
@@ -2133,7 +2133,7 @@ const CifraPage: React.FC = () => {
 
       {/* Chord Diagrams */}
       {showChords && visibleChordCards.length > 0 && (
-        <div className="mb-7 -mx-1 print:mb-4 sm:mx-0 sm:mb-6">
+        <div className="mb-7 -mx-1 hidden print:mb-4 sm:mx-0 sm:mb-6 sm:block">
           <div className="mb-3 hidden items-center justify-between gap-3 sm:flex">
             <div>
               <h2 className="text-base font-semibold text-white">Dicionário de acordes</h2>
@@ -2172,7 +2172,7 @@ const CifraPage: React.FC = () => {
       {/* Cifra Content */}
       <div
         ref={contentRef}
-        className="font-mono leading-[1.85] tracking-[-0.02em] sm:leading-relaxed sm:tracking-normal"
+        className="font-mono leading-[1.62] tracking-[-0.01em] sm:leading-relaxed sm:tracking-normal"
         style={{ fontSize: `${fontSize}px` }}
       >
         {/* Key info */}
@@ -2205,7 +2205,7 @@ const CifraPage: React.FC = () => {
                   style={shouldRenderTwoColumns ? { breakInside: 'avoid-column' } : undefined}
                 >
                   {section.section_label ? (
-                    <div className="mb-3 text-base font-bold text-white">
+                    <div className="mb-3 text-base font-medium text-[#252525] sm:font-bold sm:text-white">
                       {section.section_label}
                     </div>
                   ) : null}
@@ -2224,11 +2224,11 @@ const CifraPage: React.FC = () => {
       </div>
 
       {/* Mobile quick controls */}
-      <div className="fixed inset-x-3 bottom-3 z-30 grid grid-cols-5 overflow-hidden rounded-[2rem] border border-white/10 bg-[#111313]/95 px-2 py-3 shadow-2xl shadow-black/60 backdrop-blur-xl sm:hidden print:hidden">
+      <div className="fixed inset-x-3 bottom-3 z-30 grid grid-cols-5 overflow-hidden rounded-[1.75rem] border border-black/10 bg-white/95 px-2 py-3 shadow-2xl shadow-black/20 backdrop-blur-xl sm:hidden print:hidden">
         <button
           type="button"
           onClick={() => setShowOptions(true)}
-          className="flex flex-col items-center gap-1.5 text-[11px] font-medium text-primary-300"
+          className="flex flex-col items-center gap-1.5 text-[11px] font-medium text-[#118a42]"
         >
           <Music className="h-5 w-5" />
           Tom
@@ -2236,7 +2236,7 @@ const CifraPage: React.FC = () => {
         <button
           type="button"
           onClick={() => setAutoScrollSpeed(prev => prev === 0 ? 1 : prev === 1 ? 2 : prev === 2 ? 3 : 0)}
-          className={`flex flex-col items-center gap-1.5 text-[11px] font-medium ${autoScrollSpeed > 0 ? 'text-primary-300' : 'text-gray-300'}`}
+          className={`flex flex-col items-center gap-1.5 text-[11px] font-medium ${autoScrollSpeed > 0 ? 'text-[#118a42]' : 'text-gray-700'}`}
         >
           <ScrollText className="h-5 w-5" />
           Rolagem
@@ -2244,7 +2244,7 @@ const CifraPage: React.FC = () => {
         <button
           type="button"
           onClick={() => setShowChords((current) => !current)}
-          className={`flex flex-col items-center gap-1.5 text-[11px] font-medium ${showChords ? 'text-orange-400' : 'text-gray-300'}`}
+          className={`flex flex-col items-center gap-1.5 text-[11px] font-medium ${showChords ? 'text-[#ff6a00]' : 'text-gray-700'}`}
         >
           <Settings2 className="h-5 w-5" />
           Acordes
@@ -2252,7 +2252,7 @@ const CifraPage: React.FC = () => {
         <button
           type="button"
           onClick={() => setMetronomeEnabled((current) => !current)}
-          className={`flex flex-col items-center gap-1.5 text-[11px] font-medium ${metronomeEnabled ? 'text-primary-300' : 'text-gray-300'}`}
+          className={`flex flex-col items-center gap-1.5 text-[11px] font-medium ${metronomeEnabled ? 'text-[#118a42]' : 'text-gray-700'}`}
         >
           <Gauge className="h-5 w-5" />
           Metrônomo
@@ -2260,7 +2260,7 @@ const CifraPage: React.FC = () => {
         <button
           type="button"
           onClick={() => setShowOptions(true)}
-          className="flex flex-col items-center gap-1.5 text-[11px] font-medium text-gray-300"
+          className="flex flex-col items-center gap-1.5 text-[11px] font-medium text-gray-700"
         >
           <Settings2 className="h-5 w-5" />
           Opções
@@ -2270,37 +2270,37 @@ const CifraPage: React.FC = () => {
       {showOptions ? (
         <div className="fixed inset-0 z-40 flex items-end bg-black/60 px-3 pb-3 sm:hidden print:hidden" onClick={() => setShowOptions(false)}>
           <div
-            className="w-full rounded-[2rem] border border-white/10 bg-[#161818]/95 p-5 shadow-2xl shadow-black/70 backdrop-blur-xl"
+            className="w-full rounded-[2rem] border border-black/10 bg-white/95 p-5 shadow-2xl shadow-black/20 backdrop-blur-xl"
             onClick={(event) => event.stopPropagation()}
           >
-            <div className="mx-auto mb-5 h-1 w-16 rounded-full bg-white/30" />
+            <div className="mx-auto mb-5 h-1 w-16 rounded-full bg-black/20" />
             <div className="mb-5 flex items-center justify-between gap-4">
               <div>
-                <h2 className="text-2xl font-black tracking-[-0.03em] text-white">Ajustes rápidos</h2>
-                <p className="mt-1 text-sm text-gray-400">Controle a cifra sem sair do modo tocar.</p>
+                <h2 className="text-2xl font-black tracking-[-0.03em] text-[#252525]">Ajustes rápidos</h2>
+                <p className="mt-1 text-sm text-gray-600">Controle a cifra sem sair do modo tocar.</p>
               </div>
-              <button type="button" onClick={() => setShowOptions(false)} className="rounded-full bg-white/10 p-2 text-gray-300">
+              <button type="button" onClick={() => setShowOptions(false)} className="rounded-full bg-black/5 p-2 text-gray-700">
                 <X className="h-5 w-5" />
               </button>
             </div>
 
             <div className="space-y-3">
-              <div className="grid grid-cols-[1fr,64px,84px,64px] items-center overflow-hidden rounded-2xl border border-white/10 bg-white/[0.04] text-white">
-                <span className="px-4 py-4 text-sm font-medium text-gray-200">Transposição (Tom)</span>
-                <button type="button" onClick={transposeDown} className="h-full border-l border-white/10 text-primary-300">−</button>
-                <button type="button" onClick={() => setShowKeySelector((current) => !current)} className="h-full border-l border-white/10 text-base font-bold">{selectedKey}</button>
-                <button type="button" onClick={transposeUp} className="h-full border-l border-white/10 text-2xl text-primary-300">+</button>
+              <div className="grid grid-cols-[1fr,64px,84px,64px] items-center overflow-hidden rounded-2xl border border-black/10 bg-black/[0.03] text-[#252525]">
+                <span className="px-4 py-4 text-sm font-medium text-gray-800">Transposição (Tom)</span>
+                <button type="button" onClick={transposeDown} className="h-full border-l border-black/10 text-[#118a42]">−</button>
+                <button type="button" onClick={() => setShowKeySelector((current) => !current)} className="h-full border-l border-black/10 text-base font-bold">{selectedKey}</button>
+                <button type="button" onClick={transposeUp} className="h-full border-l border-black/10 text-2xl text-[#118a42]">+</button>
               </div>
 
               {showKeySelector ? (
-                <div className="rounded-2xl border border-white/10 bg-black/20 p-3">
+                <div className="rounded-2xl border border-black/10 bg-black/[0.03] p-3">
                   <div className="grid grid-cols-6 gap-2">
                     {ALL_KEYS.map((keyName) => (
                       <button
                         key={keyName}
                         type="button"
                         onClick={() => { setSelectedKey(keyName); setShowKeySelector(false); }}
-                        className={`h-10 rounded-xl text-sm font-bold ${keyName === selectedKey ? 'bg-primary-500 text-black' : 'bg-white/5 text-gray-200'}`}
+                        className={`h-10 rounded-xl text-sm font-bold ${keyName === selectedKey ? 'bg-[#118a42] text-white' : 'bg-black/[0.04] text-gray-800'}`}
                       >
                         {keyName}
                       </button>
@@ -2309,15 +2309,15 @@ const CifraPage: React.FC = () => {
                 </div>
               ) : null}
 
-              <div className="grid grid-cols-[1fr,64px,84px,64px] items-center overflow-hidden rounded-2xl border border-white/10 bg-white/[0.04] text-white">
-                <span className="px-4 py-4 text-sm font-medium text-gray-200">Fonte (Cifra)</span>
-                <button type="button" onClick={() => setFontSize(prev => Math.max(12, prev - 1))} className="h-full border-l border-white/10 text-primary-300">A−</button>
-                <span className="border-l border-white/10 py-4 text-center text-sm font-bold">{Math.round((fontSize / 16) * 100)}%</span>
-                <button type="button" onClick={() => setFontSize(prev => Math.min(24, prev + 1))} className="h-full border-l border-white/10 text-primary-300">A+</button>
+              <div className="grid grid-cols-[1fr,64px,84px,64px] items-center overflow-hidden rounded-2xl border border-black/10 bg-black/[0.03] text-[#252525]">
+                <span className="px-4 py-4 text-sm font-medium text-gray-800">Fonte (Cifra)</span>
+                <button type="button" onClick={() => setFontSize(prev => Math.max(12, prev - 1))} className="h-full border-l border-black/10 text-[#118a42]">A−</button>
+                <span className="border-l border-black/10 py-4 text-center text-sm font-bold">{Math.round((fontSize / 16) * 100)}%</span>
+                <button type="button" onClick={() => setFontSize(prev => Math.min(24, prev + 1))} className="h-full border-l border-black/10 text-[#118a42]">A+</button>
               </div>
 
-              <div className="grid grid-cols-[1fr,1.3fr,90px] items-center overflow-hidden rounded-2xl border border-white/10 bg-white/[0.04] text-white">
-                <span className="px-4 py-4 text-sm font-medium text-gray-200">Rolagem</span>
+              <div className="grid grid-cols-[1fr,1.3fr,90px] items-center overflow-hidden rounded-2xl border border-black/10 bg-black/[0.03] text-[#252525]">
+                <span className="px-4 py-4 text-sm font-medium text-gray-800">Rolagem</span>
                 <input
                   type="range"
                   min={0}
@@ -2327,15 +2327,15 @@ const CifraPage: React.FC = () => {
                   onChange={(event) => setAutoScrollSpeed(Number(event.target.value))}
                   className="accent-primary-500"
                 />
-                <span className="border-l border-white/10 py-4 text-center text-sm font-bold">{autoScrollSpeed === 0 ? 'Off' : `${autoScrollSpeed}x`}</span>
+                <span className="border-l border-black/10 py-4 text-center text-sm font-bold">{autoScrollSpeed === 0 ? 'Off' : `${autoScrollSpeed}x`}</span>
               </div>
 
-              <div className="grid grid-cols-[1fr,1.4fr] items-center overflow-hidden rounded-2xl border border-white/10 bg-white/[0.04] text-white">
-                <span className="px-4 py-4 text-sm font-medium text-gray-200">Instrumento</span>
+              <div className="grid grid-cols-[1fr,1.4fr] items-center overflow-hidden rounded-2xl border border-black/10 bg-black/[0.03] text-[#252525]">
+                <span className="px-4 py-4 text-sm font-medium text-gray-800">Instrumento</span>
                 <select
                   value={selectedInstrument}
                   onChange={e => handleInstrumentChange(e.target.value)}
-                  className="h-full border-l border-white/10 bg-transparent px-4 py-4 text-sm font-bold outline-none"
+                  className="h-full border-l border-black/10 bg-transparent px-4 py-4 text-sm font-bold outline-none"
                 >
                   {instrumentOptions.map(i => (
                     <option key={i.value} value={i.value}>{i.label}</option>
@@ -2347,14 +2347,14 @@ const CifraPage: React.FC = () => {
                 <button
                   type="button"
                   onClick={handleShare}
-                  className="rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-3 text-sm font-semibold text-gray-200"
+                  className="rounded-2xl border border-black/10 bg-black/[0.03] px-4 py-3 text-sm font-semibold text-gray-800"
                 >
                   Compartilhar
                 </button>
                 <button
                   type="button"
                   onClick={handlePrint}
-                  className="rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-3 text-sm font-semibold text-gray-200"
+                  className="rounded-2xl border border-black/10 bg-black/[0.03] px-4 py-3 text-sm font-semibold text-gray-800"
                 >
                   Imprimir
                 </button>
