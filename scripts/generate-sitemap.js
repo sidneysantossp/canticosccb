@@ -245,10 +245,24 @@ async function main() {
     'order': 'created_at.desc',
     'limit': '5000',
   });
-  console.log(`     Found ${cifras.length} cifras`);
+  const cifrasV2 = await supabaseFetch('cifra_public_catalog', 'public_slug,published_at', {
+    'order': 'hinario_numero.asc.nullslast,song_title.asc',
+    'limit': '5000',
+  });
+  console.log(`     Found ${cifras.length} legacy cifras`);
+  console.log(`     Found ${cifrasV2.length} V2 cifras`);
+  const cifraSlugs = new Set();
   for (const ci of cifras) {
     const mod = (ci.updated_at || ci.created_at || today).split('T')[0];
     const slug = ci.slug || ci.id;
+    cifraSlugs.add(slug);
+    urls.push(urlEntry(`/cifra/${slug}`, mod, 'monthly', '0.7'));
+  }
+  for (const ci of cifrasV2) {
+    const slug = ci.public_slug;
+    if (!slug || cifraSlugs.has(slug)) continue;
+    const mod = (ci.published_at || today).split('T')[0];
+    cifraSlugs.add(slug);
     urls.push(urlEntry(`/cifra/${slug}`, mod, 'monthly', '0.7'));
   }
 

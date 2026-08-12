@@ -281,8 +281,8 @@ export async function fetchAdminPreviewCifraPageBySlug(publicSlug: string): Prom
 
 export async function fetchMergedPublicCifrasList(): Promise<Array<Cifra | PublicCifraPageData>> {
   const [publicCatalog, legacyCifras] = await Promise.all([
-    fetchPublicCifraCatalog({ limit: 500 }),
-    fetchCifras({ is_active: true, limit: 500 }),
+    fetchPublicCifraCatalog({ limit: 1000 }),
+    fetchCifras({ is_active: true, limit: 1000 }),
   ]);
 
   const groupedByVersion = new Map<string, CifraPublicCatalogItem>();

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Search, Music, FileText, Eye } from 'lucide-react';
+import { Search, Music, FileText, Disc3 } from 'lucide-react';
 import SEOHead from '@/components/SEO/SEOHead';
 import { generateItemListSchema, generateBreadcrumbSchema } from '@/utils/schemaGenerator';
 import { Cifra, INSTRUMENTS, CATEGORIES } from '@/api/cifras';
@@ -37,6 +37,14 @@ const PUBLIC_INSTRUMENTS = [
 
 function isCifraV2(cifra: DisplayCifra): cifra is PublicCifraPageData {
   return 'source' in cifra && cifra.source === 'v2';
+}
+
+function getInstrumentLabel(value: string) {
+  return PUBLIC_INSTRUMENTS.find(i => i.value === value)?.label || value;
+}
+
+function getInstrumentIcon(_value: string) {
+  return <Music className="w-5 h-5" />;
 }
 
 const CifrasListPage: React.FC = () => {
@@ -102,10 +110,18 @@ const CifrasListPage: React.FC = () => {
     <div className="max-w-5xl mx-auto px-4 py-8 pb-24 sm:pb-8">
       {/* Header */}
       <div className="mb-8">
-        <h1 className="text-3xl md:text-4xl font-bold text-white leading-tight">
-          Cifras<br />Musicais
-        </h1>
-        <p className="text-gray-400 mt-2">Encontre cifras com acordes para violão, guitarra, ukulele e teclado</p>
+        <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+          <div>
+            <h1 className="text-3xl md:text-4xl font-bold text-white leading-tight">
+              Cifras<br />Musicais
+            </h1>
+            <p className="text-gray-400 mt-2">Hinário em formato compacto: hino, tom e instrumento para tocar mais rápido.</p>
+          </div>
+          <div className="inline-flex w-fit items-center gap-2 rounded-full border border-primary-500/25 bg-primary-500/10 px-4 py-2 text-sm text-primary-200">
+            <Disc3 className="w-4 h-4" />
+            {filtered.length} cifras disponíveis
+          </div>
+        </div>
         <div className="flex flex-wrap gap-3 mt-4">
           <Link to="/cifras-violao-ccb" className="px-4 py-2 rounded-full border border-primary-500/30 text-primary-300 hover:border-primary-400 hover:text-white transition-colors text-sm">
             Cifras de Violão
@@ -169,45 +185,43 @@ const CifrasListPage: React.FC = () => {
           </p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3">
           {filtered.map(cifra => (
             <Link
               key={cifra.id}
               to={`/cifra/${cifra.slug}`}
-              className={`group rounded-xl border p-4 transition-all ${
+              className={`group rounded-2xl border px-3 py-3 transition-all ${
                 cifra.slug === DEMO_CIFRA_SLUG
                   ? 'border-primary-500/40 bg-primary-500/10 hover:border-primary-400/70 hover:bg-primary-500/15'
                   : 'border-gray-700/50 bg-gray-800/40 hover:border-gray-600 hover:bg-gray-800/70'
               }`}
             >
-              <div className="flex items-start gap-3">
+              <div className="flex items-center gap-3">
                 {cifra.cover_url ? (
-                  <img src={cifra.cover_url} alt={`Cifra de ${cifra.title}`} className="w-14 h-14 rounded-lg object-cover flex-shrink-0" />
+                  <img src={cifra.cover_url} alt={`Cifra de ${cifra.title}`} className="w-11 h-11 rounded-xl object-cover flex-shrink-0" />
                 ) : (
-                  <div className="w-14 h-14 rounded-lg bg-gray-700/50 flex items-center justify-center flex-shrink-0">
-                    <Music className="w-6 h-6 text-gray-500" />
+                  <div className="w-11 h-11 rounded-xl bg-gray-700/50 flex items-center justify-center flex-shrink-0 text-gray-400 group-hover:text-primary-300 transition-colors">
+                    {getInstrumentIcon(cifra.instrument)}
                   </div>
                 )}
                 <div className="flex-1 min-w-0">
-                  <h3 className="text-white font-semibold group-hover:text-primary-400 transition-colors line-clamp-1">
+                  <h3 className="text-white text-sm font-semibold group-hover:text-primary-400 transition-colors line-clamp-1">
                     {cifra.title}
                   </h3>
-                  <p className="text-gray-400 text-sm line-clamp-1">{cifra.artist}</p>
-                  <div className="flex items-center gap-2 mt-2">
+                  <div className="mt-1 flex items-center gap-2 min-w-0">
                     {cifra.slug === DEMO_CIFRA_SLUG ? (
-                      <span className="px-2 py-0.5 bg-primary-500 text-black text-xs rounded-md font-bold">
+                      <span className="px-1.5 py-0.5 bg-primary-500 text-black text-[10px] rounded-md font-bold">
                         Demo
                       </span>
                     ) : null}
-                    <span className="px-2 py-0.5 bg-primary-500/15 text-primary-400 text-xs rounded-md font-medium">
-                      {cifra.original_key}
+                    {isCifraV2(cifra) && cifra.hinario_numero ? (
+                      <span className="text-gray-500 text-[11px] font-medium">#{cifra.hinario_numero}</span>
+                    ) : null}
+                    <span className="px-2 py-0.5 bg-primary-500/15 text-primary-400 text-[11px] rounded-md font-semibold">
+                      Tom {cifra.original_key}
                     </span>
-                    <span className="text-gray-500 text-xs">
-                      {PUBLIC_INSTRUMENTS.find(i => i.value === cifra.instrument)?.label || cifra.instrument}
-                    </span>
-                    <span className="text-gray-600 text-xs ml-auto flex items-center gap-1">
-                      <Eye className="w-3 h-3" />
-                      {isCifraV2(cifra) ? 'V2' : cifra.views_count}
+                    <span className="text-gray-500 text-xs line-clamp-1">
+                      {getInstrumentLabel(cifra.instrument)}
                     </span>
                   </div>
                 </div>
