@@ -1198,7 +1198,7 @@ const CifraPage: React.FC = () => {
     }
     if (isChordLine(line) && showChords) {
       return (
-        <div key={idx} className="whitespace-pre font-bold text-[#ff7a18] sm:text-primary-400 print:text-[#ff6a00]">
+        <div key={idx} className="whitespace-pre font-bold text-primary-400 sm:text-primary-400 print:text-primary-600">
           {line}
         </div>
       );
@@ -1320,18 +1320,18 @@ const CifraPage: React.FC = () => {
           <div>
             <h1 className="text-[34px] font-black leading-tight tracking-[-0.03em] text-[#202124]">{cifra.title}</h1>
             {cifra.artist ? (
-              <p className="mt-1 text-[29px] font-black leading-tight text-[#ff6a00]">{cifra.artist}</p>
+              <p className="mt-1 text-[29px] font-black leading-tight text-primary-600">{cifra.artist}</p>
             ) : null}
           </div>
           <div className="text-right text-2xl font-black text-[#202124]">Cânticos CCB</div>
         </div>
         <div className="mt-10 space-y-6 font-mono text-[17px] leading-relaxed text-[#252525]">
-          <p className="font-bold">Tom: <span className="text-[#ff6a00]">{selectedKey}</span>{selectedKey !== cifra.original_key ? ` (forma dos acordes no tom de ${cifra.original_key})` : ''}</p>
+          <p className="font-bold">Tom: <span className="text-primary-600">{selectedKey}</span>{selectedKey !== cifra.original_key ? ` (forma dos acordes no tom de ${cifra.original_key})` : ''}</p>
           {isCifraV2(cifra) && cifra.tuning ? (
-            <p>Afinação: <span className="font-bold text-[#ff6a00]">{cifra.tuning}</span></p>
+            <p>Afinação: <span className="font-bold text-primary-600">{cifra.tuning}</span></p>
           ) : null}
           {cifra.capo > 0 ? (
-            <p>Capotraste na <span className="font-bold text-[#ff6a00]">{cifra.capo}ª casa</span></p>
+            <p>Capotraste na <span className="font-bold text-primary-600">{cifra.capo}ª casa</span></p>
           ) : null}
         </div>
       </div>
@@ -1349,7 +1349,7 @@ const CifraPage: React.FC = () => {
           <div className="min-w-0 flex-1">
             <h1 className="text-[28px] font-black leading-[1.02] tracking-[-0.04em] text-white">{cifra.title}</h1>
             {cifra.artist ? (
-              <p className="mt-1 text-[19px] font-semibold leading-tight text-[#ff7a18]">{cifra.artist}</p>
+              <p className="mt-1 text-[19px] font-semibold leading-tight text-primary-400">{cifra.artist}</p>
             ) : null}
           </div>
           <button
@@ -1440,7 +1440,7 @@ const CifraPage: React.FC = () => {
                   <button
                     type="button"
                     onClick={() => setShowReportModal(true)}
-                    className="inline-flex w-full items-center justify-center gap-2 rounded-full border border-gray-700 bg-gray-800 px-3 py-1.5 text-sm text-gray-200 transition-colors hover:border-amber-500/40 hover:text-white sm:w-auto"
+                    className="inline-flex w-full items-center justify-center gap-2 rounded-full border border-gray-700 bg-gray-800 px-3 py-1.5 text-sm text-gray-200 transition-colors hover:border-primary-500/40 hover:text-white sm:w-auto"
                   >
                     <Flag className="w-4 h-4" />
                     Reportar problema
@@ -2273,7 +2273,7 @@ const CifraPage: React.FC = () => {
         <button
           type="button"
           onClick={() => setShowChords((current) => !current)}
-          className={`flex flex-col items-center gap-1.5 text-[11px] font-medium ${showChords ? 'text-[#ff7a18]' : 'text-gray-400'}`}
+          className={`flex flex-col items-center gap-1.5 text-[11px] font-medium ${showChords ? 'text-primary-400' : 'text-gray-400'}`}
         >
           <Settings2 className="h-5 w-5" />
           Acordes
