@@ -49,7 +49,7 @@ const ChordDiagramSVG: React.FC<ChordDiagramSVGProps> = ({ diagram, leftHanded =
 
   return (
     <div className="inline-flex flex-col items-center">
-      <span className="text-primary-400 font-bold text-sm mb-1">{name}</span>
+      <span className="mb-1 text-sm font-semibold text-primary-400">{name}</span>
       <svg width={width} height={height} viewBox={`0 0 ${width} ${height}`} className="text-gray-300">
         {/* Nut or fret number */}
         {baseFret === 1 ? (
@@ -276,7 +276,7 @@ const FretboardShapeSVG: React.FC<FretboardShapeSVGProps> = ({ diagram, leftHand
 
   return (
     <div className="inline-flex flex-col items-center">
-      <span className="text-primary-400 font-bold text-sm mb-1">{name}</span>
+      <span className="mb-1 text-sm font-semibold text-primary-400">{name}</span>
       <svg width={width} height={height} viewBox={`0 0 ${width} ${height}`} className="text-gray-300">
         {baseFret === 1 ? (
           <rect x={startX - 1} y={startY - 2} width={stringSpacing * (numStrings - 1) + 2} height={3} fill="currentColor" rx={1} />
@@ -452,18 +452,18 @@ const DatabaseChordShapeCard: React.FC<DatabaseChordShapeCardProps> = ({
   const editorialLabel = getEditorialOverrideLabel(editorialOverride);
 
   return (
-    <div className="flex-shrink-0 rounded-2xl border border-white/10 bg-background-secondary px-4 py-3 text-center min-w-[168px] max-w-[198px]">
+    <div className="w-[124px] flex-shrink-0 snap-start rounded-xl px-1 py-2 text-center sm:w-auto sm:min-w-[168px] sm:max-w-[198px] sm:rounded-2xl sm:border sm:border-white/10 sm:bg-background-secondary sm:px-4 sm:py-3">
       {diagram ? (
         <FretboardShapeSVG diagram={diagram} leftHanded={leftHanded && shape.instrument !== 'teclado'} />
       ) : (
         <div className="flex min-h-[132px] flex-col items-center justify-center">
-          <span className="text-primary-400 font-bold text-sm">{shape.chord_name}</span>
+          <span className="text-sm font-semibold text-primary-400">{shape.chord_name}</span>
           <span className="mt-3 rounded-full border border-primary-500/30 bg-primary-500/10 px-3 py-1 text-xs text-primary-200">
             Shape salvo no banco
           </span>
         </div>
       )}
-      <div className="mt-2 space-y-1">
+      <div className="mt-2 hidden space-y-1 sm:block">
         <p className="text-[11px] uppercase tracking-[0.18em] text-gray-500">{shape.instrument}</p>
         <div className="flex flex-wrap justify-center gap-1.5">
           <span className="rounded-full border border-primary-500/30 bg-primary-500/10 px-2 py-0.5 text-[10px] font-medium text-primary-200">
@@ -495,7 +495,7 @@ const DatabaseChordShapeCard: React.FC<DatabaseChordShapeCardProps> = ({
         ))}
       </div>
       {shapes.length > 1 ? (
-        <div className="mt-3 flex flex-wrap justify-center gap-2">
+        <div className="mt-3 hidden flex-wrap justify-center gap-2 sm:flex">
           {shapes.map((option) => {
             const isActive = option.id === shape.id;
             return (
@@ -590,7 +590,7 @@ const ChordDictionaryCarousel: React.FC<ChordDictionaryCarouselProps> = ({
           </p>
         </div>
       </div>
-      <div className="flex gap-4 overflow-x-auto pb-3 scrollbar-hide">
+      <div className="flex snap-x snap-mandatory gap-4 overflow-x-auto scroll-px-6 px-6 pb-3 scrollbar-hide sm:scroll-px-0 sm:px-0">
         {visibleChordCards.map((item) => (
           item.kind === 'database' ? (
             <DatabaseChordShapeCard
@@ -608,7 +608,7 @@ const ChordDictionaryCarousel: React.FC<ChordDictionaryCarouselProps> = ({
               }}
             />
           ) : (
-            <div key={item.chord} className="flex-shrink-0 text-center">
+            <div key={item.chord} className="w-[124px] flex-shrink-0 snap-start text-center sm:w-auto">
               <ChordDiagramSVG diagram={item.diagram} leftHanded={leftHanded} />
             </div>
           )

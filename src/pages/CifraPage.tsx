@@ -48,6 +48,23 @@ function isCifraV2(cifra: DisplayCifra | null): cifra is PublicCifraPageData {
   return Boolean(cifra && 'source' in cifra && cifra.source === 'v2');
 }
 
+function escapeRegExp(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+function stripTrailingArtistFromTitle(title: string, artist?: string | null): string {
+  const normalizedTitle = title.trim();
+  const normalizedArtist = artist?.trim();
+
+  if (!normalizedArtist) {
+    return normalizedTitle;
+  }
+
+  return normalizedTitle
+    .replace(new RegExp(`\\s+-\\s+${escapeRegExp(normalizedArtist)}\\s*$`, 'i'), '')
+    .trim();
+}
+
 function getSectionAnchor(sectionLabel: string, index: number): string {
   const normalized = String(sectionLabel || '')
     .normalize('NFD')
@@ -1265,10 +1282,11 @@ const CifraPage: React.FC = () => {
   };
   const instrumentHubUrl = instrumentHubMap[cifra.instrument] || '/cifras';
   const relatedNumber = relatedHymn?.numero || relatedLyric?.numero || (isCifraV2(cifra) ? cifra.hinario_numero : null) || extractHymnNumber(cifra.title);
+  const displayCifraTitle = stripTrailingArtistFromTitle(cifra.title, cifra.artist);
   const hinarioRange = getHinarioRangeForNumero(relatedNumber);
   const cifraTitle = (isCifraV2(cifra) ? cifra.seo_title : null) || (relatedNumber
-    ? `Hino ${relatedNumber} CCB - ${cifra.title} | Cifra`
-    : `${cifra.title}${cifra.artist ? ` - ${cifra.artist}` : ''} | Cifra`);
+    ? `Hino ${relatedNumber} CCB - ${displayCifraTitle} | Cifra`
+    : `${displayCifraTitle} | Cifra`);
   const cifraDescription = (isCifraV2(cifra) ? cifra.seo_description : null) || [
     relatedNumber ? `Cifra do Hino ${relatedNumber} CCB.` : `Cifra de ${cifra.title}.`,
     cifra.artist ? `Artista: ${cifra.artist}.` : '',
@@ -1312,10 +1330,10 @@ const CifraPage: React.FC = () => {
       ogImage={cifra.cover_url}
       schemaData={[
         generateCifraSchema({
-          name: cifra.title,
+          name: displayCifraTitle,
           url: `/cifra/${slug}`,
           artist: cifra.artist,
-          description: `Cifra e acordes de ${cifra.title} - Tom: ${cifra.original_key}`,
+          description: `Cifra e acordes de ${displayCifraTitle} - Tom: ${cifra.original_key}`,
           image: cifra.cover_url,
           datePublished: cifra.created_at,
           dateModified: cifra.updated_at,
@@ -1325,7 +1343,7 @@ const CifraPage: React.FC = () => {
         generateBreadcrumbSchema([
           { name: 'Início', url: '/' },
           { name: 'Cifras', url: '/cifras' },
-          { name: cifra.title, url: `/cifra/${slug}` },
+          { name: displayCifraTitle, url: `/cifra/${slug}` },
         ]),
       ]}
     />
@@ -1333,10 +1351,7 @@ const CifraPage: React.FC = () => {
       <div className="mb-14 hidden print:block">
         <div className="flex items-start justify-between gap-8">
           <div>
-            <h1 className="text-[34px] font-black leading-tight tracking-[-0.03em] text-[#202124]">{cifra.title}</h1>
-            {cifra.artist ? (
-              <p className="mt-1 text-[29px] font-black leading-tight text-primary-600">{cifra.artist}</p>
-            ) : null}
+            <h1 className="text-[34px] font-black leading-tight tracking-[-0.03em] text-[#202124]">{displayCifraTitle}</h1>
           </div>
           <div className="text-right text-2xl font-black text-[#202124]">Cânticos CCB</div>
         </div>
@@ -1362,10 +1377,7 @@ const CifraPage: React.FC = () => {
             <ArrowLeft className="h-6 w-6" />
           </Link>
           <div className="min-w-0 flex-1">
-            <h1 className="text-[28px] font-black leading-[1.02] tracking-[-0.04em] text-white">{cifra.title}</h1>
-            {cifra.artist ? (
-              <p className="mt-1 text-[19px] font-semibold leading-tight text-primary-400">{cifra.artist}</p>
-            ) : null}
+            <h1 className="text-[28px] font-black leading-[1.02] tracking-[-0.04em] text-white">{displayCifraTitle}</h1>
           </div>
           <button
             type="button"
@@ -1416,13 +1428,10 @@ const CifraPage: React.FC = () => {
         </Link>
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start">
           {cifra.cover_url && (
-            <img src={cifra.cover_url} alt={cifra.title} className="w-16 h-16 sm:w-20 sm:h-20 rounded-lg object-cover shadow-lg flex-shrink-0" />
+            <img src={cifra.cover_url} alt={displayCifraTitle} className="w-16 h-16 sm:w-20 sm:h-20 rounded-lg object-cover shadow-lg flex-shrink-0" />
           )}
           <div className="flex-1 min-w-0">
-            <h1 className="text-2xl sm:text-3xl font-bold text-white leading-tight">{cifra.title}</h1>
-            {cifra.artist && (
-              <p className="text-primary-400 font-medium mt-1">{cifra.artist}</p>
-            )}
+            <h1 className="text-2xl sm:text-3xl font-bold text-white leading-tight">{displayCifraTitle}</h1>
             <div className="flex flex-wrap gap-x-4 gap-y-1 text-gray-500 text-sm mt-1">
               <span>
                 {isCifraV2(cifra)
