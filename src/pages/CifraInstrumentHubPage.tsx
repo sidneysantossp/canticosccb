@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowLeft, Disc, Music2, Music4 } from 'lucide-react';
+import { ArrowLeft, Disc, Eye, Music2, Music4 } from 'lucide-react';
 import SEOHead from '@/components/SEO/SEOHead';
 import { type Cifra } from '@/api/cifras';
 import { fetchMergedPublicCifrasList, type PublicCifraPageData } from '@/lib/cifras-v2';
@@ -202,8 +202,8 @@ const CifraInstrumentHubPage: React.FC<CifraInstrumentHubPageProps> = ({ instrum
               <div className="space-y-3">
                 {items.map((item) => (
                   <article key={item.id} className="rounded-2xl border border-white/10 bg-white/5 p-4 hover:border-primary-500/30 transition-colors">
-                    <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
-                      <div>
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="min-w-0">
                         <h3 className="text-white font-semibold">
                           <Link to={`/cifra/${item.slug}`} className="hover:text-primary-400 transition-colors">
                             {item.title}
@@ -213,14 +213,14 @@ const CifraInstrumentHubPage: React.FC<CifraInstrumentHubPageProps> = ({ instrum
                           {item.artist || 'Artista CCB'}{item.original_key ? ` • Tom ${item.original_key}` : ''}
                         </p>
                       </div>
-                      <div className="flex flex-wrap gap-2">
-                        <Link
-                          to={`/cifra/${item.slug}`}
-                          className="inline-flex w-full justify-center px-3 py-2 rounded-full bg-primary-500 text-black text-sm font-semibold hover:bg-primary-400 transition-colors sm:w-auto"
-                        >
-                          Ver cifra
-                        </Link>
-                      </div>
+                      <Link
+                        to={`/cifra/${item.slug}`}
+                        className="inline-flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full border border-white/10 bg-white/5 text-white/70 transition-colors hover:border-primary-500/40 hover:bg-primary-500/15 hover:text-primary-300"
+                        aria-label={`Ver cifra ${item.title}`}
+                        title="Ver cifra"
+                      >
+                        <Eye className="w-5 h-5" />
+                      </Link>
                     </div>
                   </article>
                 ))}
