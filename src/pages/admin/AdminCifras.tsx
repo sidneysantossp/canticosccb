@@ -103,6 +103,15 @@ const AdminCifras: React.FC = () => {
     Boolean(status?.versionId) && (status?.sectionsCount ?? 0) > 0 && !status?.hasStudyDefaults;
   const canPrepareVersion = (status: LegacyCifraMigrationStatus | undefined) =>
     Boolean(status?.versionId) && !status?.publicCatalogVisible;
+  const getCifraViewPath = (cifra: Cifra) => {
+    const status = migrationStatuses[cifra.id];
+    if (status?.versionSlug) {
+      return status.publicCatalogVisible
+        ? `/cifra/${status.versionSlug}`
+        : `/cifra/${status.versionSlug}?preview=admin`;
+    }
+    return `/cifra/${cifra.slug}`;
+  };
 
   const filtered = cifras.filter(c => {
     const matchSearch = !searchTerm ||
@@ -1255,9 +1264,9 @@ const AdminCifras: React.FC = () => {
                     <td className="px-6 py-4">
                       <div className="flex items-center justify-end gap-2">
                         <Link
-                          to={`/cifra/${cifra.slug}`}
+                          to={getCifraViewPath(cifra)}
                           className="p-2 hover:bg-gray-700 rounded-lg transition-colors text-gray-400 hover:text-white"
-                          title="Visualizar"
+                          title={migrationStatuses[cifra.id]?.publicCatalogVisible ? 'Visualizar página pública' : 'Visualizar preview admin'}
                           target="_blank"
                         >
                           <Eye className="w-4 h-4" />
@@ -1289,9 +1298,9 @@ const AdminCifras: React.FC = () => {
                         )}
                         {migrationStatuses[cifra.id]?.publicPath && (
                           <Link
-                            to={migrationStatuses[cifra.id].publicPath}
+                            to={getCifraViewPath(cifra)}
                             className="p-2 hover:bg-emerald-500/20 rounded-lg transition-colors text-emerald-400 hover:text-emerald-300"
-                            title={migrationStatuses[cifra.id].publicCatalogVisible ? 'Abrir página pública V2' : 'Abrir rota pública da versão V2'}
+                            title={migrationStatuses[cifra.id].publicCatalogVisible ? 'Abrir página pública V2' : 'Abrir preview admin da versão V2'}
                             target="_blank"
                           >
                             <ExternalLink className="w-4 h-4" />

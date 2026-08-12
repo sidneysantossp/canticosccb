@@ -4116,6 +4116,12 @@
     <priority>0.7</priority>
   </url>
   <url>
+    <loc>https://www.canticosccb.com.br/album/hinos-21-darli-cd-05-acervo-canticos-ccb-d79c45d1-cf97-4d4e-ad87-9192ab4b1387</loc>
+    <lastmod>2026-08-08</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
     <loc>https://www.canticosccb.com.br/album/flauta-violino-acervo-canticos-ccb-d257f9b4-523a-4ede-bdbe-2294280545c8</loc>
     <lastmod>2026-04-03</lastmod>
     <changefreq>monthly</changefreq>
@@ -9740,6 +9746,126 @@
   <url>
     <loc>https://www.canticosccb.com.br/categoria/violinos</loc>
     <lastmod>2026-01-26</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://www.canticosccb.com.br/playlist/83ca092f-84fa-41a1-844a-c8b0fdeadd8e</loc>
+    <lastmod>2026-08-12</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://www.canticosccb.com.br/playlist/d3d026fd-d55b-42f7-83f9-4bb950a8488a</loc>
+    <lastmod>2026-08-12</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://www.canticosccb.com.br/playlist/12f8921a-7d82-44b3-a9c5-849fe3081dc4</loc>
+    <lastmod>2026-08-12</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://www.canticosccb.com.br/playlist/daeab6a4-0179-4bb4-b5d3-1ca516f538a8</loc>
+    <lastmod>2026-08-10</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://www.canticosccb.com.br/playlist/8156274c-7ecc-4c00-a0d3-6185b6bfc1b2</loc>
+    <lastmod>2026-08-10</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://www.canticosccb.com.br/playlist/a1896223-89af-4025-8662-5ae1d3eb3b9c</loc>
+    <lastmod>2026-08-10</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://www.canticosccb.com.br/playlist/dd8540aa-a4fe-44f1-bdce-a00a3390b9f5</loc>
+    <lastmod>2026-08-10</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://www.canticosccb.com.br/playlist/fbf76152-257a-4874-a557-a0fc230e3f15</loc>
+    <lastmod>2026-08-10</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://www.canticosccb.com.br/playlist/2398acb4-2813-441e-b99e-2cb3fbbd177d</loc>
+    <lastmod>2026-08-10</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://www.canticosccb.com.br/playlist/f649eeca-80d3-4130-beed-0c23701903c9</loc>
+    <lastmod>2026-08-10</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://www.canticosccb.com.br/playlist/3e9cde52-486f-4fc4-902d-5d56d7f4eeb2</loc>
+    <lastmod>2026-08-10</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://www.canticosccb.com.br/playlist/06260225-5e38-4fc5-9b89-27aa537612ab</loc>
+    <lastmod>2026-08-10</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://www.canticosccb.com.br/playlist/f0844214-8e1a-488f-b708-12d6db47ae74</loc>
+    <lastmod>2026-08-10</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://www.canticosccb.com.br/playlist/44e3b744-3595-4f63-8926-3a3b9fa96f8c</loc>
+    <lastmod>2026-08-10</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://www.canticosccb.com.br/playlist/e7415255-72f7-48bb-9426-d8d6acc17b5c</loc>
+    <lastmod>2026-08-10</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://www.canticosccb.com.br/playlist/5fc8016e-6091-4703-986f-b86d8654b7d5</loc>
+    <lastmod>2026-08-10</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://www.canticosccb.com.br/playlist/06e3b2c1-b132-43bf-937f-444f1b590244</loc>
+    <lastmod>2026-08-10</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://www.canticosccb.com.br/playlist/a09f2b91-ae75-4c59-8db1-66e5a95b804e</loc>
+    <lastmod>2026-08-10</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://www.canticosccb.com.br/playlist/250dabbe-e323-4e42-8ebd-b2d96686e1ac</loc>
+    <lastmod>2026-08-10</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://www.canticosccb.com.br/playlist/9cbcd730-9286-460f-a829-762f9ece6861</loc>
+    <lastmod>2026-08-10</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.6</priority>
   </url>

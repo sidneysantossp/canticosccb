@@ -5,6 +5,7 @@ import {
   ChevronLeft,
   ExternalLink,
   FileText,
+  Globe2,
   Loader2,
   Music,
   RefreshCw,
@@ -103,6 +104,7 @@ const AdminCifraReview: React.FC = () => {
 
   const selectedVisibleCount = filteredItems.filter((item) => selectedIds.includes(item.version.id)).length;
   const visibleBatch = filteredItems.slice(0, batchSize);
+  const filteredIds = filteredItems.map((item) => item.version.id);
 
   const loadReviewItems = async () => {
     try {
@@ -191,6 +193,14 @@ const AdminCifraReview: React.FC = () => {
         ? current.filter((id) => !visibleIds.includes(id))
         : Array.from(new Set([...current, ...visibleIds])),
     );
+  };
+
+  const selectAllFiltered = () => {
+    setSelectedIds(filteredIds);
+  };
+
+  const clearSelection = () => {
+    setSelectedIds([]);
   };
 
   const removePublishedItem = (versionId: string) => {
@@ -341,13 +351,32 @@ const AdminCifraReview: React.FC = () => {
             </label>
 
             <div className="flex items-center justify-between gap-3">
-              <button
-                type="button"
-                onClick={toggleVisibleBatch}
-                className="text-sm font-semibold text-primary-400 hover:text-primary-300"
-              >
-                Selecionar lote visível
-              </button>
+              <div className="flex flex-wrap gap-3">
+                <button
+                  type="button"
+                  onClick={toggleVisibleBatch}
+                  className="text-sm font-semibold text-primary-400 hover:text-primary-300"
+                >
+                  Selecionar lote
+                </button>
+                <button
+                  type="button"
+                  onClick={selectAllFiltered}
+                  disabled={filteredItems.length === 0}
+                  className="text-sm font-semibold text-emerald-400 hover:text-emerald-300 disabled:opacity-50"
+                >
+                  Selecionar todas filtradas
+                </button>
+                {selectedIds.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={clearSelection}
+                    className="text-sm font-semibold text-gray-400 hover:text-white"
+                  >
+                    Limpar
+                  </button>
+                )}
+              </div>
               <label className="flex items-center gap-2 text-sm text-gray-400">
                 Lote
                 <select
@@ -446,6 +475,14 @@ const AdminCifraReview: React.FC = () => {
                   </div>
 
                   <div className="flex flex-wrap gap-3">
+                    <Link
+                      to={`/cifra/${selectedItem.version.public_slug}?preview=admin`}
+                      target="_blank"
+                      className="inline-flex items-center gap-2 px-4 py-3 rounded-xl border border-emerald-500/30 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-200 font-semibold transition-colors"
+                    >
+                      <Globe2 className="w-5 h-5" />
+                      Visualizar
+                    </Link>
                     <Link
                       to={`/admin/cifras-v2/versions/${selectedItem.version.id}/edit`}
                       className="inline-flex items-center gap-2 px-4 py-3 rounded-xl border border-gray-700 bg-gray-800 hover:bg-gray-700 text-white font-semibold transition-colors"

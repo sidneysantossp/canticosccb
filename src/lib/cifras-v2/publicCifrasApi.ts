@@ -10,8 +10,11 @@ import type {
 import { fetchCifraVersionSections } from './cifraSectionsRepository';
 import { fetchCifraVersionChordOverrides } from './cifraVersionChordOverridesRepository';
 import { serializeSectionLines } from './legacyCifraParser';
+import { fetchCifraSongById } from './cifraSongsRepository';
 import {
+  fetchCifraVersions,
   fetchCifraVersionById,
+  fetchCifraVersionByPublicSlug,
   fetchPublicCifraCatalog,
   fetchPublicCifraCatalogBySlug,
 } from './cifraVersionsRepository';
@@ -198,6 +201,82 @@ export async function fetchPublicCifraPageBySlug(publicSlug: string): Promise<Pu
   }
 
   return mapPublicCifraPageData(catalog, version, sections, chordOverrides, siblings);
+}
+
+export async function fetchAdminPreviewCifraPageBySlug(publicSlug: string): Promise<PublicCifraPageData | null> {
+  const version = await fetchCifraVersionByPublicSlug(publicSlug, { authenticated: true });
+  if (!version) {
+    return null;
+  }
+
+  const [song, sections, chordOverrides, siblingVersions] = await Promise.all([
+    fetchCifraSongById(version.song_id, { authenticated: true }),
+    fetchCifraVersionSections(version.id, { authenticated: true }),
+    fetchCifraVersionChordOverrides(version.id, { authenticated: true }),
+    fetchCifraVersions({ songId: version.song_id, limit: 50 }, { authenticated: true }),
+  ]);
+
+  if (!song) {
+    return null;
+  }
+
+  return {
+    id: version.id,
+    source: 'v2',
+    song_id: song.id,
+    title: song.title || version.title,
+    artist: song.composer_name || '',
+    slug: version.public_slug,
+    content: buildDisplayContent(version, sections),
+    original_key: version.original_key,
+    preferred_key: version.preferred_key,
+    instrument: version.instrument,
+    capo: version.capo,
+    cover_url: song.cover_url || null,
+    hino_id: song.hino_id || null,
+    hinario_numero: song.hinario_numero ?? null,
+    category: song.source_type === 'avulso' ? 'avulsos' : version.arrangement_type === 'instrumental' ? 'tocados' : 'cantados',
+    views_count: version.views_count,
+    is_active: version.is_active,
+    created_by: version.created_by || null,
+    created_at: version.created_at,
+    updated_at: version.updated_at,
+    available_versions: siblingVersions.map((sibling) => ({
+      version_id: sibling.id,
+      slug: sibling.public_slug,
+      title: sibling.title,
+      instrument: sibling.instrument,
+      arrangement_type: sibling.arrangement_type,
+      publication_label: sibling.publication_label,
+      is_primary: sibling.is_primary,
+      original_key: sibling.original_key,
+      preferred_key: sibling.preferred_key,
+    })),
+    sections,
+    chord_overrides: chordOverrides,
+    seo_title: song.seo_title,
+    seo_description: song.seo_description,
+    seo_keywords: song.seo_keywords,
+    publication_label: version.publication_label,
+    arrangement_type: version.arrangement_type,
+    difficulty_level: version.difficulty_level,
+    tuning: version.tuning,
+    tempo_bpm: version.tempo_bpm,
+    time_signature: version.time_signature,
+    intro_notes: version.intro_notes,
+    default_study_section_order: version.default_study_section_order,
+    default_study_sync_audio: version.default_study_sync_audio,
+    default_study_loop_section: version.default_study_loop_section,
+    sections_count: version.sections_count,
+    lines_count: version.lines_count,
+    chords_index: version.chords_index,
+    shares_count: version.shares_count,
+    prints_count: version.prints_count,
+    favorites_count: version.favorites_count,
+    reports_count: version.reports_count,
+    open_reports_count: version.open_reports_count,
+    last_interaction_at: version.last_interaction_at,
+  };
 }
 
 export async function fetchMergedPublicCifrasList(): Promise<Array<Cifra | PublicCifraPageData>> {

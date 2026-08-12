@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
-import { useParams, Link, useNavigate } from 'react-router-dom';
+import { useParams, Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { ArrowLeft, Minus, Plus, ScrollText, Settings2, Eye, Printer, Share2, Music, X, Heart, Flag, Gauge, Hand, Target, RefreshCw, Play, Pause, RotateCcw } from 'lucide-react';
 import SEOHead from '@/components/SEO/SEOHead';
 import ChordDictionaryCarousel from '@/components/cifras/ChordDictionaryCarousel';
@@ -9,6 +9,7 @@ import { buildHinoUrl } from '@/utils/slugUrl';
 import {
   addCifraFavorite,
   fetchCifraChordShapeVariants,
+  fetchAdminPreviewCifraPageBySlug,
   fetchCifraEngagementSnapshot,
   fetchPublicCifraPageBySlug,
   removeCifraFavorite,
@@ -285,6 +286,7 @@ function resolveDefaultStudySectionIndex(
 const CifraPage: React.FC = () => {
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { user } = useAuth();
   const { showToast } = useToast();
   const {
@@ -816,7 +818,10 @@ const CifraPage: React.FC = () => {
         return;
       }
 
-      const publicData = await fetchPublicCifraPageBySlug(slug);
+      const isAdminPreview = searchParams.get('preview') === 'admin';
+      const publicData = isAdminPreview
+        ? await fetchAdminPreviewCifraPageBySlug(slug)
+        : await fetchPublicCifraPageBySlug(slug);
       if (publicData) {
         const defaultStudySectionIndex = resolveDefaultStudySectionIndex(
           publicData.sections,
