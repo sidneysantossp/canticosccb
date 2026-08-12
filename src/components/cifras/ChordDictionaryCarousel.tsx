@@ -581,7 +581,7 @@ const ChordDictionaryCarousel: React.FC<ChordDictionaryCarouselProps> = ({
   }
 
   return (
-    <div className={`mb-7 -mx-1 hidden print:hidden sm:mx-0 sm:mb-6 sm:block ${className}`}>
+    <div className={`mb-7 -mx-1 print:hidden sm:mx-0 sm:mb-6 ${className}`}>
       <div className="mb-3 hidden items-center justify-between gap-3 sm:flex">
         <div>
           <h2 className="text-base font-semibold text-white">Dicionário de acordes</h2>

@@ -1198,7 +1198,7 @@ const CifraPage: React.FC = () => {
     }
     if (isChordLine(line) && showChords) {
       return (
-        <div key={idx} className="whitespace-pre font-bold text-primary-400 sm:text-primary-400 print:text-primary-600">
+        <div key={idx} className="whitespace-pre text-primary-400 sm:text-primary-400 print:text-primary-600">
           {line}
         </div>
       );
@@ -1286,6 +1286,21 @@ const CifraPage: React.FC = () => {
     'cifras hinos ccb',
     instrumentLabel,
   ].filter(Boolean).join(', ');
+  const renderChordDictionaryCarousel = (className = '') => showChords ? (
+    <ChordDictionaryCarousel
+      chords={chords}
+      chordShapeVariants={chordShapeVariants}
+      selectedShapeIds={selectedShapeIds}
+      selectedInstrument={selectedInstrument}
+      selectedKey={selectedKey}
+      originalKey={cifra.original_key}
+      instrumentLabel={PUBLIC_INSTRUMENTS.find((entry) => entry.value === selectedInstrument)?.label || selectedInstrument}
+      leftHanded={showLeftHandedDiagrams}
+      chordOverrides={isCifraV2(cifra) ? cifra.chord_overrides : null}
+      onSelectShape={handleShapeSelection}
+      className={className}
+    />
+  ) : null;
 
   return (
     <>
@@ -1361,6 +1376,7 @@ const CifraPage: React.FC = () => {
             <Settings2 className="h-5 w-5" />
           </button>
         </div>
+        {renderChordDictionaryCarousel('mt-6 mb-5 sm:hidden')}
         <div className="mt-4 flex flex-wrap gap-2 pl-16">
           <button
             type="button"
@@ -1421,6 +1437,7 @@ const CifraPage: React.FC = () => {
             <p className="text-gray-400 text-sm mt-3 leading-relaxed">
               Cifra CCB para {instrumentLabel}, com acordes, troca de tom e navegação para outras cifras e páginas relacionadas.
             </p>
+            {renderChordDictionaryCarousel('mt-5 mb-2 hidden sm:block')}
             <div className="flex flex-wrap gap-2 mt-4">
               {isCifraV2(cifra) ? (
                 <>
@@ -2182,21 +2199,6 @@ const CifraPage: React.FC = () => {
           </div>
         )}
       </div>
-
-      {showChords ? (
-        <ChordDictionaryCarousel
-          chords={chords}
-          chordShapeVariants={chordShapeVariants}
-          selectedShapeIds={selectedShapeIds}
-          selectedInstrument={selectedInstrument}
-          selectedKey={selectedKey}
-          originalKey={cifra.original_key}
-          instrumentLabel={PUBLIC_INSTRUMENTS.find((entry) => entry.value === selectedInstrument)?.label || selectedInstrument}
-          leftHanded={showLeftHandedDiagrams}
-          chordOverrides={isCifraV2(cifra) ? cifra.chord_overrides : null}
-          onSelectShape={handleShapeSelection}
-        />
-      ) : null}
 
       {/* Cifra Content */}
       <div
