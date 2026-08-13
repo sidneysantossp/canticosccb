@@ -220,30 +220,8 @@ const HymnDetailPage: React.FC = () => {
         });
         setIsFollowing(true);
 
-        // Criar notificação para o compositor
-        try {
-          const composerRows = await supabaseFetch<any>('composers', {
-            id: `eq.${hymn.compositor_id}`,
-            select: 'user_id'
-          });
-          const composerUserId = composerRows?.[0]?.user_id;
-          if (composerUserId) {
-            const followerName = (user as any).user_metadata?.name || user.email || 'Alguém';
-            await supabaseInsert('notifications', {
-              user_id: composerUserId,
-              composer_id: hymn.compositor_id,
-              type: 'follow',
-              title: '👤 Novo seguidor',
-              message: `${followerName} começou a seguir você.`,
-              link: '/composer/followers',
-              read: false,
-              is_read: false,
-              metadata: { follower_id: user.id, follower_name: followerName },
-            });
-          }
-        } catch (notifErr) {
-          console.warn('Falha ao criar notificação de follow:', notifErr);
-        }
+        // A notificação de novo seguidor deve ser criada por trigger/RPC de domínio
+        // no banco. O navegador não recebe nem consulta o user_id privado do compositor.
       }
     } catch (err) {
       console.error('Erro ao seguir/deixar de seguir:', err);

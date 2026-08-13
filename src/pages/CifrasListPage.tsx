@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Search, Music, FileText, Eye } from 'lucide-react';
+import { Search, Music, FileText, Eye, AlertCircle, RefreshCw } from 'lucide-react';
 import SEOHead from '@/components/SEO/SEOHead';
 import { generateItemListSchema, generateBreadcrumbSchema } from '@/utils/schemaGenerator';
 import { Cifra, INSTRUMENTS, CATEGORIES } from '@/api/cifras';
-import { fetchMergedPublicCifrasList, type PublicCifraPageData } from '@/lib/cifras-v2';
+import { fetchMergedPublicCifrasListDetailed, type PublicCifraPageData } from '@/lib/cifras-v2';
 import { CIFRA_V2_INSTRUMENTS } from '@/types/cifras-v2';
 
 type DisplayCifra = Cifra | PublicCifraPageData;
@@ -24,6 +24,8 @@ const CifrasListPage: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterInstrument, setFilterInstrument] = useState('');
   const [filterCategory, setFilterCategory] = useState('');
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [loadWarning, setLoadWarning] = useState<string | null>(null);
 
   useEffect(() => {
     loadCifras();
@@ -32,10 +34,19 @@ const CifrasListPage: React.FC = () => {
   const loadCifras = async () => {
     try {
       setIsLoading(true);
-      const data = await fetchMergedPublicCifrasList();
-      setCifras(data);
+      setLoadError(null);
+      setLoadWarning(null);
+
+      const result = await fetchMergedPublicCifrasListDetailed();
+      setCifras(result.items);
+
+      if (result.unavailableSources.length > 0) {
+        setLoadWarning('Parte do catálogo está temporariamente indisponível. Os resultados exibidos continuam disponíveis para estudo.');
+      }
     } catch (err) {
       console.error('Erro ao carregar cifras:', err);
+      setCifras([]);
+      setLoadError('Não foi possível carregar as cifras agora. Tente novamente em instantes.');
     } finally {
       setIsLoading(false);
     }
@@ -128,19 +139,42 @@ const CifrasListPage: React.FC = () => {
         </select>
       </div>
 
+      {loadWarning && (
+        <div className="mb-6 flex items-start gap-3 rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-100">
+          <AlertCircle className="mt-0.5 h-5 w-5 flex-shrink-0 text-amber-300" />
+          <p>{loadWarning}</p>
+        </div>
+      )}
+
       {/* Results */}
       {isLoading ? (
         <div className="flex items-center justify-center py-20">
           <div className="animate-spin w-8 h-8 border-4 border-primary-500 border-t-transparent rounded-full" />
         </div>
+      ) : loadError ? (
+        <div className="text-center py-20">
+          <AlertCircle className="w-16 h-16 text-red-300/80 mx-auto mb-4" />
+          <h3 className="text-xl text-gray-200 mb-2">Não foi possível carregar o catálogo</h3>
+          <p className="text-gray-500 mb-5">{loadError}</p>
+          <button
+            type="button"
+            onClick={loadCifras}
+            className="inline-flex items-center gap-2 rounded-xl border border-primary-500/40 px-4 py-2 text-sm font-medium text-primary-200 transition-colors hover:border-primary-400 hover:text-white"
+          >
+            <RefreshCw className="h-4 w-4" />
+            Tentar novamente
+          </button>
+        </div>
       ) : filtered.length === 0 ? (
         <div className="text-center py-20">
           <FileText className="w-16 h-16 text-gray-600 mx-auto mb-4" />
           <h3 className="text-xl text-gray-400 mb-2">
-            {searchTerm || filterInstrument || filterCategory ? 'Nenhuma cifra encontrada' : 'Nenhuma cifra disponível'}
+            {searchTerm || filterInstrument || filterCategory ? 'Nenhuma cifra encontrada' : 'Ainda não há cifras verificadas neste catálogo'}
           </h3>
           <p className="text-gray-500">
-            {searchTerm || filterInstrument || filterCategory ? 'Tente ajustar os filtros' : 'Em breve teremos cifras disponíveis'}
+            {searchTerm || filterInstrument || filterCategory
+              ? 'Tente ajustar os filtros ou buscar pelo título do hino.'
+              : 'Quando uma cifra estiver pronta para estudo, ela aparecerá aqui.'}
           </p>
         </div>
       ) : (

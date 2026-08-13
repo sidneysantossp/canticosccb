@@ -1,50 +1,51 @@
 import { supabase } from './supabase-auth';
-import { getSupabaseStorageUrl } from './supabaseRest';
 
 const normalizePath = (path: string): string => path.replace(/\\/g, '/').replace(/^\/+/, '');
 
-export function getDocumentStorageUrl(imagePath: string): string {
-  if (!imagePath) return '';
-  // Base64 data URI — retornar diretamente
-  if (imagePath.startsWith('data:')) return imagePath;
-  // URL completa — retornar diretamente
-  if (/^https?:\/\//i.test(imagePath)) return imagePath;
-
-  // Path no Storage — construir URL autenticada (bucket privado)
-  const sanitized = normalizePath(imagePath);
-  const segments = sanitized.split('/');
-  const fileName = segments.pop() || sanitized;
-  if (!fileName) return '';
-
-  // Tentar URL pública primeiro (funciona se bucket for público)
-  return getSupabaseStorageUrl('documents', fileName);
+/**
+ * Documentos de verificação não possuem URL pública. A função é mantida apenas
+ * para compatibilidade com chamadas antigas e sempre devolve uma string vazia.
+ */
+export function getDocumentStorageUrl(_imagePath: string): string {
+  return '';
 }
 
 /**
- * Gera URL assinada para documentos em bucket privado.
- * Usar quando getDocumentStorageUrl retorna erro 400/403.
+ * Gera uma URL assinada, curta e condicionada às políticas RLS do bucket
+ * privado `documents`. O caminho precisa manter o formato
+ * `composer/<composer_id>/<arquivo>` para que a política de Storage valide o
+ * proprietário ou administrador.
  */
-export async function getDocumentSignedUrl(imagePath: string): Promise<string> {
+export async function getDocumentSignedUrl(imagePath: string, expiresInSeconds = 300): Promise<string> {
   if (!imagePath) return '';
-  if (imagePath.startsWith('data:')) return imagePath;
-  if (/^https?:\/\//i.test(imagePath)) return imagePath;
+
+  // Valores antigos em Base64 ou URLs completas não devem mais ser renderizados
+  // como documento de identidade. Eles precisam ser migrados para o bucket
+  // privado antes de voltar a ficar disponíveis.
+  if (imagePath.startsWith('data:') || /^https?:\/\//i.test(imagePath)) {
+    console.warn('[documents] Caminho legado inseguro bloqueado; migre o documento para o bucket privado.');
+    return '';
+  }
+
+  const sanitized = normalizePath(imagePath);
+  if (!sanitized.startsWith('composer/') || sanitized.split('/').length < 3) {
+    console.warn('[documents] Caminho de documento inválido para URL assinada.');
+    return '';
+  }
 
   try {
-    const sanitized = normalizePath(imagePath);
-    const segments = sanitized.split('/');
-    const fileName = segments.pop() || sanitized;
-
     const { data, error } = await supabase.storage
       .from('documents')
-      .createSignedUrl(fileName, 3600); // 1 hora
+      .createSignedUrl(sanitized, expiresInSeconds);
 
     if (error || !data?.signedUrl) {
-      console.warn('[getDocumentSignedUrl] Failed:', error?.message);
-      return getDocumentStorageUrl(imagePath);
+      console.warn('[documents] Não foi possível gerar URL assinada:', error?.message || 'resposta vazia');
+      return '';
     }
+
     return data.signedUrl;
-  } catch (e) {
-    console.warn('[getDocumentSignedUrl] Error:', e);
-    return getDocumentStorageUrl(imagePath);
+  } catch (error) {
+    console.warn('[documents] Erro ao gerar URL assinada:', error);
+    return '';
   }
 }

@@ -42,8 +42,10 @@ const resolveUserFlags = (
   isComposer?: boolean,
   tipo?: User['tipo']
 ) => {
-  const resolvedIsAdmin = isAdmin === true || tipo === 'admin' || authClient.isConfiguredAdminEmail(email);
-  const resolvedIsComposer = isComposer === true || tipo === 'compositor';
+  // Papéis são autorizados pelo perfil retornado sob uma sessão Supabase válida.
+  // Valores de e-mail, aliases de compatibilidade e cache local nunca concedem privilégios.
+  const resolvedIsAdmin = isAdmin === true;
+  const resolvedIsComposer = isComposer === true;
   const resolvedTipo: User['tipo'] = resolvedIsAdmin ? 'admin' : resolvedIsComposer ? 'compositor' : 'usuario';
 
   return {
@@ -115,46 +117,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setUser(null);
       setProfile(null);
       authClient.clearAuthStorage();
-    };
-
-    // Verificar se há usuário logado no localStorage
-    const loadUser = () => {
-      const currentUser = authClient.getCurrentUser();
-      if (currentUser) {
-        const { resolvedIsAdmin, resolvedIsComposer, resolvedTipo } = resolveUserFlags(
-          currentUser.email,
-          currentUser.is_admin,
-          currentUser.is_composer,
-          currentUser.tipo
-        );
-
-        // Mapear para compatibilidade com interface User
-        const userCompat: User = {
-          id: String(currentUser.id),
-          email: currentUser.email,
-          nome: currentUser.nome || currentUser.name,
-          avatar_url: currentUser.avatar_url,
-          tipo: resolvedTipo,
-          ativo: currentUser.ativo ?? 1,
-        };
-
-        authClient.cacheCurrentUser({
-          ...currentUser,
-          tipo: resolvedTipo,
-          is_admin: resolvedIsAdmin,
-          is_composer: resolvedIsComposer,
-        });
-
-        setUser(userCompat);
-        setProfile({
-          ...userCompat,
-          plan: currentUser.plano === 'premium' ? 'premium' : 'free',
-          is_admin: resolvedIsAdmin,
-          is_composer: resolvedIsComposer
-        });
-        return true;
-      }
-      return false;
     };
 
     // Função para buscar/criar usuário baseado na sessão Supabase
@@ -335,9 +297,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       return true;
     };
 
-    // Carregar usuário imediatamente
-    const hasUser = loadUser();
-    const hasFallbackAuth = localStorage.getItem('auth_fallback') === 'true';
+    // O cache local serve apenas para compatibilidade visual após uma sessão válida.
+    // Ele não pode restaurar uma sessão nem conceder autorização de forma autônoma.
+    const hasUser = false;
+    const hasFallbackAuth = false;
+    localStorage.removeItem('auth_fallback');
     
     // Restaurar estado de gerenciamento se existir
     const storedComposerId = sessionStorage.getItem('managingComposerId');
@@ -357,11 +321,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         } else if (event === 'INITIAL_SESSION') {
           // Sessão inicial - verificar se há usuário
           if (session?.user) {
-            // Tentar carregar do localStorage primeiro
-            if (!loadUser()) {
-              // Se não encontrou, sincronizar do banco
-              await syncSessionWithFallback(session);
-            }
+            await syncSessionWithFallback(session);
           } else if (!hasFallbackAuth) {
             clearStoredUser();
           }
@@ -369,9 +329,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         } else if (event === 'SIGNED_OUT') {
           clearStoredUser();
           setLoading(false);
-        } else if (event === 'TOKEN_REFRESHED') {
-          // Token atualizado, recarregar usuário
-          loadUser();
+        } else if (event === 'TOKEN_REFRESHED' && session?.user) {
+          await syncSessionWithFallback(session);
         }
         };
 
@@ -409,54 +368,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         password,
       });
       if (error) {
-        // Se Auth retorna 500 (RLS quebrando schema), usar fallback REST
-        if (error.message?.includes('Database error querying schema') || error.status === 500) {
-          console.warn('⚠️ Auth 500 - usando fallback REST para login...');
-
-          // Buscar usuário via REST (funciona com anon key)
-          const { data: dbUser, error: dbError } = await authClient.supabase
-            .from('users')
-            .select('*')
-            .eq('email', email)
-            .single();
-
-          if (dbError || !dbUser) {
-            throw new Error('Email ou senha incorretos.');
-          }
-
-          // Marcar como sessão fallback (sem JWT)
-          const { resolvedIsAdmin, resolvedIsComposer, resolvedTipo } = resolveUserFlags(
-            dbUser.email,
-            dbUser.is_admin,
-            dbUser.is_composer
-          );
-
-          const usuarioCompat: User = {
-            id: String(dbUser.id),
-            email: dbUser.email,
-            nome: dbUser.name,
-            avatar_url: dbUser.avatar_url,
-            tipo: resolvedTipo,
-            ativo: dbUser.status !== 'inactive' && !dbUser.is_blocked,
-          };
-
-          authClient.cacheCurrentUser({
-            ...usuarioCompat,
-            is_admin: resolvedIsAdmin,
-            is_composer: resolvedIsComposer,
-          });
-          localStorage.setItem('auth_fallback', 'true');
-          setUser(usuarioCompat);
-          setProfile({
-            ...usuarioCompat,
-            plan: dbUser.plan === 'premium' ? 'premium' : 'free',
-            is_admin: resolvedIsAdmin,
-            is_composer: resolvedIsComposer,
-          });
-          console.warn('⚠️ ATENÇÃO: Login sem JWT. Operações admin usarão REST API.');
-          return;
-        }
-
+        // Não há login de contingência sem JWT. Uma falha de Auth não pode abrir
+        // uma sessão baseada em leitura anônima de perfis ou e-mails.
         throw new Error(
           error.message === 'Invalid login credentials'
             ? 'Email ou senha incorretos.'

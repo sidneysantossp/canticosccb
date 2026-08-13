@@ -129,10 +129,7 @@ type SupabaseComposerRow = {
   artistic_name?: string;
   bio?: string;
   biography?: string;
-  verified?: boolean;
-  status?: string;
   avatar_url?: string;
-  photo_url?: string;
   slug?: string;
   category?: string;
   is_featured?: boolean;
@@ -188,7 +185,7 @@ const mapSupabaseHymn = (row: SupabaseHymnRow): HomeHymn => ({
 const mapSupabaseComposer = (row: SupabaseComposerRow): HomeComposer => {
   const id = String(row.id ?? Math.random());
   const name = row.artistic_name ?? row.name ?? 'Compositor CCB';
-  const rowAvatar = row.avatar_url || row.photo_url;
+  const rowAvatar = row.avatar_url;
   const avatarUrl = rowAvatar
     ? buildAvatarUrl({ id, avatar_url: rowAvatar, name })
     : `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&size=400&background=1a1a1a&color=00D1FF`;
@@ -197,8 +194,8 @@ const mapSupabaseComposer = (row: SupabaseComposerRow): HomeComposer => {
     name,
     avatar_url: avatarUrl,
     followers_count: row.followers_count ?? 0,
-    is_trending: Boolean(row.is_trending || row.verified),
-    bio: row.biography ?? row.bio ?? undefined,
+    is_trending: Boolean(row.is_trending),
+    bio: row.bio ?? undefined,
   };
 };
 
@@ -336,9 +333,8 @@ async function getHomePageDataFromSupabase(): Promise<HomePageData> {
     order: 'position.asc',
     limit: '6',
   });
-  const composerRows = supabaseFetch<SupabaseComposerRow>('composers', {
-    select: 'id,name,artistic_name,bio,biography,verified,status,avatar_url,photo_url,slug,category,is_featured,is_trending,followers_count',
-    or: '(verified.eq.true,status.eq.approved)',
+  const composerRows = supabaseFetch<SupabaseComposerRow>('composer_public_profiles', {
+    select: 'id,name,artistic_name,bio,avatar_url,slug,category,is_featured,is_trending,followers_count',
     order: 'name.asc',
     limit: '20',
   });

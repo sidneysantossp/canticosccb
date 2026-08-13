@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { categoriasApi, compositorGerentesApi } from '@/lib/api-client';
 import { useAuth } from '@/contexts/AuthContext';
-import { validateDocument, checkEmailAvailability, registerComposer, uploadDocumentImage, createComposerProfile } from '@/lib/composerOnboardingApi';
+import { validateDocument, checkEmailAvailability, uploadDocumentImage, createComposerDocumentRecord, createComposerProfile } from '@/lib/composerOnboardingApi';
 import { supabase } from '@/lib/supabase-auth';
 import { DEFAULT_SITE_URL, normalizeSiteUrl } from '@/utils/siteUrl';
 import {
@@ -532,16 +532,6 @@ const ComposerOnboarding: React.FC = () => {
     }
   };
 
-  // Função auxiliar para converter File para base64
-  const fileToBase64 = (file: File): Promise<string> => {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.readAsDataURL(file);
-      reader.onload = () => resolve(reader.result as string);
-      reader.onerror = error => reject(error);
-    });
-  };
-
   const handleFinish = async () => {
     // Verificar email duplicado antes de enviar
     if (emailExists && !isExistingUser) {
@@ -554,42 +544,10 @@ const ComposerOnboarding: React.FC = () => {
     setSubmitError(null);
 
     try {
-      // 1. Converter documentos para base64
-      const documents = [];
-      if (formData.documentFront && formData.documentType) {
-        const frontBase64 = await fileToBase64(formData.documentFront);
-        const backBase64 = formData.documentBack ? await fileToBase64(formData.documentBack) : null;
+      // Documentos só são enviados após a criação do compositor em uma sessão
+      // autenticada, usando caminhos privados no bucket de Storage.
 
-        documents.push({
-          type: formData.documentType,
-          frontImage: frontBase64,
-          backImage: backBase64
-        });
-      }
-
-      // 2. Upload document images if available (fallback to base64 if storage fails)
-      let documentImagePath: string | null = null;
-      let documentBackPath: string | null = null;
-      if (formData.documentFront) {
-        console.log('📄 Uploading document front...');
-        documentImagePath = await uploadDocumentImage(formData.documentFront);
-        if (!documentImagePath && documents.length > 0) {
-          console.warn('📄 Storage upload failed, using base64 fallback for front');
-          documentImagePath = documents[0].frontImage;
-        }
-        console.log('📄 Document front path:', documentImagePath ? 'OK' : 'FAILED');
-      }
-      if (formData.documentBack) {
-        console.log('📄 Uploading document back...');
-        documentBackPath = await uploadDocumentImage(formData.documentBack);
-        if (!documentBackPath && documents.length > 0) {
-          console.warn('📄 Storage upload failed, using base64 fallback for back');
-          documentBackPath = documents[0].backImage;
-        }
-        console.log('📄 Document back path:', documentBackPath ? 'OK' : 'FAILED');
-      }
-
-      // 3. Criar conta via Supabase Auth para novos usuários
+      // 1. Criar conta via Supabase Auth para novos usuários
       let userId = user?.id || null;
       let shouldVerifyEmail = false;
       const redirectBase = normalizeSiteUrl(import.meta.env.VITE_APP_URL || window.location.origin, DEFAULT_SITE_URL);
@@ -618,6 +576,11 @@ const ComposerOnboarding: React.FC = () => {
 
         userId = authData.user.id;
         shouldVerifyEmail = !authData.session;
+
+        if (!authData.session) {
+          throw new Error('Conta criada. Confirme seu e-mail, entre na plataforma e retome o cadastro de compositor para enviar documentos com segurança.');
+        }
+
         console.log('✅ Conta criada no Supabase Auth:', userId);
       }
 
@@ -631,11 +594,6 @@ const ComposerOnboarding: React.FC = () => {
             email: formData.email,
             name: formData.name,
             phone: formData.phone || null,
-            plan: 'free',
-            status: 'active',
-            is_admin: false,
-            is_composer: false,
-            is_blocked: false,
           }, { onConflict: 'id' });
 
           if (userUpsertError) {
@@ -657,8 +615,6 @@ const ComposerOnboarding: React.FC = () => {
         biografia: formData.bio,
         documento_tipo: formData.documentType,
         documento_numero: formData.documentNumber || '',
-        documento_imagem: documentImagePath || undefined,
-        documento_imagem_verso: documentBackPath || undefined,
         user_id: canLinkComposerToUser ? userId || undefined : undefined,
       });
 
@@ -668,31 +624,43 @@ const ComposerOnboarding: React.FC = () => {
 
       console.log('✅ Compositor registrado:', composerResult);
 
-      // 6. Promover o usuário para compositor somente depois que o perfil existir
-      if (userId) {
-        try {
-          const { error: promoteUserError } = await supabase.from('users').upsert({
-            id: userId,
-            email: formData.email,
-            name: formData.name,
-            phone: formData.phone || null,
-            plan: 'free',
-            status: 'active',
-            is_admin: false,
-            is_composer: true,
-            is_blocked: false,
-          }, { onConflict: 'id' });
+      // 6. Armazenar documentos somente depois que existir um compositor e uma
+      // sessão válida. Falha de upload interrompe o fluxo; nunca há fallback Base64.
+      const compositorId = composerResult.compositor_id;
+      if (formData.documentFront && formData.documentType) {
+        const frontPath = await uploadDocumentImage(formData.documentFront, compositorId, 'front');
+        if (!frontPath) {
+          throw new Error('Não foi possível enviar o documento. Tente novamente em uma conexão segura.');
+        }
 
-          if (promoteUserError) {
-            throw promoteUserError;
+        await createComposerDocumentRecord({
+          composerId: compositorId,
+          documentType: formData.documentType,
+          documentNumber: formData.documentNumber || undefined,
+          imagePath: frontPath,
+          expectedName: formData.name || formData.artisticName,
+        });
+
+        if (formData.documentBack) {
+          const backPath = await uploadDocumentImage(formData.documentBack, compositorId, 'back');
+          if (!backPath) {
+            throw new Error('Não foi possível enviar o verso do documento. Tente novamente em uma conexão segura.');
           }
-        } catch (promotionError) {
-          console.warn('⚠️ Perfil de compositor criado, mas a promoção do usuário falhou. O vínculo será corrigido no próximo login/callback:', promotionError);
+
+          await createComposerDocumentRecord({
+            composerId: compositorId,
+            documentType: `${formData.documentType}_verso`,
+            documentNumber: formData.documentNumber || undefined,
+            imagePath: backPath,
+            expectedName: formData.name || formData.artisticName,
+          });
         }
       }
 
+      // O papel de compositor é concedido apenas por processo administrativo
+      // no servidor, após a revisão. O navegador não altera is_composer.
+
       // 7. Enviar convite ao gerente (se configurado)
-      const compositorId = composerResult?.compositor_id;
       if (formData.hasManager && formData.managerData && compositorId) {
         try {
           console.log('📧 Enviando convite ao gerente:', formData.managerData.email);

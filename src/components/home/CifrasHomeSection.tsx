@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Music, Eye, ArrowRight, FileText } from 'lucide-react';
+import { Music, Eye, AlertCircle } from 'lucide-react';
 import { Cifra, INSTRUMENTS } from '@/api/cifras';
-import { fetchMergedPublicCifrasList, type PublicCifraPageData } from '@/lib/cifras-v2';
+import { fetchMergedPublicCifrasListDetailed, type PublicCifraPageData } from '@/lib/cifras-v2';
 import { CIFRA_V2_INSTRUMENTS } from '@/types/cifras-v2';
 
 type DisplayCifra = Cifra | PublicCifraPageData;
@@ -16,6 +16,8 @@ const CifrasHomeSection: React.FC = () => {
   const [cifras, setCifras] = useState<DisplayCifra[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isXl, setIsXl] = useState(false);
+  const [loadError, setLoadError] = useState(false);
+  const [loadWarning, setLoadWarning] = useState(false);
 
   useEffect(() => {
     const check = () => setIsXl(window.innerWidth >= 1280);
@@ -33,10 +35,15 @@ const CifrasHomeSection: React.FC = () => {
   const loadCifras = async () => {
     try {
       setIsLoading(true);
-      const data = await fetchMergedPublicCifrasList();
-      setCifras(data);
+      setLoadError(false);
+      setLoadWarning(false);
+      const result = await fetchMergedPublicCifrasListDetailed();
+      setCifras(result.items);
+      setLoadWarning(result.unavailableSources.length > 0);
     } catch (err) {
       console.error('[CifrasHomeSection] Erro ao carregar cifras:', err);
+      setCifras([]);
+      setLoadError(true);
     } finally {
       setIsLoading(false);
     }
@@ -59,17 +66,20 @@ const CifrasHomeSection: React.FC = () => {
     );
   }
 
-  if (cifras.length === 0) return null;
-
   const getInstrumentLabel = (value: string) =>
     PUBLIC_INSTRUMENTS.find(i => i.value === value)?.label || value;
 
   return (
     <section className="mb-12">
-      <div className="flex items-center justify-between mb-6">
-        <h2 className="text-2xl md:text-3xl font-bold text-white leading-tight">
-          Cifras
-        </h2>
+      <div className="flex items-center justify-between gap-4 mb-6">
+        <div>
+          <h2 className="text-2xl md:text-3xl font-bold text-white leading-tight">
+            Cifras
+          </h2>
+          {loadWarning && (
+            <p className="mt-1 text-xs text-amber-200">Parte do catálogo está temporariamente indisponível.</p>
+          )}
+        </div>
         <Link
           to="/cifras"
           className="text-primary-400 hover:text-primary-300 text-sm font-medium transition-colors"
@@ -78,6 +88,22 @@ const CifrasHomeSection: React.FC = () => {
         </Link>
       </div>
 
+      {loadError ? (
+        <div className="rounded-xl border border-red-500/20 bg-red-500/5 px-4 py-4 text-sm text-gray-300">
+          <div className="flex items-start gap-3">
+            <AlertCircle className="mt-0.5 h-5 w-5 flex-shrink-0 text-red-300" />
+            <div>
+              <p className="font-medium text-white">Não foi possível carregar as cifras agora.</p>
+              <button type="button" onClick={loadCifras} className="mt-2 text-primary-300 hover:text-primary-200">Tentar novamente</button>
+            </div>
+          </div>
+        </div>
+      ) : cifras.length === 0 ? (
+        <div className="rounded-xl border border-gray-700/60 bg-gray-800/30 px-4 py-5 text-sm text-gray-400">
+          <p className="font-medium text-gray-200">Ainda não há cifras verificadas em destaque.</p>
+          <p className="mt-1">Consulte o catálogo para acompanhar os materiais liberados para estudo.</p>
+        </div>
+      ) : (
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
         {cifras.slice(0, maxCards).map(cifra => (
           <Link
@@ -117,6 +143,7 @@ const CifrasHomeSection: React.FC = () => {
         ))}
 
       </div>
+      )}
     </section>
   );
 };

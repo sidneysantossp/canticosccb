@@ -66,24 +66,11 @@ const AUTH_TOKEN_STORAGE_KEY = 'auth_token';
 const AUTH_FALLBACK_STORAGE_KEY = 'auth_fallback';
 const ENABLE_GOOGLE_AUTH = String(import.meta.env.VITE_ENABLE_GOOGLE_AUTH || '').trim().toLowerCase() === 'true';
 
-function normalizeEmail(email?: string | null): string {
-  return String(email || '').trim().toLowerCase();
-}
-
-function getConfiguredAdminEmailSet(): Set<string> {
-  const raw = import.meta.env.VITE_ADMIN_EMAILS || '';
-  return new Set(
-    raw
-      .split(',')
-      .map((item) => normalizeEmail(item))
-      .filter(Boolean)
-  );
-}
-
-export function isConfiguredAdminEmail(email?: string | null): boolean {
-  if (!email) return false;
-  return getConfiguredAdminEmailSet().has(normalizeEmail(email));
-}
+/**
+ * Papéis administrativos e de compositor são definidos exclusivamente no
+ * perfil autorizado pelo banco. Nunca derive privilégios de e-mail, variáveis
+ * VITE_* ou valores persistidos no navegador.
+ */
 
 export function isGoogleAuthEnabled(): boolean {
   return ENABLE_GOOGLE_AUTH;
@@ -123,8 +110,8 @@ function getAuthRedirectBase(): string {
 
 // Função helper para mapear campos para compatibilidade
 function mapUserForCompatibility(user: any): Usuario {
-  const isAdmin = user.is_admin === true || user.tipo === 'admin' || isConfiguredAdminEmail(user.email);
-  const isComposer = user.is_composer === true || user.tipo === 'compositor';
+  const isAdmin = user.is_admin === true;
+  const isComposer = user.is_composer === true;
   return {
     ...user,
     is_admin: isAdmin,
@@ -549,12 +536,12 @@ export async function updateUserProfile(userId: string, data: Partial<Usuario>):
  */
 export function isAdmin(): boolean {
   const user = getCurrentUser();
-  return user?.is_admin === true || user?.tipo === 'admin' || isConfiguredAdminEmail(user?.email);
+  return user?.is_admin === true;
 }
 
 export function isCompositor(): boolean {
   const user = getCurrentUser();
-  return user?.is_composer === true || user?.tipo === 'compositor';
+  return user?.is_composer === true;
 }
 
 /**

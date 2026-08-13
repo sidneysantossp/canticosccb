@@ -129,10 +129,9 @@ const SearchPage: React.FC = () => {
             .order('nome', { ascending: true })
             .limit(8),
           publicSupabase
-            .from('composers')
-            .select('id, name, artistic_name, photo_url, avatar_url')
-            .or('verified.eq.true,status.eq.approved')
-            .order('created_at', { ascending: false })
+            .from('composer_public_profiles')
+            .select('id, name, artistic_name, avatar_url, followers_count')
+            .order('followers_count', { ascending: false })
             .limit(8),
           publicSupabase
             .from('albums')
@@ -375,9 +374,8 @@ const SearchPage: React.FC = () => {
         setIsLoading(true);
         try {
           const { data, error } = await publicSupabase
-            .from('composers')
-            .select('id, name, artistic_name, photo_url, avatar_url')
-            .or('verified.eq.true,status.eq.approved')
+            .from('composer_public_profiles')
+            .select('id, name, artistic_name, avatar_url, followers_count')
             .order('name', { ascending: true })
             .limit(1000);
 

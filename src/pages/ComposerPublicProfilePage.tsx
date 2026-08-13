@@ -109,9 +109,9 @@ export default function ComposerPublicProfilePage() {
     try {
       setIsLoading(true);
 
-      const composerRows = await supabaseFetch<any>('composers', {
+      const composerRows = await supabaseFetch<any>('composer_public_profiles', {
         id: `eq.${composerId}`,
-        select: 'id,name,artistic_name,bio,biography,photo_url,avatar_url,verified,is_trending,followers_count,created_at'
+        select: 'id,name,artistic_name,bio,avatar_url,is_trending,followers_count'
       });
 
       if (composerRows.length === 0) {
@@ -125,9 +125,9 @@ export default function ComposerPublicProfilePage() {
       const mappedComposer: Composer = {
         id: String(composerData.id),
         name: composerData.artistic_name || composerData.name || 'Compositor',
-        avatar_url: composerData.avatar_url || composerData.photo_url,
-        photo_url: composerData.photo_url || composerData.avatar_url,
-        bio: composerData.biography || composerData.bio || '',
+        avatar_url: composerData.avatar_url,
+        photo_url: composerData.avatar_url,
+        bio: composerData.bio || '',
         followers_count: composerData.followers_count || 0,
         is_trending: Boolean(composerData.is_trending),
         created_at: composerData.created_at || new Date().toISOString()
