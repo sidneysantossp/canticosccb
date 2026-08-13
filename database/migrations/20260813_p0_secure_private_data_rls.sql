@@ -593,6 +593,9 @@ using (
 -- -----------------------------------------------------------------------------
 alter table public.playlists enable row level security;
 revoke all on table public.playlists from anon;
+-- The anon role receives SELECT only; the RLS policy below still limits it to
+-- rows explicitly marked public.
+grant select on table public.playlists to anon;
 grant select, insert, update, delete on table public.playlists to authenticated;
 
 do $$

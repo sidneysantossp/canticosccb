@@ -8,4 +8,12 @@ A migração está delimitada por `BEGIN` e `COMMIT`. Como a execução foi inte
 
 ## Próxima ação controlada
 
-O erro indica uma incompatibilidade entre uma coluna de relacionamento armazenada como texto no schema existente e o valor `auth.uid()` do Supabase, que é UUID. A consulta somente leitura confirmou que todas as chaves avaliadas são UUID, exceto `public.playlists.user_id`, que é `text`. Uma segunda consulta agregada confirmou 200 playlists, das quais 196 possuem identificador no formato UUID e nenhuma possui identificador ausente. A correção foi limitada às cinco comparações de proprietário da tabela `playlists`, convertendo explicitamente `auth.uid()` para texto. A migração será então versionada em um commit complementar e reaplicada apenas após nova validação.
+O erro indica uma incompatibilidade entre uma coluna de relacionamento armazenada como texto no schema existente e o valor `auth.uid()` do Supabase, que é UUID. A consulta somente leitura confirmou que todas as chaves avaliadas são UUID, exceto `public.playlists.user_id`, que é `text`. Uma segunda consulta agregada confirmou 200 playlists, das quais 196 possuem identificador no formato UUID e nenhuma possui identificador ausente. A correção foi limitada às cinco comparações de proprietário da tabela `playlists`, convertendo explicitamente `auth.uid()` para texto. O patch foi versionado e publicado no commit `ce33adf`.
+
+## Aplicação corrigida
+
+A versão corrigida da migração foi reaplicada com autorização explícita e concluída com sucesso. O resultado final de verificação retornou `storage.buckets.documents.public = false`, confirmando que o bucket de documentos deixou de ser público.
+
+## Validação anônima pós-RLS
+
+Com a chave anônima, as rotas REST de `users`, `composer_documents`, `notifications`, `composers` e `playlists` retornaram HTTP 401, enquanto `composer_public_profiles` continuou disponível com 6 perfis. O bloqueio das quatro primeiras tabelas confirma a contenção da exposição privada. Para playlists, entretanto, a migração havia criado corretamente a política RLS de visibilidade pública, mas o `REVOKE ALL` anterior não era acompanhado do privilégio de tabela `SELECT` para `anon`; isso bloqueava também as playlists públicas. Uma consulta administrativa agregada confirmou 153 playlists públicas e 47 privadas. O patch complementar adiciona somente `GRANT SELECT ON public.playlists TO anon`, mantendo a política que limita as linhas anônimas a `is_public = true`.
