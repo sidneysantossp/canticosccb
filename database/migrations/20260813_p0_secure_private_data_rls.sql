@@ -613,7 +613,7 @@ create policy playlists_select_owner_or_public
 on public.playlists for select
 to authenticated
 using (
-  user_id = (select auth.uid())
+  user_id = ((select auth.uid())::text)
   or coalesce(is_public, false) = true
   or (select private.is_platform_admin())
 );
@@ -626,17 +626,17 @@ using (coalesce(is_public, false) = true);
 create policy playlists_insert_owner
 on public.playlists for insert
 to authenticated
-with check (user_id = (select auth.uid()));
+with check (user_id = ((select auth.uid())::text));
 
 create policy playlists_update_owner_or_admin
 on public.playlists for update
 to authenticated
 using (
-  user_id = (select auth.uid())
+  user_id = ((select auth.uid())::text)
   or (select private.is_platform_admin())
 )
 with check (
-  user_id = (select auth.uid())
+  user_id = ((select auth.uid())::text)
   or (select private.is_platform_admin())
 );
 
@@ -644,7 +644,7 @@ create policy playlists_delete_owner_or_admin
 on public.playlists for delete
 to authenticated
 using (
-  user_id = (select auth.uid())
+  user_id = ((select auth.uid())::text)
   or (select private.is_platform_admin())
 );
 
