@@ -462,9 +462,9 @@ async function handleHino(idParam: string): Promise<PageMeta | null> {
 
 async function handleCompositor(idParam: string): Promise<PageMeta | null> {
   const uuid = extractUUID(idParam);
-  const rows = await supaFetch('composers', {
+  const rows = await supaFetch('composer_public_profiles', {
     id: `eq.${uuid}`,
-    select: 'id,name,artistic_name,bio,biography,avatar_url,photo_url,category',
+    select: 'id,name,artistic_name,bio,avatar_url,is_trending,followers_count',
     limit: '1',
   });
   if (!rows.length) return null;
@@ -1776,6 +1776,7 @@ export default async function handler(req: Request): Promise<Response> {
     headers: {
       'Content-Type': 'text/html; charset=utf-8',
       'Cache-Control': 'public, s-maxage=3600, stale-while-revalidate=86400',
+      'Vary': 'User-Agent',
       'X-Robots-Tag': pageMeta.noindex ? 'noindex, follow' : 'index, follow',
     },
   });
