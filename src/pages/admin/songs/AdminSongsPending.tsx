@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { hinosApi, compositoresApi } from '@/lib/api-client';
 import { apiFetch } from '@/lib/api-helper';
+import sanitizeRichText from '@/utils/sanitizeHtml';
 import ConfirmModal from '@/components/ui/ConfirmModal';
 import Toast, { ToastProps } from '@/components/ui/Toast';
 import {
@@ -40,25 +41,6 @@ const AdminSongsPending: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [toasts, setToasts] = useState<ToastProps[]>([]);
 
-  // Sanitização simples para exibir HTML da letra com segurança (permitindo formatação básica)
-  const sanitizeHtml = (html: string) => {
-    if (!html) return '';
-    let out = html;
-    // Remover scripts e styles
-    out = out.replace(/<\/(?:script|style)>/gi, '')
-             .replace(/<(?:script|style)[^>]*>[\s\S]*?<\/(?:script|style)>/gi, '');
-    // Remover atributos on*
-    out = out.replace(/ on[a-z]+\s*=\s*"[^"]*"/gi, '')
-             .replace(/ on[a-z]+\s*=\s*'[^']*'/gi, '')
-             .replace(/ on[a-z]+\s*=\s*[^\s>]+/gi, '');
-    // Bloquear javascript: em href/src
-    out = out.replace(/(href|src)\s*=\s*"javascript:[^"]*"/gi, '$1="#"')
-             .replace(/(href|src)\s*=\s*'javascript:[^']*'/gi, "$1='#'");
-    // Permitir apenas tags básicas; remover outras tags
-    const allowed = /<(\/?)(p|br|strong|b|em|i|u|ul|ol|li|span|div)\b[^>]*>/gi;
-    out = out.replace(/<[^>]+>/g, (m) => (m.match(allowed) ? m : ''));
-    return out;
-  };
 
   // Função para adicionar toast
   const showToast = (type: ToastProps['type'], title: string, message?: string) => {
@@ -308,7 +290,7 @@ const AdminSongsPending: React.FC = () => {
                     <p className="text-gray-400 text-sm mb-2">Letra (Preview)</p>
                     <div
                       className="prose prose-invert max-w-none text-white text-sm line-clamp-6"
-                      dangerouslySetInnerHTML={{ __html: sanitizeHtml(song.letra) }}
+                      dangerouslySetInnerHTML={{ __html: sanitizeRichText(song.letra) }}
                     />
                   </div>
                 )}

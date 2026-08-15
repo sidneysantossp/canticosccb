@@ -4,6 +4,7 @@ import {
   ChevronDown, ChevronUp, Heart, Share2, Download, X 
 } from 'lucide-react';
 import { formatDuration } from '@/utils/youtubeApi';
+import sanitizeRichText from '@/utils/sanitizeHtml';
 
 interface BibleMobilePlayerProps {
   id: number;
@@ -264,7 +265,7 @@ const BibleMobilePlayer: React.FC<BibleMobilePlayerProps> = ({
           <div className="px-6 py-4 max-h-96 overflow-y-auto">
             <div 
               className="prose prose-invert prose-sm max-w-none"
-              dangerouslySetInnerHTML={{ __html: content }}
+              dangerouslySetInnerHTML={{ __html: sanitizeRichText(content) }}
             />
           </div>
         </div>

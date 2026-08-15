@@ -1,6 +1,7 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { hinosApi } from '@/lib/api-client';
+import sanitizeRichText from '@/utils/sanitizeHtml';
 import { ArrowLeft, FileAudio, Image as ImageIcon } from 'lucide-react';
 
 interface Hino {
@@ -24,20 +25,6 @@ const AdminSongDetails: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const sanitizeHtml = useMemo(() => (html: string) => {
-    if (!html) return '';
-    let out = html;
-    out = out.replace(/<\/(?:script|style)>/gi, '')
-             .replace(/<(?:script|style)[^>]*>[\s\S]*?<\/(?:script|style)>/gi, '');
-    out = out.replace(/ on[a-z]+\s*=\s*"[^"]*"/gi, '')
-             .replace(/ on[a-z]+\s*=\s*'[^']*'/gi, '')
-             .replace(/ on[a-z]+\s*=\s*[^\s>]+/gi, '');
-    out = out.replace(/(href|src)\s*=\s*"javascript:[^"]*"/gi, '$1="#"')
-             .replace(/(href|src)\s*=\s*'javascript:[^']*'/gi, "$1='#'");
-    const allowed = /<(\/?)(p|br|strong|b|em|i|u|ul|ol|li|span|div|h1|h2|h3)\b[^>]*>/gi;
-    out = out.replace(/<[^>]+>/g, (m) => (m.match(allowed) ? m : ''));
-    return out;
-  }, []);
 
   useEffect(() => {
     const load = async () => {
@@ -133,7 +120,7 @@ const AdminSongDetails: React.FC = () => {
           {song.letra && (
             <div className="bg-gray-800/50 rounded-lg p-4 border border-gray-700">
               <p className="text-gray-400 text-sm mb-2">Letra</p>
-              <div className="prose prose-invert max-w-none text-white text-sm" dangerouslySetInnerHTML={{ __html: sanitizeHtml(song.letra) }} />
+              <div className="prose prose-invert max-w-none text-white text-sm" dangerouslySetInnerHTML={{ __html: sanitizeRichText(song.letra) }} />
             </div>
           )}
         </div>

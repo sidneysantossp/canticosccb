@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useMemo, useRef } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { Play, Heart, Share2, ArrowLeft, Music, ChevronDown, ChevronLeft, ChevronRight, UserPlus, UserCheck } from 'lucide-react';
 import { supabaseFetch, supabaseDelete, supabaseInsert, isSupabaseConfigured } from '@/lib/supabaseRest';
@@ -10,6 +10,7 @@ import { generateMusicRecordingSchema, generateBreadcrumbSchema } from '@/utils/
 import { extractUUID, buildHinoUrl, buildCompositorUrl } from '@/utils/slugUrl';
 import { getHinarioRangeForNumero } from '@/lib/hinarioRanges';
 import { useAuth } from '@/contexts/AuthContext';
+import sanitizeRichText from '@/utils/sanitizeHtml';
 import { findRelatedCifra, findRelatedHinario, type RelatedCifraSummary } from '@/lib/hymnConnectionsApi';
 
 interface Hymn {
@@ -56,18 +57,6 @@ const HymnDetailPage: React.FC = () => {
   const carouselRef = useRef<HTMLDivElement>(null);
   const hinarioRange = getHinarioRangeForNumero(relatedLyric?.numero || hymn?.numero);
 
-  const sanitizeHtml = useMemo(() => (html: string) => {
-    if (!html) return '';
-    let out = html;
-    out = out.replace(/<\/(?:script|style)>/gi, '')
-             .replace(/<(?:script|style)[^>]*>[\s\S]*?<\/(?:script|style)>/gi, '');
-    out = out.replace(/ on[a-z]+\s*=\s*"[^"]*"/gi, '')
-             .replace(/ on[a-z]+\s*=\s*'[^']*'/gi, '')
-             .replace(/ on[a-z]+\s*=\s*[^\s>]+/gi, '');
-    out = out.replace(/(href|src)\s*=\s*"javascript:[^"]*"/gi, '$1="#"')
-             .replace(/(href|src)\s*=\s*'javascript:[^']*'/gi, "$1='#'");
-    return out;
-  }, []);
 
   useEffect(() => {
     loadHymn();
@@ -622,7 +611,7 @@ const HymnDetailPage: React.FC = () => {
                   const lyrics = hymn.letra || '';
                   const looksHtml = /<[^>]+>/.test(lyrics);
                   if (looksHtml) {
-                    let processed = sanitizeHtml(lyrics);
+                    let processed = sanitizeRichText(lyrics);
                     processed = processed.replace(/ {2,}/g, (match) => '&nbsp;'.repeat(match.length));
                     processed = processed.replace(/<p>\s*<br\s*\/?>\s*<\/p>/gi, '<div class="h-4"></div>');
                     return (

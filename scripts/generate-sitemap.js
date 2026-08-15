@@ -124,6 +124,9 @@ async function supabaseFetch(table, select = '*', filters = {}) {
     if (!res.ok) {
       console.warn(`⚠️ Failed to fetch ${table}: ${res.status} ${res.statusText}`);
       hadFetchFailure = true;
+      if (table === 'composers' && process.env.SITEMAP_STRICT === 'true') {
+        throw new Error(`Failed to fetch required sitemap table: ${table} (${res.status})`);
+      }
       return [];
     }
 
@@ -131,6 +134,7 @@ async function supabaseFetch(table, select = '*', filters = {}) {
   } catch (error) {
     console.warn(`⚠️ Failed to fetch ${table}:`, error.message || error);
     hadFetchFailure = true;
+    if (table === 'composers' && process.env.SITEMAP_STRICT === 'true') throw error;
     return [];
   }
 }
@@ -314,14 +318,12 @@ ${urls.join('\n')}
 `;
 
   const outPath = path.resolve(__dirname, '..', 'public', 'sitemap.xml');
-  if (hadFetchFailure && urls.length === staticUrlCount && fs.existsSync(outPath)) {
+  if (hadFetchFailure && fs.existsSync(outPath)) {
     console.warn('⚠️ Dynamic sitemap data unavailable. Keeping existing sitemap.xml.');
     return;
   }
-  fs.writeFileSync(outPath, xml, 'utf-8');
-  console.log(`\n✅ Sitemap generated with ${urls.length} URLs → ${outPath}`);
 }
-
-main().catch(err => {
-  console.warn('⚠️ Sitemap generation failed. Keeping existing sitemap.xml.', err);
+main().catch((err) => {
+  console.error('❌ Sitemap generation failed:', err);
+  process.exitCode = 1;
 });
