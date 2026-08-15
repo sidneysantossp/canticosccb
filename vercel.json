@@ -1,4 +1,8 @@
 {
+  "redirects": [
+    { "source": "/hinos", "destination": "/hinos-ccb", "permanent": true },
+    { "source": "/hinos/", "destination": "/hinos-ccb", "permanent": true }
+  ],
   "rewrites": [
     {
       "source": "/hino/:path*",
