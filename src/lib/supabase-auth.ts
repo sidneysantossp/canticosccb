@@ -66,6 +66,11 @@ const AUTH_TOKEN_STORAGE_KEY = 'auth_token';
 const AUTH_FALLBACK_STORAGE_KEY = 'auth_fallback';
 const ENABLE_GOOGLE_AUTH = String(import.meta.env.VITE_ENABLE_GOOGLE_AUTH || '').trim().toLowerCase() === 'true';
 
+/**
+ * Papéis administrativos e de compositor são definidos exclusivamente no
+ * perfil autorizado pelo banco. Nunca derive privilégios de e-mail, variáveis
+ * VITE_* ou valores persistidos no navegador.
+ */
 
 export function isGoogleAuthEnabled(): boolean {
   return ENABLE_GOOGLE_AUTH;
@@ -105,8 +110,8 @@ function getAuthRedirectBase(): string {
 
 // Função helper para mapear campos para compatibilidade
 function mapUserForCompatibility(user: any): Usuario {
-  const isAdmin = user.is_admin === true || user.tipo === 'admin';
-  const isComposer = user.is_composer === true || user.tipo === 'compositor';
+  const isAdmin = user.is_admin === true;
+  const isComposer = user.is_composer === true;
   return {
     ...user,
     is_admin: isAdmin,
@@ -531,12 +536,12 @@ export async function updateUserProfile(userId: string, data: Partial<Usuario>):
  */
 export function isAdmin(): boolean {
   const user = getCurrentUser();
-  return user?.is_admin === true || user?.tipo === 'admin';
+  return user?.is_admin === true;
 }
 
 export function isCompositor(): boolean {
   const user = getCurrentUser();
-  return user?.is_composer === true || user?.tipo === 'compositor';
+  return user?.is_composer === true;
 }
 
 /**

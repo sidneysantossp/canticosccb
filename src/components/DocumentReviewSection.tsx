@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { FileText, CheckCircle, XCircle, AlertCircle } from 'lucide-react';
 import { documentReviewsApi, type DocumentReview } from '@/lib/api-client';
 import { useAuth } from '@/contexts/AuthContext';
-import { getDocumentStorageUrl, getDocumentSignedUrl } from '@/lib/documentStorage';
+import { getDocumentSignedUrl } from '@/lib/documentStorage';
 
 interface DocumentReviewSectionProps {
   compositorId: number | string;
@@ -27,10 +27,10 @@ export const DocumentReviewSection: React.FC<DocumentReviewSectionProps> = ({
   const [documents, setDocuments] = useState<DocumentReview[]>([]);
   const [loading, setLoading] = useState(true);
   const [resolvedUrls, setResolvedUrls] = useState<Record<string, string>>({});
-  const [reviewingId, setReviewingId] = useState<number | null>(null);
+  const [reviewingId, setReviewingId] = useState<string | number | null>(null);
   const [showNotesModal, setShowNotesModal] = useState(false);
   const [modalType, setModalType] = useState<'approve' | 'reject'>('approve');
-  const [currentDocId, setCurrentDocId] = useState<number | null>(null);
+  const [currentDocId, setCurrentDocId] = useState<string | number | null>(null);
   const [notes, setNotes] = useState('');
 
   useEffect(() => {
@@ -59,11 +59,7 @@ export const DocumentReviewSection: React.FC<DocumentReviewSectionProps> = ({
         const urlMap: Record<string, string> = {};
         for (const doc of docs) {
           if (doc.image_path) {
-            try {
-              urlMap[doc.id] = await getDocumentSignedUrl(doc.image_path);
-            } catch {
-              urlMap[doc.id] = getDocumentStorageUrl(doc.image_path);
-            }
+            urlMap[doc.id] = await getDocumentSignedUrl(doc.image_path);
           }
         }
         setResolvedUrls(urlMap);
@@ -77,7 +73,7 @@ export const DocumentReviewSection: React.FC<DocumentReviewSectionProps> = ({
     }
   };
 
-  const openNotesModal = (docId: number, type: 'approve' | 'reject') => {
+  const openNotesModal = (docId: string | number, type: 'approve' | 'reject') => {
     setCurrentDocId(docId);
     setModalType(type);
     setNotes('');
@@ -90,7 +86,7 @@ export const DocumentReviewSection: React.FC<DocumentReviewSectionProps> = ({
     setCurrentDocId(null);
   };
 
-  const handleReview = async (documentId: number, status: 'approved' | 'rejected', notes?: string) => {
+  const handleReview = async (documentId: string | number, status: 'approved' | 'rejected', notes?: string) => {
     if (!user?.id) return;
 
     try {
@@ -98,7 +94,6 @@ export const DocumentReviewSection: React.FC<DocumentReviewSectionProps> = ({
       const response = await documentReviewsApi.review(documentId, {
         status,
         admin_notes: notes,
-        reviewed_by: user.id
       });
 
       if (response.error) {
@@ -245,19 +240,25 @@ export const DocumentReviewSection: React.FC<DocumentReviewSectionProps> = ({
               </div>
             </div>
 
-            {/* Imagem do documento */}
+            {/* Imagem do documento: somente URL assinada de bucket privado. */}
             {doc.image_path && (
               <div className="mb-3">
-                <img
-                  src={resolvedUrls[doc.id] || getDocumentStorageUrl(doc.image_path)}
-                  alt={`Documento ${doc.document_type}`}
-                  className="max-w-full h-auto rounded border border-gray-700"
-                  style={{ maxHeight: '300px' }}
-                  onError={(e) => {
-                    console.error('Erro ao carregar imagem:', doc.image_path);
-                    e.currentTarget.src = 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="300" height="200"><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" fill="gray">Imagem não disponível</text></svg>';
-                  }}
-                />
+                {resolvedUrls[doc.id] ? (
+                  <img
+                    src={resolvedUrls[doc.id]}
+                    alt={`Documento ${doc.document_type}`}
+                    className="max-w-full h-auto rounded border border-gray-700"
+                    style={{ maxHeight: '300px' }}
+                    onError={(e) => {
+                      console.error('Erro ao carregar imagem assinada:', doc.image_path);
+                      e.currentTarget.style.display = 'none';
+                    }}
+                  />
+                ) : (
+                  <div className="rounded border border-gray-700 bg-gray-900/50 px-3 py-4 text-sm text-gray-400">
+                    Documento privado indisponível. Confirme a permissão de revisão e o caminho no Storage.
+                  </div>
+                )}
               </div>
             )}
 

@@ -9,9 +9,7 @@ import {
   TrendingUp,
   Clock,
   CheckCircle,
-  Flag,
-  ArrowUp,
-  ArrowDown
+  Flag
 } from 'lucide-react';
 import { getAdminStats, getTopSongs, getRecentActivity, AdminStats } from '@/lib/admin/adminStatsApi';
 import { useApiCache } from '@/hooks/useApiCache';
@@ -55,8 +53,6 @@ const AdminDashboard: React.FC = () => {
       id: 1,
       title: 'Compositores',
       value: s.totalComposers.toString(),
-      change: '+0%',
-      trend: 'up' as const,
       icon: Mic2,
       color: 'bg-purple-500',
       bgColor: 'bg-purple-500/10',
@@ -66,8 +62,6 @@ const AdminDashboard: React.FC = () => {
       id: 2,
       title: 'Hinos Publicados',
       value: s.publishedSongs.toString(),
-      change: '+0%',
-      trend: 'up' as const,
       icon: Music,
       color: 'bg-green-500',
       bgColor: 'bg-green-500/10',
@@ -79,8 +73,6 @@ const AdminDashboard: React.FC = () => {
       value: s.totalPlays >= 1000 
         ? `${(s.totalPlays / 1000).toFixed(1)}K` 
         : s.totalPlays.toString(),
-      change: '+0%',
-      trend: 'up' as const,
       icon: Play,
       color: 'bg-orange-500',
       bgColor: 'bg-orange-500/10',
@@ -90,8 +82,6 @@ const AdminDashboard: React.FC = () => {
       id: 4,
       title: 'Total de Curtidas',
       value: s.totalLikes.toString(),
-      change: '+0%',
-      trend: 'up' as const,
       icon: Music,
       color: 'bg-pink-500',
       bgColor: 'bg-pink-500/10',
@@ -101,8 +91,6 @@ const AdminDashboard: React.FC = () => {
       id: 5,
       title: 'Total de Hinos',
       value: s.totalSongs.toString(),
-      change: '+0%',
-      trend: 'up' as const,
       icon: Music,
       color: 'bg-blue-500',
       bgColor: 'bg-blue-500/10',
@@ -112,8 +100,6 @@ const AdminDashboard: React.FC = () => {
       id: 6,
       title: 'Novos Hoje',
       value: s.newUsersToday.toString(),
-      change: '+0%',
-      trend: 'up' as const,
       icon: TrendingUp,
       color: 'bg-emerald-500',
       bgColor: 'bg-emerald-500/10',
@@ -161,7 +147,7 @@ const AdminDashboard: React.FC = () => {
         <div className="flex items-center gap-3">
           <span className="text-gray-400 text-sm flex items-center gap-2">
             <Clock className="w-4 h-4" />
-            Atualizado agora
+            Dados carregados nesta sessão
           </span>
         </div>
       </div>
@@ -170,8 +156,6 @@ const AdminDashboard: React.FC = () => {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {displayStats.map((stat) => {
           const Icon = stat.icon;
-          const TrendIcon = stat.trend === 'up' ? ArrowUp : ArrowDown;
-
           return (
             <div
               key={stat.id}
@@ -181,12 +165,7 @@ const AdminDashboard: React.FC = () => {
                 <div className={`${stat.bgColor} p-3 rounded-lg`}>
                   <Icon className={`w-6 h-6 ${stat.textColor}`} />
                 </div>
-                <div className={`flex items-center gap-1 text-sm font-semibold ${
-                  stat.trend === 'up' ? 'text-green-500' : 'text-red-500'
-                }`}>
-                  <TrendIcon className="w-4 h-4" />
-                  {stat.change}
-                </div>
+                <span className="text-xs font-medium text-gray-500">Sem comparação</span>
               </div>
               <h3 className="text-gray-400 text-sm mb-1">{stat.title}</h3>
               <p className="text-3xl font-bold text-white">{stat.value}</p>

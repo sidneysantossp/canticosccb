@@ -14,17 +14,16 @@ const mapComposer = (row: any): Composer => ({
   name: String(row.artistic_name || row.name || ''),
   slug: String(row.slug || ''),
   bio: row.biography || row.bio || undefined,
-  avatar_url: row.avatar_url || row.photo_url || undefined,
-  ativo: row.status === 'approved' || row.verified ? 1 : 0,
+  avatar_url: row.avatar_url || undefined,
+  ativo: 1,
 });
 
 export const getAll = async (): Promise<Composer[]> => {
   if (!isSupabaseConfigured) return [];
 
   try {
-    const rows = await supabaseFetch<any>('composers', {
-      select: 'id,name,artistic_name,slug,bio,biography,avatar_url,photo_url,status,verified',
-      or: '(verified.eq.true,status.eq.approved)',
+    const rows = await supabaseFetch<any>('composer_public_profiles', {
+      select: 'id,name,artistic_name,slug,bio,avatar_url',
       order: 'name.asc',
     });
     return rows.map(mapComposer);
@@ -38,9 +37,9 @@ export const getById = async (id: string | number): Promise<Composer | null> => 
   if (!isSupabaseConfigured) return null;
 
   try {
-    const rows = await supabaseFetch<any>('composers', {
+    const rows = await supabaseFetch<any>('composer_public_profiles', {
       id: `eq.${id}`,
-      select: 'id,name,artistic_name,slug,bio,biography,avatar_url,photo_url,status,verified',
+      select: 'id,name,artistic_name,slug,bio,avatar_url',
       limit: '1',
     });
     return rows.length > 0 ? mapComposer(rows[0]) : null;

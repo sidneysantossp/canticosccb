@@ -128,11 +128,7 @@ export async function getCompositores(params?: {
     order: 'name.asc',
   };
 
-  if (params?.verified) {
-    filters.verified = 'eq.true';
-  } else {
-    filters.or = '(verified.eq.true,status.eq.approved)';
-  }
+  // A view já contém apenas compositores aprovados e verificados.
   if (params?.search) {
     filters.or = `(name.ilike.%${params.search}%,artistic_name.ilike.%${params.search}%)`;
   }
@@ -140,11 +136,11 @@ export async function getCompositores(params?: {
     filters.limit = String(params.limit);
   }
 
-  return await supabaseFetch<any>('composers', filters);
+  return await supabaseFetch<any>('composer_public_profiles', filters);
 }
 
 export async function getCompositorById(id: string) {
-  const rows = await supabaseFetch<any>('composers', {
+  const rows = await supabaseFetch<any>('composer_public_profiles', {
     select: '*',
     id: `eq.${id}`,
     limit: '1',
@@ -155,7 +151,7 @@ export async function getCompositorById(id: string) {
 }
 
 export async function getCompositorBySlug(slug: string) {
-  const rows = await supabaseFetch<any>('composers', {
+  const rows = await supabaseFetch<any>('composer_public_profiles', {
     select: '*',
     slug: `eq.${slug}`,
     limit: '1',

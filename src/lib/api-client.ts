@@ -5,6 +5,7 @@
 import { getCurrentUser, supabase } from './supabase-auth';
 import {
   supabaseAuthDelete,
+  supabaseAuthFetch,
   supabaseAuthInsert,
   supabaseAuthUpdate,
   supabaseDelete,
@@ -1513,7 +1514,7 @@ export const documentReviewsApi = {
   getByCompositor: async (compositorId: string | number) => {
     try {
 
-      const rows = await supabaseFetch<any>('composer_documents', {
+      const rows = await supabaseAuthFetch<any>('composer_documents', {
         composer_id: `eq.${compositorId}`,
         select: '*',
         order: 'created_at.desc',
@@ -1539,15 +1540,20 @@ export const documentReviewsApi = {
       return { data: { documents: [] }, error: error?.message };
     }
   },
-  review: async (documentId: number | string, data: { status: string; admin_notes?: string; reviewed_by?: string }) => {
+  review: async (documentId: number | string, data: { status: string; admin_notes?: string }) => {
     try {
-
-      const result = await supabaseUpdate('composer_documents', { id: `eq.${documentId}` }, {
-        status: data.status,
-        admin_notes: data.admin_notes || null,
-        reviewed_by: data.reviewed_by || null,
-        reviewed_at: new Date().toISOString(),
+      // A RPC atribui reviewed_by e reviewed_at com auth.uid() no banco. O
+      // navegador informa apenas a decisão e a justificativa administrativa.
+      const { data: result, error } = await supabase.rpc('review_composer_document', {
+        p_document_id: String(documentId),
+        p_status: data.status,
+        p_admin_notes: data.admin_notes || null,
       });
+
+      if (error) {
+        throw error;
+      }
+
       return { data: result, error: null };
     } catch (error: any) {
       console.error('[documentReviewsApi.review] Error:', error?.message);
@@ -1812,7 +1818,7 @@ export interface CompositorGerente {
 }
 
 export interface DocumentReview {
-  id: number;
+  id: string | number;
   composer_id: string | number;
   document_type: string;
   document_number?: string;

@@ -42,8 +42,10 @@ const resolveUserFlags = (
   isComposer?: boolean,
   tipo?: User['tipo']
 ) => {
-  const resolvedIsAdmin = isAdmin === true || tipo === 'admin';
-  const resolvedIsComposer = isComposer === true || tipo === 'compositor';
+  // Papéis são autorizados pelo perfil retornado sob uma sessão Supabase válida.
+  // Valores de e-mail, aliases de compatibilidade e cache local nunca concedem privilégios.
+  const resolvedIsAdmin = isAdmin === true;
+  const resolvedIsComposer = isComposer === true;
   const resolvedTipo: User['tipo'] = resolvedIsAdmin ? 'admin' : resolvedIsComposer ? 'compositor' : 'usuario';
 
   return {
@@ -116,7 +118,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setProfile(null);
       authClient.clearAuthStorage();
     };
-
 
     // Função para buscar/criar usuário baseado na sessão Supabase
     const syncUserFromSession = async (session: any) => {
@@ -296,7 +297,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       return true;
     };
 
-    // A identidade só é restaurada depois que o Supabase confirmar a sessão.
+    // O cache local serve apenas para compatibilidade visual após uma sessão válida.
+    // Ele não pode restaurar uma sessão nem conceder autorização de forma autônoma.
+    const hasUser = false;
+    const hasFallbackAuth = false;
+    localStorage.removeItem('auth_fallback');
 
     // Restaurar estado de gerenciamento se existir
     const storedComposerId = sessionStorage.getItem('managingComposerId');
@@ -316,19 +321,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         } else if (event === 'INITIAL_SESSION') {
           // Sessão inicial - verificar se há usuário
           if (session?.user) {
-            // Nunca confiar no usuário armazenado localmente para restaurar identidade.
             await syncSessionWithFallback(session);
-          } else {
+          } else if (!hasFallbackAuth) {
             clearStoredUser();
           }
           setLoading(false);
         } else if (event === 'SIGNED_OUT') {
           clearStoredUser();
           setLoading(false);
-        } else if (event === 'TOKEN_REFRESHED') {
-          // Token atualizado: sincronizar o perfil associado à sessão confirmada.
-          if (session?.user) await syncSessionWithFallback(session);
-
+        } else if (event === 'TOKEN_REFRESHED' && session?.user) {
+          await syncSessionWithFallback(session);
         }
         };
 
@@ -338,13 +340,23 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
     );
 
-    // Timeout de segurança para não bloquear a UI indefinidamente se o provedor estiver indisponível.
-    const timeout = setTimeout(() => {
+    // Se já tem usuário carregado, podemos marcar como não loading
+    if (hasUser && hasFallbackAuth) {
       setLoading(false);
-    }, 3000);
+    } else {
+      // Timeout de segurança - se depois de 3s ainda estiver loading, desmarcar
+      const timeout = setTimeout(() => {
+        setLoading(false);
+      }, 3000);
 
+      return () => {
+        clearTimeout(timeout);
+        subscription.unsubscribe();
+      };
+    }
+
+    // Cleanup
     return () => {
-      clearTimeout(timeout);
       subscription.unsubscribe();
     };
   }, []);
@@ -356,6 +368,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         password,
       });
       if (error) {
+        // Não há login de contingência sem JWT. Uma falha de Auth não pode abrir
+        // uma sessão baseada em leitura anônima de perfis ou e-mails.
         throw new Error(
           error.message === 'Invalid login credentials'
             ? 'Email ou senha incorretos.'

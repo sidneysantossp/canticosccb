@@ -9,12 +9,12 @@ import type {
 
 import { fetchCifraVersionSections } from './cifraSectionsRepository';
 import { fetchCifraVersionChordOverrides } from './cifraVersionChordOverridesRepository';
-import { serializeSectionLines } from './legacyCifraParser';
 import { fetchCifraSongById } from './cifraSongsRepository';
+import { serializeSectionLines } from './legacyCifraParser';
 import {
-  fetchCifraVersions,
   fetchCifraVersionById,
   fetchCifraVersionByPublicSlug,
+  fetchCifraVersions,
   fetchPublicCifraCatalog,
   fetchPublicCifraCatalogBySlug,
 } from './cifraVersionsRepository';
@@ -279,11 +279,34 @@ export async function fetchAdminPreviewCifraPageBySlug(publicSlug: string): Prom
   };
 }
 
-export async function fetchMergedPublicCifrasList(): Promise<Array<Cifra | PublicCifraPageData>> {
-  const [publicCatalog, legacyCifras] = await Promise.all([
-    fetchPublicCifraCatalog({ limit: 1000 }),
-    fetchCifras({ is_active: true, limit: 1000 }),
+export interface MergedPublicCifrasResult {
+  items: Array<Cifra | PublicCifraPageData>;
+  unavailableSources: Array<'catalog_v2' | 'legacy'>;
+}
+
+export async function fetchMergedPublicCifrasListDetailed(): Promise<MergedPublicCifrasResult> {
+  const [catalogResult, legacyResult] = await Promise.allSettled([
+    fetchPublicCifraCatalog({ limit: 500 }),
+    fetchCifras({ is_active: true, limit: 500 }),
   ]);
+
+  const unavailableSources: Array<'catalog_v2' | 'legacy'> = [];
+  const publicCatalog = catalogResult.status === 'fulfilled' ? catalogResult.value : [];
+  const legacyCifras = legacyResult.status === 'fulfilled' ? legacyResult.value : [];
+
+  if (catalogResult.status === 'rejected') {
+    unavailableSources.push('catalog_v2');
+    console.warn('[cifras] Catálogo v2 indisponível:', catalogResult.reason);
+  }
+
+  if (legacyResult.status === 'rejected') {
+    unavailableSources.push('legacy');
+    console.warn('[cifras] Catálogo legado indisponível:', legacyResult.reason);
+  }
+
+  if (unavailableSources.length === 2) {
+    throw new Error('As fontes de cifras estão indisponíveis no momento.');
+  }
 
   const groupedByVersion = new Map<string, CifraPublicCatalogItem>();
   publicCatalog.forEach((item) => {
@@ -343,5 +366,13 @@ export async function fetchMergedPublicCifrasList(): Promise<Array<Cifra | Publi
   const usedSlugs = new Set(v2Items.map((item) => item.slug));
   const remainingLegacy = legacyCifras.filter((item) => !usedSlugs.has(item.slug));
 
-  return [...v2Items, ...remainingLegacy];
+  return {
+    items: [...v2Items, ...remainingLegacy],
+    unavailableSources,
+  };
+}
+
+export async function fetchMergedPublicCifrasList(): Promise<Array<Cifra | PublicCifraPageData>> {
+  const result = await fetchMergedPublicCifrasListDetailed();
+  return result.items;
 }

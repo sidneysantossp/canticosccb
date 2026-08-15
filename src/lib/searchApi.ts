@@ -122,7 +122,7 @@ function isRestrictedSupabaseError(error: unknown): boolean {
 }
 
 const HYMN_SELECT = 'id,numero,titulo,compositor_nome,categoria,cover_url,audio_url,youtube_source';
-const COMPOSER_SELECT = 'id,name,artistic_name,email,bio,biography,photo_url,avatar_url';
+const COMPOSER_SELECT = 'id,name,artistic_name,bio,avatar_url,slug,category,followers_count,is_trending';
 const ALBUM_SELECT = 'id,title,artist,genre,cover_url,active';
 const PLAYLIST_SELECT = 'id,name,description,cover_url';
 
@@ -183,7 +183,7 @@ function getSearchContext(query: string): SearchContext | null {
     hymnFilter: numericQuery != null
       ? `titulo.ilike.${searchTerm},compositor_nome.ilike.${searchTerm},categoria.ilike.${searchTerm},numero.eq.${numericQuery}`
       : `titulo.ilike.${searchTerm},compositor_nome.ilike.${searchTerm},categoria.ilike.${searchTerm}`,
-    composerFilter: `name.ilike.${searchTerm},artistic_name.ilike.${searchTerm},bio.ilike.${searchTerm},biography.ilike.${searchTerm}`,
+    composerFilter: `name.ilike.${searchTerm},artistic_name.ilike.${searchTerm},bio.ilike.${searchTerm}`,
     albumFilter: `title.ilike.${searchTerm},artist.ilike.${searchTerm},genre.ilike.${searchTerm}`,
     playlistFilter: `name.ilike.${searchTerm},description.ilike.${searchTerm}`,
     categoryFilter: `nome.ilike.${searchTerm},descricao.ilike.${searchTerm}`,
@@ -535,7 +535,7 @@ async function searchHymns(context: SearchContext, limit: number): Promise<HymnS
 
 async function searchComposers(context: SearchContext, limit: number): Promise<ComposerSearchResult[]> {
   const { data, error } = await publicSupabase
-    .from('composers')
+    .from('composer_public_profiles')
     .select(COMPOSER_SELECT)
     .or(context.composerFilter)
     .limit(limit);
