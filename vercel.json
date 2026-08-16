@@ -1,7 +1,9 @@
 {
   "redirects": [
     { "source": "/hinos", "destination": "/hinos-ccb", "permanent": true },
-    { "source": "/hinos/", "destination": "/hinos-ccb", "permanent": true }
+    { "source": "/hinos/", "destination": "/hinos-ccb", "permanent": true },
+    { "source": "/biblia", "destination": "/biblia-ccb", "permanent": true },
+    { "source": "/biblia/", "destination": "/biblia-ccb", "permanent": true }
   ],
   "rewrites": [
     {
