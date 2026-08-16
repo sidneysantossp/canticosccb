@@ -1486,6 +1486,27 @@ async function handlePlaylistDetail(idParam: string): Promise<PageMeta | null> {
   };
 }
 
+function handleHome(): PageMeta {
+  const title = 'Cânticos CCB — Ouça Hinos da Congregação Cristã no Brasil | Hinário 5, Cifras e Compositores';
+  const description = 'Ouça hinos da CCB online grátis. Hinário 5 completo, hinos cantados e tocados, cifras, compositores e playlists da Congregação Cristã no Brasil. Crie sua conta e salve seus hinos favoritos.';
+  return {
+    title,
+    description,
+    canonical: SITE_URL,
+    schemas: [],
+    bodyHtml: `
+      <nav><a href="${SITE_URL}">Início</a></nav>
+      <h1>Cânticos CCB — Hinos da Congregação Cristã no Brasil</h1>
+      <p>Ouça hinos da Congregação Cristã no Brasil. Louvor e adoração em um só lugar.</p>
+      <section>
+        <h2>Explore o acervo CCB</h2>
+        <p><a href="${SITE_URL}/hinos-ccb">Hinos CCB</a> · <a href="${SITE_URL}/hinario">Hinário 5</a> · <a href="${SITE_URL}/cifras-hinos-ccb">Cifras de Hinos CCB</a></p>
+        <p><a href="${SITE_URL}/hinos-cantados-ccb">Hinos Cantados</a> · <a href="${SITE_URL}/hinos-tocados-ccb">Hinos Tocados</a> · <a href="${SITE_URL}/hinos-avulsos-ccb">Hinos Avulsos</a></p>
+        <p><a href="${SITE_URL}/compositores">Compositores</a> · <a href="${SITE_URL}/albuns">Álbuns</a> · <a href="${SITE_URL}/playlists">Playlists</a></p>
+      </section>
+      <footer><p><a href="${SITE_URL}">Cânticos CCB</a> — Plataforma de hinos da Congregação Cristã no Brasil</p></footer>`,
+  };
+}
 function handleStaticPage(path: string): PageMeta | null {
   const pages: Record<string, { title: string; desc: string; h1: string; body: string; noindex?: boolean }> = {
     '/trends': {
@@ -1693,6 +1714,9 @@ export default async function handler(req: Request): Promise<Response> {
   let pageMeta: PageMeta | null = null;
 
   try {
+    if (pathname === '/') {
+      pageMeta = handleHome();
+    } else {
     const hinoMatch = pathname.match(/^\/hino\/(.+)$/);
     const compositorMatch = pathname.match(/^\/compositor\/(.+)$/);
     const albumMatch = pathname.match(/^\/album\/(.+)$/);
@@ -1738,6 +1762,7 @@ export default async function handler(req: Request): Promise<Response> {
       pageMeta = await handlePlaylistsList();
     } else {
       pageMeta = handleStaticPage(pathname);
+    }
     }
   } catch (e) {
     console.error('[SSR] Error:', e);
