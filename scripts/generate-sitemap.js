@@ -124,7 +124,7 @@ async function supabaseFetch(table, select = '*', filters = {}) {
     if (!res.ok) {
       console.warn(`⚠️ Failed to fetch ${table}: ${res.status} ${res.statusText}`);
       hadFetchFailure = true;
-      if (table === 'composers' && process.env.SITEMAP_STRICT === 'true') {
+      if (table === 'composer_public_profiles' && process.env.SITEMAP_STRICT === 'true') {
         throw new Error(`Failed to fetch required sitemap table: ${table} (${res.status})`);
       }
       return [];
@@ -134,7 +134,7 @@ async function supabaseFetch(table, select = '*', filters = {}) {
   } catch (error) {
     console.warn(`⚠️ Failed to fetch ${table}:`, error.message || error);
     hadFetchFailure = true;
-    if (table === 'composers' && process.env.SITEMAP_STRICT === 'true') throw error;
+    if (table === 'composer_public_profiles' && process.env.SITEMAP_STRICT === 'true') throw error;
     return [];
   }
 }
@@ -231,8 +231,7 @@ async function main() {
 
   // Compositores
   console.log('  🎵 Fetching compositores...');
-  const compositores = await supabaseFetch('composers', 'id,name,artistic_name,updated_at,created_at', {
-    'or': '(verified.eq.true,status.eq.approved)',
+  const compositores = await supabaseFetch('composer_public_profiles', 'id,name,artistic_name,slug', {
     'order': 'name.asc',
     'limit': '2000',
   });
