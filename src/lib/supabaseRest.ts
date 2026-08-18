@@ -1,5 +1,4 @@
 import { supabase } from './supabase-auth';
-import { getEmergencyRowsForTable, isSupabaseQuotaRestrictionErrorMessage } from './emergencyCatalog';
 
 const SUPABASE_URL = (import.meta.env.VITE_SUPABASE_URL ?? '').replace(/\/+$/, '').trim();
 const SUPABASE_ANON_KEY = String(import.meta.env.VITE_SUPABASE_ANON_KEY ?? '').trim();
@@ -7,20 +6,6 @@ const SUPABASE_ANON_KEY = String(import.meta.env.VITE_SUPABASE_ANON_KEY ?? '').t
 export const isSupabaseConfigured = Boolean(SUPABASE_URL && SUPABASE_ANON_KEY);
 const isDebugEnabled = import.meta.env.DEV;
 const PUBLIC_FETCH_TIMEOUT_MS = 3500;
-const EMERGENCY_FIRST_TABLES = new Set([
-  'hinos',
-  'albums',
-  'composers',
-  'playlists',
-  'categorias',
-  'album_hinos',
-  'hino_categorias',
-  'hinario',
-  'site_config',
-  'cifras',
-  'bible_narrated',
-  'user_follows',
-]);
 const debugLog = (...args: unknown[]) => {
   if (isDebugEnabled) {
     console.log(...args);
@@ -43,25 +28,6 @@ function normalizeTableName(table: string) {
     .replace(/[\u0300-\u036f]/g, '');
 }
 
-function isPublicCatalogRoute() {
-  if (typeof window === 'undefined') return false;
-
-  const path = window.location.pathname || '/';
-  return !(
-    path.startsWith('/admin')
-    || path.startsWith('/compositor')
-    || path.startsWith('/chat')
-    || path.startsWith('/profile')
-    || path.startsWith('/biblioteca')
-    || path.startsWith('/library')
-    || path.startsWith('/downloads')
-    || path.startsWith('/settings')
-  );
-}
-
-function shouldUseEmergencyCatalogImmediately(table: string) {
-  return isPublicCatalogRoute() && EMERGENCY_FIRST_TABLES.has(normalizeTableName(table));
-}
 
 // Debug: Log configuration status on load
 if (typeof window !== 'undefined') {
@@ -222,12 +188,6 @@ export async function supabaseFetchWithOptions<T>(
   const cacheKey = url.toString();
   const now = Date.now();
 
-  if (shouldUseEmergencyCatalogImmediately(table)) {
-    const fallbackRows = await getEmergencyRowsForTable(table, params);
-    cache.set(cacheKey, { data: fallbackRows, timestamp: now });
-    return fallbackRows as T[];
-  }
-  
   // Check cache first
   const cached = cache.get(cacheKey);
   if (!options.bypassCache && cached && (now - cached.timestamp) < CACHE_TTL) {
@@ -250,12 +210,6 @@ export async function supabaseFetchWithOptions<T>(
     if (!response.ok) {
       const text = await response.text().catch(() => '');
       console.error(`[supabaseFetch] Error ${response.status} for ${table}:`, text);
-      if (isSupabaseQuotaRestrictionErrorMessage(`${response.status} ${response.statusText} ${text}`)) {
-        console.warn(`[supabaseFetch] Falling back to emergency catalog for ${table}`);
-        const fallbackRows = await getEmergencyRowsForTable(table, params);
-        cache.set(cacheKey, { data: fallbackRows, timestamp: now });
-        return fallbackRows as T[];
-      }
       throw new Error(`[supabaseRest] ${response.status} ${response.statusText} - ${text}`);
     }
 
@@ -271,12 +225,6 @@ export async function supabaseFetchWithOptions<T>(
   } catch (error) {
     const msg = error instanceof Error ? error.message : String(error);
     console.error(`[supabaseFetch] Exception for ${table}:`, msg);
-    if (isSupabaseQuotaRestrictionErrorMessage(msg)) {
-      console.warn(`[supabaseFetch] Exception fallback to emergency catalog for ${table}`);
-      const fallbackRows = await getEmergencyRowsForTable(table, params);
-      cache.set(cacheKey, { data: fallbackRows, timestamp: now });
-      return fallbackRows as T[];
-    }
     throw error;
   }
 }

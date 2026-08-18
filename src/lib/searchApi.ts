@@ -1,5 +1,4 @@
 import { publicSupabase } from '@/lib/supabase-auth';
-import { getEmergencyCatalog, isSupabaseQuotaRestrictionErrorMessage } from '@/lib/emergencyCatalog';
 
 export interface HymnSearchResult {
   id: string;
@@ -117,10 +116,6 @@ interface HinoCategoriaRow {
   categoria_id?: string | number | null;
 }
 
-function isRestrictedSupabaseError(error: unknown): boolean {
-  return isSupabaseQuotaRestrictionErrorMessage(String((error as any)?.message || error || ''));
-}
-
 const HYMN_SELECT = 'id,numero,titulo,compositor_nome,categoria,cover_url,audio_url,youtube_source';
 const COMPOSER_SELECT = 'id,name,artistic_name,bio,avatar_url,slug,category,followers_count,is_trending';
 const ALBUM_SELECT = 'id,title,artist,genre,cover_url,active';
@@ -228,11 +223,7 @@ async function fetchHymnsByIds(ids: string[]): Promise<HymnRow[]> {
 
       if (error) {
         console.error('❌ Erro ao buscar hinos por IDs:', error);
-        if (isRestrictedSupabaseError(error)) {
-          const catalog = await getEmergencyCatalog();
-          return catalog.hymns.filter((hymn) => batch.includes(normalizeEntityId(hymn.id))) as HymnRow[];
-        }
-        return [] as HymnRow[];
+        throw error;
       }
 
       return (data || []) as HymnRow[];
@@ -242,6 +233,7 @@ async function fetchHymnsByIds(ids: string[]): Promise<HymnRow[]> {
   return results.flat();
 }
 
+/* Emergency catalog search removed: Supabase is the single source of truth.
 async function searchEmergencyHymns(context: SearchContext, limit: number): Promise<HymnSearchResult[]> {
   const catalog = await getEmergencyCatalog();
   const albumNamesByHymn = new Map<string, string[]>();
@@ -291,6 +283,8 @@ async function searchEmergencyHymns(context: SearchContext, limit: number): Prom
     .slice(0, limit);
 }
 
+*/
+/* Emergency catalog search removed: Supabase is the single source of truth.
 async function searchEmergencyComposers(context: SearchContext, limit: number): Promise<ComposerSearchResult[]> {
   const catalog = await getEmergencyCatalog();
 
@@ -311,6 +305,8 @@ async function searchEmergencyComposers(context: SearchContext, limit: number): 
     .slice(0, limit);
 }
 
+*/
+/* Emergency catalog search removed: Supabase is the single source of truth.
 async function searchEmergencyAlbums(context: SearchContext, limit: number): Promise<AlbumSearchResult[]> {
   const catalog = await getEmergencyCatalog();
 
@@ -331,6 +327,8 @@ async function searchEmergencyAlbums(context: SearchContext, limit: number): Pro
     .slice(0, limit);
 }
 
+*/
+/* Emergency catalog search removed: Supabase is the single source of truth.
 async function searchEmergencyPlaylists(context: SearchContext, limit: number): Promise<PlaylistSearchResult[]> {
   const catalog = await getEmergencyCatalog();
 
@@ -350,6 +348,7 @@ async function searchEmergencyPlaylists(context: SearchContext, limit: number): 
     .slice(0, limit);
 }
 
+*/
 async function searchHymns(context: SearchContext, limit: number): Promise<HymnSearchResult[]> {
   const [directHymnsResult, matchedAlbumsResult, matchedPlaylistsResult, matchedCategoriesResult] = await Promise.all([
     publicSupabase
@@ -377,13 +376,9 @@ async function searchHymns(context: SearchContext, limit: number): Promise<HymnS
       .limit(80),
   ]);
 
-  if (
-    isRestrictedSupabaseError(directHymnsResult.error) ||
-    isRestrictedSupabaseError(matchedAlbumsResult.error) ||
-    isRestrictedSupabaseError(matchedPlaylistsResult.error) ||
-    isRestrictedSupabaseError(matchedCategoriesResult.error)
-  ) {
-    return searchEmergencyHymns(context, limit);
+  const firstError = directHymnsResult.error || matchedAlbumsResult.error || matchedPlaylistsResult.error || matchedCategoriesResult.error;
+  if (firstError) {
+    throw firstError;
   }
 
   if (directHymnsResult.error) {
@@ -542,10 +537,7 @@ async function searchComposers(context: SearchContext, limit: number): Promise<C
 
   if (error) {
     console.error('❌ Erro ao buscar compositores:', error);
-    if (isRestrictedSupabaseError(error)) {
-      return searchEmergencyComposers(context, limit);
-    }
-    return [];
+    throw error;
   }
 
   return ((data || []) as ComposerRow[])
@@ -575,10 +567,7 @@ async function searchAlbums(context: SearchContext, limit: number): Promise<Albu
 
   if (error) {
     console.error('❌ Erro ao buscar álbuns:', error);
-    if (isRestrictedSupabaseError(error)) {
-      return searchEmergencyAlbums(context, limit);
-    }
-    return [];
+    throw error;
   }
 
   return ((data || []) as AlbumRow[])
@@ -608,10 +597,7 @@ async function searchPlaylists(context: SearchContext, limit: number): Promise<P
 
   if (error) {
     console.error('❌ Erro ao buscar playlists:', error);
-    if (isRestrictedSupabaseError(error)) {
-      return searchEmergencyPlaylists(context, limit);
-    }
-    return [];
+    throw error;
   }
 
   return ((data || []) as PlaylistRow[])

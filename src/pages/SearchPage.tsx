@@ -10,7 +10,6 @@ import { useAuth } from '@/contexts/AuthContext';
 import { publicSupabase, supabase } from '@/lib/supabase-auth';
 import { getPublicTags, type PublicTag } from '@/lib/publicSiteConfig';
 import { useVoiceSearch } from '@/hooks/useVoiceSearch';
-import { getEmergencyDiscoveryData, isSupabaseQuotaRestrictionErrorMessage } from '@/lib/emergencyCatalog';
 
 type DiscoveryComposer = {
   id: string;
@@ -52,9 +51,6 @@ const mapPlaylistDiscovery = (playlist: any): DiscoveryPlaylist => ({
   description: playlist.description || undefined,
   coverUrl: playlist.cover_url || undefined,
 });
-
-const isRestrictedSupabaseError = (error: unknown) =>
-  isSupabaseQuotaRestrictionErrorMessage(String((error as any)?.message || error || ''));
 
 const SearchPage: React.FC = () => {
   const { play } = usePlayerStore();
@@ -147,27 +143,6 @@ const SearchPage: React.FC = () => {
             .limit(8),
         ]);
 
-        const shouldUseEmergencyFallback =
-          isRestrictedSupabaseError(categoriesRes.error) ||
-          isRestrictedSupabaseError(composersRes.error) ||
-          isRestrictedSupabaseError(albumsRes.error) ||
-          isRestrictedSupabaseError(playlistsRes.error);
-
-        if (shouldUseEmergencyFallback) {
-          const emergency = await getEmergencyDiscoveryData();
-          setCategories(emergency.categories.slice(0, 8).map((category) => ({
-            id: category.id,
-            nome: category.nome,
-            slug: category.slug,
-            descricao: category.descricao,
-            imagem_url: category.imagem_url,
-          })));
-          setDiscoveryComposers(emergency.composers.slice(0, 8).map(mapComposerDiscovery));
-          setDiscoveryAlbums(emergency.albums.slice(0, 8).map(mapAlbumDiscovery));
-          setDiscoveryPlaylists(emergency.playlists.slice(0, 8).map(mapPlaylistDiscovery));
-          return;
-        }
-
         if (!categoriesRes.error && categoriesRes.data) {
           setCategories(categoriesRes.data);
         }
@@ -188,24 +163,7 @@ const SearchPage: React.FC = () => {
           setDiscoveryPlaylists(playlistsRes.data.map(mapPlaylistDiscovery));
         }
       } catch (error) {
-        console.error('Erro ao carregar dados de descoberta:', error);
-        if (isRestrictedSupabaseError(error)) {
-          try {
-            const emergency = await getEmergencyDiscoveryData();
-            setCategories(emergency.categories.slice(0, 8).map((category) => ({
-              id: category.id,
-              nome: category.nome,
-              slug: category.slug,
-              descricao: category.descricao,
-              imagem_url: category.imagem_url,
-            })));
-            setDiscoveryComposers(emergency.composers.slice(0, 8).map(mapComposerDiscovery));
-            setDiscoveryAlbums(emergency.albums.slice(0, 8).map(mapAlbumDiscovery));
-            setDiscoveryPlaylists(emergency.playlists.slice(0, 8).map(mapPlaylistDiscovery));
-          } catch (fallbackError) {
-            console.error('Erro ao carregar contingência de descoberta:', fallbackError);
-          }
-        }
+        console.error('Erro ao carregar dados de descoberta do Supabase:', error);
       }
     };
 
@@ -313,24 +271,7 @@ const SearchPage: React.FC = () => {
             .order('numero', { ascending: true })
             .limit(1000);
 
-          if (isRestrictedSupabaseError(error)) {
-            const emergency = await getEmergencyDiscoveryData();
-            if (isMounted) {
-              setCatalogHymns(
-                emergency.hymns.map((hymn) => ({
-                  id: hymn.id,
-                  number: hymn.numero,
-                  title: hymn.titulo,
-                  composer_name: hymn.compositor_nome || undefined,
-                  category_name: hymn.categoria || undefined,
-                  cover_url: hymn.cover_url || undefined,
-                  audio_url: hymn.audio_url || undefined,
-                  youtube_source: hymn.youtube_source || undefined,
-                  matchScore: 0,
-                }))
-              );
-            }
-          } else if (!error && data && isMounted) {
+          if (!error && data && isMounted) {
             setCatalogHymns(
               data.map((hymn: any) => ({
                 id: String(hymn.id),
@@ -347,24 +288,6 @@ const SearchPage: React.FC = () => {
           }
         } catch (error) {
           console.error('Erro ao carregar catálogo de hinos:', error);
-          if (isRestrictedSupabaseError(error)) {
-            const emergency = await getEmergencyDiscoveryData();
-            if (isMounted) {
-              setCatalogHymns(
-                emergency.hymns.map((hymn) => ({
-                  id: hymn.id,
-                  number: hymn.numero,
-                  title: hymn.titulo,
-                  composer_name: hymn.compositor_nome || undefined,
-                  category_name: hymn.categoria || undefined,
-                  cover_url: hymn.cover_url || undefined,
-                  audio_url: hymn.audio_url || undefined,
-                  youtube_source: hymn.youtube_source || undefined,
-                  matchScore: 0,
-                }))
-              );
-            }
-          }
         } finally {
           if (isMounted) setIsLoading(false);
         }
@@ -379,22 +302,11 @@ const SearchPage: React.FC = () => {
             .order('name', { ascending: true })
             .limit(1000);
 
-          if (isRestrictedSupabaseError(error)) {
-            const emergency = await getEmergencyDiscoveryData();
-            if (isMounted) {
-              setCatalogComposers(emergency.composers.map(mapComposerDiscovery));
-            }
-          } else if (!error && data && isMounted) {
+          if (!error && data && isMounted) {
             setCatalogComposers(data.map(mapComposerDiscovery));
           }
         } catch (error) {
           console.error('Erro ao carregar catálogo de compositores:', error);
-          if (isRestrictedSupabaseError(error)) {
-            const emergency = await getEmergencyDiscoveryData();
-            if (isMounted) {
-              setCatalogComposers(emergency.composers.map(mapComposerDiscovery));
-            }
-          }
         } finally {
           if (isMounted) setIsLoading(false);
         }
@@ -410,12 +322,7 @@ const SearchPage: React.FC = () => {
             .order('title', { ascending: true })
             .limit(1000);
 
-          if (isRestrictedSupabaseError(error)) {
-            const emergency = await getEmergencyDiscoveryData();
-            if (isMounted) {
-              setCatalogAlbums(emergency.albums.map(mapAlbumDiscovery));
-            }
-          } else if (!error && data && isMounted) {
+          if (!error && data && isMounted) {
             setCatalogAlbums(
               data
                 .filter((album: any) => album.active !== false)
@@ -424,12 +331,6 @@ const SearchPage: React.FC = () => {
           }
         } catch (error) {
           console.error('Erro ao carregar catálogo de álbuns:', error);
-          if (isRestrictedSupabaseError(error)) {
-            const emergency = await getEmergencyDiscoveryData();
-            if (isMounted) {
-              setCatalogAlbums(emergency.albums.map(mapAlbumDiscovery));
-            }
-          }
         } finally {
           if (isMounted) setIsLoading(false);
         }
@@ -445,22 +346,11 @@ const SearchPage: React.FC = () => {
             .order('name', { ascending: true })
             .limit(1000);
 
-          if (isRestrictedSupabaseError(error)) {
-            const emergency = await getEmergencyDiscoveryData();
-            if (isMounted) {
-              setCatalogPlaylists(emergency.playlists.map(mapPlaylistDiscovery));
-            }
-          } else if (!error && data && isMounted) {
+          if (!error && data && isMounted) {
             setCatalogPlaylists(data.map(mapPlaylistDiscovery));
           }
         } catch (error) {
           console.error('Erro ao carregar catálogo de playlists:', error);
-          if (isRestrictedSupabaseError(error)) {
-            const emergency = await getEmergencyDiscoveryData();
-            if (isMounted) {
-              setCatalogPlaylists(emergency.playlists.map(mapPlaylistDiscovery));
-            }
-          }
         } finally {
           if (isMounted) setIsLoading(false);
         }

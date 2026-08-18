@@ -9,15 +9,12 @@ const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || '';
 const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
 
 if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
-  console.error('⚠️ Supabase credentials not found in environment variables');
+  throw new Error('[supabase-auth] Missing VITE_SUPABASE_URL or VITE_SUPABASE_ANON_KEY');
 }
 
-// Cliente Supabase para autenticação
-const createSupabaseClient = (options?: Parameters<typeof createClient>[2]) => (
-  SUPABASE_URL && SUPABASE_ANON_KEY
-    ? createClient(SUPABASE_URL, SUPABASE_ANON_KEY, options)
-    : createClient('https://placeholder.supabase.co', 'placeholder', options)
-);
+// Cliente Supabase único para autenticação e leitura pública.
+const createSupabaseClient = (options?: Parameters<typeof createClient>[2]) =>
+  createClient(SUPABASE_URL, SUPABASE_ANON_KEY, options);
 
 export const supabase = createSupabaseClient();
 
@@ -182,19 +179,9 @@ export async function login(email: string, senha: string): Promise<LoginResponse
         }
       } catch {}
 
-      // Se ainda falhar, não bloquear o login: retornar um usuário mínimo
+      // Não criar um perfil local: a tabela `users` é a fonte autorizada de identidade e papéis.
       if (!user) {
-        user = {
-          id: authData.user.id,
-          email: authData.user.email!,
-          name: authData.user.user_metadata?.name || authData.user.email?.split('@')[0] || 'Usuário',
-          plan: 'free',
-          status: 'active',
-          is_admin: false,
-          is_composer: false,
-          is_blocked: false,
-          email_verified: !!authData.user.email_confirmed_at,
-        } as any;
+        throw new Error('Não foi possível carregar o perfil no Supabase. Tente novamente.');
       }
     }
 
@@ -299,17 +286,8 @@ export async function register(data: { nome: string; email: string; senha: strin
     }
 
     if (!user) {
-      console.error('❌ Não foi possível criar/buscar perfil');
-      // Mesmo assim, retornar um objeto mínimo para permitir o registro
-      user = {
-        id: authData.user.id,
-        email: data.email,
-        name: data.nome,
-        plan: 'free',
-        status: 'active',
-        is_admin: false,
-        is_composer: false,
-      };
+      console.error('❌ Não foi possível criar/buscar perfil no Supabase');
+      throw new Error('Não foi possível criar o perfil no Supabase. Tente novamente.');
     }
 
     const usuario = mapUserForCompatibility(user);
