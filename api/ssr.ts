@@ -25,20 +25,40 @@ function isBot(ua: string): boolean {
 const SUPABASE_URL = (process.env.VITE_SUPABASE_URL || '').replace(/\/+$/, '');
 const SUPABASE_ANON_KEY = process.env.VITE_SUPABASE_ANON_KEY || '';
 const SITE_URL = 'https://www.canticosccb.com.br';
+const SSR_FIXTURE_MODE = process.env.NODE_ENV !== "production" && process.env.SSR_FIXTURE_MODE === "1";
+const FIXTURE_HYMN_ID = "d0c5dff2-679d-4288-b5be-6c9e98c3e2e5";
+function fixtureRows(table: string, params: Record<string, string>): any[] {
+  const isMissing = Object.values(params).some((v) => /999999|inexistente|browser/.test(String(v)));
+  if (isMissing) return [];
+  const hymn = { id: FIXTURE_HYMN_ID, numero: 1, titulo: "Cristo Meu Mestre", compositor_nome: "Elias Brandão", categoria: "Hinos CCB", letra: "Cristo meu Mestre, meu Salvador", duracao: "PT3M", cover_url: null };
+  if (table === "hinos") return [hymn];
+  if (table === "hinario") return [{ numero: 1, titulo: "Cristo Meu Mestre", is_active: true }];
+  if (table === "cifra_public_catalog") return [{ version_id: "fixture-version-1", public_slug: "hino-avulso-cana-trilhada", version_title: "Cana Trilhada", instrument: "violao", arrangement_type: "principal", difficulty_level: "intermediario", original_key: "C", preferred_key: "C", capo: 0, tempo_bpm: 90, time_signature: "4/4", publication_label: "Cifra CCB", is_primary: true, published_at: "2026-01-01", song_id: "fixture-song-1", song_slug: "cana-trilhada", song_title: "Cana Trilhada", song_subtitle: null, composer_name: "Elias Brandão", hino_id: FIXTURE_HYMN_ID, hinario_numero: 1, source_type: "fixture", cover_url: null, seo_title: "Cana Trilhada — Cifra CCB", seo_description: "Cifra de Cana Trilhada", seo_keywords: "cifra, CCB", sections_count: 1, lines_count: 2, chords_index: "C,G,Am" }];
+  if (table === "cifra_version_sections") return [{ section_order: 1, section_label: "Principal", plain_text: "Cana trilhada\nC G Am" }];
+  if (table === "categorias") return [{ id: "fixture-category-1", slug: "hinos-ccb", nome: "Hinos CCB", titulo: "Hinos CCB", descricao: "Hinos da Congregação Cristã no Brasil" }];
+  if (table === "hino_categorias") return [{ hino_id: FIXTURE_HYMN_ID, categoria_id: "fixture-category-1" }];
+  if (table === "cifras") return [{ id: "fixture-chord-1", hino_id: FIXTURE_HYMN_ID, slug: "hino-avulso-cana-trilhada", titulo: "Cana Trilhada", tom: "C", instrumento: "violao", cifra: "C G Am" }];
+  return [];
+}
+
+class SupabaseUnavailableError extends Error {
+  constructor(message: string) { super(message); this.name = "SupabaseUnavailableError"; }
+}
 
 async function supaFetch(table: string, params: Record<string, string>): Promise<any[]> {
-  if (!SUPABASE_URL || !SUPABASE_ANON_KEY) return [];
+  if (SSR_FIXTURE_MODE) return fixtureRows(table, params);
+  if (!SUPABASE_URL || !SUPABASE_ANON_KEY) throw new SupabaseUnavailableError("Supabase configuration is unavailable");
   const url = new URL(`${SUPABASE_URL}/rest/v1/${table}`);
   Object.entries(params).forEach(([k, v]) => url.searchParams.set(k, v));
   try {
-    const res = await fetch(url.toString(), {
-      headers: { apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${SUPABASE_ANON_KEY}` },
-    });
-    if (!res.ok) return [];
+    const res = await fetch(url.toString(), { headers: { apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${SUPABASE_ANON_KEY}` }, signal: AbortSignal.timeout(12000) });
+    if (!res.ok) throw new SupabaseUnavailableError(`Supabase ${table} returned HTTP ${res.status}`);
     return res.json();
-  } catch { return []; }
+  } catch (error) {
+    if (error instanceof SupabaseUnavailableError) throw error;
+    throw new SupabaseUnavailableError(`Supabase ${table} request failed`);
+  }
 }
-
 // ─── UUID Extraction ─────────────────────────────────────────────────────────
 const UUID_RE = /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 function extractUUID(param: string): string {
@@ -345,8 +365,9 @@ function buildFullHtml(meta: PageMeta): string {
   const ogImage = meta.ogImage || `${SITE_URL}/logo-canticos-ccb.png`;
   const robotsContent = meta.noindex ? 'noindex, follow' : 'index, follow';
   const schemasHtml = (meta.schemas || [])
-    .map(s => `<script type="application/ld+json">${JSON.stringify(s)}</script>`)
+    .map(s => '<script type="application/ld+json">' + JSON.stringify(s) + '</script>')
     .join('\n    ');
+  const canonicalHtml = meta.noindex ? '' : '<link rel="canonical" href="' + esc(meta.canonical) + '">';
 
   return `<!DOCTYPE html>
 <html lang="pt-BR">
@@ -358,7 +379,7 @@ function buildFullHtml(meta: PageMeta): string {
     <meta name="robots" content="${robotsContent}">
     <meta name="googlebot" content="${robotsContent}">
     <meta name="google-adsense-account" content="ca-pub-3459130972339055">
-    <link rel="canonical" href="${esc(meta.canonical)}">
+    ${canonicalHtml}
     <meta name="author" content="Cânticos CCB">
     <meta name="keywords" content="hinos CCB, hinário 5, congregação cristã no brasil, cifras CCB, hinos cantados, hinos tocados, compositores CCB">
 
@@ -1706,12 +1727,8 @@ export default async function handler(req: Request): Promise<Response> {
   // The "path" query param is set by vercel.json rewrite
   const pathname = url.searchParams.get('path') || url.pathname.replace(/^\/api\/ssr/, '') || '/';
 
-  // If not a bot, redirect to the SPA (shouldn't happen if rewrites are correct)
-  if (!isBot(ua)) {
-    return new Response(null, { status: 302, headers: { Location: pathname } });
-  }
-
   let pageMeta: PageMeta | null = null;
+  let dependencyError: SupabaseUnavailableError | null = null;
 
   try {
     if (pathname === '/') {
@@ -1763,9 +1780,25 @@ export default async function handler(req: Request): Promise<Response> {
     } else {
       pageMeta = handleStaticPage(pathname);
     }
-    }
+  }
   } catch (e) {
-    console.error('[SSR] Error:', e);
+    if (e instanceof SupabaseUnavailableError) {
+      dependencyError = e;
+      console.error("[SSR] Supabase unavailable");
+    } else {
+      console.error("[SSR] Error:", e);
+    }
+  }
+  if (dependencyError) {
+    return new Response("<html><head><title>Serviço temporariamente indisponível | Cânticos CCB</title><meta name=\"robots\" content=\"noindex, follow\"></head><body><h1>Serviço temporariamente indisponível</h1><p>Tente novamente mais tarde.</p></body></html>", {
+      status: 503,
+      headers: {
+        "Content-Type": "text/html; charset=utf-8",
+        "Cache-Control": "no-store",
+        "X-Robots-Tag": "noindex, follow",
+        "Retry-After": "60",
+      },
+    });
   }
 
   // If no page meta found, return an actual 404/noindex page to avoid soft 404 indexing.
