@@ -1,3 +1,4 @@
+/// <reference types="@cloudflare/workers-types" />
 // Vercel Edge Function — serves pre-rendered HTML to bots/crawlers
 // For a Vite SPA, this is the correct way to do SSR on Vercel
 // Deployed at /api/ssr and called via vercel.json rewrites for bot user-agents

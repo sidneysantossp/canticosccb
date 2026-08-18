@@ -1,3 +1,4 @@
+/// <reference types="@cloudflare/workers-types" />
 // Cloudflare Pages Function — emite URLs assinadas para upload direto no R2.
 // A identidade é validada pelo Supabase Auth; nunca confiar apenas no payload do JWT.
 import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';

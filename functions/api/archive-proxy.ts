@@ -1,3 +1,4 @@
+/// <reference types="@cloudflare/workers-types" />
 // Cloudflare Pages Function — Proxy for protected archive downloads
 // Streaming via Web APIs (no buffering)
 

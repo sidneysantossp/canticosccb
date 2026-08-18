@@ -1,3 +1,4 @@
+/// <reference types="@cloudflare/workers-types" />
 // Cloudflare Pages Function — Fallback resolver for hymn audio
 // Tenta a URL fornecida; se indisponível, resolve para emergency archive track
 
