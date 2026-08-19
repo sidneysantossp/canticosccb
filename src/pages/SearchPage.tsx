@@ -220,12 +220,14 @@ const SearchPage: React.FC = () => {
 
   useEffect(() => {
     let isMounted = true;
+    const normalizedQuery = searchQuery.trim();
     const run = async () => {
-      if (!searchQuery.trim()) {
+      if (normalizedQuery.length < 2) {
         setHymns([]);
         setComposers([]);
         setAlbums([]);
         setPlaylists([]);
+        setIsLoading(false);
         return;
       }
       setIsLoading(true);
@@ -235,7 +237,7 @@ const SearchPage: React.FC = () => {
             activeFilter === 'artists' ? 'composers' :
               activeFilter === 'albums' ? 'albums' :
                 activeFilter === 'playlists' ? 'playlists' : 'all';
-        const { hymns: h, composers: c, albums: a, playlists: p } = await advancedSearch({ query: searchQuery, type, limit: 50 });
+        const { hymns: h, composers: c, albums: a, playlists: p } = await advancedSearch({ query: normalizedQuery, type, limit: 50 });
         if (!isMounted) return;
         setHymns(h);
         setComposers(c);
@@ -247,8 +249,8 @@ const SearchPage: React.FC = () => {
         if (isMounted) setIsLoading(false);
       }
     };
-    // Debounce rápido para busca instantânea
-    const t = setTimeout(run, 150);
+    // Debounce para evitar uma cascata de consultas enquanto o usuário digita.
+    const t = setTimeout(run, 500);
     return () => {
       isMounted = false;
       clearTimeout(t);
