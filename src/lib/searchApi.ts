@@ -121,10 +121,20 @@ function isRestrictedSupabaseError(error: unknown): boolean {
   return isSupabaseQuotaRestrictionErrorMessage(String((error as any)?.message || error || ''));
 }
 
+function withSearchTimeout<T>(promise: Promise<T>, timeoutMs = SEARCH_TIMEOUT_MS): Promise<T> {
+  return Promise.race([
+    promise,
+    new Promise<T>((_, reject) => {
+      globalThis.setTimeout(() => reject(new Error('Busca excedeu o tempo limite')), timeoutMs);
+    }),
+  ]);
+}
+
 const HYMN_SELECT = 'id,numero,titulo,compositor_nome,categoria,cover_url,audio_url,youtube_source';
 const COMPOSER_SELECT = 'id,name,artistic_name,bio,avatar_url,slug,category,followers_count,is_trending';
 const ALBUM_SELECT = 'id,title,artist,genre,cover_url,active';
 const PLAYLIST_SELECT = 'id,name,description,cover_url';
+const SEARCH_TIMEOUT_MS = 8000;
 
 function normalizeSearchValue(value?: string | number | null): string {
   return String(value || '')
@@ -659,17 +669,23 @@ export const advancedSearch = async (params: { query: string; type?: string; lim
   }
 
   try {
-    const [hymns, composers, albums, playlists] = await Promise.all([
+    const [hymns, composers, albums, playlists] = await withSearchTimeout(Promise.all([
       type === 'all' || type === 'hymns' ? searchHymns(context, limit) : Promise.resolve([]),
       type === 'all' || type === 'composers' ? searchComposers(context, limit) : Promise.resolve([]),
       type === 'all' || type === 'albums' ? searchAlbums(context, limit) : Promise.resolve([]),
       type === 'all' || type === 'playlists' ? searchPlaylists(context, limit) : Promise.resolve([]),
-    ]);
+    ]));
 
     return { hymns, composers, albums, playlists };
   } catch (error) {
     console.error('❌ Erro crítico na busca avançada:', error);
-    return { hymns: [], composers: [], albums: [], playlists: [] };
+    const [hymns, composers, albums, playlists] = await Promise.all([
+      type === 'all' || type === 'hymns' ? searchEmergencyHymns(context, limit) : Promise.resolve([]),
+      type === 'all' || type === 'composers' ? searchEmergencyComposers(context, limit) : Promise.resolve([]),
+      type === 'all' || type === 'albums' ? searchEmergencyAlbums(context, limit) : Promise.resolve([]),
+      type === 'all' || type === 'playlists' ? searchEmergencyPlaylists(context, limit) : Promise.resolve([]),
+    ]);
+    return { hymns, composers, albums, playlists };
   }
 };
 
