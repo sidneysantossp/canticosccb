@@ -4,7 +4,6 @@ import { ArrowLeft, Play, Pause, Heart, Music, ListPlus, Share2, Plus, Search, X
 import { DEFAULT_COVER_URL } from '@/lib/config';
 import { supabaseFetch, isSupabaseConfigured } from '@/lib/supabaseRest';
 import { getAll as getAllCategories } from '@/lib/categoriesApi';
-import { getEmergencyCatalog } from '@/lib/emergencyCatalog';
 import { usePlayerStore } from '@/stores/playerStore';
 import useFavoritesStore from '@/stores/favoritesStore';
 import { usePlayerContext } from '@/contexts/PlayerContext';
@@ -119,10 +118,12 @@ const formatSongDuration = (seconds: number | string | null): string => {
 };
 
 async function buildEmergencyCategorySongs(
-  slugValue: string,
-  categoryName?: string,
-  categoryId?: string
+  _slugValue: string,
+  _categoryName?: string,
+  _categoryId?: string
 ): Promise<Song[]> {
+  throw new Error('Emergency catalog disabled: Supabase is the single source of truth');
+/*
   const catalog = await getEmergencyCatalog();
   const slugCandidates = buildCategorySlugCandidates(slugValue, categoryName);
   const normalizedCandidates = new Set(
@@ -211,6 +212,7 @@ async function buildEmergencyCategorySongs(
       plays_count: undefined,
       youtube_source: hymn.youtube_source || undefined,
     }));
+*/
 }
 
 const chunkArray = <T,>(items: T[], size: number): T[][] => {
@@ -261,7 +263,6 @@ const CategoryPage: React.FC = () => {
       });
       const resolvedName = found?.name || slugToTitle(String(slug));
       const searchTerms = buildCategorySearchTerms(String(slug), resolvedName);
-      const emergencySongs = await buildEmergencyCategorySongs(String(slug), resolvedName, String(found?.id || ''));
 
       setCategory({
         id: String(found?.id || slug),
@@ -274,15 +275,9 @@ const CategoryPage: React.FC = () => {
         meta_description: found?.meta_description,
       });
 
-      if (emergencySongs.length > 0) {
-        setSongs(emergencySongs);
-        return;
-      }
-
       // 2) Buscar hinos dessa categoria no Supabase
       if (!isSupabaseConfigured) {
-        setSongs(emergencySongs);
-        return;
+        throw new Error('Supabase is not configured');
       }
 
       const hymnSelect = 'id,numero,titulo,compositor_nome,categoria,cover_url,audio_url,duracao,plays_count,youtube_source,ativo';
@@ -403,11 +398,11 @@ const CategoryPage: React.FC = () => {
       if (formattedSongs.length > 0) {
         setSongs(formattedSongs);
       } else {
-        setSongs(emergencySongs);
+        setSongs([]);
       }
     } catch (error) {
-      console.error('Erro ao carregar categoria:', error);
-      setSongs(await buildEmergencyCategorySongs(String(slug || ''), slugToTitle(String(slug || ''))));
+      console.error('Erro ao carregar categoria a partir do Supabase:', error);
+      setSongs([]);
     } finally {
       setIsLoading(false);
     }

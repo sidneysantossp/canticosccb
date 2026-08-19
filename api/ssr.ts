@@ -42,21 +42,53 @@ function fixtureRows(table: string, params: Record<string, string>): any[] {
 }
 
 class SupabaseUnavailableError extends Error {
-  constructor(message: string) { super(message); this.name = "SupabaseUnavailableError"; }
+  table?: string;
+  status?: number;
+  category: string;
+  responsePreview?: string;
+
+  constructor(message: string, details: { table?: string; status?: number; category: string; responsePreview?: string }) {
+    super(message);
+    this.name = "SupabaseUnavailableError";
+    this.table = details.table;
+    this.status = details.status;
+    this.category = details.category;
+    this.responsePreview = details.responsePreview;
+  }
 }
 
 async function supaFetch(table: string, params: Record<string, string>): Promise<any[]> {
   if (SSR_FIXTURE_MODE) return fixtureRows(table, params);
-  if (!SUPABASE_URL || !SUPABASE_ANON_KEY) throw new SupabaseUnavailableError("Supabase configuration is unavailable");
+  if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
+    throw new SupabaseUnavailableError("Supabase configuration is unavailable", {
+      category: "configuration",
+      table,
+    });
+  }
   const url = new URL(`${SUPABASE_URL}/rest/v1/${table}`);
   Object.entries(params).forEach(([k, v]) => url.searchParams.set(k, v));
   try {
-    const res = await fetch(url.toString(), { headers: { apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${SUPABASE_ANON_KEY}` }, signal: AbortSignal.timeout(12000) });
-    if (!res.ok) throw new SupabaseUnavailableError(`Supabase ${table} returned HTTP ${res.status}`);
-    return res.json();
+    const response = await fetch(url.toString(), {
+      headers: { apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${SUPABASE_ANON_KEY}` },
+      signal: AbortSignal.timeout(12000),
+    });
+    const responseText = await response.text();
+    if (!response.ok) {
+      throw new SupabaseUnavailableError(`Supabase ${table} returned HTTP ${response.status}`, {
+        category: "http",
+        table,
+        status: response.status,
+        responsePreview: responseText.slice(0, 300),
+      });
+    }
+    return responseText ? JSON.parse(responseText) : [];
   } catch (error) {
     if (error instanceof SupabaseUnavailableError) throw error;
-    throw new SupabaseUnavailableError(`Supabase ${table} request failed`);
+    throw new SupabaseUnavailableError(`Supabase ${table} request failed`, {
+      category: "network",
+      table,
+      responsePreview: error instanceof Error ? error.message.slice(0, 300) : String(error).slice(0, 300),
+    });
   }
 }
 // ─── UUID Extraction ─────────────────────────────────────────────────────────
@@ -1784,7 +1816,12 @@ export default async function handler(req: Request): Promise<Response> {
   } catch (e) {
     if (e instanceof SupabaseUnavailableError) {
       dependencyError = e;
-      console.error("[SSR] Supabase unavailable");
+      console.error("[SSR] Supabase unavailable", e instanceof SupabaseUnavailableError ? {
+        category: e.category,
+        table: e.table,
+        status: e.status,
+        responsePreview: e.responsePreview,
+      } : { category: "unknown" });
     } else {
       console.error("[SSR] Error:", e);
     }

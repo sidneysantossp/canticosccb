@@ -1,3 +1,4 @@
+/// <reference types="@cloudflare/workers-types" />
 // Cloudflare Pages Function — Retorna ZIP do archive.org de segmento de áudio
 // Resolve snapshot do wayback e faz streaming do ZIP
 

@@ -342,12 +342,14 @@ async function getHomePageDataFromSupabase(): Promise<HomePageData> {
     is_published: 'eq.true',
     active: 'eq.true',
     order: 'created_at.desc',
-    limit: '1000',
+    // A home exibe somente um carrossel; não carregar o catálogo inteiro.
+    limit: '24',
   });
   const categoryRows = supabaseFetch<any>('categorias', {
     select: 'id,nome,slug,descricao,imagem_url',
     ativo: 'eq.true',
     order: 'nome.asc',
+    limit: '50',
   });
   const hymnRows = supabaseFetch<SupabaseHymnRow>('hinos', {
     select: 'id,numero,titulo,compositor_nome,categoria,cover_url,audio_url,duracao,created_at,youtube_source',
@@ -362,19 +364,29 @@ async function getHomePageDataFromSupabase(): Promise<HomePageData> {
     order: 'created_at.desc',
     limit: '60',
   });
-  // Buscar relações hino_categorias para suportar múltiplas categorias por hino
-  const hinoCatRows = supabaseFetch<{ hino_id: string; categoria_id: string }>('hino_categorias', {
-    select: 'hino_id,categoria_id',
-  }).catch(() => [] as { hino_id: string; categoria_id: string }[]);
-  const [bannersData, composersData, albumsData, categoriesData, hymnsData, avulsosHymnsData, hinoCategorias] = await Promise.all([
+  const [bannersData, composersData, albumsData, categoriesData, hymnsData, avulsosHymnsData] = await Promise.all([
     heroBanners,
     composerRows,
     albumRows,
     categoryRows,
     hymnRows,
     avulsosHymnRows,
-    hinoCatRows,
   ]);
+
+  // Buscar relações somente para os hinos que a home realmente recebeu.
+  // A consulta anterior carregava toda a tabela hino_categorias em cada visita.
+  const hymnIds = [...hymnsData, ...avulsosHymnsData]
+    .map((row) => row.id)
+    .filter((id): id is string | number => id != null)
+    .map(String)
+    .filter((id, index, ids) => ids.indexOf(id) === index);
+  const hinoCategorias = hymnIds.length > 0
+    ? await supabaseFetch<{ hino_id: string; categoria_id: string }>('hino_categorias', {
+      select: 'hino_id,categoria_id',
+      hino_id: `in.(${hymnIds.join(',')})`,
+      limit: '500',
+    }).catch(() => [] as { hino_id: string; categoria_id: string }[])
+    : [] as { hino_id: string; categoria_id: string }[];
 
   const composerNameById = composersData.reduce<Record<string, string>>((acc, row) => {
     if (row.id == null) return acc;

@@ -7,13 +7,13 @@
   "scripts": {
     "dev": "vite",
     "dev:clean": "npm run clean && vite",
-    "build": "vite build && node scripts/generate-sitemap.js && node scripts/generate-robots.js",
-    "build:check": "tsc && vite build",
+    "build": "node scripts/verify-supabase-env.mjs && vite build && node scripts/generate-sitemap.js && node scripts/generate-robots.js",
+    "build:check": "node scripts/verify-supabase-env.mjs && tsc && vite build",
     "generate-sitemap": "node scripts/generate-sitemap.js",
     "audit:seo": "node scripts/validate-seo-assets.js",
     "test:seo-smoke": "node scripts/seo-smoke.mjs",
     "test:seo-csr": "playwright test tests/seo-csr.spec.mjs --reporter=line",
-    "build:seo": "vite build && node scripts/generate-sitemap.js && node scripts/generate-robots.js",
+    "build:seo": "node scripts/verify-supabase-env.mjs && vite build && node scripts/generate-sitemap.js && node scripts/generate-robots.js",
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
     "preview": "vite preview",
     "type-check": "tsc --noEmit",
@@ -48,6 +48,7 @@
     "zustand": "^4.4.0"
   },
   "devDependencies": {
+    "@cloudflare/workers-types": "^5.20260818.1",
     "@playwright/test": "^1.62.1",
     "@types/howler": "^2.2.8",
     "@types/react": "^18.2.15",

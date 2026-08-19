@@ -1,3 +1,4 @@
+/// <reference types="@cloudflare/workers-types" />
 // Cloudflare Pages Function — extrai MP3 de ZIP do archive.org
 // Requer nodejs_compat flag para node:stream e node:zlib
 import { Readable } from 'node:stream';

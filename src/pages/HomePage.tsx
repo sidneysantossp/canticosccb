@@ -24,7 +24,6 @@ import CifrasFeatureBanner from '@/components/home/CifrasFeatureBanner';
 import { DEFAULT_COVER_IDENTIFIER } from '@/lib/config';
 import { prewarmEmergencyPlaybackUrl } from '@/lib/emergencyAudioPlayback';
 import { resolveTrackAudioUrl } from '@/lib/playableAudio';
-import { getEmergencyCatalog, type EmergencyCatalog, type EmergencyHymn } from '@/lib/emergencyCatalog';
 import { normalizeYoutubeSource } from '@/lib/youtubeSource';
 type PopularHino = {
   id: string;
@@ -141,7 +140,7 @@ const mapHomeHymnToPopular = (row: HomePageData['newReleases'][number], index: n
   youtubeSource: normalizeYoutubeSource(row.youtube_source),
 });
 
-const mapEmergencyHymnToHomeSectionCard = (hymn: EmergencyHymn, fallbackSubtitle: string): HomeSectionCard => ({
+const mapEmergencyHymnToHomeSectionCard = (hymn: any, fallbackSubtitle: string): HomeSectionCard => ({
   id: String(hymn.id),
   number: Number(hymn.numero ?? 0),
   title: String(hymn.titulo || 'Hino'),
@@ -158,7 +157,7 @@ const mapEmergencyHymnToHomeSectionCard = (hymn: EmergencyHymn, fallbackSubtitle
   createdAt: hymn.created_at || new Date().toISOString(),
 });
 
-const mapEmergencyHymnToPopular = (hymn: EmergencyHymn, index: number): PopularHino => ({
+const mapEmergencyHymnToPopular = (hymn: any, index: number): PopularHino => ({
   id: String(hymn.id),
   number: Number(hymn.numero ?? index + 1),
   title: String(hymn.titulo || 'Hino'),
@@ -220,7 +219,7 @@ const matchesAvulsoTitle = (value: string | undefined | null) => {
   return normalized.includes('hino avulso') || normalized.includes('hinos avulso');
 };
 
-const buildStableHomeSelections = (catalog: EmergencyCatalog) => {
+const buildStableHomeSelections = (catalog: any) => {
   const activeHymns = catalog.hymns
     .filter((hymn) => hymn.ativo !== false)
     .sort((left, right) => {
@@ -466,25 +465,8 @@ const HomePage: React.FC = () => {
   // Carregar dados da API
   useEffect(() => {
     const loadHomeData = async () => {
-      let resolvedEmergency = false;
       try {
         setIsLoading(true);
-
-        try {
-          const emergencyCatalog = await getEmergencyCatalog();
-          setStableHomeSelections(buildStableHomeSelections(emergencyCatalog));
-          resolvedEmergency = true;
-          setIsLoading(false);
-        } catch (emergencyError) {
-          console.warn('⚠️ Emergency catalog unavailable on homepage:', emergencyError);
-          setStableHomeSelections({
-            recent: [],
-            cantados: [],
-            tocados: [],
-            avulsos: [],
-          });
-        }
-
         const dataPromise = getHomePageData();
         const timeoutPromise = new Promise((_, reject) =>
           setTimeout(() => reject(new Error('HomePage timeout')), 8000)
@@ -495,9 +477,7 @@ const HomePage: React.FC = () => {
         console.error('âŒ Error loading homepage data:', error);
         setHomeData(EMPTY_HOME_DATA);
       } finally {
-        if (!resolvedEmergency) {
-          setIsLoading(false);
-        }
+        setIsLoading(false);
       }
     };
     
