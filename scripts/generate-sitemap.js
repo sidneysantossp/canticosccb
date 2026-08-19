@@ -35,6 +35,7 @@ loadEnvFile(path.resolve(__dirname, '..', '.env.local'));
 const SUPABASE_URL = (process.env.VITE_SUPABASE_URL || '').replace(/\/+$/, '');
 const SUPABASE_ANON_KEY = process.env.VITE_SUPABASE_ANON_KEY || '';
 const DEFAULT_SITE_URL = 'https://www.canticosccb.com.br';
+const FETCH_TIMEOUT_MS = Number.parseInt(process.env.SITEMAP_FETCH_TIMEOUT_MS || '8000', 10);
 
 function normalizeSiteUrl(siteUrl = DEFAULT_SITE_URL) {
   try {
@@ -53,6 +54,7 @@ function normalizeSiteUrl(siteUrl = DEFAULT_SITE_URL) {
 
 const SITE_URL = normalizeSiteUrl(process.env.VITE_SITE_URL || DEFAULT_SITE_URL);
 let hadFetchFailure = false;
+let isSupabaseUnavailable = false;
 
 if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
   console.warn('⚠️ Missing VITE_SUPABASE_URL or VITE_SUPABASE_ANON_KEY env vars. Keeping existing sitemap.xml.');
@@ -107,6 +109,15 @@ function buildPlaylistUrl(id) {
 }
 
 async function supabaseFetch(table, select = '*', filters = {}) {
+  if (isSupabaseUnavailable) {
+    console.warn(`⚠️ Skipping ${table}: Supabase is unavailable for this build.`);
+    hadFetchFailure = true;
+    return [];
+  }
+
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
+
   try {
     const url = new URL(`${SUPABASE_URL}/rest/v1/${table}`);
     url.searchParams.set('select', select);
@@ -119,11 +130,15 @@ async function supabaseFetch(table, select = '*', filters = {}) {
         apikey: SUPABASE_ANON_KEY,
         Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
       },
+      signal: controller.signal,
     });
 
     if (!res.ok) {
       console.warn(`⚠️ Failed to fetch ${table}: ${res.status} ${res.statusText}`);
       hadFetchFailure = true;
+      if ([502, 503, 504, 522].includes(res.status)) {
+        isSupabaseUnavailable = true;
+      }
       if (table === 'composer_public_profiles' && process.env.SITEMAP_STRICT === 'true') {
         throw new Error(`Failed to fetch required sitemap table: ${table} (${res.status})`);
       }
@@ -132,10 +147,16 @@ async function supabaseFetch(table, select = '*', filters = {}) {
 
     return res.json();
   } catch (error) {
-    console.warn(`⚠️ Failed to fetch ${table}:`, error.message || error);
+    const message = error?.name === 'AbortError'
+      ? `request timed out after ${FETCH_TIMEOUT_MS}ms`
+      : error?.message || error;
+    console.warn(`⚠️ Failed to fetch ${table}:`, message);
     hadFetchFailure = true;
+    isSupabaseUnavailable = true;
     if (table === 'composer_public_profiles' && process.env.SITEMAP_STRICT === 'true') throw error;
     return [];
+  } finally {
+    clearTimeout(timeoutId);
   }
 }
 
@@ -321,6 +342,9 @@ ${urls.join('\n')}
     console.warn('⚠️ Dynamic sitemap data unavailable. Keeping existing sitemap.xml.');
     return;
   }
+
+  fs.writeFileSync(outPath, xml, 'utf-8');
+  console.log(`🗺️  sitemap.xml generated → ${outPath}`);
 }
 main().catch((err) => {
   console.error('❌ Sitemap generation failed:', err);

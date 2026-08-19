@@ -5,6 +5,7 @@ import { fileURLToPath } from 'url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const DEFAULT_SITE_URL = 'https://www.canticosccb.com.br';
+const FETCH_TIMEOUT_MS = Number.parseInt(process.env.ROBOTS_FETCH_TIMEOUT_MS || '8000', 10);
 const PRIVATE_ROBOTS_RULES = `Disallow: /admin
 Disallow: /admin/*
 Disallow: /composer/dashboard
@@ -168,12 +169,27 @@ async function fetchSiteConfig() {
   url.searchParams.set('select', 'config_key,config_value');
   url.searchParams.set('config_key', 'in.(robots_txt,site_url)');
 
-  const response = await fetch(url.toString(), {
-    headers: {
-      apikey: supabaseAnonKey,
-      Authorization: `Bearer ${supabaseAnonKey}`,
-    },
-  });
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
+
+  let response;
+  try {
+    response = await fetch(url.toString(), {
+      headers: {
+        apikey: supabaseAnonKey,
+        Authorization: `Bearer ${supabaseAnonKey}`,
+      },
+      signal: controller.signal,
+    });
+  } catch (error) {
+    const message = error?.name === 'AbortError'
+      ? `request timed out after ${FETCH_TIMEOUT_MS}ms`
+      : error?.message || error;
+    console.warn(`⚠️ Failed to fetch site_config for robots.txt: ${message}`);
+    return { siteUrl: DEFAULT_SITE_URL, robotsTxt: '' };
+  } finally {
+    clearTimeout(timeoutId);
+  }
 
   if (!response.ok) {
     console.warn(`⚠️ Failed to fetch site_config for robots.txt: ${response.status} ${response.statusText}`);
