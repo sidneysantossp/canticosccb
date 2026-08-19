@@ -311,7 +311,8 @@ const SearchPage: React.FC = () => {
             .select('id,numero,titulo,compositor_nome,categoria,cover_url,audio_url,youtube_source')
             .eq('ativo', 1)
             .order('numero', { ascending: true })
-            .limit(1000);
+            // Carregar uma página inicial; a busca não deve trazer o catálogo inteiro.
+            .limit(100);
 
           if (isRestrictedSupabaseError(error)) {
             const emergency = await getEmergencyDiscoveryData();
@@ -377,7 +378,8 @@ const SearchPage: React.FC = () => {
             .from('composer_public_profiles')
             .select('id, name, artistic_name, avatar_url, followers_count')
             .order('name', { ascending: true })
-            .limit(1000);
+            // Carregar uma página inicial; a busca não deve trazer o catálogo inteiro.
+            .limit(100);
 
           if (isRestrictedSupabaseError(error)) {
             const emergency = await getEmergencyDiscoveryData();
@@ -408,7 +410,8 @@ const SearchPage: React.FC = () => {
             .select('id, title, artist, cover_url, active')
             .eq('is_published', true)
             .order('title', { ascending: true })
-            .limit(1000);
+            // Carregar uma página inicial; a busca não deve trazer o catálogo inteiro.
+            .limit(100);
 
           if (isRestrictedSupabaseError(error)) {
             const emergency = await getEmergencyDiscoveryData();
@@ -443,7 +446,8 @@ const SearchPage: React.FC = () => {
             .select('id, name, description, cover_url')
             .eq('is_public', true)
             .order('name', { ascending: true })
-            .limit(1000);
+            // Carregar uma página inicial; a busca não deve trazer o catálogo inteiro.
+            .limit(100);
 
           if (isRestrictedSupabaseError(error)) {
             const emergency = await getEmergencyDiscoveryData();
