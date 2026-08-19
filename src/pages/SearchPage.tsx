@@ -119,6 +119,8 @@ const SearchPage: React.FC = () => {
 
   // Carregar categorias do banco de dados
   useEffect(() => {
+    if (urlQuery.trim()) return;
+
     const loadDiscoveryData = async () => {
       try {
         const [categoriesRes, composersRes, albumsRes, playlistsRes] = await Promise.all([
@@ -210,7 +212,7 @@ const SearchPage: React.FC = () => {
     };
 
     loadDiscoveryData();
-  }, []);
+  }, [urlQuery]);
 
   useEffect(() => {
     const loadTags = async () => {
