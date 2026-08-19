@@ -98,7 +98,8 @@ const SITE_CONFIG_KEYS = [
   EDITORIAL_PLAYLISTS_CONFIG_KEY,
 ] as const;
 
-const CACHE_TTL_MS = 60 * 1000;
+const CACHE_TTL_MS = 5 * 60 * 1000;
+const RUNTIME_CONFIG_STORAGE_KEY = 'canticosccb:runtime-config:v1';
 
 const defaultSeoSettings: RuntimeSeoSettings = {
   site_title: 'Cânticos CCB',
@@ -131,6 +132,36 @@ export const defaultRuntimeTheme: RuntimeThemeSettings = {
 
 let runtimeConfigCache: { value: SiteRuntimeConfig; timestamp: number } | null = null;
 let inflightRuntimeConfig: Promise<SiteRuntimeConfig> | null = null;
+
+function readPersistedRuntimeConfig(): { value: SiteRuntimeConfig; timestamp: number } | null {
+  if (typeof window === 'undefined') return null;
+
+  try {
+    const raw = window.sessionStorage.getItem(RUNTIME_CONFIG_STORAGE_KEY);
+    if (!raw) return null;
+
+    const parsed = JSON.parse(raw) as { value?: SiteRuntimeConfig; timestamp?: number };
+    if (!parsed?.value || typeof parsed.timestamp !== 'number') return null;
+    if (Date.now() - parsed.timestamp >= CACHE_TTL_MS) {
+      window.sessionStorage.removeItem(RUNTIME_CONFIG_STORAGE_KEY);
+      return null;
+    }
+
+    return { value: parsed.value, timestamp: parsed.timestamp };
+  } catch {
+    return null;
+  }
+}
+
+function persistRuntimeConfig(cache: { value: SiteRuntimeConfig; timestamp: number }) {
+  if (typeof window === 'undefined') return;
+
+  try {
+    window.sessionStorage.setItem(RUNTIME_CONFIG_STORAGE_KEY, JSON.stringify(cache));
+  } catch {
+    // O cache em memória continua disponível quando o sessionStorage está bloqueado.
+  }
+}
 
 const parseBoolean = (value: unknown, fallback = false) => {
   if (value == null) return fallback;
@@ -272,10 +303,22 @@ async function fetchSiteConfigMap(
 export function invalidateSiteRuntimeConfigCache() {
   runtimeConfigCache = null;
   inflightRuntimeConfig = null;
+
+  if (typeof window !== 'undefined') {
+    try {
+      window.sessionStorage.removeItem(RUNTIME_CONFIG_STORAGE_KEY);
+    } catch {
+      // Ignora falhas de storage; a invalidação em memória já foi aplicada.
+    }
+  }
 }
 
 export async function getSiteRuntimeConfig(force = false): Promise<SiteRuntimeConfig> {
   const now = Date.now();
+
+  if (!force && !runtimeConfigCache) {
+    runtimeConfigCache = readPersistedRuntimeConfig();
+  }
 
   if (!force && runtimeConfigCache && now - runtimeConfigCache.timestamp < CACHE_TTL_MS) {
     return runtimeConfigCache.value;
@@ -318,6 +361,7 @@ export async function getSiteRuntimeConfig(force = false): Promise<SiteRuntimeCo
       };
 
       runtimeConfigCache = { value, timestamp: Date.now() };
+      persistRuntimeConfig(runtimeConfigCache);
       return value;
     } catch {
       const fallback: SiteRuntimeConfig = {
@@ -328,6 +372,7 @@ export async function getSiteRuntimeConfig(force = false): Promise<SiteRuntimeCo
         editorialPlaylistMeta: {},
       };
       runtimeConfigCache = { value: fallback, timestamp: Date.now() };
+      persistRuntimeConfig(runtimeConfigCache);
       return fallback;
     } finally {
       inflightRuntimeConfig = null;
