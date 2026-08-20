@@ -42,7 +42,8 @@ const Header: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const profileName = (profile as any)?.name || (profile as any)?.nome || user?.email?.split('@')[0] || 'Usuário';
-  const displayName = (isComposer && activeComposerName) || profileName;
+  const isComposerArea = location.pathname.startsWith('/composer') || location.pathname.startsWith('/compositor');
+  const displayName = activeComposerName || profileName;
   const {
     supported: voiceSupported,
     isListening: isVoiceListening,
@@ -63,7 +64,7 @@ const Header: React.FC = () => {
     let cancelled = false;
 
     const loadComposerName = async () => {
-      if (!user || !isComposer) {
+      if (!user || (!isComposer && !isComposerArea)) {
         setActiveComposerName('');
         return;
       }
@@ -87,7 +88,7 @@ const Header: React.FC = () => {
     return () => {
       cancelled = true;
     };
-  }, [isComposer, managingComposerId, user?.email, user?.id]);
+  }, [isComposer, isComposerArea, managingComposerId, user?.email, user?.id]);
 
   // Fechar dropdowns ao clicar fora do header (sem overlay bloqueante)
   useEffect(() => {
