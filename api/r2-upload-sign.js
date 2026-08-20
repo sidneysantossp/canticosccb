@@ -18,7 +18,8 @@ const R2_BUCKET = cleanEnvValue(process.env.R2_BUCKET || 'canticos-media') || 'c
 const R2_PUBLIC_URL = cleanEnvValue(process.env.R2_PUBLIC_URL || process.env.VITE_MEDIA_PUBLIC_BASE_URL || 'https://media.canticosccb.com.br').replace(/\/+$/, '');
 const SUPABASE_URL = cleanEnvValue(process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL).replace(/\/+$/, '');
 const SUPABASE_ANON_KEY = cleanEnvValue(process.env.SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY);
-const ALLOWED_ORIGINS = new Set((cleanEnvValue(process.env.CORS_ALLOWED_ORIGINS) || [...DEFAULT_ALLOWED_ORIGINS]).split(',').map((origin) => origin.trim()).filter(Boolean));
+const configuredAllowedOrigins = cleanEnvValue(process.env.CORS_ALLOWED_ORIGINS);
+const ALLOWED_ORIGINS = new Set((configuredAllowedOrigins || [...DEFAULT_ALLOWED_ORIGINS].join(',')).split(',').map((origin) => origin.trim()).filter(Boolean));
 
 function sanitizeBearerToken(value) {
   return String(value || '').trim().replace(/^Bearer\s+/i, '').replace(/[^A-Za-z0-9._-]/g, '');
