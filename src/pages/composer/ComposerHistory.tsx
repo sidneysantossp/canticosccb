@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ComposerPageWrapper } from '@/components/ComposerPageWrapper';
 import { useActiveComposer } from '@/hooks/useActiveComposer';
 import {
   getComposerRecentActivityByComposerId,
@@ -76,7 +75,7 @@ const ComposerHistory: React.FC = () => {
   }, [composerId, loadingComposer]);
 
   return (
-    <ComposerPageWrapper requireComposer>
+    <>
       <div className="p-6 max-w-7xl mx-auto space-y-8">
         <div>
           <h1 className="text-3xl font-bold text-white mb-2">Histórico do Catálogo</h1>
@@ -153,7 +152,7 @@ const ComposerHistory: React.FC = () => {
           )}
         </div>
       </div>
-    </ComposerPageWrapper>
+    </>
   );
 };
 

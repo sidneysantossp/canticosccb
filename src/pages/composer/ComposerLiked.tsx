@@ -1,6 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ComposerPageWrapper } from '@/components/ComposerPageWrapper';
 import { useActiveComposer } from '@/hooks/useActiveComposer';
 import { getComposerLikedSongsByComposerId, type ComposerCatalogSong } from '@/lib/composerCatalogApi';
 import { buildHinoUrl } from '@/utils/slugUrl';
@@ -53,7 +52,7 @@ const ComposerLiked: React.FC = () => {
   const averageLikes = songs.length > 0 ? Math.round(totalLikes / songs.length) : 0;
 
   return (
-    <ComposerPageWrapper requireComposer>
+    <>
       <div className="p-6 max-w-7xl mx-auto space-y-8">
         <div>
           <h1 className="text-3xl font-bold text-white mb-2">Mais Curtidas</h1>
@@ -172,7 +171,7 @@ const ComposerLiked: React.FC = () => {
           )}
         </div>
       </div>
-    </ComposerPageWrapper>
+    </>
   );
 };
 
