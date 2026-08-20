@@ -1,11 +1,12 @@
-import { getCurrentUser, publicSupabase } from './supabase-auth';
+import { getCurrentUser, supabase } from './supabase-auth';
 
 const SUPPORT_TABLE = 'notifications';
 const DEFAULT_SUPPORT_COVER = 'https://www.canticosccb.com.br/logo-canticos-ccb.png';
 const SUPPORT_NOTIFICATION_TYPE = 'support_chat';
 const SUPPORT_LINK = '/chat';
 const SUPPORT_THREAD_MARKER = 'support';
-const supportClient = publicSupabase;
+// O Chat é privado: precisa da sessão JWT para satisfazer o RLS de notifications.
+const supportClient = supabase;
 
 export const SUPPORT_SUBJECT_OPTIONS = [
   { key: 'conta-acesso', label: 'Conta e acesso' },
