@@ -46,7 +46,10 @@ export const ProtectedComposerRoute: React.FC<ProtectedComposerRouteProps> = ({ 
 
       if (compositor) {
         setHasComposerProfile(true);
-        const verified = compositor.verificado === true || compositor.verificado === 1 || compositor.verified === true;
+        const verified = compositor.verificado === true
+          || compositor.verificado === 1
+          || compositor.verified === true
+          || ['approved', 'active', 'ativo'].includes(String(compositor.status || '').toLowerCase());
         setIsVerified(verified);
       } else {
         setHasComposerProfile(false);
@@ -164,6 +167,17 @@ export const ProtectedComposerRoute: React.FC<ProtectedComposerRouteProps> = ({ 
 
   if (hasManagerAccess) {
     return <Navigate to="/manage-composers" replace />;
+  }
+
+  // Se a conta já está marcada como Composer no perfil autenticado, não a
+  // enviar para o onboarding enquanto a linha `composers` termina de hidratar.
+  const profileIsComposer = Boolean(
+    (user as any).is_composer
+      || (user as any).tipo_usuario === 'compositor'
+      || (user as any).tipo === 'compositor'
+  );
+  if (profileIsComposer) {
+    return <>{children}</>;
   }
 
   // Se não é compositor nem gerente, direciona para onboarding/cadastro

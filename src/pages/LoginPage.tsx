@@ -36,7 +36,13 @@ const LoginPage: React.FC = () => {
       closeMenu();
 
       // Redirecionamento imediato para rotas corretas
-      const approvedComposer = composer && composer.verificado !== false && composer.status !== 'inactive';
+      const composerRecord = composer as any;
+      const approvedComposer = Boolean(composerRecord && (
+        composerRecord.verificado === true
+          || composerRecord.verificado === 1
+          || composerRecord.verified === true
+          || ['approved', 'active', 'ativo'].includes(String(composerRecord.status || '').toLowerCase())
+      ));
       if (profile.is_composer || approvedComposer) {
         navigate('/composer');
       } else if (profile.is_admin) {
