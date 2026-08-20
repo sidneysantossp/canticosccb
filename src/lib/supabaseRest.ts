@@ -682,7 +682,10 @@ export async function supabaseGetSignedUrl(bucket: string, path: string, expires
     }
 
     const result = await response.json();
-    return result.signedURL || result.signedUrl || null;
+    const signed = result.signedURL || result.signedUrl || null;
+    if (!signed) return null;
+    if (/^https?:\/\//i.test(signed)) return signed;
+    return `${SUPABASE_URL}${String(signed).startsWith('/') ? '' : '/'}${signed}`;
   } catch (error) {
     console.error(`[supabaseGetSignedUrl] Exception:`, error);
     return null;

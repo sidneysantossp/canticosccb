@@ -10,6 +10,7 @@ import {
   supabaseAuthUpdate,
   supabaseDelete,
   supabaseFetch,
+  supabaseGetSignedUrl,
   supabaseInsert,
   supabaseUpdate,
 } from './supabaseRest';
@@ -1537,19 +1538,26 @@ export const documentReviewsApi = {
         order: 'created_at.desc',
       });
       // Map composer_documents columns to the shape DocumentReviewSection expects
-      const mapped = (rows || []).map((row: any) => ({
-        id: row.id,
-        composer_id: row.composer_id,
-        document_type: row.document_type || 'documento',
-        document_number: row.document_number,
-        expected_name: row.expected_name || '',
-        extracted_name: row.extracted_name || '',
-        image_path: row.document_image || row.image_path || '',
-        status: row.status || 'pending',
-        admin_notes: row.admin_notes || '',
-        reviewed_by: row.reviewed_by || null,
-        reviewed_at: row.reviewed_at || null,
-        created_at: row.created_at || new Date().toISOString(),
+      const mapped = await Promise.all((rows || []).map(async (row: any) => {
+        const privatePath = row.document_image || row.image_path || '';
+        const signedUrl = privatePath
+          ? await supabaseGetSignedUrl('documents', privatePath, 1800)
+          : null;
+        return {
+          id: row.id,
+          composer_id: row.composer_id,
+          document_type: row.document_type || 'documento',
+          document_number: row.document_number,
+          expected_name: row.expected_name || '',
+          extracted_name: row.extracted_name || '',
+          image_path: privatePath,
+          signed_url: signedUrl,
+          status: row.status || 'pending',
+          admin_notes: row.admin_notes || '',
+          reviewed_by: row.reviewed_by || null,
+          reviewed_at: row.reviewed_at || null,
+          created_at: row.created_at || new Date().toISOString(),
+        };
       }));
       return { data: { documents: mapped }, error: null };
     } catch (error: any) {
