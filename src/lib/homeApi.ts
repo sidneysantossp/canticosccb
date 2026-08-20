@@ -553,11 +553,14 @@ const mapCategory = (category: any, index: number): HomeCategory => {
 };
 
 export async function getHomePageData(): Promise<HomePageData> {
+  let supabaseHomeFailed = false;
+
   if (isSupabaseConfigured) {
     try {
       return await getHomePageDataFromSupabase();
     } catch (error) {
-      console.warn('[homeApi] Supabase home data fetch falhou, usando fallback de API antiga', error);
+      supabaseHomeFailed = true;
+      console.warn('[homeApi] Supabase home data fetch falhou, usando fallback sem repetir consultas ao banco', error);
     }
   }
 
@@ -592,7 +595,7 @@ export async function getHomePageData(): Promise<HomePageData> {
   let avulsosApi: any[] = [];
 
   
-  if (isSupabaseConfigured) {
+  if (isSupabaseConfigured && !supabaseHomeFailed) {
     try {
       // Single query to fetch all active hymns, then filter by category
       const allHymns = await supabaseFetch<any>('hinos', {
