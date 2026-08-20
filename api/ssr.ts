@@ -45,6 +45,31 @@ class SupabaseUnavailableError extends Error {
   constructor(message: string) { super(message); this.name = "SupabaseUnavailableError"; }
 }
 
+async function serveSpaIndex(): Promise<Response> {
+  try {
+    const indexResponse = await fetch(`${SITE_URL}/index.html`, { signal: AbortSignal.timeout(8000) });
+    if (!indexResponse.ok) throw new Error(`index.html returned HTTP ${indexResponse.status}`);
+    return new Response(await indexResponse.text(), {
+      status: 200,
+      headers: {
+        'Content-Type': 'text/html; charset=utf-8',
+        'Cache-Control': 'private, no-store',
+        'X-Robots-Tag': 'noindex, follow',
+      },
+    });
+  } catch (error) {
+    console.error('[SSR] SPA index unavailable:', error);
+    return new Response('<html><head><title>Serviço temporariamente indisponível | Cânticos CCB</title></head><body><h1>Serviço temporariamente indisponível</h1><p>Tente novamente mais tarde.</p></body></html>', {
+      status: 503,
+      headers: {
+        'Content-Type': 'text/html; charset=utf-8',
+        'Cache-Control': 'no-store',
+        'Retry-After': '60',
+      },
+    });
+  }
+}
+
 async function supaFetch(table: string, params: Record<string, string>): Promise<any[]> {
   if (SSR_FIXTURE_MODE) return fixtureRows(table, params);
   if (!SUPABASE_URL || !SUPABASE_ANON_KEY) throw new SupabaseUnavailableError("Supabase configuration is unavailable");
@@ -1726,6 +1751,11 @@ export default async function handler(req: Request): Promise<Response> {
 
   // The "path" query param is set by vercel.json rewrite
   const pathname = url.searchParams.get('path') || url.pathname.replace(/^\/api\/ssr/, '') || '/';
+
+  // Playlists are private SPA routes. Never make them depend on Supabase SSR.
+  if (pathname === '/playlist/criar' || /^\/playlist\/[^/]+$/.test(pathname)) {
+    return serveSpaIndex();
+  }
 
   let pageMeta: PageMeta | null = null;
   let dependencyError: SupabaseUnavailableError | null = null;
