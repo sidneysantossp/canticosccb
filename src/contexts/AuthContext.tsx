@@ -125,9 +125,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       try {
         // Buscar usuário pelo id (UUID)
+        const profileColumns = 'id,email,name,avatar_url,plan,status,is_admin,is_composer,is_blocked,email_verified';
         const { data: dbUser } = await authClient.supabase
           .from('users')
-          .select('*')
+          .select(profileColumns)
           .eq('id', session.user.id)
           .single();
 
@@ -151,11 +152,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           }
 
           if (Object.keys(updates).length > 0) {
-            const { data: updatedUser, error: updateError } = await authClient.supabase
+              const { data: updatedUser, error: updateError } = await authClient.supabase
               .from('users')
               .update(updates)
               .eq('id', session.user.id)
-              .select('*')
+              .select(profileColumns)
               .single();
 
             if (!updateError && updatedUser) {
@@ -208,7 +209,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
               is_blocked: false,
               email_verified: !!session.user.email_confirmed_at,
             }, { onConflict: 'id' })
-            .select()
+            .select(profileColumns)
             .single();
 
           if (!error && newUser) {
