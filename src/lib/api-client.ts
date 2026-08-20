@@ -379,6 +379,9 @@ export const compositoresApi = {
         user_id: `eq.${userId}`,
         select: '*',
         limit: '1'
+      }).catch((error) => {
+        console.warn('⚠️ [getByUsuarioId] Consulta por user_id indisponível; tentando e-mail:', error);
+        return [] as any[];
       });
       if (rows.length > 0) {
         const r = rows[0];
@@ -398,10 +401,14 @@ export const compositoresApi = {
 
       // 2. Fallback: buscar por email e auto-vincular user_id
       if (userEmail) {
+        const normalizedEmail = String(userEmail).trim().toLowerCase();
         const byEmail = await supabaseFetch<any>('composers', {
-          email: `eq.${userEmail}`,
+          email: `ilike.${normalizedEmail}`,
           select: '*',
           limit: '1'
+        }).catch((error) => {
+          console.warn('⚠️ [getByUsuarioId] Consulta por e-mail indisponível:', error);
+          return [] as any[];
         });
         if (byEmail.length > 0) {
           const r = byEmail[0];
