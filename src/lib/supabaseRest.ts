@@ -125,11 +125,25 @@ function isTokenExpired(token: string): boolean {
 }
 
 async function buildAuthHeaders() {
-  let accessToken = sanitizeBearerToken(getStoredToken());
   const anonKey = sanitizeBearerToken(SUPABASE_ANON_KEY);
+  let accessToken = '';
+
+  // A sessão do cliente é a fonte de verdade. O localStorage pode ainda não
+  // ter sido atualizado quando o painel dispara as primeiras consultas.
+  try {
+    const { data } = await supabase.auth.getSession();
+    accessToken = sanitizeBearerToken(data.session?.access_token || '');
+  } catch (error) {
+    debugLog('[supabaseRest] Could not read Supabase session:', error);
+  }
+
+  // Fallback para sessões persistidas por versões anteriores do cliente.
+  if (!accessToken) {
+    accessToken = sanitizeBearerToken(getStoredToken());
+  }
 
   // Se o token está expirado, tentar refresh via Supabase client (com timeout)
-  if (accessToken !== anonKey && isTokenExpired(accessToken)) {
+  if (accessToken && accessToken !== anonKey && isTokenExpired(accessToken)) {
     debugLog('[supabaseRest] JWT expired, attempting refresh...');
     try {
       const refreshPromise = supabase.auth.refreshSession();

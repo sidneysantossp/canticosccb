@@ -316,7 +316,7 @@ export async function resolveEmergencyPlaybackUrl(routeUrl: string): Promise<str
       : compressedBody;
 
     const objectUrl = URL.createObjectURL(new Blob(
-      [decompressedBody],
+      [(decompressedBody as Uint8Array).buffer as ArrayBuffer],
       { type: 'audio/mpeg' },
     ));
 
