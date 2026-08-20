@@ -8,7 +8,7 @@ import { googleOAuthLogin, isGoogleAuthEnabled } from '@/lib/supabase-auth';
 const LoginPage: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { signIn, profile } = useAuth();
+  const { signIn, profile, loading: authLoading } = useAuth();
   const { closeMenu } = useMobileMenu();
 
   const [email, setEmail] = useState('');
@@ -24,6 +24,10 @@ const LoginPage: React.FC = () => {
 
   // Redirecionar quando o perfil carregar após login
   useEffect(() => {
+    // O AuthContext aplica inicialmente um perfil mínimo enquanto sincroniza
+    // users.is_composer/is_admin. Não redirecionar antes dessa sincronização.
+    if (authLoading || !profile) return;
+
     if (profile) {
       // Fechar menu mobile se estiver aberto
       closeMenu();
@@ -40,7 +44,7 @@ const LoginPage: React.FC = () => {
       // Resetar loading após redirecionamento
       setIsLoading(false);
     }
-  }, [profile, navigate, location.state, closeMenu]);
+  }, [authLoading, profile, navigate, location.state, closeMenu]);
 
   const handleGoogleLogin = async () => {
     try {

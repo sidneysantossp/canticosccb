@@ -20,7 +20,7 @@ import { getSupportInboxStats } from '@/lib/supportChatApi';
 
 const UserSidebar: React.FC = () => {
   const location = useLocation();
-  const { user } = useAuth();
+  const { user, isComposer } = useAuth();
   const [isManager, setIsManager] = useState(false);
   const [supportUnreadCount, setSupportUnreadCount] = useState(0);
 
@@ -70,6 +70,12 @@ const UserSidebar: React.FC = () => {
   };
 
   const menuItems = [
+    ...(isComposer ? [{
+      category: 'Área do Compositor',
+      items: [
+        { icon: Music, label: 'Painel do Compositor', path: '/composer' }
+      ]
+    }] : []),
     {
       category: 'Navegar',
       items: [
