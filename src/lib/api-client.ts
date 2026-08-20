@@ -149,7 +149,12 @@ export const hinosApi = {
   create: async (data: any) => {
 
     try {
-      const resolvedStatus = data.status || (data.ativo === 1 ? 'published' : 'pending');
+      const requestedStatus = String(data.status || '').toLowerCase();
+      const resolvedStatus = requestedStatus === 'pending'
+        ? 'draft'
+        : (requestedStatus === 'draft' || requestedStatus === 'published' || requestedStatus === 'archived')
+          ? requestedStatus
+          : (data.ativo === 1 ? 'published' : 'draft');
       // Inserir hino sem categorias primeiro
       const hinoData: Record<string, any> = {
         titulo: data.titulo,
@@ -217,9 +222,14 @@ export const hinosApi = {
       if (data.letra !== undefined) updateData.letra = data.letra || null;
       if (data.ativo !== undefined) updateData.ativo = data.ativo;
       if (data.status !== undefined) {
-        updateData.status = data.status;
+        const requestedStatus = String(data.status || '').toLowerCase();
+        updateData.status = requestedStatus === 'pending'
+          ? 'draft'
+          : (requestedStatus === 'draft' || requestedStatus === 'published' || requestedStatus === 'archived')
+            ? requestedStatus
+            : 'draft';
       } else if (data.ativo !== undefined) {
-        updateData.status = data.ativo === 1 || data.ativo === true ? 'published' : 'pending';
+        updateData.status = data.ativo === 1 || data.ativo === true ? 'published' : 'draft';
       }
       if (data.youtube_source !== undefined) updateData.youtube_source = data.youtube_source || null;
       if (data.participacao_especial !== undefined) {
