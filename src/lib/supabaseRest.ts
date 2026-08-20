@@ -671,7 +671,7 @@ export async function supabaseGetSignedUrl(bucket: string, path: string, expires
   try {
     const response = await fetch(url, {
       method: 'POST',
-      headers: buildHeaders(),
+      headers: await buildAuthHeaders(),
       body: JSON.stringify({ expiresIn }),
     });
 
