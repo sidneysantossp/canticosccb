@@ -1531,21 +1531,18 @@ export const documentReviewsApi = {
   getById: async () => null,
   getByCompositor: async (compositorId: string | number) => {
     try {
-
       const rows = await supabaseAuthFetch<any>('composer_documents', {
         composer_id: `eq.${compositorId}`,
-        select: '*',
+        // Evita select=*; o schema de produção pode conter colunas divergentes.
+        select: 'id,composer_id,document_type,document_number,expected_name,extracted_name,document_image,image_path,status,admin_notes,reviewed_by,reviewed_at,created_at',
         order: 'created_at.desc',
       });
       // Map composer_documents columns to the shape DocumentReviewSection expects
       const mapped = await Promise.all((rows || []).map(async (row: any) => {
         const privatePath = row.document_image || row.image_path || '';
-        const signedUrl = privatePath
-          ? await supabaseGetSignedUrl('documents', privatePath, 1800).catch((signError) => {
-              console.warn('[documentReviewsApi] URL assinada indisponível:', signError);
-              return null;
-            })
-          : null;
+        // A rota efetiva gera a URL através de documentStorage. Uma falha de
+        // assinatura nunca deve ocultar o registo documental válido.
+        const signedUrl = null;
         return {
           id: row.id,
           composer_id: row.composer_id,
@@ -1565,7 +1562,7 @@ export const documentReviewsApi = {
       return { data: { documents: mapped }, error: null };
     } catch (error: any) {
       console.warn('[documentReviewsApi.getByCompositor] Error:', error?.message);
-      return { data: { documents: [] }, error: error?.message };
+      return { data: { documents: [], error: error?.message }, error: error?.message };
     }
   },
   review: async (documentId: number | string, data: { status: string; admin_notes?: string }) => {
