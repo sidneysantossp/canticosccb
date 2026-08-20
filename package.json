@@ -11,6 +11,7 @@
     "build:check": "tsc && vite build",
     "generate-sitemap": "node scripts/generate-sitemap.js",
     "audit:seo": "node scripts/validate-seo-assets.js",
+    "validate:sitemap": "node scripts/validate-sitemap.mjs",
     "test:seo-smoke": "node scripts/seo-smoke.mjs",
     "test:seo-csr": "playwright test tests/seo-csr.spec.mjs --reporter=line",
     "build:seo": "vite build && node scripts/generate-sitemap.js && node scripts/generate-robots.js",
