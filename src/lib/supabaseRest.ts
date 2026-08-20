@@ -252,7 +252,9 @@ export async function supabaseFetchWithOptions<T>(
   debugLog(`[supabaseFetch] Cache miss for ${table}, fetching:`, url.toString());
 
   try {
-    const headers = buildHeaders();
+    // Leituras públicas continuam a funcionar com a anon key quando não há
+    // sessão; quando existe uma sessão, as rotas protegidas recebem o JWT.
+    const headers = await buildAuthHeaders();
     
     const response = await fetchWithTimeout(url.toString(), {
       method: 'GET',
