@@ -14,6 +14,7 @@ export const ProtectedComposerRoute: React.FC<ProtectedComposerRouteProps> = ({ 
   const [hasComposerProfile, setHasComposerProfile] = useState(false);
   const [hasManagerAccess, setHasManagerAccess] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [verificationError, setVerificationError] = useState<string | null>(null);
 
   const checkComposerStatus = React.useCallback(async () => {
     if (!user) {
@@ -22,6 +23,7 @@ export const ProtectedComposerRoute: React.FC<ProtectedComposerRouteProps> = ({ 
     }
 
     try {
+      setVerificationError(null);
       const { compositoresApi, compositorGerentesApi } = await import('@/lib/api-client');
       let compositor: any = null;
 
@@ -52,6 +54,7 @@ export const ProtectedComposerRoute: React.FC<ProtectedComposerRouteProps> = ({ 
       }
     } catch (error) {
       console.error('Erro ao verificar compositor:', error);
+      setVerificationError('Não foi possível verificar o acesso ao painel agora. Tente novamente em alguns segundos.');
       setHasComposerProfile(false);
       setHasManagerAccess(false);
       setIsVerified(false);
@@ -82,6 +85,29 @@ export const ProtectedComposerRoute: React.FC<ProtectedComposerRouteProps> = ({ 
         <div className="text-center">
           <div className="w-16 h-16 border-4 border-primary-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
           <p className="text-gray-400">Verificando acesso...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (verificationError) {
+    return (
+      <div className="min-h-screen bg-gray-950 flex items-center justify-center p-6">
+        <div className="max-w-md w-full bg-gray-900 border border-gray-800 rounded-xl p-8 text-center">
+          <div className="w-16 h-16 bg-yellow-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
+            <AlertCircle className="w-8 h-8 text-yellow-400" />
+          </div>
+          <h2 className="text-2xl font-bold text-white mb-3">Acesso temporariamente indisponível</h2>
+          <p className="text-gray-400 mb-6">{verificationError}</p>
+          <button
+            onClick={() => {
+              setLoading(true);
+              void checkComposerStatus();
+            }}
+            className="w-full px-6 py-3 bg-primary-600 hover:bg-primary-700 text-white rounded-lg font-semibold transition-colors"
+          >
+            Tentar novamente
+          </button>
         </div>
       </div>
     );
