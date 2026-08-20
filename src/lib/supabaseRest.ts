@@ -131,7 +131,11 @@ async function buildAuthHeaders() {
   // A sessão do cliente é a fonte de verdade. O localStorage pode ainda não
   // ter sido atualizado quando o painel dispara as primeiras consultas.
   try {
-    const { data } = await supabase.auth.getSession();
+    const sessionPromise = supabase.auth.getSession();
+    const sessionTimeout = new Promise<any>((resolve) => {
+      window.setTimeout(() => resolve({ data: { session: null }, error: new Error('Session read timeout') }), 2000);
+    });
+    const { data } = await Promise.race([sessionPromise, sessionTimeout]);
     accessToken = sanitizeBearerToken(data.session?.access_token || '');
   } catch (error) {
     debugLog('[supabaseRest] Could not read Supabase session:', error);
