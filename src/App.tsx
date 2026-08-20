@@ -414,7 +414,9 @@ const AppContent: React.FC = () => {
           <Route path="compositor/hino/editar/:id" element={<ProtectedComposerRoute><ComposerCreateSong /></ProtectedComposerRoute>} />
           <Route path="composer/songs/edit/:id" element={<ProtectedComposerRoute><ComposerCreateSong /></ProtectedComposerRoute>} />
           <Route path="compositor/analytics" element={<ProtectedComposerRoute><ComposerAnalytics /></ProtectedComposerRoute>} />
+          <Route path="compositor/performance" element={<ProtectedComposerRoute><ComposerAnalytics /></ProtectedComposerRoute>} />
           <Route path="composer/analytics" element={<ProtectedComposerRoute><ComposerAnalytics /></ProtectedComposerRoute>} />
+          <Route path="composer/performance" element={<ProtectedComposerRoute><ComposerAnalytics /></ProtectedComposerRoute>} />
           <Route path="compositor/seguidores" element={<ProtectedComposerRoute><ComposerFollowers /></ProtectedComposerRoute>} />
           <Route path="composer/followers" element={<ProtectedComposerRoute><ComposerFollowers /></ProtectedComposerRoute>} />
           <Route path="compositor/notificacoes" element={<ProtectedComposerRoute><ComposerNotifications /></ProtectedComposerRoute>} />

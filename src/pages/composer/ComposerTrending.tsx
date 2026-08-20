@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ComposerPageWrapper } from '@/components/ComposerPageWrapper';
 import { useActiveComposer } from '@/hooks/useActiveComposer';
 import { getComposerTrendingSongsByComposerId, type ComposerCatalogSong } from '@/lib/composerCatalogApi';
 import { buildHinoUrl } from '@/utils/slugUrl';
@@ -52,7 +51,7 @@ const ComposerTrending: React.FC = () => {
   }).length;
 
   return (
-    <ComposerPageWrapper requireComposer>
+    <>
       <div className="p-6 max-w-7xl mx-auto space-y-8">
         <div>
           <h1 className="text-3xl font-bold text-white mb-2">Hinos em Alta</h1>
@@ -176,7 +175,7 @@ const ComposerTrending: React.FC = () => {
           )}
         </div>
       </div>
-    </ComposerPageWrapper>
+    </>
   );
 };
 

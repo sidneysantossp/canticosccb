@@ -125,31 +125,11 @@ const ComposerAnalytics: React.FC = () => {
   }));
 
   const audienceInsights = {
-    gender: [
-      { label: 'Feminino', percentage: 58, color: 'bg-pink-500' },
-      { label: 'Masculino', percentage: 40, color: 'bg-blue-500' },
-      { label: 'Outro', percentage: 2, color: 'bg-purple-500' }
-    ],
-    devices: [
-      { label: 'Mobile', percentage: 72 },
-      { label: 'Desktop', percentage: 23 },
-      { label: 'Tablet', percentage: 5 }
-    ],
-    timeOfDay: [
-      { hour: '00h-06h', plays: 5 },
-      { hour: '06h-12h', plays: 25 },
-      { hour: '12h-18h', plays: 35 },
-      { hour: '18h-00h', plays: 35 }
-    ]
+    gender: [{ label: 'Sem dados disponíveis', percentage: 0, color: 'bg-gray-600' }],
+    devices: [{ label: 'Sem dados disponíveis', percentage: 0 }],
+    timeOfDay: [{ hour: 'Aguardando dados reais', plays: 0 }]
   };
-
-  const topCities = [
-    { city: 'São Paulo', state: 'SP', plays: 245678 },
-    { city: 'Rio de Janeiro', state: 'RJ', plays: 156789 },
-    { city: 'Belo Horizonte', state: 'MG', plays: 98765 },
-    { city: 'Curitiba', state: 'PR', plays: 87654 },
-    { city: 'Porto Alegre', state: 'RS', plays: 76543 }
-  ];
+  const topCities: { city: string; state: string; plays: number }[] = [];
 
   const formatNumber = (num: number | string) => {
     if (typeof num === 'string') return num;
@@ -598,39 +578,39 @@ const ComposerAnalytics: React.FC = () => {
               <div>
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-white">Taxa de Conclusão</span>
-                  <span className="text-primary-400 font-bold">87.5%</span>
+                  <span className="text-text-muted font-bold">N/D</span>
                 </div>
                 <p className="text-text-muted text-sm mb-2">
                   Porcentagem média de cada hino que os ouvintes escutam
                 </p>
                 <div className="w-full h-2 bg-background-tertiary rounded-full overflow-hidden">
-                  <div className="h-full bg-primary-500" style={{ width: '87.5%' }} />
+                  <div className="h-full bg-primary-500" style={{ width: '0%' }} />
                 </div>
               </div>
 
               <div>
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-white">Taxa de Salvamento</span>
-                  <span className="text-green-400 font-bold">23.5%</span>
+                  <span className="text-text-muted font-bold">N/D</span>
                 </div>
                 <p className="text-text-muted text-sm mb-2">
                   Ouvintes que salvaram seus hinos
                 </p>
                 <div className="w-full h-2 bg-background-tertiary rounded-full overflow-hidden">
-                  <div className="h-full bg-green-500" style={{ width: '23.5%' }} />
+                  <div className="h-full bg-green-500" style={{ width: '0%' }} />
                 </div>
               </div>
 
               <div>
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-white">Taxa de Compartilhamento</span>
-                  <span className="text-blue-400 font-bold">4.3%</span>
+                  <span className="text-text-muted font-bold">N/D</span>
                 </div>
                 <p className="text-text-muted text-sm mb-2">
                   Ouvintes que compartilharam seus hinos
                 </p>
                 <div className="w-full h-2 bg-background-tertiary rounded-full overflow-hidden">
-                  <div className="h-full bg-blue-500" style={{ width: '4.3%' }} />
+                  <div className="h-full bg-blue-500" style={{ width: '0%' }} />
                 </div>
               </div>
             </div>
