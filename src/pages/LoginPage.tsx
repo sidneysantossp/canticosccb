@@ -61,12 +61,17 @@ const LoginPage: React.FC = () => {
     setIsLoading(true);
 
     try {
-      await signIn(email, password);
+      await Promise.race([
+        signIn(email, password),
+        new Promise<never>((_, reject) => {
+          window.setTimeout(() => reject(new Error('LOGIN_TIMEOUT')), 12000);
+        }),
+      ]);
     } catch (err: any) {
       console.error('❌ Login error:', err?.message || err);
       const msg = String(err?.message || '');
-      if (msg.includes('timeout') || msg.includes('Failed to fetch')) {
-        setError('Tempo esgotado. Verifique sua conexão e tente novamente.');
+      if (msg === 'LOGIN_TIMEOUT' || msg.includes('timeout') || msg.includes('Failed to fetch')) {
+        setError('O servidor de autenticação demorou a responder. Tente novamente em alguns segundos.');
       } else if (msg.toLowerCase().includes('credentials') || msg.toLowerCase().includes('incorretos')) {
         setError('Email ou senha incorretos.');
       } else {
