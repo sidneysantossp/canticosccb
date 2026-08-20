@@ -393,7 +393,9 @@ export async function googleOAuthLogin(): Promise<void> {
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: `${window.location.origin}/auth/callback`,
+        // O AuthContext processa a sessão OAuth ao carregar a rota pública de login.
+        // Evita depender de uma rota server-side que pode cair no 404 do Vercel.
+        redirectTo: `${window.location.origin}/login`,
         queryParams: {
           access_type: 'offline',
           prompt: 'consent',
