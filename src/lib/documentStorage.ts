@@ -1,4 +1,4 @@
-import { supabase } from './supabase-auth';
+import { supabaseGetSignedUrl } from './supabaseRest';
 
 const normalizePath = (path: string): string => path.replace(/\\/g, '/').replace(/^\/+/, '');
 
@@ -34,16 +34,12 @@ export async function getDocumentSignedUrl(imagePath: string, expiresInSeconds =
   }
 
   try {
-    const { data, error } = await supabase.storage
-      .from('documents')
-      .createSignedUrl(sanitized, expiresInSeconds);
-
-    if (error || !data?.signedUrl) {
-      console.warn('[documents] Não foi possível gerar URL assinada:', error?.message || 'resposta vazia');
+    const signedUrl = await supabaseGetSignedUrl('documents', sanitized, expiresInSeconds);
+    if (!signedUrl) {
+      console.warn('[documents] Não foi possível gerar URL assinada para o caminho:', sanitized);
       return '';
     }
-
-    return data.signedUrl;
+    return signedUrl;
   } catch (error) {
     console.warn('[documents] Erro ao gerar URL assinada:', error);
     return '';

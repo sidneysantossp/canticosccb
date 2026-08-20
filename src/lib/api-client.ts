@@ -1541,7 +1541,10 @@ export const documentReviewsApi = {
       const mapped = await Promise.all((rows || []).map(async (row: any) => {
         const privatePath = row.document_image || row.image_path || '';
         const signedUrl = privatePath
-          ? await supabaseGetSignedUrl('documents', privatePath, 1800)
+          ? await supabaseGetSignedUrl('documents', privatePath, 1800).catch((signError) => {
+              console.warn('[documentReviewsApi] URL assinada indisponível:', signError);
+              return null;
+            })
           : null;
         return {
           id: row.id,
