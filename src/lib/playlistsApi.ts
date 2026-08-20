@@ -163,12 +163,10 @@ async function loadPlaylistRelations(playlistIds: string[]): Promise<PlaylistRel
     return relationRows;
   }
 
-  const firstError = playlistHinos.error || current.error || legacy.error;
-  if (firstError) {
-    throw new Error(firstError.message);
-  }
-
-  return [];
+  // Playlists novas podem não ter relações ainda. Se uma tabela legada
+  // estiver indisponível por RLS/permissão, não bloqueie a playlist vazia.
+  // Relações que foram lidas com sucesso continuam sendo preservadas acima.
+  return relationRows;
 }
 
 async function loadHymnsByIds(songIds: string[]): Promise<Map<string, HymnRow>> {

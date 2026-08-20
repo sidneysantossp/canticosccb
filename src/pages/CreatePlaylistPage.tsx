@@ -32,6 +32,7 @@ const CreatePlaylistPage: React.FC = () => {
   
   const [previewImage, setPreviewImage] = useState<string>('');
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const { upsertPlaylist, updatePlaylist } = usePlaylistsStore();
   const { user } = useAuth();
 
@@ -49,17 +50,22 @@ const CreatePlaylistPage: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError(null);
     setIsLoading(true);
 
     try {
       if (!user?.id) throw new Error('Usuário não autenticado');
-      const created = await playlistsApi.create({
+      const createRequest = playlistsApi.create({
         userId: user.id,
         name: formData.name,
         description: formData.description,
         coverUrl: '',
         isPublic: formData.privacy !== 'private'
       });
+      const timeout = new Promise<never>((_, reject) =>
+        setTimeout(() => reject(new Error('O servidor demorou a criar a playlist. Tente novamente.')), 12000)
+      );
+      const created = await Promise.race([createRequest, timeout]);
 
       // Mapear DTO -> store Playlist
       const playlistStore = {
@@ -78,8 +84,9 @@ const CreatePlaylistPage: React.FC = () => {
       }
 
       navigate(`/playlist/${created.id}`);
-    } catch (error) {
-      console.error('Error creating playlist:', error);
+    } catch (submitError) {
+      console.error('Error creating playlist:', submitError);
+      setError(submitError instanceof Error ? submitError.message : 'Não foi possível criar a playlist.');
     } finally {
       setIsLoading(false);
     }
@@ -119,6 +126,12 @@ const CreatePlaylistPage: React.FC = () => {
             <X className="w-6 h-6 text-text-muted hover:text-white" />
           </button>
         </div>
+
+        {error && (
+          <div role="alert" className="mb-6 rounded-lg border border-red-500/40 bg-red-500/10 px-4 py-3 text-sm text-red-200">
+            {error}
+          </div>
+        )}
 
         {/* Form */}
         <form onSubmit={handleSubmit} className="space-y-8">
