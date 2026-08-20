@@ -52,7 +52,7 @@ const AdminComposers: React.FC = () => {
         setTotalCount(apiData.total || 0);
         
         // Contar pendentes
-        const pending = composersList.filter((c: Compositor) => !c.verificado).length;
+        const pending = composersList.filter((c: Compositor) => c.verificado === false).length;
         setPendingCount(pending);
         
         console.log('✅ [AdminComposers] State updated - composers:', composersList.length, 'pending:', pending);

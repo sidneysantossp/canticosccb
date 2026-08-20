@@ -38,7 +38,9 @@ const AdminComposersPending: React.FC = () => {
         const allComposers = apiData.compositores || [];
         
         // Filtrar apenas não verificados
-        const pending = allComposers.filter((c: any) => !c.verificado);
+        const pending = allComposers.filter((c: any) =>
+          c.verificado === false || c.verificado === 0
+        );
         console.log('📋 [Pending] Compositores não verificados:', pending);
         
         // Carregar documentos para cada compositor
