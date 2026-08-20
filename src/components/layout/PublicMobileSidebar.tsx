@@ -44,10 +44,10 @@ const PublicMobileSidebar: React.FC<PublicMobileSidebarProps> = ({ isOpen, onClo
       { path: '/', icon: Home, label: 'Início' },
       { path: '/search', icon: Search, label: 'Pesquisar' },
       { path: '/library', icon: Library, label: 'Biblioteca' },
-      { path: '/categories', icon: Grid, label: 'Categorias' },
+      { path: '/categorias', icon: Grid, label: 'Categorias' },
       { path: '/hinos-avulsos-ccb', icon: Music, label: 'Avulsos' },
       { path: '/hinos-cantados-ccb', icon: Mic, label: 'Cantados' },
-      { path: '/categoria/instrumentais', icon: Music, label: 'Instrumentais' },
+      { path: '/instrumentais', icon: Music, label: 'Instrumentais' },
       { path: '/cifras', icon: FileText, label: 'Cifras' },
       { path: '/hinario', icon: BookOpen, label: 'Hinário' },
     ];

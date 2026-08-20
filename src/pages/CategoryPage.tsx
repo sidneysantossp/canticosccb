@@ -616,7 +616,7 @@ const CategoryPage: React.FC = () => {
         schemaData={[
           generateBreadcrumbSchema([
             { name: 'Início', url: '/' },
-            { name: 'Categorias', url: '/categories' },
+            { name: 'Categorias', url: '/categorias' },
             { name: category.name, url: `/categoria/${slug}` },
           ]),
           ...(songs.length > 0

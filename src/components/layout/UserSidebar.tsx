@@ -76,10 +76,10 @@ const UserSidebar: React.FC = () => {
         { icon: Home, label: 'Início', path: '/' },
         { icon: Search, label: 'Buscar', path: '/search' },
         { icon: Library, label: 'Biblioteca', path: '/library' },
-        { icon: Grid, label: 'Categorias', path: '/categories' },
+        { icon: Grid, label: 'Categorias', path: '/categorias' },
         { icon: Music, label: 'Avulsos', path: '/hinos-avulsos-ccb' },
         { icon: Mic, label: 'Cantados', path: '/hinos-cantados-ccb' },
-        { icon: Music, label: 'Instrumentais', path: '/categoria/instrumentais' },
+        { icon: Music, label: 'Instrumentais', path: '/instrumentais' },
         { icon: FileText, label: 'Cifras', path: '/cifras' },
         { icon: BookOpen, label: 'Hinário', path: '/hinario' }
       ]
