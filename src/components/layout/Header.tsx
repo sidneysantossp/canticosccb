@@ -13,6 +13,7 @@ import { quickSearch } from '@/lib/searchApi';
 import { buildAlbumUrl, buildCompositorUrl, buildHinoUrl } from '@/utils/slugUrl';
 import { useVoiceSearch } from '@/hooks/useVoiceSearch';
 import { clearAuthStorage } from '@/lib/supabase-auth';
+import { resolveActiveComposer } from '@/lib/activeComposer';
 
 type HeaderSearchItem = {
   id: string;
@@ -34,11 +35,14 @@ const Header: React.FC = () => {
   const searchRequestId = useRef(0);
   const headerRef = useRef<HTMLElement | null>(null);
 
-  const { user, profile, signOut, isAdmin, isComposer } = useAuth();
+  const { user, profile, signOut, isAdmin, isComposer, managingComposerId } = useAuth();
+  const [activeComposerName, setActiveComposerName] = useState('');
   const { isMenuOpen, openMenu, closeMenu } = useMobileMenu();
   const { unreadCount } = useNotifications();
   const navigate = useNavigate();
   const location = useLocation();
+  const profileName = (profile as any)?.name || (profile as any)?.nome || user?.email?.split('@')[0] || 'Usuário';
+  const displayName = (isComposer && activeComposerName) || profileName;
   const {
     supported: voiceSupported,
     isListening: isVoiceListening,
@@ -54,6 +58,36 @@ const Header: React.FC = () => {
       setShowResults(false);
     },
   });
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const loadComposerName = async () => {
+      if (!user || !isComposer) {
+        setActiveComposerName('');
+        return;
+      }
+
+      try {
+        const activeComposer = await resolveActiveComposer({
+          userId: user.id,
+          userEmail: user.email,
+          managingComposerId,
+        });
+        if (!cancelled) {
+          setActiveComposerName(activeComposer?.nome_artistico || activeComposer?.nome || '');
+        }
+      } catch (error) {
+        console.warn('Não foi possível resolver o nome do compositor no Header:', error);
+        if (!cancelled) setActiveComposerName('');
+      }
+    };
+
+    void loadComposerName();
+    return () => {
+      cancelled = true;
+    };
+  }, [isComposer, managingComposerId, user?.email, user?.id]);
 
   // Fechar dropdowns ao clicar fora do header (sem overlay bloqueante)
   useEffect(() => {
@@ -377,19 +411,19 @@ const Header: React.FC = () => {
                   src={buildAvatarUrl({
                     id: String((user as any)?.id || ''),
                     avatar_url: (profile as any)?.avatar_url || '',
-                    name: (profile as any)?.name || (profile as any)?.nome || user?.email || 'Usuário'
+                    name: displayName
                   })}
-                  alt={(profile as any)?.name || (profile as any)?.nome || 'User'}
+                  alt={displayName}
                   className="w-8 h-8 rounded-full object-cover"
                   referrerPolicy="no-referrer"
                   onError={(e) => {
                     const target = e.currentTarget as HTMLImageElement;
-                    const name = (profile as any)?.name || (profile as any)?.nome || user?.email || 'Usuário';
+                    const name = displayName;
                     target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=1db954&color=fff&size=200`;
                   }}
                 />
                 <span className="text-sm font-medium text-text-primary">
-                  {(profile as any)?.name || (profile as any)?.nome || user.email?.split('@')[0] || 'Usuário'}
+                  {displayName}
                 </span>
                 <ChevronDown className="hidden sm:block w-4 h-4 text-text-muted" />
               </button>
@@ -402,7 +436,7 @@ const Header: React.FC = () => {
                   {/* User Info Header */}
                   <div className="px-4 py-3 border-b border-gray-700">
                     <p className="text-sm font-semibold text-white truncate">
-                      {(profile as any)?.name || (profile as any)?.nome || 'Usuário'}
+                      {displayName}
                     </p>
                     <p className="text-xs text-text-muted truncate">
                       {profile?.email || user?.email}
