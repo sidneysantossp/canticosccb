@@ -80,7 +80,7 @@ export const hinosApi = {
     try {
       const filters: Record<string, string> = {
         select: 'id,numero,titulo,compositor_nome,compositor_id,categoria,cover_url,audio_url,duracao,status,ativo,created_at',
-        status: 'eq.pending',
+        status: 'eq.draft',
         order: 'created_at.desc',
       };
 

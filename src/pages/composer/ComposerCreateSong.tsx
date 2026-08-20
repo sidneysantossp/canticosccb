@@ -292,18 +292,22 @@ const ComposerCreateSong: React.FC = () => {
         return num;
       };
 
-      // 5) Montar payload compatível com tabela 'hinos'
+      // 5) Montar payload compatível com tabela 'hinos'. A base de produção
+      // aceita draft/published/archived; “pending” é estado de revisão da UI,
+      // mas não é um valor válido no constraint hinos_status_check.
+      const persistedStatus = formData.status === 'pending' ? 'draft' : formData.status;
       const songData: any = {
         numero: formData.number ? parseInt(formData.number) : undefined,
         titulo: formData.title.trim(),
         compositor: compositorNome,
+        compositor_nome: compositorNome,
         categoria: categoriaNome,
         audio_url: audioUrl,
         cover_url: coverUrl,
         duracao: normalizeDuration(formData.duration),
         letra: formData.lyrics || undefined,
-        ativo: formData.status === 'published' ? 1 : 0,
-        status: formData.status,
+        ativo: persistedStatus === 'published' ? 1 : 0,
+        status: persistedStatus,
       };
 
       // Vincular ao compositor_id para que o hino apareça nos álbuns
@@ -597,7 +601,7 @@ const ComposerCreateSong: React.FC = () => {
                 <p className="text-white/80 text-sm">{isEditMode ? 'Hino atualizado com sucesso!' : 'Hino enviado com sucesso!'}</p>
               </div>
             </div>
-            <p className="text-white/80 text-sm mb-6">Status: Em análise pelo Admin. Você será notificado após a revisão.</p>
+            <p className="text-white/80 text-sm mb-6">Status: Rascunho enviado. A equipa administrativa deverá revisar e publicar este hino.</p>
             <div className="flex justify-end">
               <button
                 onClick={() => { setShowSuccessModal(false); navigate('/composer/songs'); }}
