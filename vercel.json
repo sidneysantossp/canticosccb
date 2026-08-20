@@ -63,7 +63,7 @@
     },
     {
       "source": "/auth/callback",
-      "destination": "/index.html"
+      "destination": "/"
     },
     {
       "source": "/((?!api(?:/|$))(?!.*\\.(?:png|jpg|jpeg|gif|svg|ico|css|js|webmanifest|json|woff|woff2|ttf|eot|pdf|zip|mp3|mp4|webm|ogg)$).*)",
