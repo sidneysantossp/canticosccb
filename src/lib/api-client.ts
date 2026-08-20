@@ -405,12 +405,12 @@ export const compositoresApi = {
         });
         if (byEmail.length > 0) {
           const r = byEmail[0];
-          // Auto-vincular user_id para não precisar de fallback novamente
-          try {
-            await supabaseUpdate('composers', { id: `eq.${r.id}` }, { user_id: userId });
-          } catch (linkErr) {
-            console.warn('⚠️ [getByUsuarioId] Falha ao vincular user_id:', linkErr);
-          }
+          // Auto-vincular em segundo plano: a resolução do perfil não pode ficar
+          // bloqueada por uma escrita protegida ou por uma instabilidade de rede.
+          void supabaseUpdate('composers', { id: `eq.${r.id}` }, { user_id: userId })
+            .catch((linkErr) => {
+              console.warn('⚠️ [getByUsuarioId] Falha ao vincular user_id:', linkErr);
+            });
           return {
             data: {
               ...r,
