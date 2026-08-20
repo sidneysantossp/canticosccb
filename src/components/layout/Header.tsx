@@ -85,8 +85,12 @@ const Header: React.FC = () => {
     };
 
     void loadComposerName();
+    const retryId = window.setTimeout(() => {
+      if (!cancelled) void loadComposerName();
+    }, 1500);
     return () => {
       cancelled = true;
+      window.clearTimeout(retryId);
     };
   }, [isComposer, isComposerArea, managingComposerId, user?.email, user?.id]);
 
