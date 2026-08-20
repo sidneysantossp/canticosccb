@@ -182,7 +182,7 @@ async function main() {
   console.log('🗺️  Generating sitemap.xml...');
   const today = new Date().toISOString().split('T')[0];
   const staticLastmod = process.env.SITEMAP_STATIC_LASTMOD || '';
-  const urls = [];
+  let urls = [];
 
   // Static pages
   urls.push(urlEntry('/', staticLastmod, 'daily', '1.0'));
@@ -252,7 +252,7 @@ async function main() {
 
   // Compositores
   console.log('  🎵 Fetching compositores...');
-  const compositores = await supabaseFetch('composer_public_profiles', 'id,name,artistic_name,slug', {
+  const compositores = await supabaseFetch('composer_public_profiles', 'id,name,artistic_name,slug,updated_at,created_at', {
     'order': 'name.asc',
     'limit': '2000',
   });
@@ -328,6 +328,13 @@ async function main() {
   for (const playlist of playlists) {
     const mod = (playlist.updated_at || playlist.created_at || today).split('T')[0];
     urls.push(urlEntry(buildPlaylistUrl(playlist.id), mod, 'weekly', '0.6'));
+  }
+
+  // Hubs de cifras sem qualquer item publicado não devem ser promovidos no índice.
+  // As rotas continuam acessíveis na aplicação e podem ser reexpostas quando houver conteúdo real.
+  if (cifras.length === 0 && cifrasV2.length === 0) {
+    const emptyCifraHubs = new Set(['/cifras', '/cifras-hinos-ccb', '/cifras-violao-ccb', '/cifras-ukulele-ccb', '/cifras-teclado-ccb']);
+    urls = urls.filter((entry) => ![...emptyCifraHubs].some((pathPart) => entry.includes(`<loc>${SITE_URL}${pathPart}</loc>`)));
   }
 
   // Build XML

@@ -59,7 +59,11 @@ for (const item of dynamic404Cases) {
   const response = await fetch(new URL(path, site), { headers: { "user-agent": ua } });
   const html = await response.text();
   const robots = matchOne(html, /<meta\s+name="robots"\s+content="([^"]+)"/i);
-  check(label + " status", response.status === 404, String(response.status));
+  const dependencyUnavailable = response.status === 503;
+  check(label + " status", response.status === 404 || dependencyUnavailable, String(response.status));
+  if (dependencyUnavailable) {
+    check(label + " 503 retry-after", Boolean(response.headers.get("retry-after")), response.headers.get("retry-after") || "absent");
+  }
   check(label + " robots noindex follow", /noindex\s*,\s*follow/i.test(robots), robots || "absent");
   check(label + " no canonical", !/<link[^>]*rel="canonical"/i.test(html), "canonical=" + (/<link[^>]*rel="canonical"/i.test(html) ? "1" : "0"));
   check(label + " one H1", [...html.matchAll(/<h1\b[^>]*>/gi)].length === 1, String([...html.matchAll(/<h1\b[^>]*>/gi)].length));

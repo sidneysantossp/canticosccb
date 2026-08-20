@@ -1826,7 +1826,7 @@ export default async function handler(req: Request): Promise<Response> {
         "Content-Type": "text/html; charset=utf-8",
         "Cache-Control": "no-store",
         "X-Robots-Tag": "noindex, follow",
-        "Retry-After": "60",
+        "Retry-After": "120",
       },
     });
   }
@@ -1863,7 +1863,7 @@ export default async function handler(req: Request): Promise<Response> {
     status: pageMeta.status || 200,
     headers: {
       'Content-Type': 'text/html; charset=utf-8',
-      'Cache-Control': 'public, s-maxage=3600, stale-while-revalidate=86400',
+      'Cache-Control': 'public, s-maxage=86400, stale-while-revalidate=604800',
       'Vary': 'User-Agent',
       'X-Robots-Tag': pageMeta.noindex ? 'noindex, follow' : 'index, follow',
     },
