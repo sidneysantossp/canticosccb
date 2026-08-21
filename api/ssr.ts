@@ -1054,47 +1054,54 @@ async function handleCategoria(slug: string): Promise<PageMeta | null> {
   const canonical = `${SITE_URL}/categoria/${slug}`;
 
   let relatedSongIds: string[] = [];
-  const categoryRelations = await supaFetch('hino_categorias', {
-    categoria_id: `eq.${categoryId}`,
-    select: 'hino_id',
-    limit: '1000',
-  });
-  if (categoryRelations.length > 0) {
-    relatedSongIds = categoryRelations
-      .map((row: any) => String(row.hino_id || ''))
-      .filter(Boolean);
-  }
-
   let songs: any[] = [];
-  if (relatedSongIds.length > 0) {
-    songs = await supaFetch('hinos', {
-      id: `in.(${relatedSongIds.join(',')})`,
+  let dataUnavailable = false;
+  try {
+    const categoryRelations = await supaFetch('hino_categorias', {
+      categoria_id: `eq.${categoryId}`,
+      select: 'hino_id',
+      limit: '1000',
+    });
+    if (categoryRelations.length > 0) {
+      relatedSongIds = categoryRelations
+        .map((row: any) => String(row.hino_id || ''))
+        .filter(Boolean);
+    }
+    if (relatedSongIds.length > 0) {
+      songs = await supaFetch('hinos', {
+        id: `in.(${relatedSongIds.join(',')})`,
+        'or': '(ativo.eq.true,ativo.eq.1)',
+        select: 'id,numero,titulo,compositor_nome',
+        order: 'numero.asc',
+        limit: '200',
+      });
+    }
+    const fallbackSongs = await supaFetch('hinos', {
+      categoria: `ilike.%${categoryName}%`,
       'or': '(ativo.eq.true,ativo.eq.1)',
       select: 'id,numero,titulo,compositor_nome',
       order: 'numero.asc',
       limit: '200',
     });
-  }
-
-  const fallbackSongs = await supaFetch('hinos', {
-    categoria: `ilike.%${categoryName}%`,
-    'or': '(ativo.eq.true,ativo.eq.1)',
-    select: 'id,numero,titulo,compositor_nome',
-    order: 'numero.asc',
-    limit: '200',
-  });
-
-  const mergedSongs = [...songs];
-  const seen = new Set(mergedSongs.map((song: any) => String(song.id)));
-  for (const song of fallbackSongs) {
-    const key = String(song.id);
-    if (!seen.has(key)) {
-      mergedSongs.push(song);
-      seen.add(key);
+    const mergedFallback = [...songs];
+    const fallbackSeen = new Set(mergedFallback.map((song: any) => String(song.id)));
+    for (const song of fallbackSongs) {
+      const key = String(song.id);
+      if (!fallbackSeen.has(key)) {
+        mergedFallback.push(song);
+        fallbackSeen.add(key);
+      }
     }
+    songs = mergedFallback;
+  } catch (error) {
+    dataUnavailable = true;
+    console.warn(`[SSR] /categoria/${slug} dynamic content unavailable; serving safe fallback`, error);
   }
 
+
+    const mergedSongs = songs;
   const listItems = mergedSongs.slice(0, 120);
+
   const songListHtml = listItems.length > 0
     ? `<ul>${listItems.map((song: any) => {
       const cleanTitle = normalizeHymnTitle(song.titulo || '', song.numero);
@@ -1107,6 +1114,7 @@ async function handleCategoria(slug: string): Promise<PageMeta | null> {
     description,
     canonical,
     ogImage: category.imagem_url || undefined,
+    noindex: dataUnavailable || mergedSongs.length === 0,
     schemas: [
       {
         '@context': 'https://schema.org',
@@ -1130,6 +1138,7 @@ async function handleCategoria(slug: string): Promise<PageMeta | null> {
       <h1>${esc(categoryName)}</h1>
       <p>${esc(description)}</p>
       <section><h2>Hinos desta categoria</h2>${songListHtml}</section>
+      ${dataUnavailable ? '<p>O catálogo dinâmico desta categoria está temporariamente indisponível. Volte mais tarde para ver os hinos publicados.</p>' : ''}
       <footer><p><a href="${SITE_URL}">Cânticos CCB</a> — Plataforma de hinos da Congregação Cristã no Brasil</p></footer>`,
   };
 }
