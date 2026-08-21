@@ -712,7 +712,9 @@ async function handleCifra(slug: string): Promise<PageMeta | null> {
         : Promise.resolve([] as any[]),
     ]);
     const relatedLyric = relatedLyricRows[0];
-    const displayTitle = String(c.song_title || c.version_title || 'Cifra CCB');
+    const displayTitle = String(c.song_title || c.version_title || 'Cifra CCB')
+      .replace(/^\s*(?:hino\s*)?\d+\s*(?:ccb)?\s*[-–—:.]\s*/i, '')
+      .trim();
     const title = relatedNumber
       ? `CIFRA Hino ${relatedNumber} - ${displayTitle} - Cânticos CCB`
       : `CIFRA ${displayTitle} - Cânticos CCB`;

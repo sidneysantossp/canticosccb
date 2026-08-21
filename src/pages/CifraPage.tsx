@@ -1282,7 +1282,9 @@ const CifraPage: React.FC = () => {
   };
   const instrumentHubUrl = instrumentHubMap[cifra.instrument] || '/cifras';
   const relatedNumber = relatedHymn?.numero || relatedLyric?.numero || (isCifraV2(cifra) ? cifra.hinario_numero : null) || extractHymnNumber(cifra.title);
-  const displayCifraTitle = stripTrailingArtistFromTitle(cifra.title, cifra.artist);
+  const displayCifraTitle = stripTrailingArtistFromTitle(cifra.title, cifra.artist)
+    .replace(/^\s*(?:hino\s*)?\d+\s*(?:ccb)?\s*[-–—:.]\s*/i, '')
+    .trim();
   const hinarioRange = getHinarioRangeForNumero(relatedNumber);
   const cifraTitle = relatedNumber
     ? `CIFRA Hino ${relatedNumber} - ${displayCifraTitle} - Cânticos CCB`
