@@ -712,15 +712,15 @@ async function handleCifra(slug: string): Promise<PageMeta | null> {
         : Promise.resolve([] as any[]),
     ]);
     const relatedLyric = relatedLyricRows[0];
-    const displayTitle = String(c.song_title || c.version_title || 'Cifra CCB')
+    const displayTitle = String(relatedHymn?.titulo || relatedLyric?.titulo || c.song_title || c.version_title || 'Cifra CCB')
       .replace(/^\s*(?:hino\s*)?\d+\s*(?:ccb)?\s*[-–—:.]\s*/i, '')
       .trim();
     const instrumentLabel = ({ violao: 'Violão', ukulele: 'Ukulele', teclado: 'Teclado', cavaco: 'Cavaco', guitarra: 'Guitarra' } as Record<string, string>)[String(c.instrument)] || String(c.instrument || 'instrumento');
     const title = relatedNumber
-      ? `CIFRA Hino ${relatedNumber} - ${displayTitle} - ${instrumentLabel} - Cânticos CCB`
-      : `CIFRA ${displayTitle} - ${instrumentLabel} - Cânticos CCB`;
+      ? `CIFRA Hino ${relatedNumber} CCB - ${displayTitle} - ${instrumentLabel} | Cânticos CCB`
+      : `CIFRA ${displayTitle} - ${instrumentLabel} | Cânticos CCB`;
     const desc = [
-      relatedNumber ? `Cifra Hino ${relatedNumber} - ${displayTitle} - Cânticos CCB para ${instrumentLabel}.` : `Cifra CCB de ${displayTitle} para ${instrumentLabel}.`,
+      relatedNumber ? `Cifra Hino ${relatedNumber} CCB - ${displayTitle} para ${instrumentLabel}.` : `Cifra CCB de ${displayTitle} para ${instrumentLabel}.`,
       c.composer_name ? `Artista: ${c.composer_name}.` : '',
       `Tom: ${c.original_key || 'original'}. Instrumento disponível: ${instrumentLabel}.`,
       'Termos relacionados: cifras para Violão, Ukulele e Teclado, com acordes e transposição de tom quando publicados.',
@@ -785,16 +785,16 @@ async function handleCifra(slug: string): Promise<PageMeta | null> {
       : Promise.resolve([] as any[]),
   ]);
   const relatedLyric = relatedLyricRows[0];
-  const legacyDisplayTitle = String(c.title || 'Cifra CCB')
+  const legacyDisplayTitle = String(relatedHymn?.titulo || relatedLyric?.titulo || c.title || 'Cifra CCB')
     .replace(/^\s*(?:hino\s*)?\d+\s*(?:ccb)?\s*[-–—:.]\s*/i, '')
     .replace(c.artist ? new RegExp(`\\s+-\\s+${String(c.artist).replace(/[.*+?^${}()|[\\]\\\\]/g, '\\$&')}\\s*$`, 'i') : /$^/, '')
     .trim();
   const legacyInstrumentLabel = ({ violao: 'Violão', ukulele: 'Ukulele', teclado: 'Teclado', cavaco: 'Cavaco', guitarra: 'Guitarra' } as Record<string, string>)[String(c.instrumento || 'violao')] || String(c.instrumento || 'Violão');
   const title = relatedHymn?.numero
-    ? `CIFRA Hino ${relatedHymn.numero} - ${legacyDisplayTitle} - ${legacyInstrumentLabel} - Cânticos CCB`
-    : `CIFRA ${legacyDisplayTitle} - ${legacyInstrumentLabel} - Cânticos CCB`;
+    ? `CIFRA Hino ${relatedHymn.numero} CCB - ${legacyDisplayTitle} - ${legacyInstrumentLabel} | Cânticos CCB`
+    : `CIFRA ${legacyDisplayTitle} - ${legacyInstrumentLabel} | Cânticos CCB`;
   const desc = [
-    relatedHymn?.numero ? `Cifra Hino ${relatedHymn.numero} - ${legacyDisplayTitle} - Cânticos CCB para ${legacyInstrumentLabel}.` : `Cifra CCB de ${legacyDisplayTitle} para ${legacyInstrumentLabel}.`,
+    relatedHymn?.numero ? `Cifra Hino ${relatedHymn.numero} CCB - ${legacyDisplayTitle} para ${legacyInstrumentLabel}.` : `Cifra CCB de ${legacyDisplayTitle} para ${legacyInstrumentLabel}.`,
     c.artist ? `Artista: ${c.artist}.` : '',
     `Tom: ${c.original_key || 'original'}. Instrumento disponível: ${legacyInstrumentLabel}.`,
     'Termos relacionados: cifras para Violão, Ukulele e Teclado, com acordes e transposição de tom quando publicados.',
