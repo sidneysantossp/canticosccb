@@ -1283,7 +1283,9 @@ const CifraPage: React.FC = () => {
   const instrumentHubUrl = instrumentHubMap[cifra.instrument] || '/cifras';
   const relatedNumber = relatedHymn?.numero || relatedLyric?.numero || (isCifraV2(cifra) ? cifra.hinario_numero : null) || extractHymnNumber(cifra.title);
   const displayCifraTitle = stripTrailingArtistFromTitle(relatedHymn?.titulo || relatedLyric?.titulo || cifra.title, cifra.artist)
+    .replace(/\s*[-–—]\s*Elias Brandão\s*$/i, '')
     .replace(/^\s*(?:hino\s*)?\d+\s*(?:ccb)?\s*[-–—:.]\s*/i, '')
+    .replace(/\s{2,}/g, ' ')
     .trim();
   const hinarioRange = getHinarioRangeForNumero(relatedNumber);
   const cifraTitle = relatedNumber

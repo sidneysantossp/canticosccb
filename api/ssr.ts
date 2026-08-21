@@ -713,7 +713,9 @@ async function handleCifra(slug: string): Promise<PageMeta | null> {
     ]);
     const relatedLyric = relatedLyricRows[0];
     const displayTitle = String(relatedHymn?.titulo || relatedLyric?.titulo || c.song_title || c.version_title || 'Cifra CCB')
+      .replace(/\s*[-–—]\s*Elias Brandão\s*$/i, '')
       .replace(/^\s*(?:hino\s*)?\d+\s*(?:ccb)?\s*[-–—:.]\s*/i, '')
+      .replace(/\s{2,}/g, ' ')
       .trim();
     const instrumentLabel = ({ violao: 'Violão', ukulele: 'Ukulele', teclado: 'Teclado', cavaco: 'Cavaco', guitarra: 'Guitarra' } as Record<string, string>)[String(c.instrument)] || String(c.instrument || 'instrumento');
     const title = relatedNumber
@@ -786,7 +788,9 @@ async function handleCifra(slug: string): Promise<PageMeta | null> {
   ]);
   const relatedLyric = relatedLyricRows[0];
   const legacyDisplayTitle = String(relatedHymn?.titulo || relatedLyric?.titulo || c.title || 'Cifra CCB')
+    .replace(/\s*[-–—]\s*Elias Brandão\s*$/i, '')
     .replace(/^\s*(?:hino\s*)?\d+\s*(?:ccb)?\s*[-–—:.]\s*/i, '')
+    .replace(/\s{2,}/g, ' ')
     .replace(c.artist ? new RegExp(`\\s+-\\s+${String(c.artist).replace(/[.*+?^${}()|[\\]\\\\]/g, '\\$&')}\\s*$`, 'i') : /$^/, '')
     .trim();
   const legacyInstrumentLabel = ({ violao: 'Violão', ukulele: 'Ukulele', teclado: 'Teclado', cavaco: 'Cavaco', guitarra: 'Guitarra' } as Record<string, string>)[String(c.instrumento || 'violao')] || String(c.instrumento || 'Violão');
