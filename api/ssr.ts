@@ -784,8 +784,21 @@ async function handleCifra(slug: string): Promise<PageMeta | null> {
       : Promise.resolve([] as any[]),
   ]);
   const relatedLyric = relatedLyricRows[0];
-  const title = `${relatedHymn?.numero ? `Hino ${relatedHymn.numero} CCB - ` : ''}${c.title || 'Cifra CCB'}${c.artist ? ` — ${c.artist}` : ''} | Tom ${c.original_key || ''} | Cânticos CCB`;
-  const desc = `Cifra de "${c.title || ''}"${c.artist ? ` por ${c.artist}` : ''} em tom ${c.original_key || 'original'}.${relatedHymn ? ` Página do hino ${relatedHymn.numero || ''} disponível.` : ''}${relatedLyric ? ` Letra no Hinário ${relatedLyric.numero}.` : ''} Cifras de hinos da CCB com transposição de tom.`;
+  const legacyDisplayTitle = String(c.title || 'Cifra CCB')
+    .replace(/^\s*(?:hino\s*)?\d+\s*(?:ccb)?\s*[-–—:.]\s*/i, '')
+    .replace(c.artist ? new RegExp(`\\s+-\\s+${String(c.artist).replace(/[.*+?^${}()|[\\]\\\\]/g, '\\$&')}\\s*$`, 'i') : /$^/, '')
+    .trim();
+  const title = relatedHymn?.numero
+    ? `CIFRA Hino ${relatedHymn.numero} - ${legacyDisplayTitle} - Cânticos CCB`
+    : `CIFRA ${legacyDisplayTitle} - Cânticos CCB`;
+  const desc = [
+    relatedHymn?.numero ? `Cifra Hino ${relatedHymn.numero} - ${legacyDisplayTitle} - Cânticos CCB.` : `Cifra CCB de ${legacyDisplayTitle}.`,
+    c.artist ? `Artista: ${c.artist}.` : '',
+    `Tom: ${c.original_key || 'original'}. Instrumento disponível: violão.`,
+    'Termos relacionados: cifras para Violão, Ukulele e Teclado, com acordes e transposição de tom quando publicados.',
+    relatedHymn ? `Página do hino ${relatedHymn.numero || ''} disponível.` : '',
+    relatedLyric ? `Letra disponível no Hinário ${relatedLyric.numero}.` : '',
+  ].filter(Boolean).join(' ');
   const canonical = `${SITE_URL}/cifra/${slug}`;
 
   const schema = {
