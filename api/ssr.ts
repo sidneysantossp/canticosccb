@@ -1254,7 +1254,16 @@ async function handleHymnHub(pathname: string): Promise<PageMeta | null> {
   const config = HYMN_HUBS[pathname];
   if (!config) return null;
 
-  const songs = await fetchHymnsByKeyword(config.keyword);
+  let songs: any[] = [];
+  let dataUnavailable = false;
+  try {
+    songs = await fetchHymnsByKeyword(config.keyword);
+  } catch (error) {
+    // Não inventar itens de acervo: servir apenas o conteúdo editorial estático
+    // enquanto o catálogo dinâmico estiver indisponível.
+    dataUnavailable = true;
+    console.warn(`[SSR] ${pathname} dynamic content unavailable; serving safe fallback`, error);
+  }
   const songListHtml = songs.length > 0
     ? `<ul>${songs.slice(0, 120).map((song: any) => {
       const cleanTitle = normalizeHymnTitle(song.titulo || '', song.numero);
@@ -1268,7 +1277,7 @@ async function handleHymnHub(pathname: string): Promise<PageMeta | null> {
     title: config.title,
     description: config.description,
     canonical: `${SITE_URL}${pathname}`,
-    noindex: songs.length === 0,
+    noindex: dataUnavailable || songs.length === 0,
     schemas: [
       {
         '@context': 'https://schema.org',
@@ -1291,6 +1300,7 @@ async function handleHymnHub(pathname: string): Promise<PageMeta | null> {
       <h1>${esc(config.heading)}</h1>
       <p>${esc(config.description)}</p>
       <section><h2>Hinos publicados</h2>${songListHtml}</section>
+      ${dataUnavailable ? '<p>O catálogo dinâmico está temporariamente indisponível. Consulte o <a href="https://www.canticosccb.com.br/hinario">Hinário</a> ou volte mais tarde para ver os itens publicados.</p>' : ''}
       <footer><p><a href="${SITE_URL}">Cânticos CCB</a> — Plataforma de hinos da Congregação Cristã no Brasil</p></footer>`,
   };
 }
