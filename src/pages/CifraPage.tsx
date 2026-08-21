@@ -1287,10 +1287,10 @@ const CifraPage: React.FC = () => {
     .trim();
   const hinarioRange = getHinarioRangeForNumero(relatedNumber);
   const cifraTitle = relatedNumber
-    ? `CIFRA Hino ${relatedNumber} - ${displayCifraTitle} - Cânticos CCB`
-    : `CIFRA ${displayCifraTitle} - Cânticos CCB`;
+    ? `CIFRA Hino ${relatedNumber} - ${displayCifraTitle} - ${instrumentLabel} - Cânticos CCB`
+    : `CIFRA ${displayCifraTitle} - ${instrumentLabel} - Cânticos CCB`;
   const cifraDescription = [
-    relatedNumber ? `Cifra Hino ${relatedNumber} - ${displayCifraTitle} - Cânticos CCB.` : `Cifra CCB de ${displayCifraTitle}.`,
+    relatedNumber ? `Cifra Hino ${relatedNumber} - ${displayCifraTitle} - Cânticos CCB para ${instrumentLabel}.` : `Cifra CCB de ${displayCifraTitle} para ${instrumentLabel}.`,
     cifra.artist ? `Artista: ${cifra.artist}.` : '',
     `Tom: ${cifra.original_key}. Instrumento disponível: ${instrumentLabel}.`,
     'Termos relacionados: cifras para Violão, Ukulele e Teclado, com acordes e transposição de tom quando publicados.',
