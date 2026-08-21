@@ -1284,16 +1284,16 @@ const CifraPage: React.FC = () => {
   const relatedNumber = relatedHymn?.numero || relatedLyric?.numero || (isCifraV2(cifra) ? cifra.hinario_numero : null) || extractHymnNumber(cifra.title);
   const displayCifraTitle = stripTrailingArtistFromTitle(cifra.title, cifra.artist);
   const hinarioRange = getHinarioRangeForNumero(relatedNumber);
-  const cifraTitle = (isCifraV2(cifra) ? cifra.seo_title : null) || (relatedNumber
-    ? `Hino ${relatedNumber} CCB - ${displayCifraTitle} | Cifra`
-    : `${displayCifraTitle} | Cifra`);
-  const cifraDescription = (isCifraV2(cifra) ? cifra.seo_description : null) || [
-    relatedNumber ? `Cifra do Hino ${relatedNumber} CCB.` : `Cifra de ${cifra.title}.`,
+  const cifraTitle = relatedNumber
+    ? `CIFRA Hino ${relatedNumber} - ${displayCifraTitle} - Cânticos CCB`
+    : `CIFRA ${displayCifraTitle} - Cânticos CCB`;
+  const cifraDescription = [
+    relatedNumber ? `Cifra Hino ${relatedNumber} - ${displayCifraTitle} - Cânticos CCB.` : `Cifra CCB de ${displayCifraTitle}.`,
     cifra.artist ? `Artista: ${cifra.artist}.` : '',
-    `Tom: ${cifra.original_key}.`,
-    `Acordes e navegacao para ${instrumentLabel}.`,
-    relatedLyric ? `Letra disponivel no Hinario ${relatedLyric.numero}.` : '',
-    relatedHymn ? 'Pagina de audio relacionada disponivel.' : '',
+    `Tom: ${cifra.original_key}. Instrumento disponível: ${instrumentLabel}.`,
+    'Termos relacionados: cifras para Violão, Ukulele e Teclado, com acordes e transposição de tom quando publicados.',
+    relatedLyric ? `Letra disponível no Hinário ${relatedLyric.numero}.` : '',
+    relatedHymn ? 'Página de áudio relacionada disponível.' : '',
   ].filter(Boolean).join(' ');
   const cifraKeywords = (isCifraV2(cifra) ? cifra.seo_keywords : null) || [
     cifra.title,

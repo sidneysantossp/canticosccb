@@ -713,8 +713,17 @@ async function handleCifra(slug: string): Promise<PageMeta | null> {
     ]);
     const relatedLyric = relatedLyricRows[0];
     const displayTitle = String(c.song_title || c.version_title || 'Cifra CCB');
-    const title = c.seo_title || `${relatedNumber ? `Hino ${relatedNumber} CCB - ` : ''}${displayTitle}${c.composer_name ? ` — ${c.composer_name}` : ''} | Tom ${c.original_key || ''} | Cânticos CCB`;
-    const desc = c.seo_description || `Cifra de "${displayTitle}"${c.composer_name ? ` por ${c.composer_name}` : ''} em tom ${c.original_key || 'original'}.${relatedHymn ? ` Página do hino ${relatedHymn.numero || ''} disponível.` : ''}${relatedLyric ? ` Letra no Hinário ${relatedLyric.numero}.` : ''} Cifras de hinos da CCB com transposição de tom.`;
+    const title = relatedNumber
+      ? `CIFRA Hino ${relatedNumber} - ${displayTitle} - Cânticos CCB`
+      : `CIFRA ${displayTitle} - Cânticos CCB`;
+    const desc = [
+      relatedNumber ? `Cifra Hino ${relatedNumber} - ${displayTitle} - Cânticos CCB.` : `Cifra CCB de ${displayTitle}.`,
+      c.composer_name ? `Artista: ${c.composer_name}.` : '',
+      `Tom: ${c.original_key || 'original'}. Instrumento disponível: ${c.instrument || 'instrumento musical'}.`,
+      'Termos relacionados: cifras para Violão, Ukulele e Teclado, com acordes e transposição de tom quando publicados.',
+      relatedHymn ? `Página do hino ${relatedHymn.numero || ''} disponível.` : '',
+      relatedLyric ? `Letra disponível no Hinário ${relatedLyric.numero}.` : '',
+    ].filter(Boolean).join(' ');
     const canonical = `${SITE_URL}/cifra/${slug}`;
 
     const schema = {

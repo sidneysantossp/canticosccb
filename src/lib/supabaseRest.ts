@@ -17,7 +17,6 @@ const EMERGENCY_FIRST_TABLES = new Set([
   'hino_categorias',
   'hinario',
   'site_config',
-  'cifras',
   'bible_narrated',
   'user_follows',
 ]);
