@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Search, FileText, AlertCircle, RefreshCw, Music, Music2 } from 'lucide-react';
 import SEOHead from '@/components/SEO/SEOHead';
+import CifrasFeatureBanner from '@/components/home/CifrasFeatureBanner';
 import { generateItemListSchema, generateBreadcrumbSchema } from '@/utils/schemaGenerator';
 import { Cifra, INSTRUMENTS, CATEGORIES } from '@/api/cifras';
 import { fetchMergedPublicCifrasListDetailed, type PublicCifraPageData } from '@/lib/cifras-v2';
@@ -139,6 +140,11 @@ const CifrasListPage: React.FC = () => {
             Cifras de Teclado
           </Link>
         </div>
+      </div>
+
+      {/* Hero específico da área de cifras */}
+      <div className="mb-6 -mx-4 sm:-mx-0">
+        <CifrasFeatureBanner />
       </div>
 
       {/* Search & Filters */}
