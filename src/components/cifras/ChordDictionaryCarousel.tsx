@@ -467,7 +467,7 @@ const ChordPopup: React.FC<ChordPopupProps> = ({ item, onClose }) => {
   return (
     <div className="fixed inset-0 z-[80] pointer-events-none" aria-live="polite">
       <div
-        className="pointer-events-auto absolute w-[76px] -translate-x-1/2 -translate-y-1/2 rounded-2xl border border-white/15 bg-[#1b1f1f]/98 p-1.5 text-center shadow-2xl shadow-black/60 backdrop-blur-xl sm:w-[76px]"
+        className="pointer-events-auto absolute box-border w-[76px] -translate-x-1/2 -translate-y-1/2 rounded-2xl border border-white/15 bg-[#1b1f1f]/98 px-2.5 py-1.5 text-center shadow-2xl shadow-black/60 backdrop-blur-xl sm:w-[76px]"
         style={{ left: `${position.x}px`, top: `${position.y}px` }}
       >
         <div
@@ -478,9 +478,8 @@ const ChordPopup: React.FC<ChordPopupProps> = ({ item, onClose }) => {
           onPointerCancel={() => setIsDragging(false)}
         >
           <span className="sr-only">Arraste para mover</span>
-          <button type="button" onClick={onClose} className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-white/10 bg-white/[0.06] text-gray-400 transition-colors hover:border-primary-500/50 hover:bg-primary-500/15 hover:text-white" aria-label="Fechar acorde"><X className="h-4 w-4" /></button>
+          <button type="button" onClick={onClose} className="inline-flex h-6 w-6 items-center justify-center rounded-full border border-white/10 bg-white/[0.06] text-gray-400 transition-colors hover:border-primary-500/50 hover:bg-primary-500/15 hover:text-white" aria-label="Fechar acorde"><X className="h-3 w-3" /></button>
         </div>
-        <p className="mb-1 text-sm font-black text-primary-300">{item.chord}</p>
         <div className="relative mx-auto flex min-h-[92px] items-center justify-center overflow-hidden rounded-xl border border-white/10 bg-black/15 py-0.5">
           {item.kind === 'database' ? (
             databaseDiagram ? <FretboardShapeSVG diagram={databaseDiagram} /> : <span className="text-sm text-gray-400">Diagrama indisponível</span>
@@ -561,7 +560,7 @@ const DatabaseChordShapeCard: React.FC<DatabaseChordShapeCardProps> = ({
 
   return (
     <div
-      className="group relative w-[76px] flex-shrink-0 snap-start cursor-pointer rounded-lg border border-white/10 bg-[#171a1a] px-1 py-1.5 text-center shadow-lg shadow-black/10 transition-all hover:-translate-y-1 hover:border-primary-500/50 hover:bg-[#1c2020] sm:w-[76px] sm:min-w-0 sm:max-w-none sm:px-1.5 sm:py-1.5"
+      className="group relative box-border w-[76px] flex-shrink-0 snap-start cursor-pointer rounded-lg border border-white/10 bg-[#171a1a] px-2 py-1.5 text-center shadow-lg shadow-black/10 transition-all hover:-translate-y-1 hover:border-primary-500/50 hover:bg-[#1c2020] sm:w-[76px] sm:min-w-0 sm:max-w-none sm:px-2 sm:py-1.5"
       onClick={onOpen}
       onMouseEnter={onMouseEnter}
       onKeyDown={(event) => { if (event.key === 'Enter' || event.key === ' ') onOpen(); }}
@@ -730,7 +729,7 @@ const ChordDictionaryCarousel: React.FC<ChordDictionaryCarouselProps> = ({
           ) : (
             <div
               key={item.chord}
-              className="group relative w-[76px] flex-shrink-0 snap-start cursor-pointer rounded-lg border border-white/10 bg-[#171a1a] px-1 py-1.5 text-center shadow-lg shadow-black/10 transition-all hover:-translate-y-1 hover:border-primary-500/50 hover:bg-[#1c2020] sm:w-[76px] sm:px-1.5 sm:py-1.5"
+              className="group relative box-border w-[76px] flex-shrink-0 snap-start cursor-pointer rounded-lg border border-white/10 bg-[#171a1a] px-2 py-1.5 text-center shadow-lg shadow-black/10 transition-all hover:-translate-y-1 hover:border-primary-500/50 hover:bg-[#1c2020] sm:w-[76px] sm:px-2 sm:py-1.5"
               onClick={() => setActiveChord(item)}
               onMouseEnter={() => setActiveChord(item)}
               onKeyDown={(event) => { if (event.key === 'Enter' || event.key === ' ') setActiveChord(item); }}
