@@ -445,6 +445,10 @@ const ChordPopup: React.FC<ChordPopupProps> = ({ item, onClose }) => {
     : null;
 
   const beginDrag = (event: React.PointerEvent<HTMLDivElement>) => {
+    if ((event.target as HTMLElement).closest('button')) {
+      return;
+    }
+
     event.currentTarget.setPointerCapture(event.pointerId);
     const rect = event.currentTarget.parentElement?.getBoundingClientRect() || event.currentTarget.getBoundingClientRect();
     dragOrigin.current = {
@@ -478,7 +482,19 @@ const ChordPopup: React.FC<ChordPopupProps> = ({ item, onClose }) => {
           onPointerCancel={() => setIsDragging(false)}
         >
           <span className="sr-only">Arraste para mover</span>
-          <button type="button" onClick={onClose} className="inline-flex h-6 w-6 items-center justify-center rounded-full border border-white/10 bg-white/[0.06] text-gray-400 transition-colors hover:border-primary-500/50 hover:bg-primary-500/15 hover:text-white" aria-label="Fechar acorde"><X className="h-3 w-3" /></button>
+          <button
+            type="button"
+            onPointerDown={(event) => event.stopPropagation()}
+            onPointerUp={(event) => event.stopPropagation()}
+            onClick={(event) => {
+              event.stopPropagation();
+              onClose();
+            }}
+            className="inline-flex h-6 w-6 items-center justify-center rounded-full border border-white/10 bg-white/[0.06] text-gray-400 transition-colors hover:border-primary-500/50 hover:bg-primary-500/15 hover:text-white"
+            aria-label="Fechar acorde"
+          >
+            <X className="h-3 w-3" />
+          </button>
         </div>
         <div className="relative mx-auto flex min-h-[92px] items-center justify-center overflow-hidden rounded-xl border border-white/10 bg-black/15 py-0.5">
           {item.kind === 'database' ? (
