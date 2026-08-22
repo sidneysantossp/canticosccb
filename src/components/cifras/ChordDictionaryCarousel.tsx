@@ -1,5 +1,5 @@
 import React, { useMemo, useRef, useState } from 'react';
-import { Play } from 'lucide-react';
+import { Play, X } from 'lucide-react';
 import { getChordDiagram, parseChord, type ChordDiagram } from '@/utils/chordUtils';
 import {
   explainCifraChordNameMatch,
@@ -40,17 +40,17 @@ const ChordDiagramSVG: React.FC<ChordDiagramSVGProps> = ({ diagram, leftHanded =
   const { name, baseFret, barres } = diagram;
   const numStrings = 6;
   const numFrets = 5;
-  const stringSpacing = 16;
-  const fretSpacing = 18;
-  const startX = 14;
-  const startY = 30;
+  const stringSpacing = 13;
+  const fretSpacing = 14;
+  const startX = 12;
+  const startY = 25;
   const width = startX * 2 + stringSpacing * (numStrings - 1);
   const height = startY + fretSpacing * numFrets + 30;
   const frets = mirrorStringValues(diagram.frets, numStrings, leftHanded);
 
   return (
     <div className="inline-flex flex-col items-center">
-      <span className="mb-1 text-sm font-semibold text-primary-400">{name}</span>
+      <span className="mb-1 text-[13px] font-bold tracking-wide text-primary-300">{name}</span>
       <svg width={width} height={height} viewBox={`0 0 ${width} ${height}`} className="text-gray-300">
         {/* Nut or fret number */}
         {baseFret === 1 ? (
@@ -103,8 +103,8 @@ const ChordDiagramSVG: React.FC<ChordDiagramSVGProps> = ({ diagram, leftHanded =
               x={startX + first * stringSpacing - 4}
               y={y - 5}
               width={(last - first) * stringSpacing + 8}
-              height={10}
-              rx={5}
+              height={8}
+              rx={4}
               fill="#10B981"
               opacity={0.8}
             />
@@ -123,7 +123,7 @@ const ChordDiagramSVG: React.FC<ChordDiagramSVGProps> = ({ diagram, leftHanded =
               key={`dot-${stringIdx}`}
               cx={x}
               cy={y}
-              r={6}
+              r={5}
               fill="#10B981"
             />
           );
@@ -138,7 +138,7 @@ const ChordDiagramSVG: React.FC<ChordDiagramSVGProps> = ({ diagram, leftHanded =
                 key={`open-${stringIdx}`}
                 cx={x}
                 cy={startY - 10}
-                r={4}
+                r={3.5}
                 fill="none"
                 stroke="#9CA3AF"
                 strokeWidth={1.5}
@@ -267,17 +267,17 @@ const FretboardShapeSVG: React.FC<FretboardShapeSVGProps> = ({ diagram, leftHand
   const { name, baseFret, barres, stringCount } = diagram;
   const numStrings = Math.max(1, stringCount);
   const numFrets = 5;
-  const stringSpacing = numStrings <= 4 ? 18 : 16;
-  const fretSpacing = 18;
-  const startX = 14;
-  const startY = 30;
+  const stringSpacing = numStrings <= 4 ? 14 : 13;
+  const fretSpacing = 14;
+  const startX = 12;
+  const startY = 25;
   const width = startX * 2 + stringSpacing * (numStrings - 1);
   const height = startY + fretSpacing * numFrets + 30;
   const frets = mirrorStringValues(diagram.frets, numStrings, leftHanded);
 
   return (
     <div className="inline-flex flex-col items-center">
-      <span className="mb-1 text-sm font-semibold text-primary-400">{name}</span>
+      <span className="mb-1 text-[13px] font-bold tracking-wide text-primary-300">{name}</span>
       <svg width={width} height={height} viewBox={`0 0 ${width} ${height}`} className="text-gray-300">
         {baseFret === 1 ? (
           <rect x={startX - 1} y={startY - 2} width={stringSpacing * (numStrings - 1) + 2} height={3} fill="currentColor" rx={1} />
@@ -333,8 +333,8 @@ const FretboardShapeSVG: React.FC<FretboardShapeSVGProps> = ({ diagram, leftHand
               x={startX + first * stringSpacing - 4}
               y={y - 5}
               width={(last - first) * stringSpacing + 8}
-              height={10}
-              rx={5}
+              height={8}
+              rx={4}
               fill="#10B981"
               opacity={0.8}
             />
@@ -354,7 +354,7 @@ const FretboardShapeSVG: React.FC<FretboardShapeSVGProps> = ({ diagram, leftHand
               key={`dot-${stringIdx}`}
               cx={x}
               cy={y}
-              r={6}
+              r={5}
               fill="#10B981"
             />
           );
@@ -368,7 +368,7 @@ const FretboardShapeSVG: React.FC<FretboardShapeSVGProps> = ({ diagram, leftHand
                 key={`open-${stringIdx}`}
                 cx={x}
                 cy={startY - 10}
-                r={4}
+                r={3.5}
                 fill="none"
                 stroke="#9CA3AF"
                 strokeWidth={1.5}
@@ -467,21 +467,21 @@ const ChordPopup: React.FC<ChordPopupProps> = ({ item, onClose }) => {
   return (
     <div className="fixed inset-0 z-[80] pointer-events-none" aria-live="polite">
       <div
-        className="pointer-events-auto absolute w-[min(22rem,calc(100vw-2rem))] -translate-x-1/2 -translate-y-1/2 rounded-2xl border border-white/15 bg-[#1d2020]/98 p-4 text-center shadow-2xl shadow-black/60 backdrop-blur-xl"
+        className="pointer-events-auto absolute w-[min(20rem,calc(100vw-1.5rem))] -translate-x-1/2 -translate-y-1/2 rounded-3xl border border-white/15 bg-[#1b1f1f]/98 p-3 text-center shadow-2xl shadow-black/60 backdrop-blur-xl"
         style={{ left: `${position.x}px`, top: `${position.y}px` }}
       >
         <div
-          className="mb-2 flex cursor-move touch-none items-center justify-between border-b border-white/10 pb-2"
+          className="mb-2 flex cursor-move touch-none select-none items-center justify-between border-b border-white/10 pb-2"
           onPointerDown={beginDrag}
           onPointerMove={moveDrag}
           onPointerUp={() => setIsDragging(false)}
           onPointerCancel={() => setIsDragging(false)}
         >
-          <span className="text-xs font-semibold uppercase tracking-[0.18em] text-gray-500">Mover acorde</span>
-          <button type="button" onClick={onClose} className="rounded-full px-2 py-1 text-lg leading-none text-gray-400 hover:bg-white/10 hover:text-white" aria-label="Fechar acorde">×</button>
+          <span className="text-[10px] font-semibold uppercase tracking-[0.18em] text-gray-500">Arraste para mover</span>
+          <button type="button" onClick={onClose} className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-white/10 bg-white/[0.06] text-gray-400 transition-colors hover:border-primary-500/50 hover:bg-primary-500/15 hover:text-white" aria-label="Fechar acorde"><X className="h-4 w-4" /></button>
         </div>
         <p className="mb-2 text-2xl font-black text-primary-400">{item.chord}</p>
-        <div className="relative mx-auto flex min-h-[150px] items-center justify-center overflow-hidden rounded-xl bg-black/10 py-1">
+        <div className="relative mx-auto flex min-h-[132px] items-center justify-center overflow-hidden rounded-2xl border border-white/10 bg-black/15 py-1">
           {item.kind === 'database' ? (
             databaseDiagram ? <FretboardShapeSVG diagram={databaseDiagram} /> : <span className="text-sm text-gray-400">Diagrama indisponível</span>
           ) : (
@@ -508,6 +508,7 @@ interface DatabaseChordShapeCardProps {
   selectedShapeId: string;
   onSelectShape: (chord: string, shapeId: string) => void;
   onOpen: () => void;
+  onMouseEnter?: () => void;
   leftHanded?: boolean;
   editorialOverride?: CifraVersionChordOverride | null;
   matchOptions: {
@@ -546,6 +547,7 @@ const DatabaseChordShapeCard: React.FC<DatabaseChordShapeCardProps> = ({
   selectedShapeId,
   onSelectShape,
   onOpen,
+  onMouseEnter,
   leftHanded = false,
   editorialOverride,
   matchOptions,
@@ -560,8 +562,9 @@ const DatabaseChordShapeCard: React.FC<DatabaseChordShapeCardProps> = ({
 
   return (
     <div
-      className="w-[124px] flex-shrink-0 snap-start cursor-pointer rounded-xl px-1 py-1 text-center transition-transform hover:-translate-y-0.5 sm:w-auto sm:min-w-[168px] sm:max-w-[198px] sm:rounded-2xl sm:border sm:border-white/10 sm:bg-background-secondary sm:px-3 sm:py-2"
+      className="group relative w-[112px] flex-shrink-0 snap-start cursor-pointer rounded-2xl border border-white/10 bg-[#171a1a] px-2 py-2 text-center shadow-lg shadow-black/10 transition-all hover:-translate-y-1 hover:border-primary-500/50 hover:bg-[#1c2020] sm:w-auto sm:min-w-[150px] sm:max-w-[176px] sm:px-3 sm:py-2.5"
       onClick={onOpen}
+      onMouseEnter={onMouseEnter}
       onKeyDown={(event) => { if (event.key === 'Enter' || event.key === ' ') onOpen(); }}
       role="button"
       tabIndex={0}
@@ -570,7 +573,7 @@ const DatabaseChordShapeCard: React.FC<DatabaseChordShapeCardProps> = ({
       {diagram ? (
         <FretboardShapeSVG diagram={diagram} leftHanded={leftHanded && shape.instrument !== 'teclado'} />
       ) : (
-        <div className="flex min-h-[132px] flex-col items-center justify-center">
+        <div className="flex min-h-[118px] flex-col items-center justify-center">
           <span className="text-sm font-semibold text-primary-400">{shape.chord_name}</span>
           <span className="mt-3 rounded-full border border-primary-500/30 bg-primary-500/10 px-3 py-1 text-xs text-primary-200">
             Shape salvo no banco
@@ -716,6 +719,7 @@ const ChordDictionaryCarousel: React.FC<ChordDictionaryCarouselProps> = ({
               selectedShapeId={item.selectedShape.id}
               onSelectShape={onSelectShape}
               onOpen={() => setActiveChord(item)}
+              onMouseEnter={() => setActiveChord(item)}
               leftHanded={leftHanded}
               editorialOverride={item.editorialOverride}
               matchOptions={{
@@ -727,14 +731,16 @@ const ChordDictionaryCarousel: React.FC<ChordDictionaryCarouselProps> = ({
           ) : (
             <div
               key={item.chord}
-              className="w-[124px] flex-shrink-0 snap-start cursor-pointer text-center transition-transform hover:-translate-y-0.5 sm:w-auto"
+              className="group relative w-[112px] flex-shrink-0 snap-start cursor-pointer rounded-2xl border border-white/10 bg-[#171a1a] px-2 py-2 text-center shadow-lg shadow-black/10 transition-all hover:-translate-y-1 hover:border-primary-500/50 hover:bg-[#1c2020] sm:w-auto sm:px-3 sm:py-2.5"
               onClick={() => setActiveChord(item)}
+              onMouseEnter={() => setActiveChord(item)}
               onKeyDown={(event) => { if (event.key === 'Enter' || event.key === ' ') setActiveChord(item); }}
               role="button"
               tabIndex={0}
               aria-label={`Abrir acorde ${item.chord}`}
             >
               <ChordDiagramSVG diagram={item.diagram} leftHanded={leftHanded} />
+              <span className="pointer-events-none absolute inset-x-3 bottom-2 flex items-center justify-center gap-1 rounded-full bg-black/60 py-1 text-[10px] font-semibold text-white opacity-0 transition-opacity group-hover:opacity-100 sm:bottom-2"> <Play className="h-3 w-3 fill-current" /> ouvir</span>
             </div>
           )
         ))}
