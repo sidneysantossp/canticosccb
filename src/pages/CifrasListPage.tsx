@@ -8,12 +8,45 @@ import HeroSection from '@/components/home/HeroSection';
 import { getCifrasBanner, type HomeBanner } from '@/lib/homeApi';
 import { generateItemListSchema, generateBreadcrumbSchema } from '@/utils/schemaGenerator';
 import { Cifra } from '@/api/cifras';
+import { fetchHinario5NumberMap } from '@/api/hinario';
 import { fetchMergedPublicCifrasListDetailed, type PublicCifraPageData } from '@/lib/cifras-v2';
 
 type DisplayCifra = Cifra | PublicCifraPageData;
 
 function isCifraV2(cifra: DisplayCifra): cifra is PublicCifraPageData {
   return 'source' in cifra && cifra.source === 'v2';
+}
+
+function normalizeHymnTitle(value: string): string {
+  return value
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9]+/g, ' ')
+    .replace(/\b(hino|hinario|ccb)\b/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function resolveHinario5Number(title: string, numbers: Record<string, number>): number | null {
+  const normalizedTitle = normalizeHymnTitle(title);
+  if (!normalizedTitle) return null;
+  if (numbers[normalizedTitle]) return numbers[normalizedTitle];
+
+  const titleTokens = new Set(normalizedTitle.split(' ').filter(Boolean));
+  let bestMatch: { number: number; score: number } | null = null;
+
+  for (const [officialTitle, number] of Object.entries(numbers)) {
+    const officialTokens = new Set(officialTitle.split(' ').filter(Boolean));
+    const overlap = [...titleTokens].filter((token) => officialTokens.has(token)).length;
+    const containsAllTitleTokens = titleTokens.size >= 3 && overlap === titleTokens.size;
+    const score = containsAllTitleTokens ? 1 : overlap / Math.max(titleTokens.size, officialTokens.size);
+    if ((containsAllTitleTokens || score >= 0.75) && (!bestMatch || score > bestMatch.score)) {
+      bestMatch = { number, score };
+    }
+  }
+
+  return bestMatch?.number ?? null;
 }
 
 const INSTRUMENT_SHORTCUTS: Array<{ value: 'violao' | 'ukulele' | 'teclado'; label: string; Icon: IconType }> = [
@@ -43,9 +76,18 @@ const CifrasListPage: React.FC = () => {
   const [loadError, setLoadError] = useState<string | null>(null);
   const [loadWarning, setLoadWarning] = useState<string | null>(null);
   const [heroBanners, setHeroBanners] = useState<HomeBanner[]>([]);
+  const [hinario5Numbers, setHinario5Numbers] = useState<Record<string, number>>({});
 
   useEffect(() => {
     loadCifras();
+    fetchHinario5NumberMap()
+      .then((items) => {
+        const numbers = Object.fromEntries(
+          Object.entries(items).map(([title, number]) => [normalizeHymnTitle(title), number])
+        );
+        setHinario5Numbers(numbers);
+      })
+      .catch((error) => console.error('Erro ao carregar a numeração do Hinário 5:', error));
     getCifrasBanner()
       .then(setHeroBanners)
       .catch((error) => console.error('Erro ao carregar o banner de cifras:', error));
@@ -79,11 +121,11 @@ const CifrasListPage: React.FC = () => {
         key: groupKey,
         title: cifra.title,
         artist: cifra.artist,
-        hinarioNumero: isCifraV2(cifra) && cifra.hinario_numero ? cifra.hinario_numero : null,
+        hinarioNumero: resolveHinario5Number(cifra.title, hinario5Numbers),
         versions: {},
       } satisfies CifraCardGroup;
-      if (!current.hinarioNumero && isCifraV2(cifra) && cifra.hinario_numero) {
-        current.hinarioNumero = cifra.hinario_numero;
+      if (!current.hinarioNumero) {
+        current.hinarioNumero = resolveHinario5Number(cifra.title, hinario5Numbers);
       }
       const instrument = normalizeInstrument(cifra.instrument);
       if (!current.versions[instrument]) current.versions[instrument] = cifra;
