@@ -1,20 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Search, FileText, AlertCircle, RefreshCw, Music, Music2 } from 'lucide-react';
+import { FileText, AlertCircle, RefreshCw, Music, Music2 } from 'lucide-react';
 import SEOHead from '@/components/SEO/SEOHead';
 import HeroSection from '@/components/home/HeroSection';
 import { getCifrasBanner, type HomeBanner } from '@/lib/homeApi';
 import { generateItemListSchema, generateBreadcrumbSchema } from '@/utils/schemaGenerator';
-import { Cifra, INSTRUMENTS, CATEGORIES } from '@/api/cifras';
+import { Cifra } from '@/api/cifras';
 import { fetchMergedPublicCifrasListDetailed, type PublicCifraPageData } from '@/lib/cifras-v2';
-import { CIFRA_V2_INSTRUMENTS } from '@/types/cifras-v2';
 
 type DisplayCifra = Cifra | PublicCifraPageData;
-
-const PUBLIC_INSTRUMENTS = [
-  ...INSTRUMENTS,
-  ...CIFRA_V2_INSTRUMENTS.filter((entry) => !INSTRUMENTS.some((legacy) => legacy.value === entry.value)),
-];
 
 function isCifraV2(cifra: DisplayCifra): cifra is PublicCifraPageData {
   return 'source' in cifra && cifra.source === 'v2';
@@ -43,9 +37,6 @@ type CifraCardGroup = {
 const CifrasListPage: React.FC = () => {
   const [cifras, setCifras] = useState<DisplayCifra[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [filterInstrument, setFilterInstrument] = useState('');
-  const [filterCategory, setFilterCategory] = useState('');
   const [loadError, setLoadError] = useState<string | null>(null);
   const [loadWarning, setLoadWarning] = useState<string | null>(null);
   const [heroBanners, setHeroBanners] = useState<HomeBanner[]>([]);
@@ -78,17 +69,8 @@ const CifrasListPage: React.FC = () => {
     }
   };
 
-  const filtered = cifras.filter(c => {
-    const matchSearch = !searchTerm ||
-      c.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      c.artist.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchInstrument = !filterInstrument || c.instrument === filterInstrument;
-    const matchCategory = !filterCategory || c.category === filterCategory;
-    return matchSearch && matchInstrument && matchCategory;
-  });
-
   const grouped = Array.from(
-    filtered.reduce((map, cifra) => {
+    cifras.reduce((map, cifra) => {
       const groupKey = cifra.hino_id || `${cifra.title}::${cifra.artist}`;
       const current = map.get(groupKey) || {
         key: groupKey,
@@ -111,11 +93,11 @@ const CifrasListPage: React.FC = () => {
       keywords="cifras, acordes, tablatura, violão, guitarra, ukulele, teclado, hinos, CCB"
       canonical="/cifras"
       schemaData={[
-        ...(filtered.length > 0 ? [generateItemListSchema({
+        ...(cifras.length > 0 ? [generateItemListSchema({
           name: 'Cifras Musicais',
           description: 'Cifras com acordes para hinos da CCB',
           url: '/cifras',
-          items: filtered.slice(0, 20).map((c, i) => ({
+          items: cifras.slice(0, 20).map((c, i) => ({
             name: c.title,
             url: `/cifra/${c.slug}`,
             position: i + 1,
@@ -134,40 +116,6 @@ const CifrasListPage: React.FC = () => {
           <HeroSection banners={heroBanners.slice(0, 1)} variant="fullBanner" />
         </div>
       )}
-
-      {/* Search & Filters */}
-      <div className="flex flex-col sm:flex-row gap-3 mb-8">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-          <input
-            type="text"
-            placeholder="Buscar cifra por título ou artista..."
-            value={searchTerm}
-            onChange={e => setSearchTerm(e.target.value)}
-            className="w-full pl-10 pr-4 py-3 bg-gray-800/60 border border-gray-700 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary-500"
-          />
-        </div>
-        <select
-          value={filterInstrument}
-          onChange={e => setFilterInstrument(e.target.value)}
-          className="w-full px-4 py-3 bg-gray-800/60 border border-gray-700 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-primary-500 sm:w-auto"
-        >
-          <option value="">Instrumento</option>
-          {PUBLIC_INSTRUMENTS.map(i => (
-            <option key={i.value} value={i.value}>{i.label}</option>
-          ))}
-        </select>
-        <select
-          value={filterCategory}
-          onChange={e => setFilterCategory(e.target.value)}
-          className="w-full px-4 py-3 bg-gray-800/60 border border-gray-700 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-primary-500 sm:w-auto"
-        >
-          <option value="">Categoria</option>
-          {CATEGORIES.map(c => (
-            <option key={c.value} value={c.value}>{c.label}</option>
-          ))}
-        </select>
-      </div>
 
       {loadWarning && (
         <div className="mb-6 flex items-start gap-3 rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-100">
@@ -195,16 +143,14 @@ const CifrasListPage: React.FC = () => {
             Tentar novamente
           </button>
         </div>
-      ) : filtered.length === 0 ? (
+      ) : cifras.length === 0 ? (
         <div className="text-center py-20">
           <FileText className="w-16 h-16 text-gray-600 mx-auto mb-4" />
           <h3 className="text-xl text-gray-400 mb-2">
-            {searchTerm || filterInstrument || filterCategory ? 'Nenhuma cifra encontrada' : 'Ainda não há cifras verificadas neste catálogo'}
+            Ainda não há cifras verificadas neste catálogo
           </h3>
           <p className="text-gray-500">
-            {searchTerm || filterInstrument || filterCategory
-              ? 'Tente ajustar os filtros ou buscar pelo título do hino.'
-              : 'Quando uma cifra estiver pronta para estudo, ela aparecerá aqui.'}
+            Quando uma cifra estiver pronta para estudo, ela aparecerá aqui.
           </p>
         </div>
       ) : (
