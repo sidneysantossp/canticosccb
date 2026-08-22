@@ -1779,7 +1779,7 @@ const CifraPage: React.FC = () => {
           <h1 className="text-2xl font-bold leading-tight text-white sm:text-3xl">{headerCifraTitle}</h1>
           <p className="mt-2 text-lg font-bold text-primary-400">{headerCifraCategory}</p>
         </header>
-        {renderChordDictionaryCarousel('mb-6 hidden sm:block')}
+        {renderChordDictionaryCarousel('mt-6 mb-6 hidden sm:block')}
 
       {/* Cifra Content */}
       <div

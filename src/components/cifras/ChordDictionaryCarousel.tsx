@@ -436,7 +436,7 @@ function playChordAudio(chord: string): void {
 }
 
 const ChordPopup: React.FC<ChordPopupProps> = ({ item, onClose }) => {
-  const [position, setPosition] = useState(() => ({ x: window.innerWidth / 2, y: window.innerHeight / 2 }));
+  const [position, setPosition] = useState(() => ({ x: window.innerWidth / 2, y: Math.max(260, window.innerHeight / 2) }));
   const [isDragging, setIsDragging] = useState(false);
   const dragOrigin = useRef({ pointerX: 0, pointerY: 0, centerX: 0, centerY: 0 });
 
@@ -467,21 +467,21 @@ const ChordPopup: React.FC<ChordPopupProps> = ({ item, onClose }) => {
   return (
     <div className="fixed inset-0 z-[80] pointer-events-none" aria-live="polite">
       <div
-        className="pointer-events-auto absolute w-[min(10rem,calc(100vw-1rem))] -translate-x-1/2 -translate-y-1/2 rounded-3xl border border-white/15 bg-[#1b1f1f]/98 p-2 text-center shadow-2xl shadow-black/60 backdrop-blur-xl"
+        className="pointer-events-auto absolute w-[76px] -translate-x-1/2 -translate-y-1/2 rounded-2xl border border-white/15 bg-[#1b1f1f]/98 p-1.5 text-center shadow-2xl shadow-black/60 backdrop-blur-xl sm:w-[76px]"
         style={{ left: `${position.x}px`, top: `${position.y}px` }}
       >
         <div
-          className="mb-2 flex cursor-move touch-none select-none items-center justify-between border-b border-white/10 pb-2"
+          className="mb-1 flex cursor-move touch-none select-none items-center justify-end border-b border-white/10 pb-1"
           onPointerDown={beginDrag}
           onPointerMove={moveDrag}
           onPointerUp={() => setIsDragging(false)}
           onPointerCancel={() => setIsDragging(false)}
         >
-          <span className="text-[10px] font-semibold uppercase tracking-[0.18em] text-gray-500">Arraste para mover</span>
+          <span className="sr-only">Arraste para mover</span>
           <button type="button" onClick={onClose} className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-white/10 bg-white/[0.06] text-gray-400 transition-colors hover:border-primary-500/50 hover:bg-primary-500/15 hover:text-white" aria-label="Fechar acorde"><X className="h-4 w-4" /></button>
         </div>
-        <p className="mb-1 text-xl font-black text-primary-400">{item.chord}</p>
-        <div className="relative mx-auto flex min-h-[112px] items-center justify-center overflow-hidden rounded-2xl border border-white/10 bg-black/15 py-1">
+        <p className="mb-1 text-sm font-black text-primary-300">{item.chord}</p>
+        <div className="relative mx-auto flex min-h-[92px] items-center justify-center overflow-hidden rounded-xl border border-white/10 bg-black/15 py-0.5">
           {item.kind === 'database' ? (
             databaseDiagram ? <FretboardShapeSVG diagram={databaseDiagram} /> : <span className="text-sm text-gray-400">Diagrama indisponível</span>
           ) : (
@@ -490,13 +490,12 @@ const ChordPopup: React.FC<ChordPopupProps> = ({ item, onClose }) => {
           <button
             type="button"
             onClick={() => playChordAudio(item.chord)}
-            className="absolute left-1/2 top-1/2 inline-flex h-14 w-14 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-2xl border border-white/20 bg-[#252827]/95 text-white shadow-xl transition hover:scale-105 hover:bg-primary-500 hover:text-black"
+            className="absolute left-1/2 top-1/2 inline-flex h-9 w-9 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-xl border border-white/20 bg-[#252827]/95 text-white shadow-xl transition hover:scale-105 hover:bg-primary-500 hover:text-black"
             aria-label={`Ouvir acorde ${item.chord}`}
           >
-            <Play className="ml-1 h-7 w-7 fill-current" />
+            <Play className="ml-0.5 h-5 w-5 fill-current" />
           </button>
         </div>
-        <button type="button" onClick={() => playChordAudio(item.chord)} className="mt-2 w-full rounded-xl border border-white/15 bg-white/[0.04] px-2 py-1.5 text-xs font-bold text-white transition hover:border-primary-500/50 hover:text-primary-300">Ouvir acorde</button>
       </div>
     </div>
   );
@@ -562,7 +561,7 @@ const DatabaseChordShapeCard: React.FC<DatabaseChordShapeCardProps> = ({
 
   return (
     <div
-      className="group relative w-[76px] flex-shrink-0 snap-start cursor-pointer rounded-xl border border-white/10 bg-[#171a1a] px-1 py-1.5 text-center shadow-lg shadow-black/10 transition-all hover:-translate-y-1 hover:border-primary-500/50 hover:bg-[#1c2020] sm:w-auto sm:min-w-[92px] sm:max-w-[108px] sm:px-2 sm:py-2"
+      className="group relative w-[76px] flex-shrink-0 snap-start cursor-pointer rounded-lg border border-white/10 bg-[#171a1a] px-1 py-1.5 text-center shadow-lg shadow-black/10 transition-all hover:-translate-y-1 hover:border-primary-500/50 hover:bg-[#1c2020] sm:w-[76px] sm:min-w-0 sm:max-w-none sm:px-1.5 sm:py-1.5"
       onClick={onOpen}
       onMouseEnter={onMouseEnter}
       onKeyDown={(event) => { if (event.key === 'Enter' || event.key === ' ') onOpen(); }}
@@ -573,7 +572,7 @@ const DatabaseChordShapeCard: React.FC<DatabaseChordShapeCardProps> = ({
       {diagram ? (
         <FretboardShapeSVG diagram={diagram} leftHanded={leftHanded && shape.instrument !== 'teclado'} />
       ) : (
-        <div className="flex min-h-[94px] flex-col items-center justify-center">
+        <div className="flex min-h-[72px] flex-col items-center justify-center">
           <span className="text-sm font-semibold text-primary-400">{shape.chord_name}</span>
           <span className="mt-3 rounded-full border border-primary-500/30 bg-primary-500/10 px-3 py-1 text-xs text-primary-200">
             Shape salvo no banco
@@ -709,7 +708,7 @@ const ChordDictionaryCarousel: React.FC<ChordDictionaryCarouselProps> = ({
           </p>
         </div>
       </div>
-      <div className="flex snap-x snap-mandatory gap-2 overflow-x-auto scroll-px-6 px-6 pb-3 scrollbar-hide sm:scroll-px-0 sm:px-0">
+      <div className="flex snap-x snap-mandatory gap-1.5 overflow-x-auto scroll-px-6 px-6 pb-3 scrollbar-hide sm:scroll-px-0 sm:px-0">
         {visibleChordCards.map((item) => (
           item.kind === 'database' ? (
             <DatabaseChordShapeCard
@@ -731,7 +730,7 @@ const ChordDictionaryCarousel: React.FC<ChordDictionaryCarouselProps> = ({
           ) : (
             <div
               key={item.chord}
-              className="group relative w-[76px] flex-shrink-0 snap-start cursor-pointer rounded-xl border border-white/10 bg-[#171a1a] px-1 py-1.5 text-center shadow-lg shadow-black/10 transition-all hover:-translate-y-1 hover:border-primary-500/50 hover:bg-[#1c2020] sm:w-auto sm:px-2 sm:py-2"
+              className="group relative w-[76px] flex-shrink-0 snap-start cursor-pointer rounded-lg border border-white/10 bg-[#171a1a] px-1 py-1.5 text-center shadow-lg shadow-black/10 transition-all hover:-translate-y-1 hover:border-primary-500/50 hover:bg-[#1c2020] sm:w-[76px] sm:px-1.5 sm:py-1.5"
               onClick={() => setActiveChord(item)}
               onMouseEnter={() => setActiveChord(item)}
               onKeyDown={(event) => { if (event.key === 'Enter' || event.key === ' ') setActiveChord(item); }}
