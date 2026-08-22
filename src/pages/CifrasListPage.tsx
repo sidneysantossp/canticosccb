@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Search, FileText, Eye, AlertCircle, RefreshCw } from 'lucide-react';
+import { Search, FileText, AlertCircle, RefreshCw, Music, Music2 } from 'lucide-react';
 import SEOHead from '@/components/SEO/SEOHead';
 import { generateItemListSchema, generateBreadcrumbSchema } from '@/utils/schemaGenerator';
 import { Cifra, INSTRUMENTS, CATEGORIES } from '@/api/cifras';
@@ -17,6 +17,26 @@ const PUBLIC_INSTRUMENTS = [
 function isCifraV2(cifra: DisplayCifra): cifra is PublicCifraPageData {
   return 'source' in cifra && cifra.source === 'v2';
 }
+
+const INSTRUMENT_SHORTCUTS = [
+  { value: 'violao', label: 'Violão', Icon: Music2 },
+  { value: 'ukulele', label: 'Ukulele', Icon: Music2 },
+  { value: 'teclado', label: 'Teclado', Icon: Music },
+] as const;
+
+function normalizeInstrument(value: string): 'violao' | 'ukulele' | 'teclado' {
+  const normalized = value.toLowerCase();
+  if (normalized.includes('ukulele')) return 'ukulele';
+  if (normalized.includes('teclado') || normalized.includes('piano')) return 'teclado';
+  return 'violao';
+}
+
+type CifraCardGroup = {
+  key: string;
+  title: string;
+  artist: string;
+  versions: Partial<Record<'violao' | 'ukulele' | 'teclado', DisplayCifra>>;
+};
 
 const CifrasListPage: React.FC = () => {
   const [cifras, setCifras] = useState<DisplayCifra[]>([]);
@@ -60,6 +80,22 @@ const CifrasListPage: React.FC = () => {
     const matchCategory = !filterCategory || c.category === filterCategory;
     return matchSearch && matchInstrument && matchCategory;
   });
+
+  const grouped = Array.from(
+    filtered.reduce((map, cifra) => {
+      const groupKey = cifra.hino_id || `${cifra.title}::${cifra.artist}`;
+      const current = map.get(groupKey) || {
+        key: groupKey,
+        title: cifra.title,
+        artist: cifra.artist,
+        versions: {},
+      } satisfies CifraCardGroup;
+      const instrument = normalizeInstrument(cifra.instrument);
+      if (!current.versions[instrument]) current.versions[instrument] = cifra;
+      map.set(groupKey, current);
+      return map;
+    }, new Map<string, CifraCardGroup>()).values()
+  );
 
   return (
     <>
@@ -178,34 +214,38 @@ const CifrasListPage: React.FC = () => {
           </p>
         </div>
       ) : (
-        <div className="flex flex-col gap-2">
-          {filtered.map(cifra => (
-            <Link
-              key={cifra.id}
-              to={`/cifra/${cifra.slug}`}
-              className="group rounded-xl border border-gray-700/50 bg-gray-800/40 px-3 py-2.5 transition-all hover:border-gray-600 hover:bg-gray-800/70 sm:px-4 sm:py-3"
+        <div className="flex flex-col gap-1.5">
+          {grouped.map(group => (
+            <article
+              key={group.key}
+              className="group flex min-h-[62px] items-center gap-3 rounded-lg border border-gray-700/50 bg-gray-800/40 px-3 py-2 transition-colors hover:border-gray-600 hover:bg-gray-800/70 sm:min-h-[68px] sm:px-4 sm:py-2.5"
             >
-              <div className="flex items-center gap-3">
-                <div className="min-w-0 flex-1">
-                  <h3 className="line-clamp-1 text-sm font-semibold leading-5 text-white transition-colors group-hover:text-primary-400 sm:text-base">
-                    {cifra.title}
-                  </h3>
-                  <p className="line-clamp-1 text-xs leading-4 text-gray-400 sm:text-sm">{cifra.artist}</p>
-                  <div className="mt-1.5 flex items-center gap-2">
-                    <span className="rounded-md bg-primary-500/15 px-2 py-0.5 text-xs font-medium text-primary-400">
-                      {cifra.original_key}
-                    </span>
-                    <span className="line-clamp-1 text-xs text-gray-500">
-                      {PUBLIC_INSTRUMENTS.find(i => i.value === cifra.instrument)?.label || cifra.instrument}
-                    </span>
-                    <span className="ml-auto flex shrink-0 items-center gap-1 text-xs text-gray-600">
-                      <Eye className="h-3 w-3" />
-                      {isCifraV2(cifra) ? 'V2' : cifra.views_count}
-                    </span>
-                  </div>
-                </div>
+              <div className="min-w-0 flex-1">
+                <h3 className="line-clamp-1 text-sm font-semibold leading-5 text-white transition-colors group-hover:text-primary-400 sm:text-base">
+                  {group.title}
+                </h3>
+                {group.artist && (
+                  <p className="mt-0.5 line-clamp-1 text-[11px] leading-4 text-gray-400 sm:text-xs">{group.artist}</p>
+                )}
               </div>
-            </Link>
+              <div className="flex shrink-0 items-center gap-1 sm:gap-1.5" aria-label={`Cifras de ${group.title}`}>
+                {INSTRUMENT_SHORTCUTS.map(({ value, label, Icon }) => {
+                  const version = group.versions[value];
+                  if (!version) return null;
+                  return (
+                    <Link
+                      key={`${group.key}-${value}`}
+                      to={`/cifra/${version.slug}`}
+                      aria-label={`${label}: ${group.title}`}
+                      title={`${label}: ${group.title}`}
+                      className="flex h-8 w-8 items-center justify-center rounded-md border border-gray-700/70 text-gray-300 transition-colors hover:border-primary-400 hover:bg-primary-500/15 hover:text-primary-300 sm:h-9 sm:w-9"
+                    >
+                      <Icon className="h-4 w-4 sm:h-[18px] sm:w-[18px]" strokeWidth={1.8} />
+                    </Link>
+                  );
+                })}
+              </div>
+            </article>
           ))}
         </div>
       )}
