@@ -15,7 +15,8 @@ const BANNER_TYPES: { value: BannerType; label: string }[] = [
   { value: 'hero', label: 'Hero/Principal' },
   { value: 'promotional', label: 'Promocional' },
   { value: 'announcement', label: 'Anúncio' },
-  { value: 'featured', label: 'Destaque' }
+  { value: 'featured', label: 'Destaque' },
+  { value: 'cifras', label: 'Categorias — FullBanner de cifras' }
 ];
 
 const GRADIENT_OPTIONS = [

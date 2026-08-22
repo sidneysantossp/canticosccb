@@ -1,7 +1,7 @@
 import { supabaseFetch, supabaseInsert, supabaseUpdate, supabaseDelete, isSupabaseConfigured, invalidateSupabaseCache } from '@/lib/supabaseRest';
 import { uploadFile } from '@/lib/supabase-upload';
 
-export type BannerType = 'hero' | 'promotional' | 'contextual' | 'announcement' | 'featured';
+export type BannerType = 'hero' | 'promotional' | 'contextual' | 'cifras' | 'announcement' | 'featured';
 
 export interface Banner {
   id: string;

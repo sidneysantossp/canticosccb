@@ -266,6 +266,32 @@ const mapSupabaseBanner = (row: SupabaseBannerRow): HomeBanner => ({
   gradient_overlay: row.gradient_overlay ?? undefined,
 });
 
+/**
+ * Banner exclusivo da página /cifras.
+ * Usa o tipo persistido `cifras` para não misturar os banners da Home com o FullBanner de cifras.
+ */
+export async function getCifrasBanner(): Promise<HomeBanner[]> {
+  if (!isSupabaseConfigured) return [];
+
+  try {
+    const rows = await supabaseFetch<SupabaseBannerRow>('banners', {
+      select: 'id,title,description,image_url,link_url,link_id,gradient_overlay,button_text,type',
+      type: 'eq.cifras',
+      is_active: 'eq.true',
+      order: 'position.asc',
+      limit: '1',
+    });
+
+    return rows
+      .filter((row) => hasUsableBannerMedia(row.image_url))
+      .slice(0, 1)
+      .map(mapSupabaseBanner);
+  } catch (error) {
+    console.error('Erro ao carregar banner de cifras:', error);
+    return [];
+  }
+}
+
 const normalizeHomeCategory = (value: string | undefined | null) => slugify(String(value ?? ''));
 
 const matchesAvulsoTitle = (value: string | undefined | null) => {

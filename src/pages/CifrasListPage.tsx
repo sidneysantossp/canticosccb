@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { Search, FileText, AlertCircle, RefreshCw, Music, Music2 } from 'lucide-react';
 import SEOHead from '@/components/SEO/SEOHead';
 import HeroSection from '@/components/home/HeroSection';
-import { getHomePageData } from '@/lib/homeApi';
+import { getCifrasBanner, type HomeBanner } from '@/lib/homeApi';
 import { generateItemListSchema, generateBreadcrumbSchema } from '@/utils/schemaGenerator';
 import { Cifra, INSTRUMENTS, CATEGORIES } from '@/api/cifras';
 import { fetchMergedPublicCifrasListDetailed, type PublicCifraPageData } from '@/lib/cifras-v2';
@@ -48,13 +48,13 @@ const CifrasListPage: React.FC = () => {
   const [filterCategory, setFilterCategory] = useState('');
   const [loadError, setLoadError] = useState<string | null>(null);
   const [loadWarning, setLoadWarning] = useState<string | null>(null);
-  const [heroBanners, setHeroBanners] = useState<Awaited<ReturnType<typeof getHomePageData>>['banners']>([]);
+  const [heroBanners, setHeroBanners] = useState<HomeBanner[]>([]);
 
   useEffect(() => {
     loadCifras();
-    getHomePageData()
-      .then((homeData) => setHeroBanners(homeData.banners || []))
-      .catch((error) => console.error('Erro ao carregar banners da área de cifras:', error));
+    getCifrasBanner()
+      .then(setHeroBanners)
+      .catch((error) => console.error('Erro ao carregar o banner de cifras:', error));
   }, []);
 
   const loadCifras = async () => {
@@ -127,30 +127,13 @@ const CifrasListPage: React.FC = () => {
         ]),
       ]}
     />
-    <div className="max-w-5xl mx-auto px-4 py-8 pb-24 sm:pb-8">
-      {/* Header */}
-      <div className="mb-8">
-        <h1 className="text-3xl md:text-4xl font-bold text-white leading-tight">
-          Cifras<br />Musicais
-        </h1>
-        <p className="text-gray-400 mt-2">Encontre cifras com acordes para violão, guitarra, ukulele e teclado</p>
-        <div className="flex flex-wrap gap-3 mt-4">
-          <Link to="/cifras-violao-ccb" className="px-4 py-2 rounded-full border border-primary-500/30 text-primary-300 hover:border-primary-400 hover:text-white transition-colors text-sm">
-            Cifras de Violão
-          </Link>
-          <Link to="/cifras-ukulele-ccb" className="px-4 py-2 rounded-full border border-primary-500/30 text-primary-300 hover:border-primary-400 hover:text-white transition-colors text-sm">
-            Cifras de Ukulele
-          </Link>
-          <Link to="/cifras-teclado-ccb" className="px-4 py-2 rounded-full border border-primary-500/30 text-primary-300 hover:border-primary-400 hover:text-white transition-colors text-sm">
-            Cifras de Teclado
-          </Link>
+    <div className="max-w-5xl mx-auto px-4 pt-0 pb-24 sm:pb-8">
+      {/* Único FullBanner da página de cifras, gerido na aba Categorias do admin */}
+      {heroBanners.length > 0 && (
+        <div className="mb-6">
+          <HeroSection banners={heroBanners.slice(0, 1)} variant="fullBanner" />
         </div>
-      </div>
-
-      {/* Hero administrável da área de cifras: usa os banners Hero publicados no painel */}
-      <div className="mb-6 -mx-4 sm:-mx-0">
-        <HeroSection banners={heroBanners} />
-      </div>
+      )}
 
       {/* Search & Filters */}
       <div className="flex flex-col sm:flex-row gap-3 mb-8">
