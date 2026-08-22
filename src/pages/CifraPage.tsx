@@ -1445,125 +1445,6 @@ const CifraPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Header */}
-      <div className="mb-6 hidden sm:block print:hidden">
-        <Link to="/cifras" className="inline-flex items-center gap-2 text-gray-400 hover:text-white mb-4 transition-colors print:hidden">
-          <ArrowLeft className="w-4 h-4" />
-          Voltar
-        </Link>
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-start">
-          {cifra.cover_url && (
-            <img src={cifra.cover_url} alt={displayCifraTitle} className="w-16 h-16 sm:w-20 sm:h-20 rounded-lg object-cover shadow-lg flex-shrink-0" />
-          )}
-          <div className="flex-1 min-w-0">
-            <h1 className="text-2xl font-bold leading-tight text-white sm:text-3xl">{headerCifraTitle}</h1>
-            <p className="mt-2 text-lg font-bold text-primary-400">{headerCifraCategory}</p>
-            <p className="mt-1 text-sm font-medium text-gray-300">Tipo de cifra: {instrumentLabel}</p>
-            <div className="flex flex-wrap gap-x-4 gap-y-1 text-gray-500 text-sm mt-1">
-              <span>
-                {isCifraV2(cifra)
-                  ? `Versão ${cifra.publication_label === 'official' ? 'oficial' : cifra.publication_label === 'reviewed' ? 'revisada' : 'publicada'}`
-                  : `${cifra.views_count.toLocaleString()} exibições`}
-              </span>
-              {isCifraV2(cifra) ? <span>{cifra.arrangement_type.replace('_', ' ')}</span> : null}
-              {engagement ? <span>{engagement.viewsCount.toLocaleString()} visualizações</span> : null}
-              {engagement ? <span>{engagement.favoritesCount.toLocaleString()} favoritos</span> : null}
-              {engagement ? <span>{engagement.openReportsCount.toLocaleString()} denúncias abertas</span> : null}
-            </div>
-            <p className="text-gray-400 text-sm mt-3 leading-relaxed">
-              Cifra CCB para {instrumentLabel}, com acordes, troca de tom e navegação para outras cifras e páginas relacionadas.
-            </p>
-            {renderChordDictionaryCarousel('mt-5 mb-2 hidden')}
-            <div className="hidden">
-              {isCifraV2(cifra) ? (
-                <>
-                  <button
-                    type="button"
-                    onClick={() => void handleToggleFavorite()}
-                    disabled={isFavoriteLoading}
-                    className={`inline-flex w-full items-center justify-center gap-2 rounded-full border px-3 py-1.5 text-sm transition-colors sm:w-auto ${
-                      engagement?.isFavorited
-                        ? 'border-red-500/50 bg-red-500/15 text-red-300'
-                        : 'border-gray-700 bg-gray-800 text-gray-200 hover:border-red-500/40 hover:text-white'
-                    }`}
-                  >
-                    <Heart className={`w-4 h-4 ${engagement?.isFavorited ? 'fill-current' : ''}`} />
-                    {engagement?.isFavorited ? 'Favoritada' : 'Favoritar'}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setShowReportModal(true)}
-                    className="inline-flex w-full items-center justify-center gap-2 rounded-full border border-gray-700 bg-gray-800 px-3 py-1.5 text-sm text-gray-200 transition-colors hover:border-primary-500/40 hover:text-white sm:w-auto"
-                  >
-                    <Flag className="w-4 h-4" />
-                    Reportar problema
-                  </button>
-                </>
-              ) : null}
-              {relatedHymn ? (
-                <Link
-                  to={buildHinoUrl(relatedHymn.id, relatedHymn.titulo, relatedHymn.numero)}
-                  className="inline-flex w-full items-center justify-center rounded-full border border-primary-500/40 bg-primary-500/10 px-3 py-1.5 text-sm text-primary-300 transition-colors hover:bg-primary-500/20 sm:w-auto"
-                >
-                  Ouvir este hino
-                </Link>
-              ) : null}
-              {relatedHymnTrack ? (
-                <button
-                  type="button"
-                  onClick={() => handlePlayRelatedTrack()}
-                  disabled={isRelatedTrackLoading || !canPlayRelatedTrack}
-                  className="inline-flex w-full items-center justify-center gap-2 rounded-full border border-primary-500 bg-primary-500 px-3 py-1.5 text-sm font-semibold text-black transition-colors hover:bg-primary-600 disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
-                >
-                  {isRelatedTrackActive && isPlayerPlaying ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
-                  {isRelatedTrackActive && isPlayerPlaying ? 'Pausar áudio' : 'Tocar áudio aqui'}
-                </button>
-              ) : null}
-              {relatedLyric ? (
-                <Link
-                  to={`/hinario/${relatedLyric.numero}`}
-                  className="inline-flex w-full items-center justify-center rounded-full border border-primary-500/40 bg-primary-500/10 px-3 py-1.5 text-sm text-primary-300 transition-colors hover:bg-primary-500/20 sm:w-auto"
-                >
-                  Letra no Hinario
-                </Link>
-              ) : null}
-              <Link
-                to={instrumentHubUrl}
-                className="inline-flex w-full items-center justify-center rounded-full border border-primary-500/40 bg-primary-500/10 px-3 py-1.5 text-sm text-primary-300 transition-colors hover:bg-primary-500/20 sm:w-auto"
-              >
-                Mais cifras de {instrumentLabel}
-              </Link>
-              <Link
-                to="/cifras"
-                className="inline-flex w-full items-center justify-center rounded-full border border-gray-700 bg-gray-800 px-3 py-1.5 text-sm text-gray-200 transition-colors hover:border-primary-500/40 hover:text-white sm:w-auto"
-              >
-                Todas as cifras
-              </Link>
-              <Link
-                to="/hinario"
-                className="inline-flex w-full items-center justify-center rounded-full border border-gray-700 bg-gray-800 px-3 py-1.5 text-sm text-gray-200 transition-colors hover:border-primary-500/40 hover:text-white sm:w-auto"
-              >
-                Letras do Hinário
-              </Link>
-              <Link
-                to="/cifras-hinos-ccb"
-                className="inline-flex w-full items-center justify-center rounded-full border border-gray-700 bg-gray-800 px-3 py-1.5 text-sm text-gray-200 transition-colors hover:border-primary-500/40 hover:text-white sm:w-auto"
-              >
-                Cifras de Hinos
-              </Link>
-              {hinarioRange ? (
-                <Link
-                  to={hinarioRange.path}
-                  className="inline-flex w-full items-center justify-center rounded-full border border-gray-700 bg-gray-800 px-3 py-1.5 text-sm text-gray-200 transition-colors hover:border-primary-500/40 hover:text-white sm:w-auto"
-                >
-                  {hinarioRange.label}
-                </Link>
-              ) : null}
-            </div>
-          </div>
-        </div>
-      </div>
-
       <div className="grid gap-6 lg:grid-cols-[240px,minmax(0,1fr)] lg:items-start">
       {/* Recursos e controlos */}
       <div className="sticky top-16 z-40 hidden bg-background-primary/95 shadow-lg shadow-black/20 backdrop-blur-sm border-b border-gray-800 -mx-4 px-4 py-3 mb-6 sm:block lg:col-start-1 lg:row-start-1 lg:top-[88px] lg:mx-0 lg:mb-0 lg:rounded-2xl lg:border lg:p-4 print:hidden">
@@ -1890,6 +1771,14 @@ const CifraPage: React.FC = () => {
       </div>
 
       <main className="min-w-0 lg:col-start-2 lg:row-start-1">
+        <header className="mb-6 hidden sm:block print:hidden">
+          <Link to="/cifras" className="mb-4 inline-flex items-center gap-2 text-gray-400 transition-colors hover:text-white print:hidden">
+            <ArrowLeft className="h-4 w-4" />
+            Voltar
+          </Link>
+          <h1 className="text-2xl font-bold leading-tight text-white sm:text-3xl">{headerCifraTitle}</h1>
+          <p className="mt-2 text-lg font-bold text-primary-400">{headerCifraCategory}</p>
+        </header>
         {renderChordDictionaryCarousel('mb-6 hidden sm:block')}
 
       {/* Cifra Content */}
