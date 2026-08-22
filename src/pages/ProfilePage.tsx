@@ -408,6 +408,16 @@ const ProfilePage: React.FC = () => {
               )}
             </div>
 
+            <div className="mb-8 rounded-2xl border border-primary-500/20 bg-primary-500/5 p-5">
+              <div className="flex flex-wrap items-center justify-between gap-4">
+                <div>
+                  <h3 className="text-lg font-bold text-white">Minhas Cifras</h3>
+                  <p className="mt-1 text-sm text-gray-400">Gerencie cifras e novas tonalidades enviadas para revisão.</p>
+                </div>
+                <Link to="/profile/cifras" className="rounded-xl bg-primary-500 px-4 py-2 font-semibold text-black hover:bg-primary-400">Gerir minhas cifras</Link>
+              </div>
+            </div>
+
             {/* Top Playlists */}
             <div>
               <h3 className="text-xl font-bold text-white mb-4">Minhas Playlists</h3>

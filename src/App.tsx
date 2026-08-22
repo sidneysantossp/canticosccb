@@ -180,6 +180,9 @@ import ProtectedRoute from '@/components/ProtectedRoute';
 import ProtectedComposerRoute from '@/components/ProtectedComposerRoute';
 import { Navigate, useLocation, useParams as useRouteParams } from 'react-router-dom';
 import { lazyWithChunkRecovery } from '@/utils/chunkLoadRecovery';
+import CifraContributionPage from '@/pages/CifraContributionPage';
+import CifraContributionsDashboard from '@/pages/CifraContributionsDashboard';
+import AdminCifraContributions from '@/pages/admin/AdminCifraContributions';
 
 const AppRuntime = lazyWithChunkRecovery(() => import('@/components/app/AppRuntime'));
 const Layout = lazyWithChunkRecovery(() => import('@/components/layout/Layout'));
@@ -299,6 +302,7 @@ const AppContent: React.FC = () => {
           <Route path="cifras-ukulele-ccb" element={<CifraInstrumentHubPage instrument="ukulele" />} />
           <Route path="cifras-teclado-ccb" element={<CifraInstrumentHubPage instrument="teclado" />} />
           <Route path="cifra/:slug" element={<CifraPage />} />
+          <Route path="profile/cifras/contribuir" element={<ProtectedRoute><CifraContributionPage /></ProtectedRoute>} />
           <Route path="hinario" element={<HinarioListPage />} />
           <Route path="hinos-ccb" element={<HinosHubPage />} />
           <Route path="hinos-1-a-120-ccb" element={<HinarioRangePage rangeKey="1-120" />} />
@@ -362,6 +366,7 @@ const AppContent: React.FC = () => {
           <Route path="perfil/editar" element={<ProtectedRoute><EditProfilePage /></ProtectedRoute>} />
           {/* English aliases */}
           <Route path="profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
+          <Route path="profile/cifras" element={<ProtectedRoute><CifraContributionsDashboard /></ProtectedRoute>} />
           <Route path="edit-profile" element={<ProtectedRoute><EditProfilePage /></ProtectedRoute>} />
           <Route path="biblioteca" element={<ProtectedRoute><LibraryPage /></ProtectedRoute>} />
           <Route path="library" element={<ProtectedRoute><LibraryPage /></ProtectedRoute>} />
@@ -387,6 +392,7 @@ const AppContent: React.FC = () => {
           {/* Composer Routes - Protected + Verified Composer Only */}
           <Route path="composer" element={<ProtectedComposerRoute><ComposerDashboard /></ProtectedComposerRoute>} />
           <Route path="composer/dashboard" element={<ProtectedComposerRoute><ComposerDashboard /></ProtectedComposerRoute>} />
+          <Route path="composer/cifras" element={<ProtectedComposerRoute><CifraContributionsDashboard /></ProtectedComposerRoute>} />
           <Route path="compositor/dashboard" element={<ProtectedComposerRoute><ComposerDashboard /></ProtectedComposerRoute>} />
           <Route path="compositor/perfil" element={<ProtectedComposerRoute><ComposerProfile /></ProtectedComposerRoute>} />
           <Route path="composer/profile" element={<ProtectedComposerRoute><ComposerProfile /></ProtectedComposerRoute>} />
@@ -614,6 +620,7 @@ const AppContent: React.FC = () => {
           <Route path="admin/cifras/:id/edit" element={<ProtectedRoute requireAdmin><AdminCifraForm /></ProtectedRoute>} />
           <Route path="admin/cifras/:id/migrate" element={<ProtectedRoute requireAdmin><AdminCifraMigrationPage /></ProtectedRoute>} />
           <Route path="admin/cifras-v2/revisao" element={<ProtectedRoute requireAdmin><AdminCifraReview /></ProtectedRoute>} />
+          <Route path="admin/cifras-contribuicoes" element={<ProtectedRoute requireAdmin><AdminCifraContributions /></ProtectedRoute>} />
           <Route path="admin/cifras-v2/new" element={<ProtectedRoute requireAdmin><AdminCifraV2Editor /></ProtectedRoute>} />
           <Route path="admin/cifras-v2/versions/:versionId/edit" element={<ProtectedRoute requireAdmin><AdminCifraV2Editor /></ProtectedRoute>} />
           <Route path="admin/cifras-v2/shapes" element={<ProtectedRoute requireAdmin><AdminCifraChordShapes /></ProtectedRoute>} />

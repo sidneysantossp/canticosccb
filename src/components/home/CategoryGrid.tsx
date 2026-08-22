@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { fetchActiveCategories, type CategoryRecord } from '@/lib/categoriesApi';
 import { Plus } from 'lucide-react';
-import { buildAlbumCoverUrl } from '@/lib/media-helper';
+import { buildCategoryImageUrl } from '@/lib/media-helper';
 import { DEFAULT_COVER_URL } from '@/lib/config';
 
 const CategoryGrid: React.FC = () => {
@@ -74,7 +74,7 @@ const CategoryGrid: React.FC = () => {
           >
             <div className="relative flex-shrink-0">
               <img
-                src={buildAlbumCoverUrl({ id: String(category.id), cover_url: category.image_url })}
+                src={buildCategoryImageUrl({ id: String(category.id), image_url: category.image_url })}
                 alt={category.name}
                 className="w-12 h-12 rounded object-cover"
                 loading="lazy"

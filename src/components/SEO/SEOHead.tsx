@@ -60,13 +60,27 @@ const SEOHead: React.FC<SEOProps> = ({
     DEFAULT_SITE_URL
   );
   const cleanPath = window.location.pathname;
+  const isHomePage = canonical === '/' || cleanPath === '/';
+  const resolvedTitle = isHomePage ? (runtimeSeo?.site_title || fullTitle) : fullTitle;
   const defaultUrl = normalizeSiteUrl(`${baseUrl}${cleanPath}`, baseUrl);
   const canonicalUrl = canonical
     ? normalizeSiteUrl(canonical.startsWith('http') ? canonical : `${baseUrl}${canonical}`, baseUrl)
     : defaultUrl;
-  const resolvedDescription = description || runtimeSeo?.site_description || '';
-  const resolvedKeywords = keywords || runtimeSeo?.site_keywords || undefined;
-  const resolvedImage = ogImage || runtimeSeo?.og_image || '/logo-canticos-ccb.png';
+  const resolvedDescription = isHomePage
+    ? (runtimeSeo?.site_description || description || '')
+    : (description || runtimeSeo?.site_description || '');
+  const resolvedKeywords = isHomePage
+    ? (runtimeSeo?.site_keywords || keywords || undefined)
+    : (keywords || runtimeSeo?.site_keywords || undefined);
+  const resolvedImage = isHomePage
+    ? (runtimeSeo?.og_image || ogImage || '/logo-canticos-ccb.png')
+    : (ogImage || runtimeSeo?.og_image || '/logo-canticos-ccb.png');
+  const resolvedOgTitle = isHomePage
+    ? (runtimeSeo?.og_title || resolvedTitle)
+    : resolvedTitle;
+  const resolvedOgDescription = isHomePage
+    ? (runtimeSeo?.og_description || resolvedDescription)
+    : resolvedDescription;
   const imageUrl = normalizeAssetUrl(
     resolvedImage.startsWith('http') ? resolvedImage : `${baseUrl}${resolvedImage}`
   );
@@ -85,7 +99,7 @@ const SEOHead: React.FC<SEOProps> = ({
   return (
     <Helmet>
       {/* Basic Meta Tags */}
-      <title>{fullTitle}</title>
+      <title>{resolvedTitle}</title>
       <meta name="description" content={resolvedDescription} />
       {resolvedKeywords && <meta name="keywords" content={resolvedKeywords} />}
       <meta name="robots" content={robotsContent} />
@@ -103,10 +117,10 @@ const SEOHead: React.FC<SEOProps> = ({
       {/* Open Graph / Facebook */}
       <meta property="og:type" content={ogType} />
       <meta property="og:site_name" content={siteName} />
-      <meta property="og:title" content={fullTitle} />
-      <meta property="og:description" content={resolvedDescription} />
+      <meta property="og:title" content={resolvedOgTitle} />
+      <meta property="og:description" content={resolvedOgDescription} />
       <meta property="og:image" content={imageUrl} />
-      <meta property="og:image:alt" content={fullTitle} />
+      <meta property="og:image:alt" content={resolvedTitle} />
       <meta property="og:image:width" content="1200" />
       <meta property="og:image:height" content="630" />
       <meta property="og:url" content={pageUrl} />
@@ -114,10 +128,10 @@ const SEOHead: React.FC<SEOProps> = ({
 
       {/* Twitter Card */}
       <meta name="twitter:card" content={resolvedTwitterCard} />
-      <meta name="twitter:title" content={fullTitle} />
-      <meta name="twitter:description" content={resolvedDescription} />
+      <meta name="twitter:title" content={resolvedOgTitle} />
+      <meta name="twitter:description" content={resolvedOgDescription} />
       <meta name="twitter:image" content={imageUrl} />
-      <meta name="twitter:image:alt" content={fullTitle} />
+      <meta name="twitter:image:alt" content={resolvedTitle} />
       <meta name="twitter:site" content={twitterSite} />
       <meta name="twitter:creator" content={twitterSite} />
 

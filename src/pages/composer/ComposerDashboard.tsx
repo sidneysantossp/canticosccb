@@ -331,6 +331,12 @@ const ComposerDashboard: React.FC = () => {
             <Plus className="w-5 h-5" />
             Novo Hino
           </Link>
+          <Link
+            to="/composer/cifras"
+            className="flex items-center gap-2 px-4 py-2 border border-primary-500/40 text-primary-300 rounded-lg font-medium hover:bg-primary-500/10 transition-colors"
+          >
+            Gerir Cifras
+          </Link>
         </div>
       </div>
 

@@ -109,8 +109,8 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
           {children || <Outlet />}
         </main>
         
-        {/* Footer Global - Ocultar em páginas de auth */}
-        {!isAuthPage && !isImmersiveCifraPage && <Footer />}
+        {/* Footer Global - Ocultar apenas em páginas de autenticação */}
+        {!isAuthPage && <Footer />}
       </div>
       
       {/* Mobile Navigation - Mobile Only */}

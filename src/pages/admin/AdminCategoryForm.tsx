@@ -127,7 +127,9 @@ const AdminCategoryForm: React.FC = () => {
         timeoutPromise,
       ]);
 
-      return (result as any)?.url || null;
+      // uploadCover retorna diretamente a URL (string), não um objeto { url }.
+      const uploadedUrl = typeof result === 'string' ? result : (result as any)?.url;
+      return uploadedUrl || null;
     } catch (error) {
       console.error('Erro ao fazer upload da imagem:', error);
       setError((error as any)?.message || 'Erro ao fazer upload da imagem');

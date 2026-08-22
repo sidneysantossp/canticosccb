@@ -266,6 +266,24 @@ const mapSupabaseBanner = (row: SupabaseBannerRow): HomeBanner => ({
   gradient_overlay: row.gradient_overlay ?? undefined,
 });
 
+export async function fetchCifrasPageBanner(): Promise<HomeBanner | null> {
+  if (!isSupabaseConfigured) return null;
+
+  try {
+    const rows = await supabaseFetch<SupabaseBannerRow>('banners', {
+      select: 'id,title,description,image_url,link_url,link_id,gradient_overlay,button_text,type',
+      type: 'eq.cifras',
+      is_active: 'eq.true',
+      order: 'position.asc',
+      limit: '1',
+    });
+    return rows.length > 0 ? mapSupabaseBanner(rows[0]) : null;
+  } catch (error) {
+    console.error('Erro ao carregar slide da página de cifras:', error);
+    return null;
+  }
+}
+
 const normalizeHomeCategory = (value: string | undefined | null) => slugify(String(value ?? ''));
 
 const matchesAvulsoTitle = (value: string | undefined | null) => {

@@ -8,7 +8,7 @@ const defaultThemeColor = '#10b981';
 
 const SiteConfigRuntime = () => {
   const [verificationId, setVerificationId] = useState('');
-  const [faviconUrl, setFaviconUrl] = useState('/icons/favicon.svg');
+  const [faviconUrl, setFaviconUrl] = useState('/favicon.png');
 
   useEffect(() => {
     const existingStyle = document.getElementById(styleTagId);
@@ -42,7 +42,7 @@ const SiteConfigRuntime = () => {
     let cancelled = false;
 
     const applyFavicon = (url: string) => {
-      const resolvedUrl = url || '/icons/favicon.svg';
+      const resolvedUrl = url || '/favicon.png';
       const selectors = [
         'link[rel="icon"]',
         'link[rel="shortcut icon"]',
@@ -74,18 +74,18 @@ const SiteConfigRuntime = () => {
 
     const loadFavicon = async () => {
       try {
-        const cached = sessionStorage.getItem('faviconLogoUrl') || localStorage.getItem('faviconLogoUrl');
-        if (cached) {
-          applyFavicon(cached);
-          return;
-        }
-
         const logo = await getLogoByType('favicon');
         if (!cancelled && logo?.url) {
           applyFavicon(logo.url);
+          return;
+        }
+
+        const cached = sessionStorage.getItem('faviconLogoUrl') || localStorage.getItem('faviconLogoUrl');
+        if (!cancelled && cached) {
+          applyFavicon(cached);
         }
       } catch {
-        applyFavicon('/icons/favicon.svg');
+        applyFavicon('/favicon.png');
       }
     };
 

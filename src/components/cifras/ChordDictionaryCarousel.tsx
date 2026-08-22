@@ -397,6 +397,74 @@ const FretboardShapeSVG: React.FC<FretboardShapeSVGProps> = ({ diagram, leftHand
   );
 };
 
+function chordToFrequencies(chord: string): number[] {
+  const match = chord.trim().match(/^(A#|Bb|C#|Db|D#|Eb|F#|Gb|G#|Ab|[A-G])/i);
+  if (!match) return [];
+  const pitchClass: Record<string, number> = { C: 0, 'C#': 1, Db: 1, D: 2, 'D#': 3, Eb: 3, E: 4, F: 5, 'F#': 6, Gb: 6, G: 7, 'G#': 8, Ab: 8, A: 9, 'A#': 10, Bb: 10, B: 11 };
+  const root = pitchClass[match[1][0].toUpperCase() + match[1].slice(1)] ?? 0;
+  const minor = /m(?!aj)/i.test(chord);
+  const intervals = minor ? [0, 3, 7] : [0, 4, 7];
+  return intervals.map(interval => 220 * Math.pow(2, ((root + interval) - 9) / 12));
+}
+
+export interface ChordPopoverProps {
+  chord: string;
+  shape?: CifraChordShape;
+  fallbackDiagram?: ChordDiagram;
+  leftHanded?: boolean;
+}
+
+export const ChordPopover: React.FC<ChordPopoverProps> = ({ chord, shape, fallbackDiagram, leftHanded = false }) => {
+  const [open, setOpen] = React.useState(false);
+  const databaseDiagram = shape ? normalizeDatabaseShape(shape) : null;
+  const diagram = databaseDiagram || fallbackDiagram;
+  const playChord = () => {
+    if (typeof window === 'undefined' || !window.AudioContext) return;
+    const context = new window.AudioContext();
+    const now = context.currentTime;
+    chordToFrequencies(chord).forEach((frequency, index) => {
+      const oscillator = context.createOscillator();
+      const gain = context.createGain();
+      oscillator.type = 'sine';
+      oscillator.frequency.value = frequency;
+      gain.gain.setValueAtTime(0.0001, now);
+      gain.gain.exponentialRampToValueAtTime(0.16, now + 0.03);
+      gain.gain.exponentialRampToValueAtTime(0.0001, now + 1.35);
+      oscillator.connect(gain).connect(context.destination);
+      oscillator.start(now + index * 0.025);
+      oscillator.stop(now + 1.4);
+    });
+    window.setTimeout(() => void context.close(), 1700);
+  };
+
+  return (
+    <span
+      className="group relative inline-block"
+      onMouseEnter={() => setOpen(true)}
+      onMouseLeave={() => setOpen(false)}
+      onFocus={() => setOpen(true)}
+      onBlur={() => setOpen(false)}
+    >
+      <button
+        type="button"
+        onClick={() => setOpen(current => !current)}
+        className="rounded-md px-1 text-inherit underline decoration-dotted underline-offset-4 transition-colors hover:bg-primary-500/20 focus:outline-none focus:ring-2 focus:ring-primary-400"
+        aria-label={`Ver diagrama do acorde ${chord}`}
+        aria-expanded={open}
+      >
+        {chord}
+      </button>
+      {open && diagram ? (
+        <span className="absolute bottom-full left-1/2 z-[60] mb-3 w-56 -translate-x-1/2 rounded-3xl border border-white/10 bg-[#202222] p-4 text-center shadow-2xl shadow-black/60">
+          <span className="mb-2 block text-xl font-black text-primary-400">{chord}</span>
+          <span className="flex justify-center">{databaseDiagram ? <FretboardShapeSVG diagram={databaseDiagram} leftHanded={leftHanded && shape?.instrument !== 'teclado'} /> : <ChordDiagramSVG diagram={fallbackDiagram!} leftHanded={leftHanded} />}</span>
+          <button type="button" onClick={playChord} className="mt-3 w-full rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-2 text-sm font-bold text-white transition-colors hover:border-primary-500/50 hover:text-primary-300">Ouvir acorde</button>
+        </span>
+      ) : null}
+    </span>
+  );
+};
+
 interface DatabaseChordShapeCardProps {
   chord: string;
   shapes: CifraChordShape[];

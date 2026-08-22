@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowLeft, Disc, Music2, Music4 } from 'lucide-react';
+import { ArrowLeft, Keyboard, Music2, Music4 } from 'lucide-react';
 import SEOHead from '@/components/SEO/SEOHead';
 import { type Cifra } from '@/api/cifras';
 import { fetchMergedPublicCifrasList, type PublicCifraPageData } from '@/lib/cifras-v2';
@@ -31,22 +31,10 @@ const relatedLinks = [
   { label: 'Hinos CCB', href: '/hinos-ccb' },
 ];
 
-const iconByInstrument: Record<string, React.ComponentType<{ className?: string }>> = {
-  violao: Music4,
-  ukulele: Music2,
-  teclado: Disc,
-};
-
 const labelByInstrument: Record<string, string> = {
   violao: 'Violao',
   ukulele: 'Ukulele',
   teclado: 'Teclado',
-};
-
-const hubHrefByInstrument: Record<string, string> = {
-  violao: '/cifras-violao-ccb',
-  ukulele: '/cifras-ukulele-ccb',
-  teclado: '/cifras-teclado-ccb',
 };
 
 const CifrasHubPage: React.FC = () => {
@@ -80,14 +68,6 @@ const CifrasHubPage: React.FC = () => {
       cancelled = true;
     };
   }, []);
-
-  const instrumentCounts = useMemo(() => {
-    return items.reduce<Record<string, number>>((acc, item) => {
-      const key = String(item.instrument || 'outros');
-      acc[key] = (acc[key] || 0) + 1;
-      return acc;
-    }, {});
-  }, [items]);
 
   const schemaData = useMemo(() => ([
     generateBreadcrumbSchema([
@@ -156,7 +136,7 @@ const CifrasHubPage: React.FC = () => {
       </div>
 
       <div className="max-w-6xl mx-auto px-4 py-8 sm:px-6">
-        <div className="grid gap-6 lg:grid-cols-[1.35fr,0.95fr]">
+        <div>
           <section className="rounded-3xl border border-white/10 bg-background-secondary p-6">
             <div className="flex items-center justify-between gap-4 mb-5">
               <div>
@@ -182,33 +162,46 @@ const CifrasHubPage: React.FC = () => {
               <div className="space-y-3">
                 {items.slice(0, 60).map((item) => (
                   <article key={item.id} className="rounded-2xl border border-white/10 bg-background-primary p-4 transition-colors hover:border-primary-500/40">
-                    <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
-                      <div>
-                        <p className="text-primary-400 text-sm font-medium">
+                    <div className="flex items-center gap-4">
+                      <Link
+                        to={`/cifra/${item.slug}`}
+                        aria-label={`Abrir cifra de ${item.title}`}
+                        className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border border-white/10 bg-white/5 text-primary-300 transition-colors hover:border-primary-500/50 hover:bg-primary-500/10"
+                      >
+                        <Music4 className="h-6 w-6" />
+                      </Link>
+
+                      <div className="min-w-0 flex-1">
+                        <p className="text-primary-400 text-xs font-medium uppercase tracking-wide">
                           {labelByInstrument[item.instrument] || 'Cifra CCB'}
                         </p>
-                        <h3 className="text-white font-semibold mt-1">
+                        <h3 className="truncate text-white font-semibold mt-1">
                           <Link to={`/cifra/${item.slug}`} className="hover:text-primary-300 transition-colors">
                             {item.title}
                           </Link>
                         </h3>
-                        <p className="text-text-muted text-sm mt-1">
+                        <p className="truncate text-text-muted text-sm mt-1">
                           {item.artist || 'Artista CCB'}{item.original_key ? ` • Tom ${item.original_key}` : ''}
                         </p>
                       </div>
-                      <div className="flex flex-wrap gap-2">
-                        <Link
-                          to={`/cifra/${item.slug}`}
-                          className="inline-flex w-full justify-center px-3 py-2 rounded-full bg-primary-500 text-black text-sm font-semibold transition-colors hover:bg-primary-400 sm:w-auto"
-                        >
-                          Ver cifra
-                        </Link>
-                        <Link
-                          to={hubHrefByInstrument[item.instrument] || '/cifras'}
-                          className="inline-flex w-full justify-center px-3 py-2 rounded-full border border-white/10 bg-white/5 text-sm font-medium text-white/85 transition-colors hover:border-primary-500/30 hover:text-white sm:w-auto"
-                        >
-                          Mais do instrumento
-                        </Link>
+
+                      <div className="flex shrink-0 items-center gap-1 sm:gap-2" aria-label="Instrumentos disponíveis em breve">
+                        {[
+                          { key: 'violao', label: 'Violão', Icon: Music4 },
+                          { key: 'ukulele', label: 'Ukulele', Icon: Music2 },
+                          { key: 'teclado', label: 'Teclado', Icon: Keyboard },
+                        ].map(({ key, label, Icon }) => (
+                          <button
+                            key={key}
+                            type="button"
+                            disabled
+                            title={`${label}: página em cadastro`}
+                            aria-label={`${label}: página em cadastro`}
+                            className="flex h-9 w-9 cursor-not-allowed items-center justify-center rounded-lg border border-white/10 bg-white/5 text-white/35 opacity-70"
+                          >
+                            <Icon className="h-4 w-4" />
+                          </button>
+                        ))}
                       </div>
                     </div>
                   </article>
@@ -217,44 +210,6 @@ const CifrasHubPage: React.FC = () => {
             )}
           </section>
 
-          <aside className="space-y-6">
-            <section className="rounded-3xl border border-white/10 bg-background-secondary p-6">
-              <h2 className="text-xl font-semibold text-white mb-3">Instrumentos com cobertura</h2>
-              <div className="space-y-3">
-                {relatedLinks.slice(1, 4).map((link) => {
-                  const instrumentKey = link.href.replace('/cifras-', '').replace('-ccb', '');
-                  const Icon = iconByInstrument[instrumentKey] || Music4;
-                  return (
-                    <Link
-                      key={link.href}
-                      to={link.href}
-                      className="flex items-center justify-between rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-white transition-colors hover:border-primary-500/30"
-                    >
-                      <span>
-                        {link.label}
-                        <span className="block text-xs text-text-muted mt-1">
-                          {instrumentCounts[instrumentKey] || 0} cifras publicadas
-                        </span>
-                      </span>
-                      <Icon className="w-4 h-4 text-primary-400" />
-                    </Link>
-                  );
-                })}
-              </div>
-            </section>
-
-            <section className="rounded-3xl border border-white/10 bg-background-secondary p-6">
-              <h2 className="text-xl font-semibold text-white mb-3">Perguntas frequentes</h2>
-              <div className="space-y-4">
-                {faq.map((item) => (
-                  <div key={item.question}>
-                    <h3 className="text-white font-medium">{item.question}</h3>
-                    <p className="text-text-muted text-sm mt-1">{item.answer}</p>
-                  </div>
-                ))}
-              </div>
-            </section>
-          </aside>
         </div>
       </div>
     </div>

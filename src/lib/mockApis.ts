@@ -294,22 +294,27 @@ export const advancedSearch = async (params: { query: string; type?: string; lim
   }
 };
 
-// Logo mock: lê do sessionStorage (preenchido pela área admin) e retorna um fallback
+// Consulta o logo público salvo no painel e usa cache apenas como fallback.
 export const getLogoByType = async (type: string): Promise<{ url: string } | null> => {
   try {
-    // Prioriza cache específico do tipo, senão usa 'primary'
+    const { data, error } = await publicSupabase
+      .from('site_logos')
+      .select('url')
+      .eq('type', type)
+      .limit(1);
+    const savedUrl = String(data?.[0]?.url || '').trim();
+    if (!error && savedUrl) return { url: normalizeAssetUrl(savedUrl) };
+  } catch {}
+
+  try {
     const cacheKey = `${type}LogoUrl`;
-    const fromSession = (typeof sessionStorage !== 'undefined')
-      ? (sessionStorage.getItem(cacheKey) || sessionStorage.getItem('primaryLogoUrl'))
-      : null;
-    const fromLocal = (typeof localStorage !== 'undefined')
-      ? (localStorage.getItem(cacheKey) || localStorage.getItem('primaryLogoUrl'))
-      : null;
-    const cached = fromSession || fromLocal;
+    const cached = (typeof sessionStorage !== 'undefined' && sessionStorage.getItem(cacheKey))
+      || (typeof localStorage !== 'undefined' && localStorage.getItem(cacheKey));
     if (cached) return { url: normalizeAssetUrl(cached) };
   } catch {}
 
-  // Fallback seguro local (garante UI funcional)
-  return { url: 'https://www.canticosccb.com.br/logo-canticos-ccb.png' };
+  return type === 'favicon'
+    ? { url: '/icons/favicon.svg' }
+    : { url: 'https://www.canticosccb.com.br/logo-canticos-ccb.png' };
 };
 import { normalizeAssetUrl } from '@/utils/siteUrl';

@@ -3,6 +3,7 @@ import { ChevronLeft, ChevronRight, Play } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import type { HomeBanner } from '@/lib/homeApi';
 import { buildBannerUrl } from '@/lib/media-helper';
+import { parseBannerOverlay } from '@/lib/bannerOverlay';
 
 interface Slide {
   id: number;
@@ -18,9 +19,11 @@ interface Slide {
 
 interface HeroSectionProps {
   banners?: HomeBanner[];
+  className?: string;
 }
 
-const HeroSection: React.FC<HeroSectionProps> = ({ banners = [] }) => {
+const HeroSection: React.FC<HeroSectionProps> = ({ banners = [], className }) => {
+  const spacingClassName = className ?? 'md:mx-6 md:mt-2';
   const [currentSlide, setCurrentSlide] = useState(0);
   const [failedSlides, setFailedSlides] = useState<Record<number, true>>({});
   const touchStartX = useRef<number | null>(null);
@@ -171,7 +174,7 @@ const HeroSection: React.FC<HeroSectionProps> = ({ banners = [] }) => {
   // Fallback: banner padrão quando não há banners do backend
   if (!slide) {
     return (
-      <div className="relative h-[360px] md:h-[350px] rounded-lg overflow-hidden mb-8 mt-0 md:mx-6 md:mt-2">
+      <div className={`relative h-[360px] md:h-[350px] rounded-lg overflow-hidden mb-8 mt-0 ${spacingClassName}`}>
         <div className="absolute inset-0 bg-gradient-to-br from-primary-600 to-primary-900" />
         <div className="relative z-10 flex items-center h-full px-6 md:px-12">
           <div className="max-w-2xl">
@@ -211,7 +214,7 @@ const HeroSection: React.FC<HeroSectionProps> = ({ banners = [] }) => {
 
   return (
     <div
-      className="relative h-[360px] md:h-[350px] rounded-lg overflow-hidden mb-8 mt-0 md:mx-6 md:mt-2"
+      className={`relative h-[360px] md:h-[350px] rounded-lg overflow-hidden mb-8 mt-0 ${spacingClassName}`}
       onTouchStart={handleTouchStart}
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
@@ -219,6 +222,7 @@ const HeroSection: React.FC<HeroSectionProps> = ({ banners = [] }) => {
       {/* Slides Container - Usando CSS transitions */}
       {displaySlides.map((s, index) => {
         const isActive = index === safeIndex;
+        const overlay = parseBannerOverlay(s.color);
 
         return (
           <div
@@ -264,8 +268,8 @@ const HeroSection: React.FC<HeroSectionProps> = ({ banners = [] }) => {
 
             {/* Gradient Overlay */}
             <div
-              className={`absolute inset-0 ${String(s.color)}`}
-              style={{ background: getGradientStyle(s.color) }}
+              className={`absolute inset-0 ${overlay.gradient}`}
+              style={{ background: getGradientStyle(overlay.gradient), opacity: overlay.opacity / 100 }}
             />
           </div>
         );

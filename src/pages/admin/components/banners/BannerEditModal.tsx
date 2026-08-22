@@ -136,6 +136,7 @@ const BannerEditModal: React.FC<Props> = ({
                 <option value="hero">Hero/Carousel</option>
                 <option value="promotional">Promocional</option>
                 <option value="contextual">Contextual</option>
+                <option value="cifras">Cifras — Slide da página de cifras</option>
               </select>
             </div>
             <div>

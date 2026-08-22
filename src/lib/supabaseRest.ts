@@ -12,7 +12,6 @@ const EMERGENCY_FIRST_TABLES = new Set([
   'albums',
   'composers',
   'playlists',
-  'categorias',
   'album_hinos',
   'hino_categorias',
   'hinario',

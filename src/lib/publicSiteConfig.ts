@@ -24,6 +24,8 @@ export interface RuntimeSeoSettings {
   site_description: string;
   site_keywords: string;
   site_url: string;
+  og_title: string;
+  og_description: string;
   og_image: string;
   twitter_card: 'summary' | 'summary_large_image' | 'player';
   twitter_site: string;
@@ -86,6 +88,8 @@ const SITE_CONFIG_KEYS = [
   'site_description',
   'site_keywords',
   'site_url',
+  'og_title',
+  'og_description',
   'og_image',
   'twitter_card',
   'twitter_site',
@@ -106,6 +110,8 @@ const defaultSeoSettings: RuntimeSeoSettings = {
   site_description: 'Plataforma independente de hinos, cifras, compositores e playlists relacionados à CCB',
   site_keywords: 'hinos CCB, hinário 5, congregação cristã no brasil',
   site_url: DEFAULT_SITE_URL,
+  og_title: '',
+  og_description: '',
   og_image: `${DEFAULT_SITE_URL}/logo-canticos-ccb.png`,
   twitter_card: 'summary_large_image',
   twitter_site: '@canticosccb',
@@ -340,6 +346,8 @@ export async function getSiteRuntimeConfig(force = false): Promise<SiteRuntimeCo
             toNonEmptyString(config.site_url, defaultSeoSettings.site_url),
             defaultSeoSettings.site_url
           ),
+          og_title: toNonEmptyString(config.og_title, defaultSeoSettings.og_title),
+          og_description: toNonEmptyString(config.og_description, defaultSeoSettings.og_description),
           og_image: normalizeAssetUrl(
             toNonEmptyString(config.og_image, defaultSeoSettings.og_image)
           ),

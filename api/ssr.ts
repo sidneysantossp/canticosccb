@@ -25,6 +25,53 @@ function isBot(ua: string): boolean {
 const SUPABASE_URL = (process.env.VITE_SUPABASE_URL || '').replace(/\/+$/, '');
 const SUPABASE_ANON_KEY = process.env.VITE_SUPABASE_ANON_KEY || '';
 const SITE_URL = 'https://www.canticosccb.com.br';
+const DEFAULT_SSR_SEO = {
+  site_title: 'Cânticos CCB — Ouça Hinos da Congregação Cristã no Brasil | Hinário 5, Cifras e Compositores',
+  site_description: 'Ouça hinos da CCB online grátis. Hinário 5 completo, hinos cantados e tocados, cifras, compositores e playlists da Congregação Cristã no Brasil. Crie sua conta e salve seus hinos favoritos.',
+  site_keywords: 'hinos CCB, hinário 5, congregação cristã no brasil, cifras CCB, hinos cantados, hinos tocados, compositores CCB',
+  og_image: `${SITE_URL}/logo-canticos-ccb.png`,
+  twitter_card: 'summary_large_image',
+  twitter_site: '@canticosccb',
+  favicon_url: `${SITE_URL}/favicon.png`,
+};
+type SsrSeoConfig = typeof DEFAULT_SSR_SEO;
+async function fetchSsrSeoConfig(): Promise<SsrSeoConfig> {
+  if (!SUPABASE_URL || !SUPABASE_ANON_KEY) return DEFAULT_SSR_SEO;
+  try {
+    const url = new URL(`${SUPABASE_URL}/rest/v1/site_config`);
+    url.searchParams.set('select', 'config_key,config_value');
+    url.searchParams.set('config_key', 'in.(site_title,site_description,site_keywords,og_image,twitter_card,twitter_site)');
+    const response = await fetch(url.toString(), {
+      headers: { apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${SUPABASE_ANON_KEY}` },
+      signal: AbortSignal.timeout(5000),
+    });
+    if (!response.ok) return DEFAULT_SSR_SEO;
+    const rows = await response.json();
+    const values = rows.reduce((acc: Record<string, string>, row: any) => {
+      if (row?.config_key && row.config_value) acc[row.config_key] = String(row.config_value).trim();
+      return acc;
+    }, {});
+    let faviconUrl = DEFAULT_SSR_SEO.favicon_url;
+    try {
+      const logoUrl = new URL(`${SUPABASE_URL}/rest/v1/site_logos`);
+      logoUrl.searchParams.set('select', 'url');
+      logoUrl.searchParams.set('type', 'eq.favicon');
+      logoUrl.searchParams.set('limit', '1');
+      const logoResponse = await fetch(logoUrl.toString(), {
+        headers: { apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${SUPABASE_ANON_KEY}` },
+        signal: AbortSignal.timeout(3000),
+      });
+      const logoRows = logoResponse.ok ? await logoResponse.json() : [];
+      const savedUrl = String(logoRows?.[0]?.url || '').trim();
+      if (savedUrl) faviconUrl = savedUrl.startsWith('http') ? savedUrl : `${SITE_URL}${savedUrl.startsWith('/') ? '' : '/'}${savedUrl}`;
+    } catch {
+      // Favicon estático continua como fallback para crawlers.
+    }
+    return { ...DEFAULT_SSR_SEO, ...values, favicon_url: faviconUrl };
+  } catch {
+    return DEFAULT_SSR_SEO;
+  }
+}
 const SSR_FIXTURE_MODE = process.env.NODE_ENV !== "production" && process.env.SSR_FIXTURE_MODE === "1";
 const FIXTURE_HYMN_ID = "d0c5dff2-679d-4288-b5be-6c9e98c3e2e5";
 function fixtureRows(table: string, params: Record<string, string>): any[] {
@@ -385,14 +432,36 @@ interface PageMeta {
   status?: number;
 }
 
-function buildFullHtml(meta: PageMeta): string {
+async function getSpaAssetTags(): Promise<string> {
+  try {
+    const response = await fetch(`${SITE_URL}/index.html`, { signal: AbortSignal.timeout(8000) });
+    if (!response.ok) return '';
+    const indexHtml = await response.text();
+    const assets = [...indexHtml.matchAll(/<link\b[^>]*>/gi)]
+      .map((match) => match[0])
+      .filter((tag) => /\brel=["']stylesheet["']/i.test(tag))
+      .map((tag) => tag.match(/\bhref=["']([^"']+)["']/i)?.[1])
+      .filter((href): href is string => Boolean(href))
+      .map((href) => `<link rel="stylesheet" href="${esc(href)}">`);
+    const scripts = [...indexHtml.matchAll(/<script\b[^>]*type=["']module["'][^>]*src=["']([^"']+)["'][^>]*>/gi)]
+      .map((match) => `<script type="module" src="${esc(match[1])}"></script>`);
+    return [...assets, ...scripts].join('\n    ');
+  } catch (error) {
+    console.error('[SSR] SPA assets unavailable:', error);
+    return '';
+  }
+}
+
+async function buildFullHtml(meta: PageMeta, seo: SsrSeoConfig = DEFAULT_SSR_SEO): Promise<string> {
   const ogType = meta.ogType || 'website';
-  const ogImage = meta.ogImage || `${SITE_URL}/logo-canticos-ccb.png`;
+  const siteName = seo.site_title || 'Cânticos CCB';
+  const ogImage = meta.ogImage || seo.og_image || `${SITE_URL}/logo-canticos-ccb.png`;
   const robotsContent = meta.noindex ? 'noindex, follow' : 'index, follow';
   const schemasHtml = (meta.schemas || [])
     .map(s => '<script type="application/ld+json">' + JSON.stringify(s) + '</script>')
     .join('\n    ');
   const canonicalHtml = meta.noindex ? '' : '<link rel="canonical" href="' + esc(meta.canonical) + '">';
+  const spaAssetTags = await getSpaAssetTags();
 
   return `<!DOCTYPE html>
 <html lang="pt-BR">
@@ -400,31 +469,36 @@ function buildFullHtml(meta: PageMeta): string {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>${esc(meta.title)}</title>
-    <meta name="description" content="${esc(meta.description)}">
+    <meta name="description" content="${esc(meta.description || seo.site_description)}">
+    <meta name="keywords" content="${esc(seo.site_keywords)}">
+    <link rel="icon" href="${esc(seo.favicon_url)}">
+    <link rel="shortcut icon" href="${esc(seo.favicon_url)}">
+    <link rel="apple-touch-icon" href="${esc(seo.favicon_url)}">
     <meta name="robots" content="${robotsContent}">
     <meta name="googlebot" content="${robotsContent}">
     <meta name="google-adsense-account" content="ca-pub-3459130972339055">
     ${canonicalHtml}
     <meta name="author" content="Cânticos CCB">
-    <meta name="keywords" content="hinos CCB, hinário 5, congregação cristã no brasil, cifras CCB, hinos cantados, hinos tocados, compositores CCB">
 
     <meta property="og:type" content="${ogType}">
-    <meta property="og:site_name" content="Cânticos CCB">
+    <meta property="og:site_name" content="${esc(siteName)}">
     <meta property="og:title" content="${esc(meta.title)}">
     <meta property="og:description" content="${esc(meta.description)}">
     <meta property="og:image" content="${esc(ogImage)}">
     <meta property="og:url" content="${esc(meta.canonical)}">
     <meta property="og:locale" content="pt_BR">
 
-    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:card" content="${esc(seo.twitter_card)}">
     <meta name="twitter:title" content="${esc(meta.title)}">
     <meta name="twitter:description" content="${esc(meta.description)}">
     <meta name="twitter:image" content="${esc(ogImage)}">
+    <meta name="twitter:site" content="${esc(seo.twitter_site)}">
 
     ${schemasHtml}
+    ${spaAssetTags}
 </head>
-<body style="max-width:900px;margin:0 auto;padding:40px 20px;font-family:system-ui,sans-serif;color:#e5e7eb;background:#121212;">
-    ${meta.bodyHtml}
+<body>
+    <div id="root">${meta.bodyHtml}</div>
 </body>
 </html>`;
 }
@@ -1532,9 +1606,9 @@ async function handlePlaylistDetail(idParam: string): Promise<PageMeta | null> {
   };
 }
 
-function handleHome(): PageMeta {
-  const title = 'Cânticos CCB — Ouça Hinos da Congregação Cristã no Brasil | Hinário 5, Cifras e Compositores';
-  const description = 'Ouça hinos da CCB online grátis. Hinário 5 completo, hinos cantados e tocados, cifras, compositores e playlists da Congregação Cristã no Brasil. Crie sua conta e salve seus hinos favoritos.';
+function handleHome(seo: SsrSeoConfig = DEFAULT_SSR_SEO): PageMeta {
+  const title = seo.site_title || DEFAULT_SSR_SEO.site_title;
+  const description = seo.site_description || DEFAULT_SSR_SEO.site_description;
   return {
     title,
     description,
@@ -1757,12 +1831,13 @@ export default async function handler(req: Request): Promise<Response> {
     return serveSpaIndex();
   }
 
+  const seoConfig = await fetchSsrSeoConfig();
   let pageMeta: PageMeta | null = null;
   let dependencyError: SupabaseUnavailableError | null = null;
 
   try {
     if (pathname === '/') {
-      pageMeta = handleHome();
+      pageMeta = handleHome(seoConfig);
     } else {
     const hinoMatch = pathname.match(/^\/hino\/(.+)$/);
     const compositorMatch = pathname.match(/^\/compositor\/(.+)$/);
@@ -1858,7 +1933,7 @@ export default async function handler(req: Request): Promise<Response> {
     };
   }
 
-  const html = buildFullHtml(pageMeta);
+  const html = await buildFullHtml(pageMeta, seoConfig);
   return new Response(html, {
     status: pageMeta.status || 200,
     headers: {

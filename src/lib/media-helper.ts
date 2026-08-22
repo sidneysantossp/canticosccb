@@ -145,8 +145,33 @@ export function buildHinoUrl(hino: { id: string; audio_url?: string } | string):
 }
 
 /**
- * Gera URL de capa de álbum com fallback
+ * Gera a URL da thumb de uma categoria.
+ *
+ * As categorias podem guardar uma URL pública completa (Supabase Storage ou R2)
+ * ou apenas o nome/caminho do ficheiro. URLs completas devem ser preservadas:
+ * diferente de capas de álbuns, não há garantia de que a thumb esteja no
+ * endpoint público de capas do serviço de mídia.
  */
+export function buildCategoryImageUrl(category: { id: string; image_url?: string } | string): string {
+  const raw = typeof category === 'string'
+    ? String(category || '').trim()
+    : String(category.image_url || '').trim();
+
+  if (!raw) {
+    const id = typeof category === 'string' ? raw : String(category.id || '').trim();
+    return getAlbumCoverUrl(id);
+  }
+
+  if (/^(https?:|data:|blob:)/i.test(raw)) {
+    return raw;
+  }
+
+  return buildAlbumCoverUrl({
+    id: typeof category === 'string' ? raw : String(category.id || raw),
+    cover_url: raw,
+  });
+}
+
 export function buildAlbumCoverUrl(album: { id: string; cover_url?: string } | string, _withFallback = true): string {
   if (typeof album === 'string') {
     return getAlbumCoverUrl(album);

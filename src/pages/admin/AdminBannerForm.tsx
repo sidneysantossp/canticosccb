@@ -10,11 +10,13 @@ import {
   CreateBannerData
 } from '@/lib/admin/bannersAdminApi';
 import { getSupabaseStorageUrl } from '@/lib/supabaseRest';
+import { parseBannerOverlay, serializeBannerOverlay } from '@/lib/bannerOverlay';
 
 const BANNER_TYPES: { value: BannerType; label: string }[] = [
   { value: 'hero', label: 'Hero/Principal' },
   { value: 'promotional', label: 'Promocional' },
-  { value: 'announcement', label: 'Anúncio' },
+  { value: 'contextual', label: 'Contextual' },
+  { value: 'cifras', label: 'Cifras — Slide da página de cifras' },
   { value: 'featured', label: 'Destaque' }
 ];
 
@@ -45,6 +47,7 @@ const AdminBannerForm: React.FC = () => {
     gradient_overlay: ''
   });
 
+  const [gradientOpacity, setGradientOpacity] = useState(100);
   const [imagePreview, setImagePreview] = useState('');
   const [previewType, setPreviewType] = useState<'image'|'video'|'audio'>('image');
   const [imageFile, setImageFile] = useState<File | null>(null);
@@ -74,8 +77,9 @@ const AdminBannerForm: React.FC = () => {
           type: banner.type,
           position: banner.position,
           is_active: banner.is_active,
-          gradient_overlay: banner.gradient_overlay || ''
+          gradient_overlay: parseBannerOverlay(banner.gradient_overlay).gradient
         });
+        setGradientOpacity(parseBannerOverlay(banner.gradient_overlay).opacity);
         // Normalizar URL antiga pública /media/banners/ -> stream seguro
         const resolveBannerUrl = (value: string) => {
           if (!value) return '';
@@ -190,7 +194,7 @@ const AdminBannerForm: React.FC = () => {
         type: formData.type,
         position: formData.position,
         is_active: formData.is_active,
-        gradient_overlay: formData.gradient_overlay
+        gradient_overlay: serializeBannerOverlay(formData.gradient_overlay, gradientOpacity)
       };
 
       if (isEditing && id) {
@@ -379,6 +383,31 @@ const AdminBannerForm: React.FC = () => {
                     <option key={gradient.value} value={gradient.value}>{gradient.label}</option>
                   ))}
                 </select>
+              </div>
+
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <label htmlFor="gradient-opacity" className="block text-gray-400 text-sm font-semibold">
+                    Opacidade do Overlay
+                  </label>
+                  <span className="text-green-400 text-sm font-semibold">{gradientOpacity}%</span>
+                </div>
+                <input
+                  id="gradient-opacity"
+                  type="range"
+                  min="0"
+                  max="100"
+                  step="1"
+                  value={gradientOpacity}
+                  onChange={(e) => setGradientOpacity(Number(e.target.value))}
+                  disabled={!formData.gradient_overlay}
+                  className="w-full accent-green-500 disabled:opacity-40"
+                  aria-label="Opacidade do Overlay"
+                />
+                <div className="flex justify-between text-xs text-gray-500 mt-1">
+                  <span>Transparente</span>
+                  <span>Opaco</span>
+                </div>
               </div>
             </div>
           </div>

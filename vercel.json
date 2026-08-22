@@ -12,52 +12,52 @@
     },
     {
       "source": "/",
-      "has": [{ "type": "header", "key": "user-agent", "value": "(?i).*(googlebot|bingbot|yandexbot|duckduckbot|slurp|baiduspider|facebookexternalhit|twitterbot|linkedinbot|whatsapp|telegrambot|discordbot|applebot|pinterest|redditbot|gptbot|oai-searchbot|chatgpt-user|claudebot|google-extended|applebot-extended|perplexitybot|perplexity-user|bytespider|ccbot|amazonbot|meta-externalagent|petalbot|semrushbot|ahrefsbot|mj12bot|embedly|quora|showyoubot|outbrain|rogerbot|screaming.frog).*" }],
+      "has": [{ "type": "header", "key": "user-agent", "value": ".*(googlebot|bingbot|yandexbot|duckduckbot|slurp|baiduspider|facebookexternalhit|twitterbot|linkedinbot|whatsapp|telegrambot|discordbot|applebot|pinterest|redditbot|gptbot|oai-searchbot|chatgpt-user|claudebot|google-extended|applebot-extended|perplexitybot|perplexity-user|bytespider|ccbot|amazonbot|meta-externalagent|petalbot|semrushbot|ahrefsbot|mj12bot|embedly|quora|showyoubot|outbrain|rogerbot|screaming.frog).*" }],
       "destination": "/api/ssr?path=/"
     },
     {
       "source": "/hino/:path*",
-      "has": [{ "type": "header", "key": "user-agent", "value": "(?i).*(googlebot|bingbot|yandexbot|duckduckbot|slurp|baiduspider|facebookexternalhit|twitterbot|linkedinbot|whatsapp|telegrambot|discordbot|applebot|pinterest|redditbot|gptbot|oai-searchbot|chatgpt-user|claudebot|google-extended|applebot-extended|perplexitybot|perplexity-user|bytespider|ccbot|amazonbot|meta-externalagent|petalbot|semrushbot|ahrefsbot|mj12bot|embedly|quora|showyoubot|outbrain|rogerbot|screaming.frog).*" }],
+      "has": [{ "type": "header", "key": "user-agent", "value": ".*(googlebot|bingbot|yandexbot|duckduckbot|slurp|baiduspider|facebookexternalhit|twitterbot|linkedinbot|whatsapp|telegrambot|discordbot|applebot|pinterest|redditbot|gptbot|oai-searchbot|chatgpt-user|claudebot|google-extended|applebot-extended|perplexitybot|perplexity-user|bytespider|ccbot|amazonbot|meta-externalagent|petalbot|semrushbot|ahrefsbot|mj12bot|embedly|quora|showyoubot|outbrain|rogerbot|screaming.frog).*" }],
       "destination": "/api/ssr?path=/hino/:path*"
     },
     {
       "source": "/compositor/:path*",
-      "has": [{ "type": "header", "key": "user-agent", "value": "(?i).*(googlebot|bingbot|yandexbot|duckduckbot|slurp|baiduspider|facebookexternalhit|twitterbot|linkedinbot|whatsapp|telegrambot|discordbot|applebot|pinterest|redditbot|gptbot|oai-searchbot|chatgpt-user|claudebot|google-extended|applebot-extended|perplexitybot|perplexity-user|bytespider|ccbot|amazonbot|meta-externalagent|petalbot|semrushbot|ahrefsbot|mj12bot|embedly|quora|showyoubot|outbrain|rogerbot|screaming.frog).*" }],
+      "has": [{ "type": "header", "key": "user-agent", "value": ".*(googlebot|bingbot|yandexbot|duckduckbot|slurp|baiduspider|facebookexternalhit|twitterbot|linkedinbot|whatsapp|telegrambot|discordbot|applebot|pinterest|redditbot|gptbot|oai-searchbot|chatgpt-user|claudebot|google-extended|applebot-extended|perplexitybot|perplexity-user|bytespider|ccbot|amazonbot|meta-externalagent|petalbot|semrushbot|ahrefsbot|mj12bot|embedly|quora|showyoubot|outbrain|rogerbot|screaming.frog).*" }],
       "destination": "/api/ssr?path=/compositor/:path*"
     },
     {
       "source": "/album/:path*",
-      "has": [{ "type": "header", "key": "user-agent", "value": "(?i).*(googlebot|bingbot|yandexbot|duckduckbot|slurp|baiduspider|facebookexternalhit|twitterbot|linkedinbot|whatsapp|telegrambot|discordbot|applebot|pinterest|redditbot|gptbot|oai-searchbot|chatgpt-user|claudebot|google-extended|applebot-extended|perplexitybot|perplexity-user|bytespider|ccbot|amazonbot|meta-externalagent|petalbot|semrushbot|ahrefsbot|mj12bot|embedly|quora|showyoubot|outbrain|rogerbot|screaming.frog).*" }],
+      "has": [{ "type": "header", "key": "user-agent", "value": ".*(googlebot|bingbot|yandexbot|duckduckbot|slurp|baiduspider|facebookexternalhit|twitterbot|linkedinbot|whatsapp|telegrambot|discordbot|applebot|pinterest|redditbot|gptbot|oai-searchbot|chatgpt-user|claudebot|google-extended|applebot-extended|perplexitybot|perplexity-user|bytespider|ccbot|amazonbot|meta-externalagent|petalbot|semrushbot|ahrefsbot|mj12bot|embedly|quora|showyoubot|outbrain|rogerbot|screaming.frog).*" }],
       "destination": "/api/ssr?path=/album/:path*"
     },
     {
       "source": "/categoria/:path*",
-      "has": [{ "type": "header", "key": "user-agent", "value": "(?i).*(googlebot|bingbot|yandexbot|duckduckbot|slurp|baiduspider|facebookexternalhit|twitterbot|linkedinbot|whatsapp|telegrambot|discordbot|applebot|pinterest|redditbot|gptbot|oai-searchbot|chatgpt-user|claudebot|google-extended|applebot-extended|perplexitybot|perplexity-user|bytespider|ccbot|amazonbot|meta-externalagent|petalbot|semrushbot|ahrefsbot|mj12bot|embedly|quora|showyoubot|outbrain|rogerbot|screaming.frog).*" }],
+      "has": [{ "type": "header", "key": "user-agent", "value": ".*(googlebot|bingbot|yandexbot|duckduckbot|slurp|baiduspider|facebookexternalhit|twitterbot|linkedinbot|whatsapp|telegrambot|discordbot|applebot|pinterest|redditbot|gptbot|oai-searchbot|chatgpt-user|claudebot|google-extended|applebot-extended|perplexitybot|perplexity-user|bytespider|ccbot|amazonbot|meta-externalagent|petalbot|semrushbot|ahrefsbot|mj12bot|embedly|quora|showyoubot|outbrain|rogerbot|screaming.frog).*" }],
       "destination": "/api/ssr?path=/categoria/:path*"
     },
     {
       "source": "/hinario/:numero",
-      "has": [{ "type": "header", "key": "user-agent", "value": "(?i).*(googlebot|bingbot|yandexbot|duckduckbot|slurp|baiduspider|facebookexternalhit|twitterbot|linkedinbot|whatsapp|telegrambot|discordbot|applebot|pinterest|redditbot|gptbot|oai-searchbot|chatgpt-user|claudebot|google-extended|applebot-extended|perplexitybot|perplexity-user|bytespider|ccbot|amazonbot|meta-externalagent|petalbot|semrushbot|ahrefsbot|mj12bot|embedly|quora|showyoubot|outbrain|rogerbot|screaming.frog).*" }],
+      "has": [{ "type": "header", "key": "user-agent", "value": ".*(googlebot|bingbot|yandexbot|duckduckbot|slurp|baiduspider|facebookexternalhit|twitterbot|linkedinbot|whatsapp|telegrambot|discordbot|applebot|pinterest|redditbot|gptbot|oai-searchbot|chatgpt-user|claudebot|google-extended|applebot-extended|perplexitybot|perplexity-user|bytespider|ccbot|amazonbot|meta-externalagent|petalbot|semrushbot|ahrefsbot|mj12bot|embedly|quora|showyoubot|outbrain|rogerbot|screaming.frog).*" }],
       "destination": "/api/ssr?path=/hinario/:numero"
     },
     {
       "source": "/hinario",
-      "has": [{ "type": "header", "key": "user-agent", "value": "(?i).*(googlebot|bingbot|yandexbot|duckduckbot|slurp|baiduspider|facebookexternalhit|twitterbot|linkedinbot|whatsapp|telegrambot|discordbot|applebot|pinterest|redditbot|gptbot|oai-searchbot|chatgpt-user|claudebot|google-extended|applebot-extended|perplexitybot|perplexity-user|bytespider|ccbot|amazonbot|meta-externalagent|petalbot|semrushbot|ahrefsbot|mj12bot|embedly|quora|showyoubot|outbrain|rogerbot|screaming.frog).*" }],
+      "has": [{ "type": "header", "key": "user-agent", "value": ".*(googlebot|bingbot|yandexbot|duckduckbot|slurp|baiduspider|facebookexternalhit|twitterbot|linkedinbot|whatsapp|telegrambot|discordbot|applebot|pinterest|redditbot|gptbot|oai-searchbot|chatgpt-user|claudebot|google-extended|applebot-extended|perplexitybot|perplexity-user|bytespider|ccbot|amazonbot|meta-externalagent|petalbot|semrushbot|ahrefsbot|mj12bot|embedly|quora|showyoubot|outbrain|rogerbot|screaming.frog).*" }],
       "destination": "/api/ssr?path=/hinario"
     },
     {
       "source": "/cifra/:slug*",
-      "has": [{ "type": "header", "key": "user-agent", "value": "(?i).*(googlebot|bingbot|yandexbot|duckduckbot|slurp|baiduspider|facebookexternalhit|twitterbot|linkedinbot|whatsapp|telegrambot|discordbot|applebot|pinterest|redditbot|gptbot|oai-searchbot|chatgpt-user|claudebot|google-extended|applebot-extended|perplexitybot|perplexity-user|bytespider|ccbot|amazonbot|meta-externalagent|petalbot|semrushbot|ahrefsbot|mj12bot|embedly|quora|showyoubot|outbrain|rogerbot|screaming.frog).*" }],
+      "has": [{ "type": "header", "key": "user-agent", "value": ".*(googlebot|bingbot|yandexbot|duckduckbot|slurp|baiduspider|facebookexternalhit|twitterbot|linkedinbot|whatsapp|telegrambot|discordbot|applebot|pinterest|redditbot|gptbot|oai-searchbot|chatgpt-user|claudebot|google-extended|applebot-extended|perplexitybot|perplexity-user|bytespider|ccbot|amazonbot|meta-externalagent|petalbot|semrushbot|ahrefsbot|mj12bot|embedly|quora|showyoubot|outbrain|rogerbot|screaming.frog).*" }],
       "destination": "/api/ssr?path=/cifra/:slug*"
     },
     {
       "source": "/cifras",
-      "has": [{ "type": "header", "key": "user-agent", "value": "(?i).*(googlebot|bingbot|yandexbot|duckduckbot|slurp|baiduspider|facebookexternalhit|twitterbot|linkedinbot|whatsapp|telegrambot|discordbot|applebot|pinterest|redditbot|gptbot|oai-searchbot|chatgpt-user|claudebot|google-extended|applebot-extended|perplexitybot|perplexity-user|bytespider|ccbot|amazonbot|meta-externalagent|petalbot|semrushbot|ahrefsbot|mj12bot|embedly|quora|showyoubot|outbrain|rogerbot|screaming.frog).*" }],
+      "has": [{ "type": "header", "key": "user-agent", "value": ".*(googlebot|bingbot|yandexbot|duckduckbot|slurp|baiduspider|facebookexternalhit|twitterbot|linkedinbot|whatsapp|telegrambot|discordbot|applebot|pinterest|redditbot|gptbot|oai-searchbot|chatgpt-user|claudebot|google-extended|applebot-extended|perplexitybot|perplexity-user|bytespider|ccbot|amazonbot|meta-externalagent|petalbot|semrushbot|ahrefsbot|mj12bot|embedly|quora|showyoubot|outbrain|rogerbot|screaming.frog).*" }],
       "destination": "/api/ssr?path=/cifras"
     },
     {
       "source": "/:path(trends|tendencias|about|sobre|search|buscar|compositores|albuns|categorias|playlists|termos|premium|privacidade|privacy|cookies|disclaimer|lgpd|avisos|ajuda|contato|instrumentais|biblia-ccb|biblia-narrada|radio|hinos-ccb|hinos-1-a-120-ccb|hinos-121-a-240-ccb|hinos-241-a-360-ccb|hinos-361-a-480-ccb|hinario-5-ccb|letras-hinos-ccb|hinos-cantados-ccb|hinos-tocados-ccb|hinos-avulsos-ccb|cifras-hinos-ccb|cifras-violao-ccb|cifras-ukulele-ccb|cifras-teclado-ccb|baixar-hinos-ccb|baixar-albuns-ccb|baixar-cds-ccb)",
-      "has": [{ "type": "header", "key": "user-agent", "value": "(?i).*(googlebot|bingbot|yandexbot|duckduckbot|slurp|baiduspider|facebookexternalhit|twitterbot|linkedinbot|whatsapp|telegrambot|discordbot|applebot|pinterest|redditbot|gptbot|oai-searchbot|chatgpt-user|claudebot|google-extended|applebot-extended|perplexitybot|perplexity-user|bytespider|ccbot|amazonbot|meta-externalagent|petalbot|semrushbot|ahrefsbot|mj12bot|embedly|quora|showyoubot|outbrain|rogerbot|screaming.frog).*" }],
+      "has": [{ "type": "header", "key": "user-agent", "value": ".*(googlebot|bingbot|yandexbot|duckduckbot|slurp|baiduspider|facebookexternalhit|twitterbot|linkedinbot|whatsapp|telegrambot|discordbot|applebot|pinterest|redditbot|gptbot|oai-searchbot|chatgpt-user|claudebot|google-extended|applebot-extended|perplexitybot|perplexity-user|bytespider|ccbot|amazonbot|meta-externalagent|petalbot|semrushbot|ahrefsbot|mj12bot|embedly|quora|showyoubot|outbrain|rogerbot|screaming.frog).*" }],
       "destination": "/api/ssr?path=/:path"
     },
     {

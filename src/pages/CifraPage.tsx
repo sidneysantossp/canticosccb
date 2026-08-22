@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { useParams, Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { ArrowLeft, Minus, Plus, ScrollText, Settings2, Eye, Printer, Share2, Music, X, Heart, Flag, Gauge, Hand, Target, RefreshCw, Play, Pause, RotateCcw } from 'lucide-react';
 import SEOHead from '@/components/SEO/SEOHead';
-import ChordDictionaryCarousel from '@/components/cifras/ChordDictionaryCarousel';
+import ChordDictionaryCarousel, { ChordPopover } from '@/components/cifras/ChordDictionaryCarousel';
 import { generateCifraSchema, generateBreadcrumbSchema } from '@/utils/schemaGenerator';
 import { fetchCifraBySlug, incrementCifraViews, type Cifra, INSTRUMENTS, ALL_KEYS } from '@/api/cifras';
 import { buildHinoUrl } from '@/utils/slugUrl';
@@ -35,6 +35,7 @@ import {
   extractChords,
   getSemitonesBetweenKeys,
   transposeCifraContent,
+  getChordDiagram,
 } from '@/utils/chordUtils';
 
 type DisplayCifra = Cifra | PublicCifraPageData;
@@ -63,6 +64,32 @@ function stripTrailingArtistFromTitle(title: string, artist?: string | null): st
   return normalizedTitle
     .replace(new RegExp(`\\s+-\\s+${escapeRegExp(normalizedArtist)}\\s*$`, 'i'), '')
     .trim();
+}
+
+function buildInstrumentSeoTitle(
+  number: number | null,
+  title: string,
+  instrumentLabel: string,
+  fallback?: string | null,
+): string {
+  if (!number) {
+    return fallback?.trim() || `${title} | Cânticos CCB`;
+  }
+
+  return `CIFRA Hino ${number} CCB - ${title} - ${instrumentLabel} | Cânticos CCB`;
+}
+
+function buildInstrumentSeoDescription(
+  number: number | null,
+  title: string,
+  instrumentLabel: string,
+  fallback?: string | null,
+): string {
+  if (!number) {
+    return fallback?.trim() || `Cifra de ${title} para ${instrumentLabel}. Acordes e tom.`;
+  }
+
+  return `Cifra Hino ${number} CCB - ${title} para ${instrumentLabel}. Acordes e tom do Hinário 5 CCB.`;
 }
 
 function getSectionAnchor(sectionLabel: string, index: number): string {
@@ -1214,9 +1241,23 @@ const CifraPage: React.FC = () => {
       );
     }
     if (isChordLine(line) && showChords) {
+      const chordTokens = line.split(/(\s+)/);
       return (
         <div key={idx} className="whitespace-pre text-primary-400 sm:text-primary-400 print:text-primary-600">
-          {line}
+          {chordTokens.map((token, tokenIndex) => {
+            const shapeOptions = chordShapeVariants[token];
+            const selectedShape = shapeOptions?.find(shape => shape.id === selectedShapeIds[token]) || shapeOptions?.[0];
+            const isKnownChord = Boolean(selectedShape || getChordDiagram(token));
+            return isKnownChord ? (
+              <ChordPopover
+                key={`${String(idx)}-${tokenIndex}`}
+                chord={token}
+                shape={selectedShape}
+                fallbackDiagram={getChordDiagram(token) || undefined}
+                leftHanded={showLeftHandedDiagrams}
+              />
+            ) : <span key={`${String(idx)}-${tokenIndex}`}>{token}</span>;
+          })}
         </div>
       );
     }
@@ -1284,17 +1325,20 @@ const CifraPage: React.FC = () => {
   const relatedNumber = relatedHymn?.numero || relatedLyric?.numero || (isCifraV2(cifra) ? cifra.hinario_numero : null) || extractHymnNumber(cifra.title);
   const displayCifraTitle = stripTrailingArtistFromTitle(cifra.title, cifra.artist);
   const hinarioRange = getHinarioRangeForNumero(relatedNumber);
-  const cifraTitle = (isCifraV2(cifra) ? cifra.seo_title : null) || (relatedNumber
-    ? `Hino ${relatedNumber} CCB - ${displayCifraTitle} | Cifra`
-    : `${displayCifraTitle} | Cifra`);
-  const cifraDescription = (isCifraV2(cifra) ? cifra.seo_description : null) || [
-    relatedNumber ? `Cifra do Hino ${relatedNumber} CCB.` : `Cifra de ${cifra.title}.`,
-    cifra.artist ? `Artista: ${cifra.artist}.` : '',
-    `Tom: ${cifra.original_key}.`,
-    `Acordes e navegacao para ${instrumentLabel}.`,
-    relatedLyric ? `Letra disponivel no Hinario ${relatedLyric.numero}.` : '',
-    relatedHymn ? 'Pagina de audio relacionada disponivel.' : '',
-  ].filter(Boolean).join(' ');
+  const storedSeoTitle = isCifraV2(cifra) ? cifra.seo_title : null;
+  const storedSeoDescription = isCifraV2(cifra) ? cifra.seo_description : null;
+  const cifraTitle = buildInstrumentSeoTitle(
+    relatedNumber,
+    displayCifraTitle,
+    instrumentLabel,
+    storedSeoTitle,
+  );
+  const cifraDescription = buildInstrumentSeoDescription(
+    relatedNumber,
+    displayCifraTitle,
+    instrumentLabel,
+    storedSeoDescription,
+  );
   const cifraKeywords = (isCifraV2(cifra) ? cifra.seo_keywords : null) || [
     cifra.title,
     cifra.artist,
@@ -1347,7 +1391,7 @@ const CifraPage: React.FC = () => {
         ]),
       ]}
     />
-    <div className="min-h-screen overflow-x-hidden bg-[#080909] px-6 pt-6 pb-36 text-white sm:mx-auto sm:min-h-0 sm:max-w-4xl sm:bg-transparent sm:px-4 sm:py-6 sm:pb-6 sm:text-inherit print:max-w-none print:bg-white print:px-12 print:py-10 print:pb-0 print:text-[#252525]">
+    <div className="min-h-screen overflow-x-clip bg-[#080909] px-6 pt-6 pb-36 text-white sm:mx-auto sm:min-h-0 sm:max-w-4xl sm:bg-transparent sm:px-4 sm:py-6 sm:pb-6 sm:text-inherit print:max-w-none print:bg-white print:px-12 print:py-10 print:pb-0 print:text-[#252525]">
       <div className="mb-14 hidden print:block">
         <div className="flex items-start justify-between gap-8">
           <div>
@@ -1446,7 +1490,6 @@ const CifraPage: React.FC = () => {
             <p className="text-gray-400 text-sm mt-3 leading-relaxed">
               Cifra CCB para {instrumentLabel}, com acordes, troca de tom e navegação para outras cifras e páginas relacionadas.
             </p>
-            {renderChordDictionaryCarousel('mt-5 mb-2 hidden sm:block')}
             <div className="flex flex-wrap gap-2 mt-4">
               {isCifraV2(cifra) ? (
                 <>
@@ -1537,6 +1580,38 @@ const CifraPage: React.FC = () => {
         </div>
       </div>
 
+      {/* Dicionário e controles permanecem juntos logo abaixo do header no desktop. */}
+      <div className="hidden sm:block lg:sticky lg:top-0 z-30 -mx-4 px-4 pt-1 bg-[#080909]/95 sm:bg-background-primary/95 backdrop-blur-md print:hidden">
+        {renderChordDictionaryCarousel('mt-0 mb-2 hidden sm:block')}
+        <div className="flex flex-wrap items-center gap-2 border-b border-gray-800 pb-3 mb-6 print:hidden">
+          <select value={selectedInstrument} onChange={e => handleInstrumentChange(e.target.value)} className="shrink-0 rounded-lg border border-gray-700 bg-gray-800 px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-primary-500">
+            {instrumentOptions.map(i => <option key={i.value} value={i.value}>{i.label}</option>)}
+          </select>
+          <div className="flex shrink-0 items-center rounded-lg border border-gray-700 bg-gray-800">
+            <button onClick={transposeDown} className="rounded-l-lg px-3 py-2 text-white hover:bg-gray-700" aria-label="Diminuir tom"><Minus className="h-4 w-4" /></button>
+            <button onClick={() => setShowKeySelector(!showKeySelector)} className="min-w-[74px] px-3 py-2 text-center text-sm"><span className="text-gray-400">Tom </span><span className="font-bold text-primary-400">{selectedKey}</span></button>
+            <button onClick={transposeUp} className="rounded-r-lg px-3 py-2 text-white hover:bg-gray-700" aria-label="Aumentar tom"><Plus className="h-4 w-4" /></button>
+          </div>
+          <div className="flex shrink-0 items-center rounded-lg border border-gray-700 bg-gray-800">
+            <button onClick={() => setFontSize(prev => Math.max(10, prev - 1))} className="rounded-l-lg px-3 py-2 text-white hover:bg-gray-700" aria-label="Diminuir fonte">A</button>
+            <button onClick={() => setFontSize(prev => Math.min(24, prev + 1))} className="rounded-r-lg px-3 py-2 text-base font-bold text-white hover:bg-gray-700" aria-label="Aumentar fonte">A</button>
+          </div>
+          <button onClick={() => setAutoScrollSpeed(prev => prev === 0 ? 1 : prev === 1 ? 2 : prev === 2 ? 3 : 0)} className={`shrink-0 rounded-lg border px-3 py-2 text-sm ${autoScrollSpeed > 0 ? 'border-primary-500/50 bg-primary-500/20 text-primary-400' : 'border-gray-700 bg-gray-800 text-gray-400'}`}><ScrollText className="mr-1 inline h-4 w-4" />{autoScrollSpeed > 0 ? `${autoScrollSpeed}x` : 'Rolagem'}</button>
+          <button onClick={() => setShowChords(!showChords)} className={`shrink-0 rounded-lg border px-3 py-2 text-sm ${showChords ? 'border-primary-500/50 bg-primary-500/20 text-primary-400' : 'border-gray-700 bg-gray-800 text-gray-400'}`}>Acordes</button>
+          <button onClick={() => setMetronomeEnabled(current => !current)} className={`shrink-0 rounded-lg border px-3 py-2 text-sm ${metronomeEnabled ? 'border-primary-500/50 bg-primary-500/20 text-primary-400' : 'border-gray-700 bg-gray-800 text-gray-400'}`}><Gauge className="mr-1 inline h-4 w-4" />Metrônomo</button>
+          {selectedInstrument !== 'teclado' ? <button onClick={() => setShowLeftHandedDiagrams(current => !current)} className={`shrink-0 rounded-lg border px-3 py-2 text-sm ${showLeftHandedDiagrams ? 'border-primary-500/50 bg-primary-500/20 text-primary-400' : 'border-gray-700 bg-gray-800 text-gray-400'}`}><Hand className="mr-1 inline h-4 w-4" />Canhoto</button> : null}
+          {supportsStudyTools ? <button onClick={() => setStudyModeEnabled(current => !current)} className={`shrink-0 rounded-lg border px-3 py-2 text-sm ${studyModeEnabled ? 'border-primary-500/50 bg-primary-500/20 text-primary-400' : 'border-gray-700 bg-gray-800 text-gray-400'}`}><Target className="mr-1 inline h-4 w-4" />Estudo</button> : null}
+          <button onClick={() => setShowOptions(!showOptions)} className="shrink-0 rounded-lg border border-gray-700 bg-gray-800 px-3 py-2 text-gray-400 hover:text-white" aria-label="Abrir opções"><Settings2 className="h-4 w-4" /></button>
+        </div>
+        {showKeySelector && (
+          <div className="mt-2 rounded-xl border border-gray-700 bg-gray-900 p-3 shadow-xl">
+            <div className="flex flex-wrap gap-2">
+              {ALL_KEYS.map(key => <button key={key} onClick={() => { setSelectedKey(key); setShowKeySelector(false); }} className={`rounded-lg px-3 py-2 text-sm ${key === selectedKey ? 'bg-primary-500 text-black' : 'bg-gray-800 text-gray-300 hover:bg-gray-700'}`}>{key}</button>)}
+            </div>
+          </div>
+        )}
+      </div>
+
       {(relatedHymn || relatedLyric) && (
         <div className="mb-6 hidden rounded-2xl sm:block border border-white/10 bg-background-secondary p-5">
           <h2 className="text-lg font-semibold text-white">Letra e audio deste hino</h2>
@@ -1588,33 +1663,6 @@ const CifraPage: React.FC = () => {
           </div>
         </div>
       )}
-
-      {isCifraV2(cifra) && studyFacts.length > 0 ? (
-        <div className="mb-6 hidden rounded-2xl sm:block border border-white/10 bg-background-secondary p-5">
-          <div className="flex items-start justify-between gap-4">
-            <div>
-              <h2 className="text-lg font-semibold text-white">Visao de estudo</h2>
-              <p className="text-text-muted text-sm mt-2">
-                Resumo rapido da versao publicada para ensaio, estudo por instrumento e leitura em tela pequena.
-              </p>
-            </div>
-            <Music className="hidden sm:block w-5 h-5 text-primary-400" />
-          </div>
-          <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            {studyFacts.map((fact) => (
-              <div key={fact.label} className="rounded-2xl border border-white/10 bg-background-primary px-4 py-3">
-                <p className="text-xs uppercase tracking-[0.18em] text-text-muted">{fact.label}</p>
-                <p className="mt-2 text-sm font-semibold text-white">{fact.value}</p>
-              </div>
-            ))}
-          </div>
-          {cifra.intro_notes ? (
-            <div className="mt-4 rounded-2xl border border-primary-500/20 bg-primary-500/10 px-4 py-3 text-sm text-white/90">
-              <span className="font-semibold text-primary-300">Observacao editorial:</span> {cifra.intro_notes}
-            </div>
-          ) : null}
-        </div>
-      ) : null}
 
       {supportsStudyTools ? (
         <div className="mb-6 hidden rounded-2xl sm:block border border-primary-500/20 bg-primary-500/5 p-5">
@@ -1904,7 +1952,7 @@ const CifraPage: React.FC = () => {
       ) : null}
 
       {/* Toolbar */}
-      <div className="sticky top-0 z-20 hidden bg-background-primary/95 sm:block backdrop-blur-sm border-b border-gray-800 -mx-4 px-4 py-3 mb-6 print:hidden">
+      <div             className="hidden">
         <div className="flex items-center gap-2 overflow-x-auto pb-1 -mb-1 scrollbar-hide sm:flex-wrap sm:overflow-visible">
           {/* Instrument selector */}
           <select
@@ -2210,6 +2258,7 @@ const CifraPage: React.FC = () => {
       </div>
 
       {/* Cifra Content */}
+      <div className="rounded-3xl border border-white/10 bg-background-secondary p-5 sm:p-7">
       <div
         ref={contentRef}
         className="font-mono leading-[1.62] tracking-[-0.01em] sm:leading-relaxed sm:tracking-normal print:text-[17px] print:leading-[1.6]"
@@ -2262,6 +2311,53 @@ const CifraPage: React.FC = () => {
           transposedContent.split('\n').map((line, idx) => renderLine(line, idx))
         )}
       </div>
+      </div>
+
+      {isCifraV2(cifra) && studyFacts.length > 0 ? (
+        <div className="mt-8 mb-6 hidden rounded-2xl border border-white/10 bg-background-secondary p-5 sm:block">
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <h2 className="text-lg font-semibold text-white">Visão de estudo</h2>
+              <p className="mt-2 text-sm text-text-muted">Resumo rápido da versão publicada para ensaio, estudo por instrumento e leitura em tela pequena.</p>
+            </div>
+            <Music className="hidden h-5 w-5 text-primary-400 sm:block" />
+          </div>
+          <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {studyFacts.map((fact) => (
+              <div key={fact.label} className="rounded-2xl border border-white/10 bg-background-primary px-4 py-3">
+                <p className="text-xs uppercase tracking-[0.18em] text-text-muted">{fact.label}</p>
+                <p className="mt-2 text-sm font-semibold text-white">{fact.value}</p>
+              </div>
+            ))}
+          </div>
+          {cifra.intro_notes ? (
+            <div className="mt-4 rounded-2xl border border-primary-500/20 bg-primary-500/10 px-4 py-3 text-sm text-white/90">
+              <span className="font-semibold text-primary-300">Observação editorial:</span> {cifra.intro_notes}
+            </div>
+          ) : null}
+        </div>
+      ) : null}
+
+      {/* Contribution prompt shown at the end of every cifra */}
+      <section className="mt-12 border-t border-white/10 pt-6 pb-4 print:hidden" aria-label="Contribua com a correção da cifra">
+        <div className="rounded-3xl border border-white/10 bg-white/[0.03] px-5 py-6 sm:px-7">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <p className="text-base font-medium text-gray-300">A Cifra desse Hino está errada?</p>
+              <button
+                type="button"
+                onClick={() => setShowReportModal(true)}
+                className="mt-2 text-left text-base font-bold text-white underline decoration-primary-500/70 underline-offset-4 transition-colors hover:text-primary-300"
+              >
+                Contribua com a correção
+              </button>
+            </div>
+            <div className="text-sm text-gray-500 sm:text-right">
+              Ajude-nos a manter esta cifra correta para toda a comunidade.
+            </div>
+          </div>
+        </div>
+      </section>
 
       {/* Mobile quick controls */}
       <div className="fixed inset-x-3 bottom-3 z-30 grid grid-cols-5 overflow-hidden rounded-[1.75rem] border border-white/10 bg-[#111313]/95 px-2 py-3 shadow-2xl shadow-black/60 backdrop-blur-xl sm:hidden print:hidden">
@@ -2403,6 +2499,26 @@ const CifraPage: React.FC = () => {
           </div>
         </div>
       ) : null}
+
+      <section className="mt-10 rounded-3xl border border-white/10 bg-background-secondary p-6 sm:p-8">
+        <h2 className="text-xl font-bold text-white">A Cifra deste Hino está errada?</h2>
+        <p className="mt-2 max-w-2xl text-gray-400">Contribua com a correção e ajude a melhorar esta cifra para toda a comunidade.</p>
+        <button
+          type="button"
+          onClick={() => {
+            const songId = isCifraV2(cifra) ? cifra.song_id : cifra.id;
+            const versionId = isCifraV2(cifra) ? cifra.id : null;
+            if (!user) {
+              navigate(`/login?redirect=${encodeURIComponent(`/cifra/${slug}`)}`);
+              return;
+            }
+            navigate(`/contribuir-cifra?type=correction&songId=${encodeURIComponent(songId)}${versionId ? `&versionId=${encodeURIComponent(versionId)}` : ''}`);
+          }}
+          className="mt-5 rounded-2xl bg-primary-500 px-5 py-3 font-semibold text-black transition-colors hover:bg-primary-400"
+        >
+          Contribua com a correção
+        </button>
+      </section>
 
       {showReportModal && isCifraV2(cifra) ? (
         <div className="fixed inset-0 z-40 flex items-end justify-center bg-black/70 px-4 py-4 sm:items-center">
