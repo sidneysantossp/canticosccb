@@ -216,242 +216,36 @@ const HinarioViewPage: React.FC = () => {
         ]}
       />
 
-      {/* Top sticky area: search + nav */}
-      <div className="sticky top-0 z-30 bg-gray-900/95 backdrop-blur-sm border-b border-gray-700/60">
-        {/* Search bar */}
-        <div className="max-w-3xl mx-auto px-4 pt-2 pb-1" ref={searchRef}>
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-            <input
-              ref={searchInputRef}
-              type="text"
-              value={searchQuery}
-              onChange={e => { setSearchQuery(e.target.value); setShowSearch(true); }}
-              onFocus={() => setShowSearch(true)}
-              placeholder="Buscar hino por número ou nome..."
-              className="w-full pl-9 pr-8 py-2 bg-gray-800/80 border border-gray-700 rounded-lg text-white text-sm placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary-500"
-            />
-            {searchQuery && (
-              <button
-                onClick={() => { setSearchQuery(''); setShowSearch(false); }}
-                className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-gray-400 hover:text-white"
-              >
-                <X className="w-3.5 h-3.5" />
-              </button>
-            )}
-
-            {/* Dropdown results */}
-            {showSearch && searchResults.length > 0 && (
-              <div className="absolute top-full left-0 right-0 mt-1 bg-gray-800 border border-gray-700 rounded-lg shadow-xl max-h-64 overflow-y-auto z-50">
-                {searchResults.map(h => (
-                  <button
-                    key={h.id}
-                    onClick={() => handleSelectHymn(h.numero)}
-                    className={`w-full flex items-center gap-3 px-4 py-2.5 text-left hover:bg-gray-700/70 transition-colors ${
-                      h.numero === currentNumero ? 'bg-primary-500/10 border-l-2 border-primary-500' : ''
-                    }`}
-                  >
-                    <span className="text-primary-400 font-bold text-sm w-8 text-right flex-shrink-0">{h.numero}</span>
-                    <span className="text-gray-200 text-sm truncate">{h.titulo}</span>
-                  </button>
-                ))}
-              </div>
-            )}
-
-            {showSearch && searchQuery.trim() && searchResults.length === 0 && (
-              <div className="absolute top-full left-0 right-0 mt-1 bg-gray-800 border border-gray-700 rounded-lg shadow-xl p-4 z-50">
-                <p className="text-gray-500 text-sm text-center">Nenhum hino encontrado</p>
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* Back link + share - inside sticky */}
-        <div className="max-w-3xl mx-auto px-4 pb-2 flex items-center justify-between">
-          <Link
-            to="/hinario"
-            className="inline-flex items-center gap-2 text-primary-400 hover:text-primary-300 transition-colors"
-          >
-            <ArrowLeft className="w-4 h-4" />
-            <span className="text-sm font-medium">Voltar</span>
-          </Link>
-
-          <button
-            onClick={handleShare}
-            className="p-2 text-gray-400 hover:text-white hover:bg-gray-800 rounded-lg transition-colors"
-            title="Compartilhar"
-          >
-            <Share2 className="w-4 h-4" />
-          </button>
-        </div>
-      </div>
-
-      <div
-        className="max-w-3xl mx-auto px-4 pt-4 pb-8 select-none"
-        onCopy={e => e.preventDefault()}
-        onCut={e => e.preventDefault()}
-        onContextMenu={e => e.preventDefault()}
-        style={{ WebkitUserSelect: 'none', userSelect: 'none' }}
-      >
-
-        {/* Hymn header */}
-        <div className="mb-8">
-          <h1 className="text-lg md:text-2xl font-bold text-white leading-tight">
-            {hymn.numero} - {hymn.titulo}
+      <main className="min-h-screen bg-background-primary px-4 py-8 md:px-6 md:py-12">
+        <article className="mx-auto max-w-4xl rounded-3xl border border-gray-300 bg-gray-200 px-6 py-8 text-gray-900 shadow-xl md:px-12 md:py-12">
+          <h1 className="text-3xl font-bold tracking-tight md:text-5xl">
+            {hymn.titulo}
           </h1>
-          {hymn.subtitulo && (
-            <p className="text-gray-400 text-sm mt-1">{hymn.subtitulo}</p>
-          )}
-          <p className="text-gray-400 text-sm md:text-base mt-4 leading-relaxed">
-            Letra do Hino {hymn.numero} CCB com navegação rápida pelo Hinário 5, acesso à versão em áudio quando disponível
-            e links para categorias e cifras relacionadas.
-          </p>
-          <div className="flex flex-wrap gap-2 mt-4">
-            {audioVersion && (
-              <Link
-                to={buildHinoUrl(audioVersion.id, audioVersion.titulo, audioVersion.numero)}
-                className="inline-flex items-center rounded-full border border-primary-500/40 bg-primary-500/10 px-3 py-1.5 text-sm text-primary-300 transition-colors hover:bg-primary-500/20"
-              >
-                Ouvir este hino
-              </Link>
-            )}
-            {cifraVersion && (
-              <Link
-                to={`/cifra/${cifraVersion.slug}`}
-                className="inline-flex items-center rounded-full border border-primary-500/40 bg-primary-500/10 px-3 py-1.5 text-sm text-primary-300 transition-colors hover:bg-primary-500/20"
-              >
-                Ver cifra{cifraVersion.original_key ? ` • Tom ${cifraVersion.original_key}` : ''}
-              </Link>
-            )}
-            <Link
-              to="/hinos-cantados-ccb"
-              className="inline-flex items-center rounded-full border border-gray-700 bg-gray-800 px-3 py-1.5 text-sm text-gray-200 transition-colors hover:border-primary-500/40 hover:text-white"
-            >
-              Hinos cantados
-            </Link>
-            <Link
-              to="/hinos-tocados-ccb"
-              className="inline-flex items-center rounded-full border border-gray-700 bg-gray-800 px-3 py-1.5 text-sm text-gray-200 transition-colors hover:border-primary-500/40 hover:text-white"
-            >
-              Hinos tocados
-            </Link>
-            <Link
-              to="/cifras"
-              className="inline-flex items-center rounded-full border border-gray-700 bg-gray-800 px-3 py-1.5 text-sm text-gray-200 transition-colors hover:border-primary-500/40 hover:text-white"
-            >
-              Ver cifras CCB
-            </Link>
-          </div>
-        </div>
 
-        {/* Verses */}
-        <div className="space-y-8" style={{ fontSize: `${fontSize}px` }}>
-          {verses.map((verse, idx) => (
-            <div key={idx} className="flex gap-4">
-              {verse.number !== null && (
-                <span className="text-primary-400 font-semibold flex-shrink-0 w-8 text-right select-none" style={{ fontSize: `${fontSize}px` }}>
-                  {verse.number}.
-                </span>
-              )}
-              <div className={`text-gray-200 leading-relaxed ${verse.number === null ? 'pl-12 italic text-gray-400' : ''}`}>
-                {verse.lines.map((line, li) => (
-                  <div key={li}>{line || '\u00A0'}</div>
+          <div className="mt-8 border-t border-gray-300 pt-8">
+            {verses.length > 0 ? (
+              <div className="space-y-7" style={{ fontSize: `${fontSize}px` }}>
+                {verses.map((verse, idx) => (
+                  <div key={idx} className="flex gap-4">
+                    {verse.number !== null && (
+                      <span className="w-8 flex-shrink-0 select-none text-right font-semibold text-gray-700" style={{ fontSize: `${fontSize}px` }}>
+                        {verse.number}.
+                      </span>
+                    )}
+                    <div className={`leading-relaxed ${verse.number === null ? 'pl-12 italic text-gray-600' : 'text-gray-900'}`}>
+                      {verse.lines.map((line, lineIndex) => (
+                        <div key={lineIndex}>{line || '\u00A0'}</div>
+                      ))}
+                    </div>
+                  </div>
                 ))}
               </div>
-            </div>
-          ))}
-        </div>
-
-        <section className="mt-10 rounded-2xl border border-gray-700/60 bg-gray-800/60 p-5">
-          <h2 className="text-lg font-semibold text-white">Escutar ou estudar este hino</h2>
-          <p className="text-gray-400 text-sm mt-2">
-            Use estes atalhos para abrir a versao em audio, a cifra relacionada e outros hubs estrategicos do repertorio CCB.
-          </p>
-          <div className="flex flex-wrap gap-2 mt-4">
-            {audioVersion ? (
-              <Link
-                to={buildHinoUrl(audioVersion.id, audioVersion.titulo, audioVersion.numero)}
-                className="inline-flex items-center rounded-full border border-primary-500/40 bg-primary-500/10 px-3 py-1.5 text-sm text-primary-300 transition-colors hover:bg-primary-500/20"
-              >
-                Ouvir Hino {hymn.numero} CCB
-              </Link>
-            ) : null}
-            {cifraVersion ? (
-              <Link
-                to={`/cifra/${cifraVersion.slug}`}
-                className="inline-flex items-center rounded-full border border-primary-500/40 bg-primary-500/10 px-3 py-1.5 text-sm text-primary-300 transition-colors hover:bg-primary-500/20"
-              >
-                Cifra do Hino {hymn.numero}{cifraVersion.original_key ? ` • Tom ${cifraVersion.original_key}` : ''}
-              </Link>
-            ) : null}
-            <Link
-              to="/hinos-ccb"
-              className="inline-flex items-center rounded-full border border-gray-700 bg-gray-800 px-3 py-1.5 text-sm text-gray-200 transition-colors hover:border-primary-500/40 hover:text-white"
-            >
-              Hinos CCB
-            </Link>
-            <Link
-              to="/cifras-hinos-ccb"
-              className="inline-flex items-center rounded-full border border-gray-700 bg-gray-800 px-3 py-1.5 text-sm text-gray-200 transition-colors hover:border-primary-500/40 hover:text-white"
-            >
-              Cifras de Hinos
-            </Link>
-            {hinarioRange ? (
-              <Link
-                to={hinarioRange.path}
-                className="inline-flex items-center rounded-full border border-gray-700 bg-gray-800 px-3 py-1.5 text-sm text-gray-200 transition-colors hover:border-primary-500/40 hover:text-white"
-              >
-                {hinarioRange.label}
-              </Link>
-            ) : null}
+            ) : (
+              <p className="text-base text-gray-600 md:text-lg">A letra deste hino ainda não está disponível.</p>
+            )}
           </div>
-        </section>
-
-        {/* Navigation bar - below content */}
-        <div className="mt-10 mb-8 border-t border-gray-700/60 pt-6">
-          <div className="flex items-center justify-between gap-2">
-            <button
-              onClick={() => currentNumero > 1 && navigate(`/hinario/${currentNumero - 1}`)}
-              disabled={currentNumero <= 1}
-              className="flex items-center gap-1 px-3 py-2 bg-gray-800 hover:bg-gray-700 disabled:opacity-30 disabled:cursor-not-allowed text-white rounded-lg transition-colors text-sm"
-            >
-              <ChevronLeft className="w-4 h-4" />
-              <span className="text-xs sm:text-sm">Anterior</span>
-            </button>
-
-            <form onSubmit={handleGoTo} className="flex items-center gap-2">
-              <input
-                type="number"
-                min={1}
-                max={totalHymns || 480}
-                value={goToInput}
-                onChange={e => setGoToInput(e.target.value)}
-                placeholder={String(currentNumero)}
-                className="w-16 px-2 py-2 bg-gray-800 border border-gray-600 rounded-lg text-white text-center text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-              />
-              <span className="text-gray-500 text-xs">/ {totalHymns || '...'}</span>
-            </form>
-
-            <div className="flex items-center gap-1">
-              <button onClick={zoomOut} disabled={fontSize <= 12} className="p-2 bg-gray-800 hover:bg-gray-700 disabled:opacity-30 text-white rounded-lg transition-colors" title="Diminuir fonte">
-                <ZoomOut className="w-4 h-4" />
-              </button>
-              <button onClick={zoomIn} disabled={fontSize >= 32} className="p-2 bg-gray-800 hover:bg-gray-700 disabled:opacity-30 text-white rounded-lg transition-colors" title="Aumentar fonte">
-                <ZoomIn className="w-4 h-4" />
-              </button>
-            </div>
-
-            <button
-              onClick={() => currentNumero < totalHymns && navigate(`/hinario/${currentNumero + 1}`)}
-              disabled={currentNumero >= totalHymns}
-              className="flex items-center gap-1 px-3 py-2 bg-gray-800 hover:bg-gray-700 disabled:opacity-30 disabled:cursor-not-allowed text-white rounded-lg transition-colors text-sm"
-            >
-              <span className="text-xs sm:text-sm">Próximo</span>
-              <ChevronRight className="w-4 h-4" />
-            </button>
-          </div>
-        </div>
-      </div>
+        </article>
+      </main>
     </>
   );
 };
