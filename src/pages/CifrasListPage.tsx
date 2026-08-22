@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Search, Music, FileText, Eye, AlertCircle, RefreshCw } from 'lucide-react';
+import { Search, FileText, Eye, AlertCircle, RefreshCw } from 'lucide-react';
 import SEOHead from '@/components/SEO/SEOHead';
 import { generateItemListSchema, generateBreadcrumbSchema } from '@/utils/schemaGenerator';
 import { Cifra, INSTRUMENTS, CATEGORIES } from '@/api/cifras';
@@ -178,35 +178,28 @@ const CifrasListPage: React.FC = () => {
           </p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="flex flex-col gap-2">
           {filtered.map(cifra => (
             <Link
               key={cifra.id}
               to={`/cifra/${cifra.slug}`}
-              className="group bg-gray-800/40 hover:bg-gray-800/70 border border-gray-700/50 hover:border-gray-600 rounded-xl p-4 transition-all"
+              className="group rounded-xl border border-gray-700/50 bg-gray-800/40 px-3 py-2.5 transition-all hover:border-gray-600 hover:bg-gray-800/70 sm:px-4 sm:py-3"
             >
-              <div className="flex items-start gap-3">
-                {cifra.cover_url ? (
-                  <img src={cifra.cover_url} alt={`Cifra de ${cifra.title}`} className="w-14 h-14 rounded-lg object-cover flex-shrink-0" />
-                ) : (
-                  <div className="w-14 h-14 rounded-lg bg-gray-700/50 flex items-center justify-center flex-shrink-0">
-                    <Music className="w-6 h-6 text-gray-500" />
-                  </div>
-                )}
-                <div className="flex-1 min-w-0">
-                  <h3 className="text-white font-semibold group-hover:text-primary-400 transition-colors line-clamp-1">
+              <div className="flex items-center gap-3">
+                <div className="min-w-0 flex-1">
+                  <h3 className="line-clamp-1 text-sm font-semibold leading-5 text-white transition-colors group-hover:text-primary-400 sm:text-base">
                     {cifra.title}
                   </h3>
-                  <p className="text-gray-400 text-sm line-clamp-1">{cifra.artist}</p>
-                  <div className="flex items-center gap-2 mt-2">
-                    <span className="px-2 py-0.5 bg-primary-500/15 text-primary-400 text-xs rounded-md font-medium">
+                  <p className="line-clamp-1 text-xs leading-4 text-gray-400 sm:text-sm">{cifra.artist}</p>
+                  <div className="mt-1.5 flex items-center gap-2">
+                    <span className="rounded-md bg-primary-500/15 px-2 py-0.5 text-xs font-medium text-primary-400">
                       {cifra.original_key}
                     </span>
-                    <span className="text-gray-500 text-xs">
+                    <span className="line-clamp-1 text-xs text-gray-500">
                       {PUBLIC_INSTRUMENTS.find(i => i.value === cifra.instrument)?.label || cifra.instrument}
                     </span>
-                    <span className="text-gray-600 text-xs ml-auto flex items-center gap-1">
-                      <Eye className="w-3 h-3" />
+                    <span className="ml-auto flex shrink-0 items-center gap-1 text-xs text-gray-600">
+                      <Eye className="h-3 w-3" />
                       {isCifraV2(cifra) ? 'V2' : cifra.views_count}
                     </span>
                   </div>

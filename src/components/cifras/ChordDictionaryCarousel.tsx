@@ -1,5 +1,6 @@
-import React, { useMemo } from 'react';
-import { getChordDiagram, type ChordDiagram } from '@/utils/chordUtils';
+import React, { useMemo, useRef, useState } from 'react';
+import { Play } from 'lucide-react';
+import { getChordDiagram, parseChord, type ChordDiagram } from '@/utils/chordUtils';
 import {
   explainCifraChordNameMatch,
   resolveCifraVersionChordOverride,
@@ -397,11 +398,116 @@ const FretboardShapeSVG: React.FC<FretboardShapeSVGProps> = ({ diagram, leftHand
   );
 };
 
+interface ChordPopupProps {
+  item: VisibleChordCard;
+  onClose: () => void;
+}
+
+function playChordAudio(chord: string): void {
+  const AudioContextCtor = window.AudioContext || ((window as Window & typeof globalThis & { webkitAudioContext?: typeof AudioContext }).webkitAudioContext);
+  if (!AudioContextCtor) return;
+
+  const context = new AudioContextCtor();
+  const parsed = parseChord(chord);
+  const roots: Record<string, number> = {
+    C: 261.63, 'C#': 277.18, Db: 277.18, D: 293.66, 'D#': 311.13, Eb: 311.13,
+    E: 329.63, F: 349.23, 'F#': 369.99, Gb: 369.99, G: 392, 'G#': 415.3,
+    Ab: 415.3, A: 440, 'A#': 466.16, Bb: 466.16, B: 493.88,
+  };
+  const root = parsed ? roots[parsed.root] || 261.63 : 261.63;
+  const intervals = parsed?.suffix.toLowerCase().startsWith('m') ? [0, 3, 7] : [0, 4, 7];
+  const now = context.currentTime;
+
+  intervals.forEach((interval, index) => {
+    const oscillator = context.createOscillator();
+    const gain = context.createGain();
+    oscillator.type = 'triangle';
+    oscillator.frequency.value = root * Math.pow(2, interval / 12);
+    gain.gain.setValueAtTime(0.0001, now);
+    gain.gain.exponentialRampToValueAtTime(0.12 / (index + 1), now + 0.03);
+    gain.gain.exponentialRampToValueAtTime(0.0001, now + 1.1);
+    oscillator.connect(gain);
+    gain.connect(context.destination);
+    oscillator.start(now);
+    oscillator.stop(now + 1.15);
+  });
+
+  window.setTimeout(() => void context.close(), 1400);
+}
+
+const ChordPopup: React.FC<ChordPopupProps> = ({ item, onClose }) => {
+  const [position, setPosition] = useState(() => ({ x: window.innerWidth / 2, y: window.innerHeight / 2 }));
+  const [isDragging, setIsDragging] = useState(false);
+  const dragOrigin = useRef({ pointerX: 0, pointerY: 0, centerX: 0, centerY: 0 });
+
+  const databaseDiagram = item.kind === 'database'
+    ? normalizeDatabaseShape(item.selectedShape)
+    : null;
+
+  const beginDrag = (event: React.PointerEvent<HTMLDivElement>) => {
+    event.currentTarget.setPointerCapture(event.pointerId);
+    const rect = event.currentTarget.parentElement?.getBoundingClientRect() || event.currentTarget.getBoundingClientRect();
+    dragOrigin.current = {
+      pointerX: event.clientX,
+      pointerY: event.clientY,
+      centerX: rect.left + rect.width / 2,
+      centerY: rect.top + rect.height / 2,
+    };
+    setIsDragging(true);
+  };
+
+  const moveDrag = (event: React.PointerEvent<HTMLDivElement>) => {
+    if (!isDragging) return;
+    setPosition((current) => ({
+      x: Math.min(window.innerWidth - 24, Math.max(24, dragOrigin.current.centerX + event.clientX - dragOrigin.current.pointerX)),
+      y: Math.min(window.innerHeight - 24, Math.max(24, dragOrigin.current.centerY + event.clientY - dragOrigin.current.pointerY)),
+    }));
+  };
+
+  return (
+    <div className="fixed inset-0 z-[80] pointer-events-none" aria-live="polite">
+      <div
+        className="pointer-events-auto absolute w-[min(22rem,calc(100vw-2rem))] -translate-x-1/2 -translate-y-1/2 rounded-2xl border border-white/15 bg-[#1d2020]/98 p-4 text-center shadow-2xl shadow-black/60 backdrop-blur-xl"
+        style={{ left: `${position.x}px`, top: `${position.y}px` }}
+      >
+        <div
+          className="mb-2 flex cursor-move touch-none items-center justify-between border-b border-white/10 pb-2"
+          onPointerDown={beginDrag}
+          onPointerMove={moveDrag}
+          onPointerUp={() => setIsDragging(false)}
+          onPointerCancel={() => setIsDragging(false)}
+        >
+          <span className="text-xs font-semibold uppercase tracking-[0.18em] text-gray-500">Mover acorde</span>
+          <button type="button" onClick={onClose} className="rounded-full px-2 py-1 text-lg leading-none text-gray-400 hover:bg-white/10 hover:text-white" aria-label="Fechar acorde">×</button>
+        </div>
+        <p className="mb-2 text-2xl font-black text-primary-400">{item.chord}</p>
+        <div className="relative mx-auto flex min-h-[150px] items-center justify-center overflow-hidden rounded-xl bg-black/10 py-1">
+          {item.kind === 'database' ? (
+            databaseDiagram ? <FretboardShapeSVG diagram={databaseDiagram} /> : <span className="text-sm text-gray-400">Diagrama indisponível</span>
+          ) : (
+            <ChordDiagramSVG diagram={item.diagram} />
+          )}
+          <button
+            type="button"
+            onClick={() => playChordAudio(item.chord)}
+            className="absolute left-1/2 top-1/2 inline-flex h-14 w-14 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-2xl border border-white/20 bg-[#252827]/95 text-white shadow-xl transition hover:scale-105 hover:bg-primary-500 hover:text-black"
+            aria-label={`Ouvir acorde ${item.chord}`}
+          >
+            <Play className="ml-1 h-7 w-7 fill-current" />
+          </button>
+        </div>
+        <button type="button" onClick={() => playChordAudio(item.chord)} className="mt-3 w-full rounded-xl border border-white/15 bg-white/[0.04] px-4 py-2 text-sm font-bold text-white transition hover:border-primary-500/50 hover:text-primary-300">Ouvir acorde</button>
+      </div>
+    </div>
+  );
+};
+
 interface DatabaseChordShapeCardProps {
   chord: string;
   shapes: CifraChordShape[];
   selectedShapeId: string;
   onSelectShape: (chord: string, shapeId: string) => void;
+  onOpen: () => void;
   leftHanded?: boolean;
   editorialOverride?: CifraVersionChordOverride | null;
   matchOptions: {
@@ -439,6 +545,7 @@ const DatabaseChordShapeCard: React.FC<DatabaseChordShapeCardProps> = ({
   shapes,
   selectedShapeId,
   onSelectShape,
+  onOpen,
   leftHanded = false,
   editorialOverride,
   matchOptions,
@@ -452,7 +559,14 @@ const DatabaseChordShapeCard: React.FC<DatabaseChordShapeCardProps> = ({
   const editorialLabel = getEditorialOverrideLabel(editorialOverride);
 
   return (
-    <div className="w-[124px] flex-shrink-0 snap-start rounded-xl px-1 py-2 text-center sm:w-auto sm:min-w-[168px] sm:max-w-[198px] sm:rounded-2xl sm:border sm:border-white/10 sm:bg-background-secondary sm:px-4 sm:py-3">
+    <div
+      className="w-[124px] flex-shrink-0 snap-start cursor-pointer rounded-xl px-1 py-1 text-center transition-transform hover:-translate-y-0.5 sm:w-auto sm:min-w-[168px] sm:max-w-[198px] sm:rounded-2xl sm:border sm:border-white/10 sm:bg-background-secondary sm:px-3 sm:py-2"
+      onClick={onOpen}
+      onKeyDown={(event) => { if (event.key === 'Enter' || event.key === ' ') onOpen(); }}
+      role="button"
+      tabIndex={0}
+      aria-label={`Abrir acorde ${chord}`}
+    >
       {diagram ? (
         <FretboardShapeSVG diagram={diagram} leftHanded={leftHanded && shape.instrument !== 'teclado'} />
       ) : (
@@ -534,6 +648,8 @@ const ChordDictionaryCarousel: React.FC<ChordDictionaryCarouselProps> = ({
   limit = 12,
   className = '',
 }) => {
+  const [activeChord, setActiveChord] = useState<VisibleChordCard | null>(null);
+
   const visibleChordCards = useMemo<VisibleChordCard[]>(() => chords
     .slice(0, limit)
     .map((chord) => {
@@ -599,6 +715,7 @@ const ChordDictionaryCarousel: React.FC<ChordDictionaryCarouselProps> = ({
               shapes={item.shapes}
               selectedShapeId={item.selectedShape.id}
               onSelectShape={onSelectShape}
+              onOpen={() => setActiveChord(item)}
               leftHanded={leftHanded}
               editorialOverride={item.editorialOverride}
               matchOptions={{
@@ -608,12 +725,21 @@ const ChordDictionaryCarousel: React.FC<ChordDictionaryCarouselProps> = ({
               }}
             />
           ) : (
-            <div key={item.chord} className="w-[124px] flex-shrink-0 snap-start text-center sm:w-auto">
+            <div
+              key={item.chord}
+              className="w-[124px] flex-shrink-0 snap-start cursor-pointer text-center transition-transform hover:-translate-y-0.5 sm:w-auto"
+              onClick={() => setActiveChord(item)}
+              onKeyDown={(event) => { if (event.key === 'Enter' || event.key === ' ') setActiveChord(item); }}
+              role="button"
+              tabIndex={0}
+              aria-label={`Abrir acorde ${item.chord}`}
+            >
               <ChordDiagramSVG diagram={item.diagram} leftHanded={leftHanded} />
             </div>
           )
         ))}
       </div>
+      {activeChord ? <ChordPopup item={activeChord} onClose={() => setActiveChord(null)} /> : null}
     </div>
   );
 };

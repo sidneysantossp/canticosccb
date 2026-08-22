@@ -65,6 +65,22 @@ function stripTrailingArtistFromTitle(title: string, artist?: string | null): st
     .trim();
 }
 
+function getCifraCategoryLabel(category?: string | null): string {
+  const normalized = String(category || '').trim().toLowerCase();
+  const labels: Record<string, string> = {
+    avulso: 'Hino Avulso CCB',
+    avulsos: 'Hino Avulso CCB',
+    cantado: 'Hino Cantado CCB',
+    cantados: 'Hino Cantado CCB',
+    tocado: 'Hino Tocado CCB',
+    tocados: 'Hino Tocado CCB',
+    instrumental: 'Hino Instrumental CCB',
+    instrumentais: 'Hino Instrumental CCB',
+  };
+
+  return labels[normalized] || String(category || 'Cifra CCB').trim();
+}
+
 function getSectionAnchor(sectionLabel: string, index: number): string {
   const normalized = String(sectionLabel || '')
     .normalize('NFD')
@@ -1287,6 +1303,10 @@ const CifraPage: React.FC = () => {
     .replace(/^\s*(?:hino\s*)?\d+\s*(?:ccb)?\s*[-–—:.]\s*/i, '')
     .replace(/\s{2,}/g, ' ')
     .trim();
+  const headerCifraTitle = cifra.artist?.trim() && cifra.artist.trim().toLowerCase() !== displayCifraTitle.toLowerCase()
+    ? `${displayCifraTitle} (${cifra.artist.trim()})`
+    : displayCifraTitle;
+  const headerCifraCategory = getCifraCategoryLabel(cifra.category);
   const hinarioRange = getHinarioRangeForNumero(relatedNumber);
   const cifraTitle = relatedNumber
     ? `CIFRA Hino ${relatedNumber} CCB - ${displayCifraTitle} - ${instrumentLabel} | Cânticos CCB`
@@ -1351,7 +1371,7 @@ const CifraPage: React.FC = () => {
         ]),
       ]}
     />
-    <div className="min-h-screen overflow-x-hidden bg-[#080909] px-6 pt-6 pb-36 text-white sm:mx-auto sm:min-h-0 sm:max-w-4xl sm:bg-transparent sm:px-4 sm:py-6 sm:pb-6 sm:text-inherit print:max-w-none print:bg-white print:px-12 print:py-10 print:pb-0 print:text-[#252525]">
+    <div className="min-h-screen overflow-x-clip bg-[#080909] px-6 pt-6 pb-36 text-white sm:mx-auto sm:min-h-0 sm:max-w-4xl sm:bg-transparent sm:px-4 sm:py-6 sm:pb-6 sm:text-inherit print:max-w-none print:bg-white print:px-12 print:py-10 print:pb-0 print:text-[#252525]">
       <div className="mb-14 hidden print:block">
         <div className="flex items-start justify-between gap-8">
           <div>
@@ -1381,7 +1401,8 @@ const CifraPage: React.FC = () => {
             <ArrowLeft className="h-6 w-6" />
           </Link>
           <div className="min-w-0 flex-1">
-            <h1 className="text-[28px] font-black leading-[1.02] tracking-[-0.04em] text-white">{displayCifraTitle}</h1>
+            <h1 className="text-[28px] font-black leading-[1.02] tracking-[-0.04em] text-white">{headerCifraTitle}</h1>
+            <p className="mt-2 text-base font-bold text-primary-400">{headerCifraCategory}</p>
           </div>
           <button
             type="button"
@@ -1435,7 +1456,8 @@ const CifraPage: React.FC = () => {
             <img src={cifra.cover_url} alt={displayCifraTitle} className="w-16 h-16 sm:w-20 sm:h-20 rounded-lg object-cover shadow-lg flex-shrink-0" />
           )}
           <div className="flex-1 min-w-0">
-            <h1 className="text-2xl sm:text-3xl font-bold text-white leading-tight">{displayCifraTitle}</h1>
+            <h1 className="text-2xl font-bold leading-tight text-white sm:text-3xl">{headerCifraTitle}</h1>
+            <p className="mt-2 text-lg font-bold text-primary-400">{headerCifraCategory}</p>
             <div className="flex flex-wrap gap-x-4 gap-y-1 text-gray-500 text-sm mt-1">
               <span>
                 {isCifraV2(cifra)
@@ -1540,6 +1562,367 @@ const CifraPage: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* Toolbar */}
+      <div className="sticky top-16 z-40 hidden bg-background-primary/95 shadow-lg shadow-black/20 backdrop-blur-sm border-b border-gray-800 -mx-4 px-4 py-3 mb-6 sm:block lg:top-[72px] print:hidden">
+        <div className="flex items-center gap-2 overflow-x-auto pb-1 -mb-1 scrollbar-hide sm:flex-wrap sm:overflow-visible">
+          {/* Instrument selector */}
+          <select
+            value={selectedInstrument}
+            onChange={e => handleInstrumentChange(e.target.value)}
+            className="shrink-0 px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+          >
+            {instrumentOptions.map(i => (
+              <option key={i.value} value={i.value}>{i.label}</option>
+            ))}
+          </select>
+
+          {/* Transpose controls */}
+          <div className="flex shrink-0 items-center gap-1 bg-gray-800 border border-gray-700 rounded-lg">
+            <button onClick={transposeDown} className="px-3 py-2 hover:bg-gray-700 rounded-l-lg transition-colors text-white">
+              <Minus className="w-4 h-4" />
+            </button>
+            <button
+              onClick={() => setShowKeySelector(!showKeySelector)}
+              className="px-3 py-2 hover:bg-gray-700 transition-colors text-sm font-medium min-w-[60px] text-center"
+            >
+              <span className="text-gray-400 text-xs">Tom </span>
+              <span className="text-primary-400 font-bold">{selectedKey}</span>
+            </button>
+            <button onClick={transposeUp} className="px-3 py-2 hover:bg-gray-700 rounded-r-lg transition-colors text-white">
+              <Plus className="w-4 h-4" />
+            </button>
+          </div>
+
+          {editorialPreferredKey ? (
+            <button
+              onClick={() => setSelectedKey(editorialPreferredKey)}
+              className={`shrink-0 px-3 py-2 rounded-lg border text-sm transition-colors ${
+                selectedKey === editorialPreferredKey
+                  ? 'bg-primary-500/20 border-primary-500/50 text-primary-400'
+                  : 'bg-gray-800 border-gray-700 text-gray-400 hover:text-white hover:border-primary-500/40'
+              }`}
+            >
+              Tom editorial {editorialPreferredKey}
+            </button>
+          ) : null}
+
+          {/* Font size */}
+          <div className="flex shrink-0 items-center gap-1 bg-gray-800 border border-gray-700 rounded-lg">
+            <button
+              onClick={() => setFontSize(prev => Math.max(10, prev - 1))}
+              className="px-2 py-2 hover:bg-gray-700 rounded-l-lg transition-colors text-white text-xs"
+            >
+              A
+            </button>
+            <button
+              onClick={() => setFontSize(prev => Math.min(24, prev + 1))}
+              className="px-2 py-2 hover:bg-gray-700 rounded-r-lg transition-colors text-white text-base font-bold"
+            >
+              A
+            </button>
+          </div>
+
+          {/* Auto scroll */}
+          <button
+            onClick={() => setAutoScrollSpeed(prev => prev === 0 ? 1 : prev === 1 ? 2 : prev === 2 ? 3 : 0)}
+            className={`shrink-0 px-3 py-2 rounded-lg border text-sm transition-colors ${
+              autoScrollSpeed > 0
+                ? 'bg-primary-500/20 border-primary-500/50 text-primary-400'
+                : 'bg-gray-800 border-gray-700 text-gray-400 hover:text-white'
+            }`}
+          >
+            <ScrollText className="w-4 h-4 inline mr-1" />
+            {autoScrollSpeed > 0 ? `${autoScrollSpeed}x` : 'Rolagem'}
+          </button>
+
+          {/* Toggle chords */}
+          <button
+            onClick={() => setShowChords(!showChords)}
+            className={`shrink-0 px-3 py-2 rounded-lg border text-sm transition-colors ${
+              showChords
+                ? 'bg-primary-500/20 border-primary-500/50 text-primary-400'
+                : 'bg-gray-800 border-gray-700 text-gray-400'
+            }`}
+          >
+            Acordes
+          </button>
+
+          <button
+            onClick={() => setMetronomeEnabled((current) => !current)}
+            className={`shrink-0 px-3 py-2 rounded-lg border text-sm transition-colors ${
+              metronomeEnabled
+                ? 'bg-primary-500/20 border-primary-500/50 text-primary-400'
+                : 'bg-gray-800 border-gray-700 text-gray-400 hover:text-white'
+            }`}
+          >
+            <Gauge className="w-4 h-4 inline mr-1" />
+            {metronomeEnabled ? `${metronomeBpm} BPM` : 'Metrônomo'}
+          </button>
+
+          {selectedInstrument !== 'teclado' ? (
+            <button
+              onClick={() => setShowLeftHandedDiagrams((current) => !current)}
+              className={`shrink-0 px-3 py-2 rounded-lg border text-sm transition-colors ${
+                showLeftHandedDiagrams
+                  ? 'bg-primary-500/20 border-primary-500/50 text-primary-400'
+                  : 'bg-gray-800 border-gray-700 text-gray-400 hover:text-white'
+              }`}
+            >
+              <Hand className="w-4 h-4 inline mr-1" />
+              Canhoto
+            </button>
+          ) : null}
+
+          {supportsTwoColumnLayout ? (
+            <button
+              onClick={() => setUseTwoColumnLayout((current) => !current)}
+              className={`shrink-0 px-3 py-2 rounded-lg border text-sm transition-colors ${
+                useTwoColumnLayout
+                  ? 'bg-primary-500/20 border-primary-500/50 text-primary-400'
+                  : 'bg-gray-800 border-gray-700 text-gray-400 hover:text-white'
+              }`}
+            >
+              <Eye className="w-4 h-4 inline mr-1" />
+              2 colunas
+            </button>
+          ) : null}
+
+          {supportsStudyTools ? (
+            <button
+              onClick={() => {
+                setStudyModeEnabled((current) => {
+                  const next = !current;
+                  if (!next) {
+                    setFocusedSectionIndex(null);
+                  }
+                  return next;
+                });
+              }}
+              className={`shrink-0 px-3 py-2 rounded-lg border text-sm transition-colors ${
+                studyModeEnabled
+                  ? 'bg-primary-500/20 border-primary-500/50 text-primary-400'
+                  : 'bg-gray-800 border-gray-700 text-gray-400 hover:text-white'
+              }`}
+            >
+              <Target className="w-4 h-4 inline mr-1" />
+              Estudo
+            </button>
+          ) : null}
+
+          {/* Options */}
+          <button
+            onClick={() => setShowOptions(!showOptions)}
+            className="shrink-0 px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-gray-400 hover:text-white transition-colors sm:ml-auto"
+          >
+            <Settings2 className="w-4 h-4" />
+          </button>
+        </div>
+
+        {/* Key selector dropdown */}
+        {showKeySelector && (
+          <div className="absolute top-full left-0 right-0 bg-gray-900 border border-gray-700 rounded-b-xl p-4 shadow-2xl z-30">
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-white font-semibold">Tom</h3>
+              <button onClick={() => setShowKeySelector(false)} className="text-gray-400 hover:text-white">
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {ALL_KEYS.filter(k => !k.includes('m')).map(k => (
+                <button
+                  key={k}
+                  onClick={() => { setSelectedKey(k); setShowKeySelector(false); }}
+                  className={`w-10 h-10 rounded-lg text-sm font-medium transition-colors ${
+                    k === selectedKey
+                      ? 'bg-primary-500 text-black'
+                      : 'bg-gray-800 text-gray-300 hover:bg-gray-700'
+                  }`}
+                >
+                  {k}
+                </button>
+              ))}
+            </div>
+            <p className="text-gray-500 text-xs mt-3 mb-2">Menores</p>
+            <div className="flex flex-wrap gap-2">
+              {ALL_KEYS.filter(k => k.includes('m')).map(k => (
+                <button
+                  key={k}
+                  onClick={() => { setSelectedKey(k); setShowKeySelector(false); }}
+                  className={`px-3 h-10 rounded-lg text-sm font-medium transition-colors ${
+                    k === selectedKey
+                      ? 'bg-primary-500 text-black'
+                      : 'bg-gray-800 text-gray-300 hover:bg-gray-700'
+                  }`}
+                >
+                  {k}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Options panel */}
+        {showOptions && (
+          <div className="absolute top-full left-4 right-4 z-30 rounded-xl border border-gray-700 bg-gray-900 p-4 shadow-2xl sm:left-auto sm:right-4 sm:w-64">
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-white font-semibold">Opções da cifra</h3>
+              <button onClick={() => setShowOptions(false)} className="text-gray-400 hover:text-white">
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+            <div className="space-y-3">
+              <button onClick={handlePrint} className="flex items-center gap-3 w-full px-3 py-2 text-gray-300 hover:text-white hover:bg-gray-800 rounded-lg transition-colors text-sm">
+                <Printer className="w-4 h-4" />
+                Imprimir
+              </button>
+              <button onClick={handleShare} className="flex items-center gap-3 w-full px-3 py-2 text-gray-300 hover:text-white hover:bg-gray-800 rounded-lg transition-colors text-sm">
+                <Share2 className="w-4 h-4" />
+                Compartilhar
+              </button>
+              <div className="border-t border-gray-700 pt-3">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-gray-400 text-xs">Metrônomo</p>
+                    <p className="text-white font-medium">{metronomeBpm} BPM · {measureBeats}/4</p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setMetronomeEnabled((current) => !current)}
+                    className={`rounded-full border px-3 py-1 text-xs font-semibold transition-colors ${
+                      metronomeEnabled
+                        ? 'border-primary-500 bg-primary-500 text-black'
+                        : 'border-gray-700 bg-gray-800 text-gray-200 hover:border-primary-500/40 hover:text-white'
+                    }`}
+                  >
+                    {metronomeEnabled ? 'Parar' : 'Iniciar'}
+                  </button>
+                </div>
+                <div className="mt-3 flex items-center gap-3">
+                  <button onClick={() => setMetronomeBpm((current) => Math.max(40, current - 2))} className="p-1 bg-gray-800 rounded text-white">
+                    <Minus className="w-3 h-3" />
+                  </button>
+                  <input
+                    type="range"
+                    min={40}
+                    max={180}
+                    step={1}
+                    value={metronomeBpm}
+                    onChange={(event) => setMetronomeBpm(Number(event.target.value))}
+                    className="flex-1 accent-primary-500"
+                  />
+                  <button onClick={() => setMetronomeBpm((current) => Math.min(180, current + 2))} className="p-1 bg-gray-800 rounded text-white">
+                    <Plus className="w-3 h-3" />
+                  </button>
+                </div>
+              </div>
+              <div className="border-t border-gray-700 pt-3">
+                <p className="text-gray-400 text-xs mb-2">Tamanho da fonte</p>
+                <div className="flex items-center gap-3">
+                  <button onClick={() => setFontSize(prev => Math.max(10, prev - 1))} className="p-1 bg-gray-800 rounded text-white">
+                    <Minus className="w-3 h-3" />
+                  </button>
+                  <span className="text-white text-sm min-w-[30px] text-center">{fontSize}px</span>
+                  <button onClick={() => setFontSize(prev => Math.min(24, prev + 1))} className="p-1 bg-gray-800 rounded text-white">
+                    <Plus className="w-3 h-3" />
+                  </button>
+                </div>
+              </div>
+              <div className="border-t border-gray-700 pt-3 space-y-2">
+                {selectedInstrument !== 'teclado' ? (
+                  <button
+                    type="button"
+                    onClick={() => setShowLeftHandedDiagrams((current) => !current)}
+                    className={`flex w-full items-center justify-between rounded-xl border px-3 py-2 text-sm transition-colors ${
+                      showLeftHandedDiagrams
+                        ? 'border-primary-500/50 bg-primary-500/10 text-primary-300'
+                        : 'border-gray-700 bg-gray-800 text-gray-200 hover:border-primary-500/40 hover:text-white'
+                    }`}
+                  >
+                    <span>Montagem para canhoto</span>
+                    <Hand className="w-4 h-4" />
+                  </button>
+                ) : null}
+                {supportsTwoColumnLayout ? (
+                  <button
+                    type="button"
+                    onClick={() => setUseTwoColumnLayout((current) => !current)}
+                    className={`flex w-full items-center justify-between rounded-xl border px-3 py-2 text-sm transition-colors ${
+                      useTwoColumnLayout
+                        ? 'border-primary-500/50 bg-primary-500/10 text-primary-300'
+                        : 'border-gray-700 bg-gray-800 text-gray-200 hover:border-primary-500/40 hover:text-white'
+                    }`}
+                  >
+                    <span>Leitura em duas colunas</span>
+                    <Eye className="w-4 h-4" />
+                  </button>
+                ) : null}
+              </div>
+              {cifra.capo > 0 && (
+                <div className="border-t border-gray-700 pt-3">
+                  <p className="text-gray-400 text-xs">Capotraste</p>
+                  <p className="text-white font-medium">{cifra.capo}ª casa</p>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Cifra Content */}
+      <div
+        ref={contentRef}
+        className="font-mono leading-[1.62] tracking-[-0.01em] sm:leading-relaxed sm:tracking-normal print:text-[17px] print:leading-[1.6]"
+        style={{ fontSize: `${fontSize}px` }}
+      >
+        {/* Key info */}
+        <div className="mb-7 hidden sm:block">
+          <span className="text-gray-400">Tom: </span>
+          <span className="text-primary-400 font-bold text-lg">{selectedKey}</span>
+          {cifra.capo > 0 && (
+            <span className="text-gray-500 ml-4">Capo: {cifra.capo}ª casa</span>
+          )}
+          {isCifraV2(cifra) && cifra.tuning ? (
+            <span className="text-gray-500 ml-4">Afinação: {cifra.tuning}</span>
+          ) : null}
+        </div>
+
+        {/* Lines */}
+        {isCifraV2(cifra) && structuredSections.length > 0 ? (
+          <div className={shouldRenderTwoColumns ? 'lg:columns-2 lg:gap-8' : 'space-y-8'}>
+            {visibleStructuredSections.map(({ section, index: sectionIndex }) => {
+              const sectionContent = transposeCifraContent(
+                serializeSectionLines(section.content_ast),
+                semitones,
+                selectedKey,
+              );
+
+              return (
+                <section
+                  key={section.id}
+                  id={getSectionAnchor(section.section_label, sectionIndex)}
+                  className={`scroll-mt-28 sm:scroll-mt-32 ${shouldRenderTwoColumns ? 'mb-8' : ''}`}
+                  style={shouldRenderTwoColumns ? { breakInside: 'avoid-column' } : undefined}
+                >
+                  {section.section_label ? (
+                    <div className="mb-3 text-base font-medium text-gray-500 sm:font-bold sm:text-white print:font-medium print:text-[#252525]">
+                      {section.section_label}
+                    </div>
+                  ) : null}
+                  <div className="space-y-1">
+                    {sectionContent.split('\n').map((line, lineIndex) =>
+                      renderLine(line, `${section.id}-${lineIndex}`),
+                    )}
+                  </div>
+                </section>
+              );
+            })}
+          </div>
+        ) : (
+          transposedContent.split('\n').map((line, idx) => renderLine(line, idx))
+        )}
+      </div>
+
 
       {(relatedHymn || relatedLyric) && (
         <div className="mb-6 hidden rounded-2xl sm:block border border-white/10 bg-background-secondary p-5">
@@ -1906,366 +2289,6 @@ const CifraPage: React.FC = () => {
           </div>
         </div>
       ) : null}
-
-      {/* Toolbar */}
-      <div className="sticky top-0 z-20 hidden bg-background-primary/95 sm:block backdrop-blur-sm border-b border-gray-800 -mx-4 px-4 py-3 mb-6 print:hidden">
-        <div className="flex items-center gap-2 overflow-x-auto pb-1 -mb-1 scrollbar-hide sm:flex-wrap sm:overflow-visible">
-          {/* Instrument selector */}
-          <select
-            value={selectedInstrument}
-            onChange={e => handleInstrumentChange(e.target.value)}
-            className="shrink-0 px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
-          >
-            {instrumentOptions.map(i => (
-              <option key={i.value} value={i.value}>{i.label}</option>
-            ))}
-          </select>
-
-          {/* Transpose controls */}
-          <div className="flex shrink-0 items-center gap-1 bg-gray-800 border border-gray-700 rounded-lg">
-            <button onClick={transposeDown} className="px-3 py-2 hover:bg-gray-700 rounded-l-lg transition-colors text-white">
-              <Minus className="w-4 h-4" />
-            </button>
-            <button
-              onClick={() => setShowKeySelector(!showKeySelector)}
-              className="px-3 py-2 hover:bg-gray-700 transition-colors text-sm font-medium min-w-[60px] text-center"
-            >
-              <span className="text-gray-400 text-xs">Tom </span>
-              <span className="text-primary-400 font-bold">{selectedKey}</span>
-            </button>
-            <button onClick={transposeUp} className="px-3 py-2 hover:bg-gray-700 rounded-r-lg transition-colors text-white">
-              <Plus className="w-4 h-4" />
-            </button>
-          </div>
-
-          {editorialPreferredKey ? (
-            <button
-              onClick={() => setSelectedKey(editorialPreferredKey)}
-              className={`shrink-0 px-3 py-2 rounded-lg border text-sm transition-colors ${
-                selectedKey === editorialPreferredKey
-                  ? 'bg-primary-500/20 border-primary-500/50 text-primary-400'
-                  : 'bg-gray-800 border-gray-700 text-gray-400 hover:text-white hover:border-primary-500/40'
-              }`}
-            >
-              Tom editorial {editorialPreferredKey}
-            </button>
-          ) : null}
-
-          {/* Font size */}
-          <div className="flex shrink-0 items-center gap-1 bg-gray-800 border border-gray-700 rounded-lg">
-            <button
-              onClick={() => setFontSize(prev => Math.max(10, prev - 1))}
-              className="px-2 py-2 hover:bg-gray-700 rounded-l-lg transition-colors text-white text-xs"
-            >
-              A
-            </button>
-            <button
-              onClick={() => setFontSize(prev => Math.min(24, prev + 1))}
-              className="px-2 py-2 hover:bg-gray-700 rounded-r-lg transition-colors text-white text-base font-bold"
-            >
-              A
-            </button>
-          </div>
-
-          {/* Auto scroll */}
-          <button
-            onClick={() => setAutoScrollSpeed(prev => prev === 0 ? 1 : prev === 1 ? 2 : prev === 2 ? 3 : 0)}
-            className={`shrink-0 px-3 py-2 rounded-lg border text-sm transition-colors ${
-              autoScrollSpeed > 0
-                ? 'bg-primary-500/20 border-primary-500/50 text-primary-400'
-                : 'bg-gray-800 border-gray-700 text-gray-400 hover:text-white'
-            }`}
-          >
-            <ScrollText className="w-4 h-4 inline mr-1" />
-            {autoScrollSpeed > 0 ? `${autoScrollSpeed}x` : 'Rolagem'}
-          </button>
-
-          {/* Toggle chords */}
-          <button
-            onClick={() => setShowChords(!showChords)}
-            className={`shrink-0 px-3 py-2 rounded-lg border text-sm transition-colors ${
-              showChords
-                ? 'bg-primary-500/20 border-primary-500/50 text-primary-400'
-                : 'bg-gray-800 border-gray-700 text-gray-400'
-            }`}
-          >
-            Acordes
-          </button>
-
-          <button
-            onClick={() => setMetronomeEnabled((current) => !current)}
-            className={`shrink-0 px-3 py-2 rounded-lg border text-sm transition-colors ${
-              metronomeEnabled
-                ? 'bg-primary-500/20 border-primary-500/50 text-primary-400'
-                : 'bg-gray-800 border-gray-700 text-gray-400 hover:text-white'
-            }`}
-          >
-            <Gauge className="w-4 h-4 inline mr-1" />
-            {metronomeEnabled ? `${metronomeBpm} BPM` : 'Metrônomo'}
-          </button>
-
-          {selectedInstrument !== 'teclado' ? (
-            <button
-              onClick={() => setShowLeftHandedDiagrams((current) => !current)}
-              className={`shrink-0 px-3 py-2 rounded-lg border text-sm transition-colors ${
-                showLeftHandedDiagrams
-                  ? 'bg-primary-500/20 border-primary-500/50 text-primary-400'
-                  : 'bg-gray-800 border-gray-700 text-gray-400 hover:text-white'
-              }`}
-            >
-              <Hand className="w-4 h-4 inline mr-1" />
-              Canhoto
-            </button>
-          ) : null}
-
-          {supportsTwoColumnLayout ? (
-            <button
-              onClick={() => setUseTwoColumnLayout((current) => !current)}
-              className={`shrink-0 px-3 py-2 rounded-lg border text-sm transition-colors ${
-                useTwoColumnLayout
-                  ? 'bg-primary-500/20 border-primary-500/50 text-primary-400'
-                  : 'bg-gray-800 border-gray-700 text-gray-400 hover:text-white'
-              }`}
-            >
-              <Eye className="w-4 h-4 inline mr-1" />
-              2 colunas
-            </button>
-          ) : null}
-
-          {supportsStudyTools ? (
-            <button
-              onClick={() => {
-                setStudyModeEnabled((current) => {
-                  const next = !current;
-                  if (!next) {
-                    setFocusedSectionIndex(null);
-                  }
-                  return next;
-                });
-              }}
-              className={`shrink-0 px-3 py-2 rounded-lg border text-sm transition-colors ${
-                studyModeEnabled
-                  ? 'bg-primary-500/20 border-primary-500/50 text-primary-400'
-                  : 'bg-gray-800 border-gray-700 text-gray-400 hover:text-white'
-              }`}
-            >
-              <Target className="w-4 h-4 inline mr-1" />
-              Estudo
-            </button>
-          ) : null}
-
-          {/* Options */}
-          <button
-            onClick={() => setShowOptions(!showOptions)}
-            className="shrink-0 px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-gray-400 hover:text-white transition-colors sm:ml-auto"
-          >
-            <Settings2 className="w-4 h-4" />
-          </button>
-        </div>
-
-        {/* Key selector dropdown */}
-        {showKeySelector && (
-          <div className="absolute top-full left-0 right-0 bg-gray-900 border border-gray-700 rounded-b-xl p-4 shadow-2xl z-30">
-            <div className="flex items-center justify-between mb-3">
-              <h3 className="text-white font-semibold">Tom</h3>
-              <button onClick={() => setShowKeySelector(false)} className="text-gray-400 hover:text-white">
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-            <div className="flex flex-wrap gap-2">
-              {ALL_KEYS.filter(k => !k.includes('m')).map(k => (
-                <button
-                  key={k}
-                  onClick={() => { setSelectedKey(k); setShowKeySelector(false); }}
-                  className={`w-10 h-10 rounded-lg text-sm font-medium transition-colors ${
-                    k === selectedKey
-                      ? 'bg-primary-500 text-black'
-                      : 'bg-gray-800 text-gray-300 hover:bg-gray-700'
-                  }`}
-                >
-                  {k}
-                </button>
-              ))}
-            </div>
-            <p className="text-gray-500 text-xs mt-3 mb-2">Menores</p>
-            <div className="flex flex-wrap gap-2">
-              {ALL_KEYS.filter(k => k.includes('m')).map(k => (
-                <button
-                  key={k}
-                  onClick={() => { setSelectedKey(k); setShowKeySelector(false); }}
-                  className={`px-3 h-10 rounded-lg text-sm font-medium transition-colors ${
-                    k === selectedKey
-                      ? 'bg-primary-500 text-black'
-                      : 'bg-gray-800 text-gray-300 hover:bg-gray-700'
-                  }`}
-                >
-                  {k}
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Options panel */}
-        {showOptions && (
-          <div className="absolute top-full left-4 right-4 z-30 rounded-xl border border-gray-700 bg-gray-900 p-4 shadow-2xl sm:left-auto sm:right-4 sm:w-64">
-            <div className="flex items-center justify-between mb-3">
-              <h3 className="text-white font-semibold">Opções da cifra</h3>
-              <button onClick={() => setShowOptions(false)} className="text-gray-400 hover:text-white">
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-            <div className="space-y-3">
-              <button onClick={handlePrint} className="flex items-center gap-3 w-full px-3 py-2 text-gray-300 hover:text-white hover:bg-gray-800 rounded-lg transition-colors text-sm">
-                <Printer className="w-4 h-4" />
-                Imprimir
-              </button>
-              <button onClick={handleShare} className="flex items-center gap-3 w-full px-3 py-2 text-gray-300 hover:text-white hover:bg-gray-800 rounded-lg transition-colors text-sm">
-                <Share2 className="w-4 h-4" />
-                Compartilhar
-              </button>
-              <div className="border-t border-gray-700 pt-3">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-gray-400 text-xs">Metrônomo</p>
-                    <p className="text-white font-medium">{metronomeBpm} BPM · {measureBeats}/4</p>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => setMetronomeEnabled((current) => !current)}
-                    className={`rounded-full border px-3 py-1 text-xs font-semibold transition-colors ${
-                      metronomeEnabled
-                        ? 'border-primary-500 bg-primary-500 text-black'
-                        : 'border-gray-700 bg-gray-800 text-gray-200 hover:border-primary-500/40 hover:text-white'
-                    }`}
-                  >
-                    {metronomeEnabled ? 'Parar' : 'Iniciar'}
-                  </button>
-                </div>
-                <div className="mt-3 flex items-center gap-3">
-                  <button onClick={() => setMetronomeBpm((current) => Math.max(40, current - 2))} className="p-1 bg-gray-800 rounded text-white">
-                    <Minus className="w-3 h-3" />
-                  </button>
-                  <input
-                    type="range"
-                    min={40}
-                    max={180}
-                    step={1}
-                    value={metronomeBpm}
-                    onChange={(event) => setMetronomeBpm(Number(event.target.value))}
-                    className="flex-1 accent-primary-500"
-                  />
-                  <button onClick={() => setMetronomeBpm((current) => Math.min(180, current + 2))} className="p-1 bg-gray-800 rounded text-white">
-                    <Plus className="w-3 h-3" />
-                  </button>
-                </div>
-              </div>
-              <div className="border-t border-gray-700 pt-3">
-                <p className="text-gray-400 text-xs mb-2">Tamanho da fonte</p>
-                <div className="flex items-center gap-3">
-                  <button onClick={() => setFontSize(prev => Math.max(10, prev - 1))} className="p-1 bg-gray-800 rounded text-white">
-                    <Minus className="w-3 h-3" />
-                  </button>
-                  <span className="text-white text-sm min-w-[30px] text-center">{fontSize}px</span>
-                  <button onClick={() => setFontSize(prev => Math.min(24, prev + 1))} className="p-1 bg-gray-800 rounded text-white">
-                    <Plus className="w-3 h-3" />
-                  </button>
-                </div>
-              </div>
-              <div className="border-t border-gray-700 pt-3 space-y-2">
-                {selectedInstrument !== 'teclado' ? (
-                  <button
-                    type="button"
-                    onClick={() => setShowLeftHandedDiagrams((current) => !current)}
-                    className={`flex w-full items-center justify-between rounded-xl border px-3 py-2 text-sm transition-colors ${
-                      showLeftHandedDiagrams
-                        ? 'border-primary-500/50 bg-primary-500/10 text-primary-300'
-                        : 'border-gray-700 bg-gray-800 text-gray-200 hover:border-primary-500/40 hover:text-white'
-                    }`}
-                  >
-                    <span>Montagem para canhoto</span>
-                    <Hand className="w-4 h-4" />
-                  </button>
-                ) : null}
-                {supportsTwoColumnLayout ? (
-                  <button
-                    type="button"
-                    onClick={() => setUseTwoColumnLayout((current) => !current)}
-                    className={`flex w-full items-center justify-between rounded-xl border px-3 py-2 text-sm transition-colors ${
-                      useTwoColumnLayout
-                        ? 'border-primary-500/50 bg-primary-500/10 text-primary-300'
-                        : 'border-gray-700 bg-gray-800 text-gray-200 hover:border-primary-500/40 hover:text-white'
-                    }`}
-                  >
-                    <span>Leitura em duas colunas</span>
-                    <Eye className="w-4 h-4" />
-                  </button>
-                ) : null}
-              </div>
-              {cifra.capo > 0 && (
-                <div className="border-t border-gray-700 pt-3">
-                  <p className="text-gray-400 text-xs">Capotraste</p>
-                  <p className="text-white font-medium">{cifra.capo}ª casa</p>
-                </div>
-              )}
-            </div>
-          </div>
-        )}
-      </div>
-
-      {/* Cifra Content */}
-      <div
-        ref={contentRef}
-        className="font-mono leading-[1.62] tracking-[-0.01em] sm:leading-relaxed sm:tracking-normal print:text-[17px] print:leading-[1.6]"
-        style={{ fontSize: `${fontSize}px` }}
-      >
-        {/* Key info */}
-        <div className="mb-7 hidden sm:block">
-          <span className="text-gray-400">Tom: </span>
-          <span className="text-primary-400 font-bold text-lg">{selectedKey}</span>
-          {cifra.capo > 0 && (
-            <span className="text-gray-500 ml-4">Capo: {cifra.capo}ª casa</span>
-          )}
-          {isCifraV2(cifra) && cifra.tuning ? (
-            <span className="text-gray-500 ml-4">Afinação: {cifra.tuning}</span>
-          ) : null}
-        </div>
-
-        {/* Lines */}
-        {isCifraV2(cifra) && structuredSections.length > 0 ? (
-          <div className={shouldRenderTwoColumns ? 'lg:columns-2 lg:gap-8' : 'space-y-8'}>
-            {visibleStructuredSections.map(({ section, index: sectionIndex }) => {
-              const sectionContent = transposeCifraContent(
-                serializeSectionLines(section.content_ast),
-                semitones,
-                selectedKey,
-              );
-
-              return (
-                <section
-                  key={section.id}
-                  id={getSectionAnchor(section.section_label, sectionIndex)}
-                  className={`scroll-mt-28 sm:scroll-mt-32 ${shouldRenderTwoColumns ? 'mb-8' : ''}`}
-                  style={shouldRenderTwoColumns ? { breakInside: 'avoid-column' } : undefined}
-                >
-                  {section.section_label ? (
-                    <div className="mb-3 text-base font-medium text-gray-500 sm:font-bold sm:text-white print:font-medium print:text-[#252525]">
-                      {section.section_label}
-                    </div>
-                  ) : null}
-                  <div className="space-y-1">
-                    {sectionContent.split('\n').map((line, lineIndex) =>
-                      renderLine(line, `${section.id}-${lineIndex}`),
-                    )}
-                  </div>
-                </section>
-              );
-            })}
-          </div>
-        ) : (
-          transposedContent.split('\n').map((line, idx) => renderLine(line, idx))
-        )}
-      </div>
 
       {/* Mobile quick controls */}
       <div className="fixed inset-x-3 bottom-3 z-30 grid grid-cols-5 overflow-hidden rounded-[1.75rem] border border-white/10 bg-[#111313]/95 px-2 py-3 shadow-2xl shadow-black/60 backdrop-blur-xl sm:hidden print:hidden">
