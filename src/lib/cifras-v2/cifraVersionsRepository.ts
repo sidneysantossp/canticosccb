@@ -251,8 +251,18 @@ export async function fetchPublicCifraCatalog(params: {
   offset?: number;
 } = {}): Promise<CifraPublicCatalogItem[]> {
   const filters: Record<string, string> = {
-    select: '*',
-    order: 'hinario_numero.asc.nullslast,song_title.asc,version_title.asc',
+    select: [
+      'version_id', 'public_slug', 'version_title', 'instrument',
+      'arrangement_type', 'difficulty_level', 'original_key', 'preferred_key',
+      'capo', 'tempo_bpm', 'time_signature', 'default_study_section_order',
+      'default_study_sync_audio', 'default_study_loop_section', 'publication_label',
+      'is_primary', 'published_at', 'song_id', 'song_slug', 'song_title',
+      'song_subtitle', 'composer_name', 'hino_id', 'hinario_numero', 'source_type',
+      'cover_url', 'seo_title', 'seo_description', 'seo_keywords', 'views_count',
+      'shares_count', 'prints_count', 'favorites_count', 'reports_count',
+      'open_reports_count', 'last_interaction_at', 'sections_count', 'lines_count',
+      'chords_index',
+    ].join(','),
   };
 
   if (params.search?.trim()) {

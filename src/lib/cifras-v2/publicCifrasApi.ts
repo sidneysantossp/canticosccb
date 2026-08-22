@@ -291,7 +291,14 @@ export async function fetchMergedPublicCifrasListDetailed(): Promise<MergedPubli
   ]);
 
   const unavailableSources: Array<'catalog_v2' | 'legacy'> = [];
-  const publicCatalog = catalogResult.status === 'fulfilled' ? catalogResult.value : [];
+  const publicCatalog = catalogResult.status === 'fulfilled'
+    ? [...catalogResult.value].sort((left, right) => {
+        const leftNumber = left.hinario_numero ?? Number.MAX_SAFE_INTEGER;
+        const rightNumber = right.hinario_numero ?? Number.MAX_SAFE_INTEGER;
+        if (leftNumber !== rightNumber) return leftNumber - rightNumber;
+        return left.song_title.localeCompare(right.song_title, 'pt-BR');
+      })
+    : [];
   const legacyCifras = legacyResult.status === 'fulfilled' ? legacyResult.value : [];
 
   if (catalogResult.status === 'rejected') {

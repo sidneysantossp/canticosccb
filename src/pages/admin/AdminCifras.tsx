@@ -974,6 +974,44 @@ const AdminCifras: React.FC = () => {
         </div>
       )}
 
+      {rolloutStats && (
+        <section className="mb-6 rounded-xl border border-white/10 bg-black/20 p-4" aria-labelledby="cifras-status-heading">
+          <div className="mb-3 flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+              <h2 id="cifras-status-heading" className="text-sm font-semibold uppercase tracking-[0.14em] text-gray-300">
+                Estado real das versões V2
+              </h2>
+              <p className="mt-1 text-xs text-gray-500">
+                Estes números vêm de <code>cifra_versions</code> e da fila editorial; não são a contagem da tabela legada <code>cifras</code>.
+              </p>
+            </div>
+            <p className="text-xs text-gray-500">Total V2: {rolloutStats.versionsTotal}</p>
+          </div>
+          <div className="grid grid-cols-2 gap-3 md:grid-cols-4 xl:grid-cols-8">
+            {[
+              { label: 'Publicadas', value: rolloutStats.publishedVersions, tone: 'text-emerald-300' },
+              { label: 'Rascunhos', value: rolloutStats.draftVersions, tone: 'text-amber-300' },
+              { label: 'Em revisão', value: rolloutStats.inReviewVersions, tone: 'text-cyan-300' },
+              { label: 'Alterações solicitadas', value: rolloutStats.changesRequestedReviewItems, tone: 'text-orange-300' },
+              { label: 'Reprovadas', value: rolloutStats.rejectedReviewItems, tone: 'text-red-300' },
+              { label: 'Arquivadas', value: rolloutStats.archivedVersions, tone: 'text-gray-300' },
+              { label: 'Sem conteúdo', value: rolloutStats.versionsWithoutContent, tone: 'text-rose-300' },
+              { label: 'Fila pendente', value: rolloutStats.pendingReviewItems, tone: 'text-violet-300' },
+            ].map((item) => (
+              <div key={item.label} className="rounded-lg border border-white/5 bg-white/[0.03] px-3 py-2">
+                <p className="text-xs leading-4 text-gray-500">{item.label}</p>
+                <p className={`mt-1 text-xl font-bold ${item.tone}`}>{item.value}</p>
+              </div>
+            ))}
+          </div>
+          <div className="mt-3 rounded-lg border border-amber-400/20 bg-amber-400/5 px-3 py-2 text-xs text-amber-100/80">
+            <strong className="text-amber-200">A revisar:</strong>{' '}
+            {rolloutStats.draftVersions + rolloutStats.inReviewVersions + rolloutStats.approvedVersions + rolloutStats.changesRequestedReviewItems}{' '}
+            versões aguardam decisão editorial. Os 26 hinos recém-criados permanecem nesta área e não são publicados automaticamente.
+          </div>
+        </section>
+      )}
+
       {/* Filters */}
       <div className="flex flex-col sm:flex-row gap-3 mb-6">
         <div className="relative flex-1">

@@ -16,6 +16,7 @@ import {
   type FetchCifraVersionChordOverridesOptions,
 } from '@/lib/cifras-v2/cifraVersionChordOverridesRepository';
 import type { CifraVersion } from '@/types/cifras-v2';
+import { supabaseAuthFetch } from '@/lib/supabaseRest';
 
 export {
   createCifraChordShape,
@@ -87,7 +88,15 @@ export interface CifraV2RolloutStats {
   songsTotal: number;
   versionsTotal: number;
   publishedVersions: number;
+  draftVersions: number;
+  inReviewVersions: number;
+  approvedVersions: number;
+  archivedVersions: number;
   searchableVersions: number;
+  pendingReviewItems: number;
+  changesRequestedReviewItems: number;
+  rejectedReviewItems: number;
+  versionsWithoutContent: number;
   publicCatalogItems: number;
   eligibleCatalogVersions: number;
   pendingCatalogVersions: number;
@@ -119,10 +128,18 @@ export async function fetchCifraVersionChordOverrides(
 }
 
 export async function fetchCifraV2RolloutStats(): Promise<CifraV2RolloutStats> {
-  const [songs, versions, publicCatalog] = await Promise.all([
+  const [songs, versions, publicCatalog, reviewQueue] = await Promise.all([
     fetchAllCifraSongs({}, { authenticated: true, pageSize: 250 }),
     fetchAllCifraVersions({}, { authenticated: true, pageSize: 250 }),
     fetchAllPublicCifraCatalog({}, { pageSize: 250 }),
+    supabaseAuthFetch<{ version_id: string; status: string }>('cifra_review_queue', {
+      select: 'version_id,status',
+      order: 'updated_at.desc',
+      limit: '1000',
+    }).catch((error) => {
+      console.warn('[cifrasV2AdminApi] Não foi possível carregar a fila de revisão:', error);
+      return [];
+    }),
   ]);
   const publicVersionIds = new Set(publicCatalog.map((item) => item.version_id));
   const eligibleCatalogVersions = versions.filter(
@@ -145,11 +162,27 @@ export async function fetchCifraV2RolloutStats(): Promise<CifraV2RolloutStats> {
       ? Math.round(((eligibleCatalogVersions - pendingCatalogVersions) / eligibleCatalogVersions) * 100)
       : 100;
 
+  const versionsWithoutContent = versions.filter(
+    (version) =>
+      version.sections_count <= 0 &&
+      version.lines_count <= 0 &&
+      !version.body_text.trim() &&
+      version.chords_index.length === 0,
+  ).length;
+
   return {
     songsTotal: songs.length,
     versionsTotal: versions.length,
     publishedVersions: versions.filter((version) => version.status === 'published').length,
+    draftVersions: versions.filter((version) => version.status === 'draft').length,
+    inReviewVersions: versions.filter((version) => version.status === 'in_review').length,
+    approvedVersions: versions.filter((version) => version.status === 'approved').length,
+    archivedVersions: versions.filter((version) => version.status === 'archived').length,
     searchableVersions: versions.filter((version) => version.is_searchable).length,
+    pendingReviewItems: reviewQueue.filter((item) => item.status === 'pending').length,
+    changesRequestedReviewItems: reviewQueue.filter((item) => item.status === 'changes_requested').length,
+    rejectedReviewItems: reviewQueue.filter((item) => item.status === 'rejected').length,
+    versionsWithoutContent,
     publicCatalogItems: publicCatalog.length,
     eligibleCatalogVersions,
     pendingCatalogVersions,
