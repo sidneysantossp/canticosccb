@@ -1371,7 +1371,7 @@ const CifraPage: React.FC = () => {
         ]),
       ]}
     />
-    <div className="min-h-screen overflow-x-clip bg-[#080909] px-6 pt-6 pb-36 text-white sm:mx-auto sm:min-h-0 sm:max-w-4xl sm:bg-transparent sm:px-4 sm:py-6 sm:pb-6 sm:text-inherit print:max-w-none print:bg-white print:px-12 print:py-10 print:pb-0 print:text-[#252525]">
+    <div className="min-h-screen overflow-x-clip bg-[#080909] px-6 pt-6 pb-36 text-white sm:mx-auto sm:min-h-0 sm:max-w-6xl sm:bg-transparent sm:px-4 sm:py-6 sm:pb-6 sm:text-inherit print:max-w-none print:bg-white print:px-12 print:py-10 print:pb-0 print:text-[#252525]">
       <div className="mb-14 hidden print:block">
         <div className="flex items-start justify-between gap-8">
           <div>
@@ -1458,6 +1458,7 @@ const CifraPage: React.FC = () => {
           <div className="flex-1 min-w-0">
             <h1 className="text-2xl font-bold leading-tight text-white sm:text-3xl">{headerCifraTitle}</h1>
             <p className="mt-2 text-lg font-bold text-primary-400">{headerCifraCategory}</p>
+            <p className="mt-1 text-sm font-medium text-gray-300">Tipo de cifra: {instrumentLabel}</p>
             <div className="flex flex-wrap gap-x-4 gap-y-1 text-gray-500 text-sm mt-1">
               <span>
                 {isCifraV2(cifra)
@@ -1472,8 +1473,8 @@ const CifraPage: React.FC = () => {
             <p className="text-gray-400 text-sm mt-3 leading-relaxed">
               Cifra CCB para {instrumentLabel}, com acordes, troca de tom e navegação para outras cifras e páginas relacionadas.
             </p>
-            {renderChordDictionaryCarousel('mt-5 mb-2 hidden sm:block')}
-            <div className="flex flex-wrap gap-2 mt-4">
+            {renderChordDictionaryCarousel('mt-5 mb-2 hidden')}
+            <div className="hidden">
               {isCifraV2(cifra) ? (
                 <>
                   <button
@@ -1563,9 +1564,28 @@ const CifraPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Toolbar */}
-      <div className="sticky top-16 z-40 hidden bg-background-primary/95 shadow-lg shadow-black/20 backdrop-blur-sm border-b border-gray-800 -mx-4 px-4 py-3 mb-6 sm:block lg:top-[72px] print:hidden">
-        <div className="flex items-center gap-2 overflow-x-auto pb-1 -mb-1 scrollbar-hide sm:flex-wrap sm:overflow-visible">
+      <div className="grid gap-6 lg:grid-cols-[240px,minmax(0,1fr)] lg:items-start">
+      {/* Recursos e controlos */}
+      <div className="sticky top-16 z-40 hidden bg-background-primary/95 shadow-lg shadow-black/20 backdrop-blur-sm border-b border-gray-800 -mx-4 px-4 py-3 mb-6 sm:block lg:col-start-1 lg:row-start-1 lg:top-[88px] lg:mx-0 lg:mb-0 lg:rounded-2xl lg:border lg:p-4 print:hidden">
+        <div className="mb-4 space-y-2 border-b border-gray-800 pb-4 lg:space-y-2">
+          <p className="px-1 text-xs font-semibold uppercase tracking-[0.16em] text-gray-500">Recursos</p>
+          {isCifraV2(cifra) ? (
+            <>
+              <button type="button" onClick={() => void handleToggleFavorite()} disabled={isFavoriteLoading} className={`flex w-full items-center gap-2 rounded-xl border px-3 py-2 text-left text-sm transition-colors ${engagement?.isFavorited ? 'border-red-500/50 bg-red-500/15 text-red-300' : 'border-gray-700 bg-gray-800 text-gray-200 hover:border-red-500/40 hover:text-white'}`}>
+                <Heart className={`h-4 w-4 ${engagement?.isFavorited ? 'fill-current' : ''}`} /> {engagement?.isFavorited ? 'Favoritada' : 'Favoritar'}
+              </button>
+              <button type="button" onClick={() => setShowReportModal(true)} className="flex w-full items-center gap-2 rounded-xl border border-gray-700 bg-gray-800 px-3 py-2 text-left text-sm text-gray-200 transition-colors hover:border-primary-500/40 hover:text-white"><Flag className="h-4 w-4" /> Reportar problema</button>
+            </>
+          ) : null}
+          {relatedHymn ? <Link to={buildHinoUrl(relatedHymn.id, relatedHymn.titulo, relatedHymn.numero)} className="flex w-full items-center gap-2 rounded-xl border border-primary-500/40 bg-primary-500/10 px-3 py-2 text-sm text-primary-300 transition-colors hover:bg-primary-500/20"><Play className="h-4 w-4" /> Ouvir este hino</Link> : null}
+          {relatedLyric ? <Link to={`/hinario/${relatedLyric.numero}`} className="flex w-full items-center gap-2 rounded-xl border border-primary-500/40 bg-primary-500/10 px-3 py-2 text-sm text-primary-300 transition-colors hover:bg-primary-500/20"><Music className="h-4 w-4" /> Letra no Hinário</Link> : null}
+          <Link to={instrumentHubUrl} className="flex w-full items-center gap-2 rounded-xl border border-primary-500/40 bg-primary-500/10 px-3 py-2 text-sm text-primary-300 transition-colors hover:bg-primary-500/20"><Music className="h-4 w-4" /> Mais cifras de {instrumentLabel}</Link>
+          <Link to="/cifras" className="flex w-full items-center gap-2 rounded-xl border border-gray-700 bg-gray-800 px-3 py-2 text-sm text-gray-200 transition-colors hover:border-primary-500/40 hover:text-white">Todas as cifras</Link>
+          <Link to="/hinario" className="flex w-full items-center gap-2 rounded-xl border border-gray-700 bg-gray-800 px-3 py-2 text-sm text-gray-200 transition-colors hover:border-primary-500/40 hover:text-white">Letras do Hinário</Link>
+          <Link to="/cifras-hinos-ccb" className="flex w-full items-center gap-2 rounded-xl border border-gray-700 bg-gray-800 px-3 py-2 text-sm text-gray-200 transition-colors hover:border-primary-500/40 hover:text-white">Cifras de Hinos</Link>
+          {hinarioRange ? <Link to={hinarioRange.path} className="flex w-full items-center gap-2 rounded-xl border border-gray-700 bg-gray-800 px-3 py-2 text-sm text-gray-200 transition-colors hover:border-primary-500/40 hover:text-white">{hinarioRange.label}</Link> : null}
+        </div>
+        <div className="flex items-center gap-2 overflow-x-auto pb-1 -mb-1 scrollbar-hide sm:flex-wrap sm:overflow-visible lg:flex-col lg:items-stretch lg:overflow-visible">
           {/* Instrument selector */}
           <select
             value={selectedInstrument}
@@ -1868,6 +1888,9 @@ const CifraPage: React.FC = () => {
           </div>
         )}
       </div>
+
+      <main className="min-w-0 lg:col-start-2 lg:row-start-1">
+        {renderChordDictionaryCarousel('mb-6 hidden sm:block')}
 
       {/* Cifra Content */}
       <div
@@ -2289,6 +2312,9 @@ const CifraPage: React.FC = () => {
           </div>
         </div>
       ) : null}
+
+      </main>
+      </div>
 
       {/* Mobile quick controls */}
       <div className="fixed inset-x-3 bottom-3 z-30 grid grid-cols-5 overflow-hidden rounded-[1.75rem] border border-white/10 bg-[#111313]/95 px-2 py-3 shadow-2xl shadow-black/60 backdrop-blur-xl sm:hidden print:hidden">
