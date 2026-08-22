@@ -19,6 +19,18 @@ import {
 const normalize = (str: string) =>
   str.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
 
+/** Exibe somente o título oficial, sem prefixo editorial, número ou autor. */
+const getOfficialTitle = (title: string, numero?: number) => {
+  let officialTitle = title.trim();
+  officialTitle = officialTitle.replace(/^hino\s*\d+\s*ccb\s*[-–—:]\s*/i, '');
+  officialTitle = officialTitle.replace(/\s*[-–—]\s*Elias Brandão\s*$/i, '');
+  officialTitle = officialTitle.replace(/^hino\s*\d+\s*[-–—:]\s*/i, '');
+  if (numero) {
+    officialTitle = officialTitle.replace(new RegExp(`^${numero}\\s*[-–—:]\\s*`, 'i'), '');
+  }
+  return officialTitle.trim();
+};
+
 const HinarioViewPage: React.FC = () => {
   const { numero } = useParams<{ numero: string }>();
   const navigate = useNavigate();
@@ -30,6 +42,7 @@ const HinarioViewPage: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [fontSize, setFontSize] = useState(18);
   const [goToInput, setGoToInput] = useState('');
+  const [quickSearchMessage, setQuickSearchMessage] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<HinarioHymn[]>([]);
   const [allHymns, setAllHymns] = useState<HinarioHymn[]>([]);
@@ -41,6 +54,7 @@ const HinarioViewPage: React.FC = () => {
 
   const currentNumero = Number(numero) || 1;
   const hinarioRange = getHinarioRangeForNumero(currentNumero);
+  const officialTitle = hymn ? getOfficialTitle(hymn.titulo, hymn.numero) : '';
 
   const loadHymn = useCallback(async (num: number) => {
     try {
@@ -156,10 +170,20 @@ const HinarioViewPage: React.FC = () => {
 
   const handleGoTo = (e: React.FormEvent) => {
     e.preventDefault();
-    const num = parseInt(goToInput, 10);
-    if (num >= 1 && num <= totalHymns) {
-      navigate(`/hinario/${num}`);
+    const query = goToInput.trim();
+    if (!query) return;
+
+    const normalizedQuery = normalize(query);
+    const matchedHymn = allHymns.find(item =>
+      String(item.numero) === query || normalize(item.titulo).includes(normalizedQuery)
+    );
+
+    if (matchedHymn?.numero) {
+      navigate(`/hinario/${matchedHymn.numero}`);
       setGoToInput('');
+      setQuickSearchMessage('');
+    } else {
+      setQuickSearchMessage('Nenhum hino encontrado. Tente o número ou parte do título.');
     }
   };
 
@@ -203,36 +227,36 @@ const HinarioViewPage: React.FC = () => {
   return (
     <>
       <SEOHead
-        title={`Hino ${hymn.numero} CCB - ${hymn.titulo} | Letra do Hinário`}
-        description={`Leia a letra do Hino ${hymn.numero} CCB - ${hymn.titulo}. Página do Hinário da comunidade CCB com navegação por número e título.`}
-        keywords={`hino ${hymn.numero} ccb, ${hymn.titulo}, letra hino ${hymn.numero}, hino ${hymn.numero} ccb letra completa, cifra hino ${hymn.numero} ccb, hinário ccb, hinário 5`}
+        title={`Hino ${hymn.numero} CCB - ${officialTitle} | Letra do Hinário`}
+        description={`Leia a letra do Hino ${hymn.numero} CCB - ${officialTitle}. Página do Hinário da comunidade CCB com navegação por número e título.`}
+        keywords={`hino ${hymn.numero} ccb, ${officialTitle}, letra hino ${hymn.numero}, hino ${hymn.numero} ccb letra completa, cifra hino ${hymn.numero} ccb, hinário ccb, hinário 5`}
         canonical={`/hinario/${hymn.numero}`}
         schemaData={[
           generateBreadcrumbSchema([
             { name: 'Início', url: '/' },
             { name: 'Hinário', url: '/hinario' },
-            { name: `Hino ${hymn.numero} CCB - ${hymn.titulo}`, url: `/hinario/${hymn.numero}` },
+            { name: officialTitle, url: `/hinario/${hymn.numero}` },
           ]),
         ]}
       />
 
       <main className="min-h-screen bg-background-primary px-4 py-8 md:px-6 md:py-12">
-        <article className="mx-auto max-w-4xl rounded-3xl border border-gray-300 bg-gray-200 px-6 py-8 text-gray-900 shadow-xl md:px-12 md:py-12">
-          <h1 className="text-3xl font-bold tracking-tight md:text-5xl">
-            {hymn.titulo}
+        <article className="ml-0 mr-auto w-full max-w-5xl rounded-3xl border border-[#3b3b3b] bg-[#202020] px-6 py-8 text-white shadow-xl md:px-12 md:py-12">
+          <h1 className="text-xl font-bold tracking-tight text-primary-500 md:text-2xl">
+            {officialTitle}
           </h1>
 
-          <div className="mt-8 border-t border-gray-300 pt-8">
+          <div className="mt-8 border-t border-[#3b3b3b] pt-8">
             {verses.length > 0 ? (
               <div className="space-y-7" style={{ fontSize: `${fontSize}px` }}>
                 {verses.map((verse, idx) => (
                   <div key={idx} className="flex gap-4">
                     {verse.number !== null && (
-                      <span className="w-8 flex-shrink-0 select-none text-right font-semibold text-gray-700" style={{ fontSize: `${fontSize}px` }}>
+                      <span className="w-8 flex-shrink-0 select-none text-right font-semibold text-gray-300" style={{ fontSize: `${fontSize}px` }}>
                         {verse.number}.
                       </span>
                     )}
-                    <div className={`leading-relaxed ${verse.number === null ? 'pl-12 italic text-gray-600' : 'text-gray-900'}`}>
+                    <div className={`leading-relaxed ${verse.number === null ? 'pl-12 italic text-gray-400' : 'text-gray-100'}`}>
                       {verse.lines.map((line, lineIndex) => (
                         <div key={lineIndex}>{line || '\u00A0'}</div>
                       ))}
@@ -241,9 +265,41 @@ const HinarioViewPage: React.FC = () => {
                 ))}
               </div>
             ) : (
-              <p className="text-base text-gray-600 md:text-lg">A letra deste hino ainda não está disponível.</p>
+              <p className="text-base text-gray-300 md:text-lg">A letra deste hino ainda não está disponível.</p>
             )}
           </div>
+
+          <form onSubmit={handleGoTo} className="mt-10 border-t border-[#3b3b3b] pt-8">
+            <label htmlFor="hinario-quick-search" className="mb-3 block text-sm font-semibold text-gray-300">
+              Pesquisar outro hino
+            </label>
+            <div className="flex flex-col gap-3 sm:flex-row">
+              <div className="relative flex-1">
+                <Search className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400" />
+                <input
+                  id="hinario-quick-search"
+                  type="search"
+                  value={goToInput}
+                  onChange={e => {
+                    setGoToInput(e.target.value);
+                    setQuickSearchMessage('');
+                  }}
+                  placeholder="Número ou nome do hino..."
+                  className="w-full rounded-xl border border-[#4a4a4a] bg-[#292929] py-3 pl-12 pr-4 text-white placeholder:text-gray-500 outline-none transition focus:border-primary-500 focus:ring-1 focus:ring-primary-500"
+                  autoComplete="off"
+                />
+              </div>
+              <button
+                type="submit"
+                className="rounded-xl bg-primary-500 px-6 py-3 font-semibold text-black transition hover:bg-primary-400"
+              >
+                Buscar hino
+              </button>
+            </div>
+            {quickSearchMessage && (
+              <p className="mt-3 text-sm text-red-300" role="status">{quickSearchMessage}</p>
+            )}
+          </form>
         </article>
       </main>
     </>

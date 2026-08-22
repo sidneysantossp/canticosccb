@@ -1,0 +1,125 @@
+[1mdiff --git a/src/lib/admin/cifrasV2AdminApi.ts b/src/lib/admin/cifrasV2AdminApi.ts[m
+[1mindex 5ea5852..44d5f0f 100644[m
+[1m--- a/src/lib/admin/cifrasV2AdminApi.ts[m
+[1m+++ b/src/lib/admin/cifrasV2AdminApi.ts[m
+[36m@@ -16,6 +16,7 @@[m [mimport {[m
+   type FetchCifraVersionChordOverridesOptions,[m
+ } from '@/lib/cifras-v2/cifraVersionChordOverridesRepository';[m
+ import type { CifraVersion } from '@/types/cifras-v2';[m
+[32m+[m[32mimport { supabaseAuthFetch } from '@/lib/supabaseRest';[m
+ [m
+ export {[m
+   createCifraChordShape,[m
+[36m@@ -87,7 +88,15 @@[m [mexport interface CifraV2RolloutStats {[m
+   songsTotal: number;[m
+   versionsTotal: number;[m
+   publishedVersions: number;[m
+[32m+[m[32m  draftVersions: number;[m
+[32m+[m[32m  inReviewVersions: number;[m
+[32m+[m[32m  approvedVersions: number;[m
+[32m+[m[32m  archivedVersions: number;[m
+   searchableVersions: number;[m
+[32m+[m[32m  pendingReviewItems: number;[m
+[32m+[m[32m  changesRequestedReviewItems: number;[m
+[32m+[m[32m  rejectedReviewItems: number;[m
+[32m+[m[32m  versionsWithoutContent: number;[m
+   publicCatalogItems: number;[m
+   eligibleCatalogVersions: number;[m
+   pendingCatalogVersions: number;[m
+[36m@@ -119,10 +128,18 @@[m [mexport async function fetchCifraVersionChordOverrides([m
+ }[m
+ [m
+ export async function fetchCifraV2RolloutStats(): Promise<CifraV2RolloutStats> {[m
+[31m-  const [songs, versions, publicCatalog] = await Promise.all([[m
+[32m+[m[32m  const [songs, versions, publicCatalog, reviewQueue] = await Promise.all([[m
+     fetchAllCifraSongs({}, { authenticated: true, pageSize: 250 }),[m
+     fetchAllCifraVersions({}, { authenticated: true, pageSize: 250 }),[m
+     fetchAllPublicCifraCatalog({}, { pageSize: 250 }),[m
+[32m+[m[32m    supabaseAuthFetch<{ version_id: string; status: string }>('cifra_review_queue', {[m
+[32m+[m[32m      select: 'version_id,status',[m
+[32m+[m[32m      order: 'updated_at.desc',[m
+[32m+[m[32m      limit: '1000',[m
+[32m+[m[32m    }).catch((error) => {[m
+[32m+[m[32m      console.warn('[cifrasV2AdminApi] Não foi possível carregar a fila de revisão:', error);[m
+[32m+[m[32m      return [];[m
+[32m+[m[32m    }),[m
+   ]);[m
+   const publicVersionIds = new Set(publicCatalog.map((item) => item.version_id));[m
+   const eligibleCatalogVersions = versions.filter([m
+[36m@@ -145,11 +162,27 @@[m [mexport async function fetchCifraV2RolloutStats(): Promise<CifraV2RolloutStats> {[m
+       ? Math.round(((eligibleCatalogVersions - pendingCatalogVersions) / eligibleCatalogVersions) * 100)[m
+       : 100;[m
+ [m
+[32m+[m[32m  const versionsWithoutContent = versions.filter([m
+[32m+[m[32m    (version) =>[m
+[32m+[m[32m      version.sections_count <= 0 &&[m
+[32m+[m[32m      version.lines_count <= 0 &&[m
+[32m+[m[32m      !version.body_text.trim() &&[m
+[32m+[m[32m      version.chords_index.length === 0,[m
+[32m+[m[32m  ).length;[m
+[32m+[m
+   return {[m
+     songsTotal: songs.length,[m
+     versionsTotal: versions.length,[m
+     publishedVersions: versions.filter((version) => version.status === 'published').length,[m
+[32m+[m[32m    draftVersions: versions.filter((version) => version.status === 'draft').length,[m
+[32m+[m[32m    inReviewVersions: versions.filter((version) => version.status === 'in_review').length,[m
+[32m+[m[32m    approvedVersions: versions.filter((version) => version.status === 'approved').length,[m
+[32m+[m[32m    archivedVersions: versions.filter((version) => version.status === 'archived').length,[m
+     searchableVersions: versions.filter((version) => version.is_searchable).length,[m
+[32m+[m[32m    pendingReviewItems: reviewQueue.filter((item) => item.status === 'pending').length,[m
+[32m+[m[32m    changesRequestedReviewItems: reviewQueue.filter((item) => item.status === 'changes_requested').length,[m
+[32m+[m[32m    rejectedReviewItems: reviewQueue.filter((item) => item.status === 'rejected').length,[m
+[32m+[m[32m    versionsWithoutContent,[m
+     publicCatalogItems: publicCatalog.length,[m
+     eligibleCatalogVersions,[m
+     pendingCatalogVersions,[m
+[1mdiff --git a/src/pages/admin/AdminCifras.tsx b/src/pages/admin/AdminCifras.tsx[m
+[1mindex b7f9c0c..644faf3 100644[m
+[1m--- a/src/pages/admin/AdminCifras.tsx[m
+[1m+++ b/src/pages/admin/AdminCifras.tsx[m
+[36m@@ -974,6 +974,44 @@[m [mconst AdminCifras: React.FC = () => {[m
+         </div>[m
+       )}[m
+ [m
+[32m+[m[32m      {rolloutStats && ([m
+[32m+[m[32m        <section className="mb-6 rounded-xl border border-white/10 bg-black/20 p-4" aria-labelledby="cifras-status-heading">[m
+[32m+[m[32m          <div className="mb-3 flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">[m
+[32m+[m[32m            <div>[m
+[32m+[m[32m              <h2 id="cifras-status-heading" className="text-sm font-semibold uppercase tracking-[0.14em] text-gray-300">[m
+[32m+[m[32m                Estado real das versões V2[m
+[32m+[m[32m              </h2>[m
+[32m+[m[32m              <p className="mt-1 text-xs text-gray-500">[m
+[32m+[m[32m                Estes números vêm de <code>cifra_versions</code> e da fila editorial; não são a contagem da tabela legada <code>cifras</code>.[m
+[32m+[m[32m              </p>[m
+[32m+[m[32m            </div>[m
+[32m+[m[32m            <p className="text-xs text-gray-500">Total V2: {rolloutStats.versionsTotal}</p>[m
+[32m+[m[32m          </div>[m
+[32m+[m[32m          <div className="grid grid-cols-2 gap-3 md:grid-cols-4 xl:grid-cols-8">[m
+[32m+[m[32m            {[[m
+[32m+[m[32m              { label: 'Publicadas', value: rolloutStats.publishedVersions, tone: 'text-emerald-300' },[m
+[32m+[m[32m              { label: 'Rascunhos', value: rolloutStats.draftVersions, tone: 'text-amber-300' },[m
+[32m+[m[32m              { label: 'Em revisão', value: rolloutStats.inReviewVersions, tone: 'text-cyan-300' },[m
+[32m+[m[32m              { label: 'Alterações solicitadas', value: rolloutStats.changesRequestedReviewItems, tone: 'text-orange-300' },[m
+[32m+[m[32m              { label: 'Reprovadas', value: rolloutStats.rejectedReviewItems, tone: 'text-red-300' },[m
+[32m+[m[32m              { label: 'Arquivadas', value: rolloutStats.archivedVersions, tone: 'text-gray-300' },[m
+[32m+[m[32m              { label: 'Sem conteúdo', value: rolloutStats.versionsWithoutContent, tone: 'text-rose-300' },[m
+[32m+[m[32m              { label: 'Fila pendente', value: rolloutStats.pendingReviewItems, tone: 'text-violet-300' },[m
+[32m+[m[32m            ].map((item) => ([m
+[32m+[m[32m              <div key={item.label} className="rounded-lg border border-white/5 bg-white/[0.03] px-3 py-2">[m
+[32m+[m[32m                <p className="text-xs leading-4 text-gray-500">{item.label}</p>[m
+[32m+[m[32m                <p className={`mt-1 text-xl font-bold ${item.tone}`}>{item.value}</p>[m
+[32m+[m[32m              </div>[m
+[32m+[m[32m            ))}[m
+[32m+[m[32m          </div>[m
+[32m+[m[32m          <div className="mt-3 rounded-lg border border-amber-400/20 bg-amber-400/5 px-3 py-2 text-xs text-amber-100/80">[m
+[32m+[m[32m            <strong className="text-amber-200">A revisar:</strong>{' '}[m
+[32m+[m[32m            {rolloutStats.draftVersions + rolloutStats.inReviewVersions + rolloutStats.approvedVersions + rolloutStats.changesRequestedReviewItems}{' '}[m
+[32m+[m[32m            versões aguardam decisão editorial. Os 26 hinos recém-criados permanecem nesta área e não são publicados automaticamente.[m
+[32m+[m[32m          </div>[m
+[32m+[m[32m        </section>[m
+[32m+[m[32m      )}[m
+[32m+[m
+       {/* Filters */}[m
+       <div className="flex flex-col sm:flex-row gap-3 mb-6">[m
+         <div className="relative flex-1">[m
