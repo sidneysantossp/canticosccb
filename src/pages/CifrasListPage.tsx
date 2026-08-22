@@ -65,7 +65,7 @@ const CifrasListPage: React.FC = () => {
     <>
     <SEOHead
       title="Cifras Musicais - Acordes e Tablaturas"
-      description="Encontre cifras com acordes para violão, guitarra, ukulele e teclado. Tablaturas de hinos da Congregação Cristã no Brasil."
+      description="Encontre cifras com acordes para violão, guitarra, ukulele e teclado. Tablaturas de hinos da comunidade CCB."
       keywords="cifras, acordes, tablatura, violão, guitarra, ukulele, teclado, hinos, CCB"
       canonical="/cifras"
       schemaData={[

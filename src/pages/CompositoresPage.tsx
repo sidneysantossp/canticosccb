@@ -196,7 +196,7 @@ export default function CompositoresPage() {
         schemaData={[
           generateItemListSchema({
             name: 'Compositores CCB',
-            description: 'Lista pública de compositores da Congregação Cristã no Brasil.',
+            description: 'Lista pública de compositores da comunidade CCB.',
             url: '/compositores',
             items: composers.slice(0, 60).map((composer, index) => ({
               position: index + 1,

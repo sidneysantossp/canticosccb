@@ -30,7 +30,7 @@ const Sidebar: React.FC = () => {
         <Link to="/" className="inline-block">
           <img 
             src="/logo-canticos-ccb.png" 
-            alt="Cânticos CCB - Congregação Cristã no Brasil" 
+            alt="Cânticos CCB - comunidade CCB"
             className="h-10 w-auto object-contain"
           />
         </Link>

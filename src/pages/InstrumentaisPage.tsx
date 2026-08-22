@@ -172,7 +172,7 @@ const InstrumentaisPage: React.FC = () => {
             <div className="max-w-3xl">
               <h1 className="text-3xl md:text-5xl font-bold text-white leading-tight">Instrumentais CCB</h1>
               <p className="text-white/85 text-base md:text-lg mt-3">
-                Hub publico para buscas por hinos instrumentais, hinos tocados e cifras da Congregacao Crista no Brasil.
+                Hub publico para buscas por hinos instrumentais, hinos tocados e cifras da comunidade CCB.
               </p>
               <div className="flex flex-wrap gap-3 sm:gap-4 mt-5 text-sm text-white/75">
                 <span>{hymns.length} hinos instrumentais mapeados</span>

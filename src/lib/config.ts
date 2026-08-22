@@ -110,7 +110,7 @@ export function getPlaceholderUrl(type: 'hino' | 'album' | 'avatar'): string {
 
 export const APP_CONFIG = {
   name: 'Cânticos CCB',
-  description: 'Plataforma de Hinos da Congregação Cristã no Brasil',
+  description: 'Plataforma de Hinos da comunidade CCB',
   url: APP_BASE_URL,
   mediaUrl: MEDIA_PUBLIC_BASE_URL,
 } as const;

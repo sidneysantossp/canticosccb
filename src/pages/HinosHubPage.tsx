@@ -121,8 +121,8 @@ const HinosHubPage: React.FC = () => {
     <div className="min-h-screen bg-background-primary">
       <SEOHead
         title="Hinos CCB | Ouvir Hinos, Letras do Hinario 5 e Cifras"
-        description="Explore hinos CCB com letras do Hinario 5, paginas para ouvir, cifras, albuns e hubs tematicos da Congregacao Crista no Brasil."
-        keywords="hinos ccb, ouvir hinos ccb, letras dos hinos ccb, hinario 5 ccb, hinos congregacao crista no brasil"
+        description="Explore hinos CCB com letras do Hinario 5, paginas para ouvir, cifras, albuns e hubs tematicos da comunidade CCB."
+        keywords="hinos ccb, ouvir hinos ccb, letras dos hinos ccb, hinario 5 ccb, hinos comunidade CCB"
         canonical="/hinos-ccb"
         schemaData={schemaData}
         noindex={!isLoading && hinarioItems.length === 0 && publishedHymns.length === 0}
@@ -142,7 +142,7 @@ const HinosHubPage: React.FC = () => {
             <div className="max-w-3xl">
               <h1 className="text-3xl md:text-5xl font-bold text-white leading-tight">Hinos CCB</h1>
               <p className="text-white/85 text-base md:text-lg mt-3">
-                Landing ampla para quem procura hinos da CCB com letra, audio, Hinario 5, cifras, albuns e navegacao por repertorio da Congregacao Crista no Brasil.
+                Landing ampla para quem procura hinos da CCB com letra, audio, Hinario 5, cifras, albuns e navegacao por repertorio da comunidade CCB.
               </p>
               <div className="flex flex-wrap gap-4 mt-5 text-sm text-white/75">
                 <span>{hinarioItems.length} hinos com letra publicados</span>

@@ -179,7 +179,7 @@ const HeroSection: React.FC<HeroSectionProps> = ({ banners = [] }) => {
               Cânticos CCB
             </h1>
             <p className="text-lg md:text-xl text-gray-200 mb-8">
-              Ouça hinos da Congregação Cristã no Brasil. Louvor e adoração em um só lugar.
+              Ouça hinos da comunidade CCB. Louvor e adoração em um só lugar.
             </p>
             <button
               onClick={() => navigate('/buscar')}

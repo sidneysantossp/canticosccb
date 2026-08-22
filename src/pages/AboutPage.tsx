@@ -21,7 +21,7 @@ const AboutPage: React.FC = () => {
     {
       icon: Heart,
       title: 'Nossa Visão',
-      description: 'Ser uma referência digital de descoberta e estudo musical para quem busca repertório relacionado à Congregação Cristã no Brasil.'
+      description: 'Ser uma referência digital de descoberta e estudo musical para quem busca repertório relacionado à comunidade CCB.'
     },
     {
       icon: Award,
@@ -82,13 +82,13 @@ const AboutPage: React.FC = () => {
           <h2 className="text-3xl font-bold text-white mb-6">Nossa História</h2>
           <div className="space-y-4 text-text-muted leading-relaxed">
             <p>
-              O Cânticos CCB organiza conteúdo musical relacionado à Congregação Cristã no Brasil em uma experiência digital pública, com páginas para hinos, letras, cifras, álbuns, compositores, categorias e playlists.
+              O Cânticos CCB organiza conteúdo musical relacionado à comunidade CCB em uma experiência digital pública, com páginas para hinos, letras, cifras, álbuns, compositores, categorias e playlists.
             </p>
             <p>
               A plataforma busca facilitar a descoberta do repertório, criar conexões entre páginas relacionadas e manter metadados claros para usuários, mecanismos de busca e assistentes de IA.
             </p>
             <p>
-              O projeto é independente e não possui vínculo, endosso, patrocínio ou relação institucional com a Congregação Cristã no Brasil. Conteúdos enviados pela comunidade passam por organização e podem ser revisados ou removidos mediante solicitação válida de direitos.
+              O projeto é independente e não possui vínculo, endosso, patrocínio ou relação institucional com a comunidade CCB. Conteúdos enviados pela comunidade passam por organização e podem ser revisados ou removidos mediante solicitação válida de direitos.
             </p>
           </div>
         </div>

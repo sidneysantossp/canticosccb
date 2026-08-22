@@ -1,7 +1,7 @@
 {
   "name": "Cânticos CCB",
   "short_name": "Cânticos CCB",
-  "description": "Plataforma independente para descobrir, ouvir e organizar hinos, cifras, compositores e playlists relacionados à CCB.",
+  "description": "Plataforma independente para descobrir, ouvir e organizar hinos, cifras, compositores e playlists publicados voluntariamente pela comunidade.",
   "id": "/",
   "start_url": "/?source=pwa",
   "scope": "/",

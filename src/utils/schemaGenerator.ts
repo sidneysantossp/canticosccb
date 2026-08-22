@@ -27,7 +27,7 @@ export const generateOrganizationSchema = () => {
     url: BASE_URL,
     logo: `${BASE_URL}/logo-canticos-ccb.png`,
     description: 'Projeto independente de organização e descoberta de hinos, cifras, álbuns, compositores e playlists relacionados à CCB.',
-    disambiguatingDescription: 'O Cânticos CCB é uma plataforma independente, sem vínculo institucional, endosso, patrocínio ou representação oficial da Congregação Cristã no Brasil.',
+    disambiguatingDescription: 'O Cânticos CCB é uma plataforma independente, sem vínculo institucional, endosso, patrocínio ou representação oficial da comunidade CCB.',
     inLanguage: 'pt-BR',
     sameAs: [
       'https://www.instagram.com/canticosccb',

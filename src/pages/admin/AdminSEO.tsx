@@ -18,7 +18,7 @@ const AdminSEO: React.FC = () => {
     // Meta Tags
     site_title: 'Cânticos CCB',
     site_description: 'Plataforma independente de hinos, cifras, compositores e playlists relacionados à CCB',
-    site_keywords: 'hinos ccb, cânticos ccb, hinário ccb, congregação cristã',
+    site_keywords: 'hinos ccb, cânticos ccb, hinário ccb, comunidade CCB',
     site_url: DEFAULT_SITE_URL,
     
     // Open Graph

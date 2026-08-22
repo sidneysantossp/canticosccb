@@ -452,7 +452,7 @@ const HymnDetailPage: React.FC = () => {
                   </span>
                 )}
                 <p className="mt-4 max-w-3xl text-sm md:text-base text-text-muted leading-relaxed">
-                  {hymnPrimaryTitle} com áudio, letra e navegação rápida para o Hinário, cifras e páginas relacionadas da Congregação Cristã no Brasil.
+                  {hymnPrimaryTitle} com áudio, letra e navegação rápida para o Hinário, cifras e páginas relacionadas da comunidade CCB.
                 </p>
                 <div className="mt-4 flex flex-wrap gap-2">
                   {relatedLyric ? (

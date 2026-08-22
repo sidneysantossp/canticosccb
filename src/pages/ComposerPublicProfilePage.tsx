@@ -506,7 +506,7 @@ export default function ComposerPublicProfilePage() {
       <SEOHead
         title={`${composer.name} | Compositor CCB`}
         description={composer.bio || `Conheça ${composer.name}, compositor da CCB. Veja perfil público, hinos publicados, álbuns e acompanhe suas publicações.`}
-        keywords={`${composer.name}, compositor ccb, hinos de ${composer.name}, compositor da congregação cristã`}
+        keywords={`${composer.name}, compositor ccb, hinos de ${composer.name}, compositor da comunidade CCB`}
         canonical={buildCompositorUrl(composer.id, composer.name)}
         ogType="profile"
         ogImage={composer.avatar_url || composer.photo_url}
@@ -515,14 +515,14 @@ export default function ComposerPublicProfilePage() {
             name: composer.name,
             url: buildCompositorUrl(composer.id, composer.name),
             image: composer.avatar_url || composer.photo_url,
-            description: composer.bio || `Perfil público de ${composer.name}, compositor da Congregação Cristã no Brasil.`,
+            description: composer.bio || `Perfil público de ${composer.name}, compositor da comunidade CCB.`,
             jobTitle: 'Compositor',
           }),
           generatePersonSchema({
             name: composer.name,
             url: buildCompositorUrl(composer.id, composer.name),
             image: composer.avatar_url || composer.photo_url,
-            description: composer.bio || `Compositor da Congregação Cristã no Brasil`,
+            description: composer.bio || `Compositor da comunidade CCB`,
             jobTitle: 'Compositor',
           }),
           generateItemListSchema({

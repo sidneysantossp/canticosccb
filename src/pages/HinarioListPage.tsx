@@ -44,7 +44,7 @@ const HinarioListPage: React.FC = () => {
     <>
       <SEOHead
         title="Hinário CCB Completo - Letras dos 480 Hinos"
-        description="Leia as letras dos 480 hinos do Hinário 5 da CCB. Navegue por número, título e categoria no hinário completo da Congregação Cristã no Brasil."
+        description="Leia as letras dos 480 hinos do Hinário 5 da CCB. Navegue por número, título e categoria no hinário completo da comunidade CCB."
         keywords="hinário ccb completo, 480 hinos ccb, letras dos hinos ccb, hinário 5, hino 1 ccb, hino 480 ccb"
         canonical="/hinario"
         schemaData={[
@@ -54,7 +54,7 @@ const HinarioListPage: React.FC = () => {
           ]),
           generateItemListSchema({
             name: 'Hinário CCB',
-            description: 'Lista dos hinos do Hinário 5 da Congregação Cristã no Brasil.',
+            description: 'Lista dos hinos do Hinário 5 da comunidade CCB.',
             url: '/hinario',
             items: hymns.slice(0, 120).map((hymn) => ({
               name: `Hino ${hymn.numero} CCB - ${hymn.titulo}`,
@@ -70,7 +70,7 @@ const HinarioListPage: React.FC = () => {
           <h1 className="text-3xl md:text-4xl font-bold text-white leading-tight">
             Hinário
           </h1>
-          <p className="text-gray-400 mt-2">Letras dos hinos da Congregação Cristã no Brasil</p>
+          <p className="text-gray-400 mt-2">Letras dos hinos da comunidade CCB</p>
           <div className="flex flex-wrap gap-2 mt-4">
             <Link
               to="/hinario-5-ccb"

@@ -18,7 +18,7 @@ const DisclaimerPage: React.FC = () => {
         <section>
           <h2 className="text-xl font-semibold text-white mb-3">1. Natureza independente da plataforma</h2>
           <p>
-            A plataforma Cânticos CCB é um projeto independente e não possui qualquer vínculo, parceria, endosso, patrocínio ou relação institucional com a Congregação Cristã no Brasil (“CCB”).
+            A plataforma Cânticos CCB é um projeto independente e não possui qualquer vínculo, parceria, endosso, patrocínio ou relação institucional com a comunidade CCB (“CCB”).
             O uso das letras “CCB” no domínio e na denominação do projeto é de caráter referencial e descritivo, refletindo a forma como os membros da comunidade se referem a hinos e conteúdos relacionados à congregação.
             Não visamos nos passar por, substituir ou competir com quaisquer canais oficiais ou institucionais.
           </p>
@@ -44,7 +44,7 @@ const DisclaimerPage: React.FC = () => {
         <section>
           <h2 className="text-xl font-semibold text-white mb-3">4. Política de integridade e boa-fé</h2>
           <p>
-            Não publicamos, promovemos ou incentivamos a divulgação de conteúdos que violem direitos autorais, conexos ou marcários de terceiros, incluindo da Congregação Cristã no Brasil. Nosso objetivo é facilitar a organização, descoberta e audição de hinos autorais e interpretações compartilhadas pela comunidade, sempre com respeito aos direitos de titulares e intérpretes.
+            Não publicamos, promovemos ou incentivamos a divulgação de conteúdos que violem direitos autorais, conexos ou marcários de terceiros, incluindo da comunidade CCB. Nosso objetivo é facilitar a organização, descoberta e audição de hinos autorais e interpretações compartilhadas pela comunidade, sempre com respeito aos direitos de titulares e intérpretes.
           </p>
         </section>
 

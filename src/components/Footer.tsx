@@ -13,7 +13,7 @@ const Footer: React.FC = () => {
               <Link to="/" className="inline-block">
                 <img 
                   src="/logo-canticos-ccb.png" 
-                  alt="Cânticos CCB - Congregação Cristã no Brasil" 
+                  alt="Cânticos CCB - comunidade CCB"
                   className="h-10 w-auto object-contain"
                   onError={(e) => {
                     // Fallback para logo local se o link externo falhar
@@ -244,7 +244,7 @@ const Footer: React.FC = () => {
           {/* Disclaimer curto */}
           <div className="mt-6 text-[13px] leading-relaxed text-text-muted">
             <p>
-              O Cânticos CCB é uma plataforma independente, sem vínculo institucional com a Congregação Cristã no Brasil. Não publicamos conteúdos que violem direitos autorais ou marcários. Conteúdos são enviados pela comunidade e passam por verificação quando aplicável. Se você é titular de direitos, utilize os canais informados para solicitar avaliação e retirada.
+              O Cânticos CCB é uma plataforma independente, sem vínculo institucional com a comunidade CCB. Não publicamos conteúdos que violem direitos autorais ou marcários. Conteúdos são enviados pela comunidade e passam por verificação quando aplicável. Se você é titular de direitos, utilize os canais informados para solicitar avaliação e retirada.
               Leia o <Link to="/disclaimer" className="text-primary-400 hover:underline">Disclaimer Jurídico</Link>, os <Link to="/termos" className="text-primary-400 hover:underline">Termos de Uso</Link> e a <Link to="/privacidade" className="text-primary-400 hover:underline">Política de Privacidade</Link>.
             </p>
           </div>
