@@ -194,16 +194,32 @@ const HeroSection: React.FC<HeroSectionProps> = ({ banners = [] }) => {
     );
   }
 
-  // Função para gerar background gradient inline
+  // O painel grava o overlay como `opacity=0;bg-gradient-to-br ...`.
+  // Respeitar a opacidade é essencial: opacity=0 deve deixar a imagem do slide totalmente visível.
+  const getGradientClassName = (color: string) => {
+    const raw = String(color || '').trim();
+    const opacityMatch = raw.match(/(?:^|;)\s*opacity\s*=\s*(\d+(?:\.\d+)?)\s*(?:;|$)/i);
+    const configuredOpacity = opacityMatch ? Number(opacityMatch[1]) : 100;
+    const overlayOpacity = Math.max(0, Math.min(1, configuredOpacity > 1 ? configuredOpacity / 100 : configuredOpacity));
+    if (overlayOpacity <= 0) return '';
+    return raw.split(';').map((part) => part.trim()).find((part) => part.startsWith('bg-gradient-')) || '';
+  };
+
   const getGradientStyle = (color: string) => {
     try {
-      const c = String(color);
-      if (!c.includes('from-[')) return undefined;
-      return c.replace(/bg-gradient-to-br from-\[([^\]]+)\]\/(\d+) to-\[([^\]]+)\]\/(\d+)/, (_, color1, opacity1, color2, opacity2) => {
-        const alpha1 = parseInt(opacity1) / 100;
-        const alpha2 = parseInt(opacity2) / 100;
-        return `linear-gradient(to bottom right, ${color1}${Math.round(alpha1 * 255).toString(16).padStart(2, '0')}, ${color2}${Math.round(alpha2 * 255).toString(16).padStart(2, '0')})`;
-      });
+      const raw = String(color || '').trim();
+      const opacityMatch = raw.match(/(?:^|;)\s*opacity\s*=\s*(\d+(?:\.\d+)?)\s*(?:;|$)/i);
+      const configuredOpacity = opacityMatch ? Number(opacityMatch[1]) : 100;
+      const overlayOpacity = Math.max(0, Math.min(1, configuredOpacity > 1 ? configuredOpacity / 100 : configuredOpacity));
+      const gradient = raw.split(';').map((part) => part.trim()).filter(Boolean).find((part) => part.includes('from-['));
+      if (!gradient || overlayOpacity <= 0) return overlayOpacity <= 0 ? { background: 'transparent' } : undefined;
+      return {
+        background: gradient.replace(/bg-gradient-to-br from-\[([^\]]+)\]\/(\d+) to-\[([^\]]+)\]\/(\d+)/, (_, color1, opacity1, color2, opacity2) => {
+          const alpha1 = (parseInt(opacity1, 10) / 100) * overlayOpacity;
+          const alpha2 = (parseInt(opacity2, 10) / 100) * overlayOpacity;
+          return `linear-gradient(to bottom right, ${color1}${Math.round(alpha1 * 255).toString(16).padStart(2, '0')}, ${color2}${Math.round(alpha2 * 255).toString(16).padStart(2, '0')})`;
+        }),
+      };
     } catch {
       return undefined;
     }
@@ -264,8 +280,8 @@ const HeroSection: React.FC<HeroSectionProps> = ({ banners = [] }) => {
 
             {/* Gradient Overlay */}
             <div
-              className={`absolute inset-0 ${String(s.color)}`}
-              style={{ background: getGradientStyle(s.color) }}
+              className={`absolute inset-0 ${getGradientClassName(s.color)}`}
+              style={getGradientStyle(s.color)}
             />
           </div>
         );

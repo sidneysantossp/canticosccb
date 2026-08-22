@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Search, FileText, AlertCircle, RefreshCw, Music, Music2 } from 'lucide-react';
 import SEOHead from '@/components/SEO/SEOHead';
-import CifrasFeatureBanner from '@/components/home/CifrasFeatureBanner';
+import HeroSection from '@/components/home/HeroSection';
+import { getHomePageData } from '@/lib/homeApi';
 import { generateItemListSchema, generateBreadcrumbSchema } from '@/utils/schemaGenerator';
 import { Cifra, INSTRUMENTS, CATEGORIES } from '@/api/cifras';
 import { fetchMergedPublicCifrasListDetailed, type PublicCifraPageData } from '@/lib/cifras-v2';
@@ -47,9 +48,13 @@ const CifrasListPage: React.FC = () => {
   const [filterCategory, setFilterCategory] = useState('');
   const [loadError, setLoadError] = useState<string | null>(null);
   const [loadWarning, setLoadWarning] = useState<string | null>(null);
+  const [heroBanners, setHeroBanners] = useState<Awaited<ReturnType<typeof getHomePageData>>['banners']>([]);
 
   useEffect(() => {
     loadCifras();
+    getHomePageData()
+      .then((homeData) => setHeroBanners(homeData.banners || []))
+      .catch((error) => console.error('Erro ao carregar banners da área de cifras:', error));
   }, []);
 
   const loadCifras = async () => {
@@ -142,9 +147,9 @@ const CifrasListPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Hero específico da área de cifras */}
+      {/* Hero administrável da área de cifras: usa os banners Hero publicados no painel */}
       <div className="mb-6 -mx-4 sm:-mx-0">
-        <CifrasFeatureBanner />
+        <HeroSection banners={heroBanners} />
       </div>
 
       {/* Search & Filters */}
