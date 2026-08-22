@@ -151,6 +151,24 @@ export async function incrementHinarioViews(id: number): Promise<void> {
   }
 }
 
+export async function fetchHinario5NumberMap(): Promise<Record<string, number>> {
+  try {
+    const rows = await supabaseFetch<{ numero: number; titulo: string }>('hinario5_number_map', {
+      select: 'numero,titulo',
+      order: 'numero.asc',
+      limit: '520',
+    });
+    return Object.fromEntries(
+      rows
+        .filter((row) => Number(row.numero) > 0 && row.titulo)
+        .map((row) => [row.titulo, Number(row.numero)])
+    );
+  } catch (error) {
+    console.error('[hinario] fetchHinario5NumberMap error:', error);
+    return {};
+  }
+}
+
 // =============================================
 // Helpers
 // =============================================

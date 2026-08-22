@@ -4,11 +4,13 @@ import { Eye, EyeOff, ArrowLeft } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useMobileMenu } from '@/contexts/MobileMenuContext';
 import { googleOAuthLogin, isGoogleAuthEnabled } from '@/lib/supabase-auth';
+import { useActiveComposer } from '@/hooks/useActiveComposer';
 
 const LoginPage: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { signIn, profile } = useAuth();
+  const { signIn, profile, loading: authLoading } = useAuth();
+  const { composer, loading: composerLoading } = useActiveComposer();
   const { closeMenu } = useMobileMenu();
 
   const [email, setEmail] = useState('');
@@ -24,12 +26,24 @@ const LoginPage: React.FC = () => {
 
   // Redirecionar quando o perfil carregar após login
   useEffect(() => {
+    // O AuthContext aplica inicialmente um perfil mínimo enquanto sincroniza.
+    // O compositor aprovado é resolvido da tabela composers em paralelo; não
+    // redirecionar um compositor para o perfil/home antes dessa resolução.
+    if (authLoading || composerLoading || !profile) return;
+
     if (profile) {
       // Fechar menu mobile se estiver aberto
       closeMenu();
 
       // Redirecionamento imediato para rotas corretas
-      if (profile.is_composer) {
+      const composerRecord = composer as any;
+      const approvedComposer = Boolean(composerRecord && (
+        composerRecord.verificado === true
+          || composerRecord.verificado === 1
+          || composerRecord.verified === true
+          || ['approved', 'active', 'ativo'].includes(String(composerRecord.status || '').toLowerCase())
+      ));
+      if (profile.is_composer || approvedComposer) {
         navigate('/composer');
       } else if (profile.is_admin) {
         navigate('/admin');
@@ -40,7 +54,7 @@ const LoginPage: React.FC = () => {
       // Resetar loading após redirecionamento
       setIsLoading(false);
     }
-  }, [profile, navigate, location.state, closeMenu]);
+  }, [authLoading, composerLoading, composer, profile, navigate, location.state, closeMenu]);
 
   const handleGoogleLogin = async () => {
     try {

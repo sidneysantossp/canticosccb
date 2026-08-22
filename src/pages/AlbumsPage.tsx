@@ -150,13 +150,13 @@ const AlbumsPage: React.FC = () => {
     <>
       <SEOHead
         title="Álbuns de Hinos CCB"
-        description="Explore álbuns de hinos da CCB, coleções cantadas e tocadas, lançamentos e repertórios completos da Congregação Cristã no Brasil."
+        description="Explore álbuns de hinos da CCB, coleções cantadas e tocadas, lançamentos e repertórios completos da comunidade CCB."
         keywords="álbuns de hinos ccb, álbuns ccb, hinos cantados ccb, hinos tocados ccb, coleções ccb"
         canonical="/albuns"
         schemaData={[
           generateItemListSchema({
             name: 'Álbuns de Hinos CCB',
-            description: 'Coleção pública de álbuns de hinos da Congregação Cristã no Brasil.',
+            description: 'Coleção pública de álbuns de hinos da comunidade CCB.',
             url: '/albuns',
             items: filteredAlbums.slice(0, 60).map((album, index) => ({
               position: index + 1,

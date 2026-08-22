@@ -87,18 +87,49 @@ async function validateAccessToken(env: Env, token: string): Promise<Authenticat
   const authUser = await authResponse.json() as { id?: string; email?: string };
   if (!authUser.id || !UUID_RE.test(authUser.id)) return null;
 
-  const profileResponse = await fetch(
-    `${url}/rest/v1/users?id=eq.${encodeURIComponent(authUser.id)}&select=is_admin,is_composer,status,is_blocked&limit=1`,
-    { headers: { apikey: anonKey, Authorization: `Bearer ${token}` } },
-  );
-  const profiles = profileResponse.ok ? await profileResponse.json() as Array<Record<string, unknown>> : [];
-  const profile = profiles[0] || {};
-  const active = profile.status === undefined || (profile.status === 'active' && profile.is_blocked !== true);
+  let profile: Record<string, unknown> = {};
+  try {
+    const profileResponse = await fetch(
+      `${url}/rest/v1/users?id=eq.${encodeURIComponent(authUser.id)}&select=is_admin,is_composer,status,is_blocked&limit=1`,
+      { headers: { apikey: anonKey, Authorization: `Bearer ${token}` } },
+    );
+    const profiles = profileResponse.ok ? await profileResponse.json() as Array<Record<string, unknown>> : [];
+    profile = profiles[0] || {};
+  } catch (error) {
+    console.warn('[r2-upload-sign] profile lookup failed:', error);
+  }
+
+  let approvedComposer = false;
+  const composerHeaders = { apikey: anonKey, Authorization: `Bearer ${token}` };
+  try {
+    const byUser = await fetch(
+      `${url}/rest/v1/composers?user_id=eq.${encodeURIComponent(authUser.id)}&select=verified,status&limit=1`,
+      { headers: composerHeaders },
+    );
+    let composerRows = byUser.ok ? await byUser.json() as Array<Record<string, unknown>> : [];
+    if (composerRows.length === 0 && authUser.email) {
+      const byEmail = await fetch(
+        `${url}/rest/v1/composers?email=ilike.${encodeURIComponent(String(authUser.email).trim().toLowerCase())}&select=verified,status&limit=1`,
+        { headers: composerHeaders },
+      );
+      composerRows = byEmail.ok ? await byEmail.json() as Array<Record<string, unknown>> : [];
+    }
+    const composer = composerRows[0];
+    approvedComposer = (composer?.verified === true || composer?.verified === 1) && composer?.status !== 'inactive';
+  } catch (error) {
+    console.warn('[r2-upload-sign] composer lookup failed:', error);
+  }
+
+  const isAdmin = profile.is_admin === true;
+  const isComposer = profile.is_composer === true || approvedComposer;
+  const active = profile.status === undefined
+    ? isComposer
+    : profile.status === 'active' && profile.is_blocked !== true;
   return {
     id: authUser.id,
     email: typeof authUser.email === 'string' ? authUser.email : '',
-    isAdmin: profile.is_admin === true,
-    isComposer: profile.is_composer === true,
+    isAdmin,
+    isComposer,
     active,
   };
 }

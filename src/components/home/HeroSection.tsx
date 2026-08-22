@@ -3,7 +3,6 @@ import { ChevronLeft, ChevronRight, Play } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import type { HomeBanner } from '@/lib/homeApi';
 import { buildBannerUrl } from '@/lib/media-helper';
-import { parseBannerOverlay } from '@/lib/bannerOverlay';
 
 interface Slide {
   id: number;
@@ -19,11 +18,11 @@ interface Slide {
 
 interface HeroSectionProps {
   banners?: HomeBanner[];
-  className?: string;
+  variant?: 'default' | 'fullBanner';
 }
 
-const HeroSection: React.FC<HeroSectionProps> = ({ banners = [], className }) => {
-  const spacingClassName = className ?? 'md:mx-6 md:mt-2';
+const HeroSection: React.FC<HeroSectionProps> = ({ banners = [], variant = 'default' }) => {
+  const isFullBanner = variant === 'fullBanner';
   const [currentSlide, setCurrentSlide] = useState(0);
   const [failedSlides, setFailedSlides] = useState<Record<number, true>>({});
   const touchStartX = useRef<number | null>(null);
@@ -174,7 +173,8 @@ const HeroSection: React.FC<HeroSectionProps> = ({ banners = [], className }) =>
   // Fallback: banner padrão quando não há banners do backend
   if (!slide) {
     return (
-      <div className={`relative h-[360px] md:h-[350px] rounded-lg overflow-hidden mb-8 mt-0 ${spacingClassName}`}>
+      <div className={`relative h-[360px] md:h-[350px] rounded-lg overflow-hidden ${isFullBanner ? 'mb-0 mt-0 mx-0' : 'mb-8 mt-0 md:mx-6 md:mt-2'}`}>
+
         <div className="absolute inset-0 bg-gradient-to-br from-primary-600 to-primary-900" />
         <div className="relative z-10 flex items-center h-full px-6 md:px-12">
           <div className="max-w-2xl">
@@ -182,7 +182,7 @@ const HeroSection: React.FC<HeroSectionProps> = ({ banners = [], className }) =>
               Cânticos CCB
             </h1>
             <p className="text-lg md:text-xl text-gray-200 mb-8">
-              Ouça hinos da Congregação Cristã no Brasil. Louvor e adoração em um só lugar.
+              Ouça hinos da comunidade CCB. Louvor e adoração em um só lugar.
             </p>
             <button
               onClick={() => navigate('/buscar')}
@@ -197,16 +197,32 @@ const HeroSection: React.FC<HeroSectionProps> = ({ banners = [], className }) =>
     );
   }
 
-  // Função para gerar background gradient inline
+  // O painel grava o overlay como `opacity=0;bg-gradient-to-br ...`.
+  // Respeitar a opacidade é essencial: opacity=0 deve deixar a imagem do slide totalmente visível.
+  const getGradientClassName = (color: string) => {
+    const raw = String(color || '').trim();
+    const opacityMatch = raw.match(/(?:^|;)\s*opacity\s*=\s*(\d+(?:\.\d+)?)\s*(?:;|$)/i);
+    const configuredOpacity = opacityMatch ? Number(opacityMatch[1]) : 100;
+    const overlayOpacity = Math.max(0, Math.min(1, configuredOpacity > 1 ? configuredOpacity / 100 : configuredOpacity));
+    if (overlayOpacity <= 0) return '';
+    return raw.split(';').map((part) => part.trim()).find((part) => part.startsWith('bg-gradient-')) || '';
+  };
+
   const getGradientStyle = (color: string) => {
     try {
-      const c = String(color);
-      if (!c.includes('from-[')) return undefined;
-      return c.replace(/bg-gradient-to-br from-\[([^\]]+)\]\/(\d+) to-\[([^\]]+)\]\/(\d+)/, (_, color1, opacity1, color2, opacity2) => {
-        const alpha1 = parseInt(opacity1) / 100;
-        const alpha2 = parseInt(opacity2) / 100;
-        return `linear-gradient(to bottom right, ${color1}${Math.round(alpha1 * 255).toString(16).padStart(2, '0')}, ${color2}${Math.round(alpha2 * 255).toString(16).padStart(2, '0')})`;
-      });
+      const raw = String(color || '').trim();
+      const opacityMatch = raw.match(/(?:^|;)\s*opacity\s*=\s*(\d+(?:\.\d+)?)\s*(?:;|$)/i);
+      const configuredOpacity = opacityMatch ? Number(opacityMatch[1]) : 100;
+      const overlayOpacity = Math.max(0, Math.min(1, configuredOpacity > 1 ? configuredOpacity / 100 : configuredOpacity));
+      const gradient = raw.split(';').map((part) => part.trim()).filter(Boolean).find((part) => part.includes('from-['));
+      if (!gradient || overlayOpacity <= 0) return overlayOpacity <= 0 ? { background: 'transparent' } : undefined;
+      return {
+        background: gradient.replace(/bg-gradient-to-br from-\[([^\]]+)\]\/(\d+) to-\[([^\]]+)\]\/(\d+)/, (_, color1, opacity1, color2, opacity2) => {
+          const alpha1 = (parseInt(opacity1, 10) / 100) * overlayOpacity;
+          const alpha2 = (parseInt(opacity2, 10) / 100) * overlayOpacity;
+          return `linear-gradient(to bottom right, ${color1}${Math.round(alpha1 * 255).toString(16).padStart(2, '0')}, ${color2}${Math.round(alpha2 * 255).toString(16).padStart(2, '0')})`;
+        }),
+      };
     } catch {
       return undefined;
     }
@@ -214,7 +230,7 @@ const HeroSection: React.FC<HeroSectionProps> = ({ banners = [], className }) =>
 
   return (
     <div
-      className={`relative h-[360px] md:h-[350px] rounded-lg overflow-hidden mb-8 mt-0 ${spacingClassName}`}
+      className={`relative h-[360px] md:h-[350px] rounded-lg overflow-hidden ${isFullBanner ? 'mb-0 mt-0 mx-0' : 'mb-8 mt-0 md:mx-6 md:mt-2'}`}
       onTouchStart={handleTouchStart}
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
@@ -222,7 +238,6 @@ const HeroSection: React.FC<HeroSectionProps> = ({ banners = [], className }) =>
       {/* Slides Container - Usando CSS transitions */}
       {displaySlides.map((s, index) => {
         const isActive = index === safeIndex;
-        const overlay = parseBannerOverlay(s.color);
 
         return (
           <div
@@ -268,8 +283,8 @@ const HeroSection: React.FC<HeroSectionProps> = ({ banners = [], className }) =>
 
             {/* Gradient Overlay */}
             <div
-              className={`absolute inset-0 ${overlay.gradient}`}
-              style={{ background: getGradientStyle(overlay.gradient), opacity: overlay.opacity / 100 }}
+              className={`absolute inset-0 ${getGradientClassName(s.color)}`}
+              style={getGradientStyle(s.color)}
             />
           </div>
         );

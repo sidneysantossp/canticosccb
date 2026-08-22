@@ -51,7 +51,12 @@ export const getAdminStats = async (): Promise<AdminStats> => {
     const publishedSongs = allSongs.filter((song: any) => song.status === 'published').length;
     const pendingSongs = allSongs.filter((song: any) => ['draft', 'pending'].includes(song.status)).length;
     const pendingAlbums = allAlbums.length;
-    const pendingComposers = allComposers.filter((composer: any) => composer.status === 'pending' || composer.verified === false).length;
+    // O badge deve usar o mesmo critério da página de aprovação: somente
+    // compositores explicitamente não verificados. O status legado "pending"
+    // pode permanecer em perfis já verificados e não representa uma pendência.
+    const pendingComposers = allComposers.filter((composer: any) =>
+      composer.verified === false || composer.verified === 0
+    ).length;
 
     const today = new Date();
     today.setHours(0, 0, 0, 0);

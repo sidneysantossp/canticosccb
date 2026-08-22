@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { useParams, Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { ArrowLeft, Minus, Plus, ScrollText, Settings2, Eye, Printer, Share2, Music, X, Heart, Flag, Gauge, Hand, Target, RefreshCw, Play, Pause, RotateCcw } from 'lucide-react';
 import SEOHead from '@/components/SEO/SEOHead';
-import ChordDictionaryCarousel, { ChordPopover } from '@/components/cifras/ChordDictionaryCarousel';
+import ChordDictionaryCarousel from '@/components/cifras/ChordDictionaryCarousel';
 import { generateCifraSchema, generateBreadcrumbSchema } from '@/utils/schemaGenerator';
 import { fetchCifraBySlug, incrementCifraViews, type Cifra, INSTRUMENTS, ALL_KEYS } from '@/api/cifras';
 import { buildHinoUrl } from '@/utils/slugUrl';
@@ -35,7 +35,6 @@ import {
   extractChords,
   getSemitonesBetweenKeys,
   transposeCifraContent,
-  getChordDiagram,
 } from '@/utils/chordUtils';
 
 type DisplayCifra = Cifra | PublicCifraPageData;
@@ -66,30 +65,20 @@ function stripTrailingArtistFromTitle(title: string, artist?: string | null): st
     .trim();
 }
 
-function buildInstrumentSeoTitle(
-  number: number | null,
-  title: string,
-  instrumentLabel: string,
-  fallback?: string | null,
-): string {
-  if (!number) {
-    return fallback?.trim() || `${title} | Cânticos CCB`;
-  }
+function getCifraCategoryLabel(category?: string | null): string {
+  const normalized = String(category || '').trim().toLowerCase();
+  const labels: Record<string, string> = {
+    avulso: 'Hino Avulso CCB',
+    avulsos: 'Hino Avulso CCB',
+    cantado: 'Hino Cantado CCB',
+    cantados: 'Hino Cantado CCB',
+    tocado: 'Hino Tocado CCB',
+    tocados: 'Hino Tocado CCB',
+    instrumental: 'Hino Instrumental CCB',
+    instrumentais: 'Hino Instrumental CCB',
+  };
 
-  return `CIFRA Hino ${number} CCB - ${title} - ${instrumentLabel} | Cânticos CCB`;
-}
-
-function buildInstrumentSeoDescription(
-  number: number | null,
-  title: string,
-  instrumentLabel: string,
-  fallback?: string | null,
-): string {
-  if (!number) {
-    return fallback?.trim() || `Cifra de ${title} para ${instrumentLabel}. Acordes e tom.`;
-  }
-
-  return `Cifra Hino ${number} CCB - ${title} para ${instrumentLabel}. Acordes e tom do Hinário 5 CCB.`;
+  return labels[normalized] || String(category || 'Cifra CCB').trim();
 }
 
 function getSectionAnchor(sectionLabel: string, index: number): string {
@@ -1241,23 +1230,9 @@ const CifraPage: React.FC = () => {
       );
     }
     if (isChordLine(line) && showChords) {
-      const chordTokens = line.split(/(\s+)/);
       return (
         <div key={idx} className="whitespace-pre text-primary-400 sm:text-primary-400 print:text-primary-600">
-          {chordTokens.map((token, tokenIndex) => {
-            const shapeOptions = chordShapeVariants[token];
-            const selectedShape = shapeOptions?.find(shape => shape.id === selectedShapeIds[token]) || shapeOptions?.[0];
-            const isKnownChord = Boolean(selectedShape || getChordDiagram(token));
-            return isKnownChord ? (
-              <ChordPopover
-                key={`${String(idx)}-${tokenIndex}`}
-                chord={token}
-                shape={selectedShape}
-                fallbackDiagram={getChordDiagram(token) || undefined}
-                leftHanded={showLeftHandedDiagrams}
-              />
-            ) : <span key={`${String(idx)}-${tokenIndex}`}>{token}</span>;
-          })}
+          {line}
         </div>
       );
     }
@@ -1323,22 +1298,27 @@ const CifraPage: React.FC = () => {
   };
   const instrumentHubUrl = instrumentHubMap[cifra.instrument] || '/cifras';
   const relatedNumber = relatedHymn?.numero || relatedLyric?.numero || (isCifraV2(cifra) ? cifra.hinario_numero : null) || extractHymnNumber(cifra.title);
-  const displayCifraTitle = stripTrailingArtistFromTitle(cifra.title, cifra.artist);
+  const displayCifraTitle = stripTrailingArtistFromTitle(relatedHymn?.titulo || relatedLyric?.titulo || cifra.title, cifra.artist)
+    .replace(/\s*[-–—]\s*Elias Brandão\s*$/i, '')
+    .replace(/^\s*(?:hino\s*)?\d+\s*(?:ccb)?\s*[-–—:.]\s*/i, '')
+    .replace(/\s{2,}/g, ' ')
+    .trim();
+  const headerCifraTitle = cifra.artist?.trim() && cifra.artist.trim().toLowerCase() !== displayCifraTitle.toLowerCase()
+    ? `${displayCifraTitle} (${cifra.artist.trim()})`
+    : displayCifraTitle;
+  const headerCifraCategory = getCifraCategoryLabel(cifra.category);
   const hinarioRange = getHinarioRangeForNumero(relatedNumber);
-  const storedSeoTitle = isCifraV2(cifra) ? cifra.seo_title : null;
-  const storedSeoDescription = isCifraV2(cifra) ? cifra.seo_description : null;
-  const cifraTitle = buildInstrumentSeoTitle(
-    relatedNumber,
-    displayCifraTitle,
-    instrumentLabel,
-    storedSeoTitle,
-  );
-  const cifraDescription = buildInstrumentSeoDescription(
-    relatedNumber,
-    displayCifraTitle,
-    instrumentLabel,
-    storedSeoDescription,
-  );
+  const cifraTitle = relatedNumber
+    ? `CIFRA Hino ${relatedNumber} CCB - ${displayCifraTitle} - ${instrumentLabel} | Cânticos CCB`
+    : `CIFRA ${displayCifraTitle} - ${instrumentLabel} | Cânticos CCB`;
+  const cifraDescription = [
+    relatedNumber ? `Cifra Hino ${relatedNumber} CCB - ${displayCifraTitle} para ${instrumentLabel}.` : `Cifra CCB de ${displayCifraTitle} para ${instrumentLabel}.`,
+    cifra.artist ? `Artista: ${cifra.artist}.` : '',
+    `Tom: ${cifra.original_key}. Instrumento disponível: ${instrumentLabel}.`,
+    'Termos relacionados: cifras para Violão, Ukulele e Teclado, com acordes e transposição de tom quando publicados.',
+    relatedLyric ? `Letra disponível no Hinário ${relatedLyric.numero}.` : '',
+    relatedHymn ? 'Página de áudio relacionada disponível.' : '',
+  ].filter(Boolean).join(' ');
   const cifraKeywords = (isCifraV2(cifra) ? cifra.seo_keywords : null) || [
     cifra.title,
     cifra.artist,
@@ -1391,7 +1371,7 @@ const CifraPage: React.FC = () => {
         ]),
       ]}
     />
-    <div className="min-h-screen overflow-x-clip bg-[#080909] px-6 pt-6 pb-36 text-white sm:mx-auto sm:min-h-0 sm:max-w-4xl sm:bg-transparent sm:px-4 sm:py-6 sm:pb-6 sm:text-inherit print:max-w-none print:bg-white print:px-12 print:py-10 print:pb-0 print:text-[#252525]">
+    <div className="min-h-screen overflow-x-clip bg-[#080909] px-6 pt-6 pb-36 text-white sm:mx-auto sm:min-h-0 sm:max-w-6xl sm:bg-transparent sm:px-4 sm:py-6 sm:pb-6 sm:text-inherit print:max-w-none print:bg-white print:px-12 print:py-10 print:pb-0 print:text-[#252525]">
       <div className="mb-14 hidden print:block">
         <div className="flex items-start justify-between gap-8">
           <div>
@@ -1421,7 +1401,8 @@ const CifraPage: React.FC = () => {
             <ArrowLeft className="h-6 w-6" />
           </Link>
           <div className="min-w-0 flex-1">
-            <h1 className="text-[28px] font-black leading-[1.02] tracking-[-0.04em] text-white">{displayCifraTitle}</h1>
+            <h1 className="text-[28px] font-black leading-[1.02] tracking-[-0.04em] text-white">{headerCifraTitle}</h1>
+            <p className="mt-2 text-base font-bold text-primary-400">{headerCifraCategory}</p>
           </div>
           <button
             type="button"
@@ -1464,496 +1445,28 @@ const CifraPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Header */}
-      <div className="mb-6 hidden sm:block print:hidden">
-        <Link to="/cifras" className="inline-flex items-center gap-2 text-gray-400 hover:text-white mb-4 transition-colors print:hidden">
-          <ArrowLeft className="w-4 h-4" />
-          Voltar
-        </Link>
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-start">
-          {cifra.cover_url && (
-            <img src={cifra.cover_url} alt={displayCifraTitle} className="w-16 h-16 sm:w-20 sm:h-20 rounded-lg object-cover shadow-lg flex-shrink-0" />
-          )}
-          <div className="flex-1 min-w-0">
-            <h1 className="text-2xl sm:text-3xl font-bold text-white leading-tight">{displayCifraTitle}</h1>
-            <div className="flex flex-wrap gap-x-4 gap-y-1 text-gray-500 text-sm mt-1">
-              <span>
-                {isCifraV2(cifra)
-                  ? `Versão ${cifra.publication_label === 'official' ? 'oficial' : cifra.publication_label === 'reviewed' ? 'revisada' : 'publicada'}`
-                  : `${cifra.views_count.toLocaleString()} exibições`}
-              </span>
-              {isCifraV2(cifra) ? <span>{cifra.arrangement_type.replace('_', ' ')}</span> : null}
-              {engagement ? <span>{engagement.viewsCount.toLocaleString()} visualizações</span> : null}
-              {engagement ? <span>{engagement.favoritesCount.toLocaleString()} favoritos</span> : null}
-              {engagement ? <span>{engagement.openReportsCount.toLocaleString()} denúncias abertas</span> : null}
-            </div>
-            <p className="text-gray-400 text-sm mt-3 leading-relaxed">
-              Cifra CCB para {instrumentLabel}, com acordes, troca de tom e navegação para outras cifras e páginas relacionadas.
-            </p>
-            <div className="flex flex-wrap gap-2 mt-4">
-              {isCifraV2(cifra) ? (
-                <>
-                  <button
-                    type="button"
-                    onClick={() => void handleToggleFavorite()}
-                    disabled={isFavoriteLoading}
-                    className={`inline-flex w-full items-center justify-center gap-2 rounded-full border px-3 py-1.5 text-sm transition-colors sm:w-auto ${
-                      engagement?.isFavorited
-                        ? 'border-red-500/50 bg-red-500/15 text-red-300'
-                        : 'border-gray-700 bg-gray-800 text-gray-200 hover:border-red-500/40 hover:text-white'
-                    }`}
-                  >
-                    <Heart className={`w-4 h-4 ${engagement?.isFavorited ? 'fill-current' : ''}`} />
-                    {engagement?.isFavorited ? 'Favoritada' : 'Favoritar'}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setShowReportModal(true)}
-                    className="inline-flex w-full items-center justify-center gap-2 rounded-full border border-gray-700 bg-gray-800 px-3 py-1.5 text-sm text-gray-200 transition-colors hover:border-primary-500/40 hover:text-white sm:w-auto"
-                  >
-                    <Flag className="w-4 h-4" />
-                    Reportar problema
-                  </button>
-                </>
-              ) : null}
-              {relatedHymn ? (
-                <Link
-                  to={buildHinoUrl(relatedHymn.id, relatedHymn.titulo, relatedHymn.numero)}
-                  className="inline-flex w-full items-center justify-center rounded-full border border-primary-500/40 bg-primary-500/10 px-3 py-1.5 text-sm text-primary-300 transition-colors hover:bg-primary-500/20 sm:w-auto"
-                >
-                  Ouvir este hino
-                </Link>
-              ) : null}
-              {relatedHymnTrack ? (
-                <button
-                  type="button"
-                  onClick={() => handlePlayRelatedTrack()}
-                  disabled={isRelatedTrackLoading || !canPlayRelatedTrack}
-                  className="inline-flex w-full items-center justify-center gap-2 rounded-full border border-primary-500 bg-primary-500 px-3 py-1.5 text-sm font-semibold text-black transition-colors hover:bg-primary-600 disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
-                >
-                  {isRelatedTrackActive && isPlayerPlaying ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
-                  {isRelatedTrackActive && isPlayerPlaying ? 'Pausar áudio' : 'Tocar áudio aqui'}
-                </button>
-              ) : null}
-              {relatedLyric ? (
-                <Link
-                  to={`/hinario/${relatedLyric.numero}`}
-                  className="inline-flex w-full items-center justify-center rounded-full border border-primary-500/40 bg-primary-500/10 px-3 py-1.5 text-sm text-primary-300 transition-colors hover:bg-primary-500/20 sm:w-auto"
-                >
-                  Letra no Hinario
-                </Link>
-              ) : null}
-              <Link
-                to={instrumentHubUrl}
-                className="inline-flex w-full items-center justify-center rounded-full border border-primary-500/40 bg-primary-500/10 px-3 py-1.5 text-sm text-primary-300 transition-colors hover:bg-primary-500/20 sm:w-auto"
-              >
-                Mais cifras de {instrumentLabel}
-              </Link>
-              <Link
-                to="/cifras"
-                className="inline-flex w-full items-center justify-center rounded-full border border-gray-700 bg-gray-800 px-3 py-1.5 text-sm text-gray-200 transition-colors hover:border-primary-500/40 hover:text-white sm:w-auto"
-              >
-                Todas as cifras
-              </Link>
-              <Link
-                to="/hinario"
-                className="inline-flex w-full items-center justify-center rounded-full border border-gray-700 bg-gray-800 px-3 py-1.5 text-sm text-gray-200 transition-colors hover:border-primary-500/40 hover:text-white sm:w-auto"
-              >
-                Letras do Hinário
-              </Link>
-              <Link
-                to="/cifras-hinos-ccb"
-                className="inline-flex w-full items-center justify-center rounded-full border border-gray-700 bg-gray-800 px-3 py-1.5 text-sm text-gray-200 transition-colors hover:border-primary-500/40 hover:text-white sm:w-auto"
-              >
-                Cifras de Hinos
-              </Link>
-              {hinarioRange ? (
-                <Link
-                  to={hinarioRange.path}
-                  className="inline-flex w-full items-center justify-center rounded-full border border-gray-700 bg-gray-800 px-3 py-1.5 text-sm text-gray-200 transition-colors hover:border-primary-500/40 hover:text-white sm:w-auto"
-                >
-                  {hinarioRange.label}
-                </Link>
-              ) : null}
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Dicionário e controles permanecem juntos logo abaixo do header no desktop. */}
-      <div className="hidden sm:block lg:sticky lg:top-0 z-30 -mx-4 px-4 pt-1 bg-[#080909]/95 sm:bg-background-primary/95 backdrop-blur-md print:hidden">
-        {renderChordDictionaryCarousel('mt-0 mb-2 hidden sm:block')}
-        <div className="flex flex-wrap items-center gap-2 border-b border-gray-800 pb-3 mb-6 print:hidden">
-          <select value={selectedInstrument} onChange={e => handleInstrumentChange(e.target.value)} className="shrink-0 rounded-lg border border-gray-700 bg-gray-800 px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-primary-500">
-            {instrumentOptions.map(i => <option key={i.value} value={i.value}>{i.label}</option>)}
-          </select>
-          <div className="flex shrink-0 items-center rounded-lg border border-gray-700 bg-gray-800">
-            <button onClick={transposeDown} className="rounded-l-lg px-3 py-2 text-white hover:bg-gray-700" aria-label="Diminuir tom"><Minus className="h-4 w-4" /></button>
-            <button onClick={() => setShowKeySelector(!showKeySelector)} className="min-w-[74px] px-3 py-2 text-center text-sm"><span className="text-gray-400">Tom </span><span className="font-bold text-primary-400">{selectedKey}</span></button>
-            <button onClick={transposeUp} className="rounded-r-lg px-3 py-2 text-white hover:bg-gray-700" aria-label="Aumentar tom"><Plus className="h-4 w-4" /></button>
-          </div>
-          <div className="flex shrink-0 items-center rounded-lg border border-gray-700 bg-gray-800">
-            <button onClick={() => setFontSize(prev => Math.max(10, prev - 1))} className="rounded-l-lg px-3 py-2 text-white hover:bg-gray-700" aria-label="Diminuir fonte">A</button>
-            <button onClick={() => setFontSize(prev => Math.min(24, prev + 1))} className="rounded-r-lg px-3 py-2 text-base font-bold text-white hover:bg-gray-700" aria-label="Aumentar fonte">A</button>
-          </div>
-          <button onClick={() => setAutoScrollSpeed(prev => prev === 0 ? 1 : prev === 1 ? 2 : prev === 2 ? 3 : 0)} className={`shrink-0 rounded-lg border px-3 py-2 text-sm ${autoScrollSpeed > 0 ? 'border-primary-500/50 bg-primary-500/20 text-primary-400' : 'border-gray-700 bg-gray-800 text-gray-400'}`}><ScrollText className="mr-1 inline h-4 w-4" />{autoScrollSpeed > 0 ? `${autoScrollSpeed}x` : 'Rolagem'}</button>
-          <button onClick={() => setShowChords(!showChords)} className={`shrink-0 rounded-lg border px-3 py-2 text-sm ${showChords ? 'border-primary-500/50 bg-primary-500/20 text-primary-400' : 'border-gray-700 bg-gray-800 text-gray-400'}`}>Acordes</button>
-          <button onClick={() => setMetronomeEnabled(current => !current)} className={`shrink-0 rounded-lg border px-3 py-2 text-sm ${metronomeEnabled ? 'border-primary-500/50 bg-primary-500/20 text-primary-400' : 'border-gray-700 bg-gray-800 text-gray-400'}`}><Gauge className="mr-1 inline h-4 w-4" />Metrônomo</button>
-          {selectedInstrument !== 'teclado' ? <button onClick={() => setShowLeftHandedDiagrams(current => !current)} className={`shrink-0 rounded-lg border px-3 py-2 text-sm ${showLeftHandedDiagrams ? 'border-primary-500/50 bg-primary-500/20 text-primary-400' : 'border-gray-700 bg-gray-800 text-gray-400'}`}><Hand className="mr-1 inline h-4 w-4" />Canhoto</button> : null}
-          {supportsStudyTools ? <button onClick={() => setStudyModeEnabled(current => !current)} className={`shrink-0 rounded-lg border px-3 py-2 text-sm ${studyModeEnabled ? 'border-primary-500/50 bg-primary-500/20 text-primary-400' : 'border-gray-700 bg-gray-800 text-gray-400'}`}><Target className="mr-1 inline h-4 w-4" />Estudo</button> : null}
-          <button onClick={() => setShowOptions(!showOptions)} className="shrink-0 rounded-lg border border-gray-700 bg-gray-800 px-3 py-2 text-gray-400 hover:text-white" aria-label="Abrir opções"><Settings2 className="h-4 w-4" /></button>
-        </div>
-        {showKeySelector && (
-          <div className="mt-2 rounded-xl border border-gray-700 bg-gray-900 p-3 shadow-xl">
-            <div className="flex flex-wrap gap-2">
-              {ALL_KEYS.map(key => <button key={key} onClick={() => { setSelectedKey(key); setShowKeySelector(false); }} className={`rounded-lg px-3 py-2 text-sm ${key === selectedKey ? 'bg-primary-500 text-black' : 'bg-gray-800 text-gray-300 hover:bg-gray-700'}`}>{key}</button>)}
-            </div>
-          </div>
-        )}
-      </div>
-
-      {(relatedHymn || relatedLyric) && (
-        <div className="mb-6 hidden rounded-2xl sm:block border border-white/10 bg-background-secondary p-5">
-          <h2 className="text-lg font-semibold text-white">Letra e audio deste hino</h2>
-          <p className="text-text-muted text-sm mt-2">
-            Esta cifra agora se conecta diretamente com a pagina do hino e com a letra do Hinario quando a correspondencia foi encontrada.
-          </p>
-          <div className="flex flex-wrap gap-2 mt-4">
-            {relatedHymn ? (
-              <Link
-                to={buildHinoUrl(relatedHymn.id, relatedHymn.titulo, relatedHymn.numero)}
-                className="inline-flex w-full items-center justify-center rounded-full border border-primary-500/40 bg-primary-500/10 px-3 py-1.5 text-sm text-primary-300 transition-colors hover:bg-primary-500/20 sm:w-auto"
-              >
-                Pagina do Hino {relatedHymn.numero || relatedNumber || ''}
-              </Link>
-            ) : null}
-            {relatedHymnTrack ? (
-              <button
-                type="button"
-                onClick={() => handlePlayRelatedTrack()}
-                disabled={isRelatedTrackLoading || !canPlayRelatedTrack}
-                className="inline-flex w-full items-center justify-center gap-2 rounded-full border border-primary-500 bg-primary-500 px-3 py-1.5 text-sm font-semibold text-black transition-colors hover:bg-primary-600 disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
-              >
-                {isRelatedTrackActive && isPlayerPlaying ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
-                {isRelatedTrackActive && isPlayerPlaying ? 'Pausar hino' : 'Ouvir enquanto estuda'}
+      <div className="grid gap-6 lg:grid-cols-[240px,minmax(0,1fr)] lg:items-start">
+      {/* Recursos e controlos */}
+      <div className="sticky top-16 z-40 hidden bg-background-primary/95 shadow-lg shadow-black/20 backdrop-blur-sm border-b border-gray-800 -mx-4 px-4 py-3 mb-6 sm:block lg:col-start-1 lg:row-start-1 lg:top-[88px] lg:mx-0 lg:mb-0 lg:rounded-2xl lg:border lg:p-4 print:hidden">
+        <div className="mb-4 space-y-2 border-b border-gray-800 pb-4 lg:space-y-2">
+          <p className="px-1 text-xs font-semibold uppercase tracking-[0.16em] text-gray-500">Recursos</p>
+          {isCifraV2(cifra) ? (
+            <>
+              <button type="button" onClick={() => void handleToggleFavorite()} disabled={isFavoriteLoading} className={`flex w-full items-center gap-2 rounded-xl border px-3 py-2 text-left text-sm transition-colors ${engagement?.isFavorited ? 'border-red-500/50 bg-red-500/15 text-red-300' : 'border-gray-700 bg-gray-800 text-gray-200 hover:border-red-500/40 hover:text-white'}`}>
+                <Heart className={`h-4 w-4 ${engagement?.isFavorited ? 'fill-current' : ''}`} /> {engagement?.isFavorited ? 'Favoritada' : 'Favoritar'}
               </button>
-            ) : null}
-            {relatedLyric ? (
-              <Link
-                to={`/hinario/${relatedLyric.numero}`}
-                className="inline-flex w-full items-center justify-center rounded-full border border-primary-500/40 bg-primary-500/10 px-3 py-1.5 text-sm text-primary-300 transition-colors hover:bg-primary-500/20 sm:w-auto"
-              >
-                Letra do Hino {relatedLyric.numero}
-              </Link>
-            ) : null}
-            <Link
-              to="/hinos-ccb"
-              className="inline-flex w-full items-center justify-center rounded-full border border-gray-700 bg-gray-800 px-3 py-1.5 text-sm text-gray-200 transition-colors hover:border-primary-500/40 hover:text-white sm:w-auto"
-            >
-              Hinos CCB
-            </Link>
-            {hinarioRange ? (
-              <Link
-                to={hinarioRange.path}
-                className="inline-flex w-full items-center justify-center rounded-full border border-gray-700 bg-gray-800 px-3 py-1.5 text-sm text-gray-200 transition-colors hover:border-primary-500/40 hover:text-white sm:w-auto"
-              >
-                Faixa {hinarioRange.shortLabel}
-              </Link>
-            ) : null}
-          </div>
+              <button type="button" onClick={() => setShowReportModal(true)} className="flex w-full items-center gap-2 rounded-xl border border-gray-700 bg-gray-800 px-3 py-2 text-left text-sm text-gray-200 transition-colors hover:border-primary-500/40 hover:text-white"><Flag className="h-4 w-4" /> Reportar problema</button>
+            </>
+          ) : null}
+          {relatedHymn ? <Link to={buildHinoUrl(relatedHymn.id, relatedHymn.titulo, relatedHymn.numero)} className="flex w-full items-center gap-2 rounded-xl border border-primary-500/40 bg-primary-500/10 px-3 py-2 text-sm text-primary-300 transition-colors hover:bg-primary-500/20"><Play className="h-4 w-4" /> Ouvir este hino</Link> : null}
+          {relatedLyric ? <Link to={`/hinario/${relatedLyric.numero}`} className="flex w-full items-center gap-2 rounded-xl border border-primary-500/40 bg-primary-500/10 px-3 py-2 text-sm text-primary-300 transition-colors hover:bg-primary-500/20"><Music className="h-4 w-4" /> Letra no Hinário</Link> : null}
+          <Link to={instrumentHubUrl} className="flex w-full items-center gap-2 rounded-xl border border-primary-500/40 bg-primary-500/10 px-3 py-2 text-sm text-primary-300 transition-colors hover:bg-primary-500/20"><Music className="h-4 w-4" /> Mais cifras de {instrumentLabel}</Link>
+          <Link to="/cifras" className="flex w-full items-center gap-2 rounded-xl border border-gray-700 bg-gray-800 px-3 py-2 text-sm text-gray-200 transition-colors hover:border-primary-500/40 hover:text-white">Todas as cifras</Link>
+          <Link to="/hinario" className="flex w-full items-center gap-2 rounded-xl border border-gray-700 bg-gray-800 px-3 py-2 text-sm text-gray-200 transition-colors hover:border-primary-500/40 hover:text-white">Letras do Hinário</Link>
+          <Link to="/cifras-hinos-ccb" className="flex w-full items-center gap-2 rounded-xl border border-gray-700 bg-gray-800 px-3 py-2 text-sm text-gray-200 transition-colors hover:border-primary-500/40 hover:text-white">Cifras de Hinos</Link>
+          {hinarioRange ? <Link to={hinarioRange.path} className="flex w-full items-center gap-2 rounded-xl border border-gray-700 bg-gray-800 px-3 py-2 text-sm text-gray-200 transition-colors hover:border-primary-500/40 hover:text-white">{hinarioRange.label}</Link> : null}
         </div>
-      )}
-
-      {supportsStudyTools ? (
-        <div className="mb-6 hidden rounded-2xl sm:block border border-primary-500/20 bg-primary-500/5 p-5">
-          <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-            <div>
-              <div className="flex items-center gap-2">
-                <Target className="w-5 h-5 text-primary-400" />
-                <h2 className="text-lg font-semibold text-white">Modo estudo</h2>
-              </div>
-              <p className="mt-2 text-sm text-gray-400">
-                Foque por seção, mantenha o pulso com o metrônomo e adapte a leitura para estudo ou ensaio.
-              </p>
-              {editorialStudySectionLabel ? (
-                <p className="mt-2 text-xs text-primary-300">
-                  Abertura editorial: {editorialStudySectionLabel}
-                  {isCifraV2(cifra) && cifra.default_study_sync_audio ? ' · sync com áudio' : ''}
-                  {isCifraV2(cifra) && cifra.default_study_loop_section ? ' · loop da seção' : ''}
-                </p>
-              ) : null}
-            </div>
-            <div className="flex flex-wrap gap-2">
-              <button
-                type="button"
-                onClick={() => setStudyModeEnabled((current) => !current)}
-                className={`inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-sm font-medium transition-colors ${
-                  studyModeEnabled
-                    ? 'border-primary-500 bg-primary-500 text-black'
-                    : 'border-gray-700 bg-gray-800 text-gray-200 hover:border-primary-500/40 hover:text-white'
-                }`}
-              >
-                <Target className="w-4 h-4" />
-                {studyModeEnabled ? 'Estudo ativo' : 'Ativar estudo'}
-              </button>
-              <button
-                type="button"
-                onClick={() => setMetronomeEnabled((current) => !current)}
-                className={`inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-sm font-medium transition-colors ${
-                  metronomeEnabled
-                    ? 'border-primary-500 bg-primary-500 text-black'
-                    : 'border-gray-700 bg-gray-800 text-gray-200 hover:border-primary-500/40 hover:text-white'
-                }`}
-              >
-                <Gauge className="w-4 h-4" />
-                {metronomeEnabled ? 'Parar metrônomo' : 'Iniciar metrônomo'}
-              </button>
-            </div>
-          </div>
-
-          <div className="mt-4 grid gap-4 xl:grid-cols-[minmax(0,1.3fr)_minmax(280px,0.7fr)]">
-            <div className="rounded-2xl border border-white/10 bg-background-primary p-4">
-              <div className="flex items-center justify-between gap-3">
-                <div>
-                  <p className="text-xs uppercase tracking-[0.18em] text-text-muted">Seções</p>
-                  <p className="mt-1 text-sm text-white">Selecione uma parte específica ou estude a cifra inteira.</p>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setFocusedSectionIndex(null);
-                    setStudyModeEnabled(true);
-                  }}
-                  className={`rounded-full border px-3 py-1 text-xs font-medium transition-colors ${
-                    focusedSectionIndex === null
-                      ? 'border-primary-500/50 bg-primary-500/10 text-primary-300'
-                      : 'border-gray-700 bg-gray-800 text-gray-200 hover:border-primary-500/40 hover:text-white'
-                  }`}
-                >
-                  Todas
-                </button>
-              </div>
-              <div className="mt-3 flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
-                {structuredSectionItems.map(({ section, index }) => (
-                  <button
-                    key={section.id}
-                    type="button"
-                    onClick={() => {
-                      setStudyModeEnabled(true);
-                      setFocusedSectionIndex(index);
-                      setTimeout(() => scrollToSection(index), 80);
-                    }}
-                    className={`shrink-0 rounded-full border px-3 py-2 text-sm transition-colors ${
-                      focusedSectionIndex === index
-                        ? 'border-primary-500 bg-primary-500 text-black'
-                        : 'border-gray-700 bg-gray-800 text-gray-200 hover:border-primary-500/40 hover:text-white'
-                    }`}
-                  >
-                    {section.section_label || `Seção ${index + 1}`}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <div className="rounded-2xl border border-white/10 bg-background-primary p-4">
-              <div className="flex items-start justify-between gap-3">
-                <div>
-                  <p className="text-xs uppercase tracking-[0.18em] text-text-muted">Pulso e leitura</p>
-                  <p className="mt-1 text-sm text-white">
-                    {metronomeBpm} BPM · {measureBeats}/4 · {showLeftHandedDiagrams ? 'Canhoto ativo' : 'Destro'} · {shouldRenderTwoColumns ? '2 colunas' : '1 coluna'}
-                  </p>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => restartFocusedSection()}
-                  className="inline-flex items-center gap-2 rounded-full border border-gray-700 bg-gray-800 px-3 py-1.5 text-xs font-medium text-gray-200 transition-colors hover:border-primary-500/40 hover:text-white"
-                >
-                  <RefreshCw className="w-3.5 h-3.5" />
-                  Reiniciar leitura
-                </button>
-              </div>
-              {relatedHymnTrack ? (
-                <div className="mt-4 rounded-2xl border border-primary-500/15 bg-primary-500/5 p-4">
-                  <div className="flex flex-col gap-3">
-                    <div>
-                      <p className="text-xs uppercase tracking-[0.18em] text-text-muted">Áudio relacionado</p>
-                      <p className="mt-1 text-sm text-white">
-                        Use o hino publicado como guia de ensaio. A sincronização usa os marcadores editoriais quando disponíveis e cai para estimativa só como fallback.
-                      </p>
-                    </div>
-                    <div className="flex flex-wrap gap-2">
-                      <button
-                        type="button"
-                        onClick={() => handlePlayRelatedTrack()}
-                        disabled={isRelatedTrackLoading || !canPlayRelatedTrack}
-                        className="inline-flex items-center gap-2 rounded-full border border-primary-500 bg-primary-500 px-3 py-2 text-sm font-semibold text-black transition-colors hover:bg-primary-600 disabled:cursor-not-allowed disabled:opacity-60"
-                      >
-                        {isRelatedTrackActive && isPlayerPlaying ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
-                        {isRelatedTrackActive && isPlayerPlaying ? 'Pausar áudio' : 'Ouvir hino'}
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => handleRestartRelatedTrack()}
-                        disabled={isRelatedTrackLoading || !canPlayRelatedTrack}
-                        className="inline-flex items-center gap-2 rounded-full border border-gray-700 bg-gray-800 px-3 py-2 text-sm font-medium text-gray-200 transition-colors hover:border-primary-500/40 hover:text-white disabled:cursor-not-allowed disabled:opacity-60"
-                      >
-                        <RotateCcw className="w-4 h-4" />
-                        Recomeçar áudio
-                      </button>
-                      {focusedSectionIndex !== null ? (
-                        <button
-                          type="button"
-                          onClick={() => {
-                            if (!isRelatedTrackActive) {
-                              handlePlayRelatedTrack({ seekToFocusedSection: true });
-                              return;
-                            }
-
-                            seekToSectionStart(focusedSectionIndex);
-                            if (!isPlayerPlaying) {
-                              resume();
-                            }
-                          }}
-                          disabled={isRelatedTrackLoading || !canPlayRelatedTrack}
-                          className="inline-flex items-center gap-2 rounded-full border border-gray-700 bg-gray-800 px-3 py-2 text-sm font-medium text-gray-200 transition-colors hover:border-primary-500/40 hover:text-white disabled:cursor-not-allowed disabled:opacity-60"
-                        >
-                          <RefreshCw className="w-4 h-4" />
-                          Ir para este trecho
-                        </button>
-                      ) : null}
-                    </div>
-                    <div className="grid gap-2 sm:grid-cols-2">
-                      <button
-                        type="button"
-                        onClick={() => setSyncStudyWithAudio((current) => !current)}
-                        disabled={!canPlayRelatedTrack || !effectiveRelatedDuration}
-                        className={`flex items-center justify-between rounded-xl border px-3 py-2 text-sm transition-colors ${
-                          syncStudyWithAudio
-                            ? 'border-primary-500/50 bg-primary-500/10 text-primary-300'
-                            : 'border-gray-700 bg-gray-800 text-gray-200 hover:border-primary-500/40 hover:text-white'
-                        } disabled:cursor-not-allowed disabled:opacity-60`}
-                      >
-                        <span>Seguir áudio por seção</span>
-                        <Music className="w-4 h-4" />
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setLoopFocusedSection((current) => {
-                            const next = !current;
-                            if (next && focusedSectionIndex !== null) {
-                              seekToSectionStart(focusedSectionIndex);
-                              if (isRelatedTrackActive && !isPlayerPlaying) {
-                                resume();
-                              }
-                            }
-                            return next;
-                          });
-                        }}
-                        disabled={focusedSectionIndex === null || !canPlayRelatedTrack || !effectiveRelatedDuration}
-                        className={`flex items-center justify-between rounded-xl border px-3 py-2 text-sm transition-colors ${
-                          loopFocusedSection
-                            ? 'border-primary-500/50 bg-primary-500/10 text-primary-300'
-                            : 'border-gray-700 bg-gray-800 text-gray-200 hover:border-primary-500/40 hover:text-white'
-                        } disabled:cursor-not-allowed disabled:opacity-60`}
-                      >
-                        <span>Loop desta seção</span>
-                        <RefreshCw className="w-4 h-4" />
-                      </button>
-                    </div>
-                    {focusedSectionWindow ? (
-                      <p className="text-xs text-gray-400">
-                        {focusedSectionHasEditorialTiming ? 'Trecho editorial' : 'Trecho estimado'}: {Math.floor(focusedSectionWindow.start)}s até {Math.ceil(focusedSectionWindow.end)}s do áudio publicado.
-                      </p>
-                    ) : null}
-                  </div>
-                </div>
-              ) : null}
-              <div className="mt-4 flex items-center gap-3">
-                <button onClick={() => setMetronomeBpm((current) => Math.max(40, current - 2))} className="rounded-lg bg-gray-800 p-2 text-white transition-colors hover:bg-gray-700">
-                  <Minus className="w-4 h-4" />
-                </button>
-                <input
-                  type="range"
-                  min={40}
-                  max={180}
-                  step={1}
-                  value={metronomeBpm}
-                  onChange={(event) => setMetronomeBpm(Number(event.target.value))}
-                  className="flex-1 accent-primary-500"
-                />
-                <button onClick={() => setMetronomeBpm((current) => Math.min(180, current + 2))} className="rounded-lg bg-gray-800 p-2 text-white transition-colors hover:bg-gray-700">
-                  <Plus className="w-4 h-4" />
-                </button>
-              </div>
-              <div className="mt-4 grid gap-2 sm:grid-cols-2">
-                {selectedInstrument !== 'teclado' ? (
-                  <button
-                    type="button"
-                    onClick={() => setShowLeftHandedDiagrams((current) => !current)}
-                    className={`inline-flex items-center justify-center gap-2 rounded-xl border px-3 py-2 text-sm font-medium transition-colors ${
-                      showLeftHandedDiagrams
-                        ? 'border-primary-500 bg-primary-500/10 text-primary-300'
-                        : 'border-gray-700 bg-gray-800 text-gray-200 hover:border-primary-500/40 hover:text-white'
-                    }`}
-                  >
-                    <Hand className="w-4 h-4" />
-                    {showLeftHandedDiagrams ? 'Canhoto ativo' : 'Ativar canhoto'}
-                  </button>
-                ) : null}
-                {supportsTwoColumnLayout ? (
-                  <button
-                    type="button"
-                    onClick={() => setUseTwoColumnLayout((current) => !current)}
-                    className={`inline-flex items-center justify-center gap-2 rounded-xl border px-3 py-2 text-sm font-medium transition-colors ${
-                      useTwoColumnLayout
-                        ? 'border-primary-500 bg-primary-500/10 text-primary-300'
-                        : 'border-gray-700 bg-gray-800 text-gray-200 hover:border-primary-500/40 hover:text-white'
-                    }`}
-                  >
-                    <Eye className="w-4 h-4" />
-                    {useTwoColumnLayout ? 'Desativar 2 colunas' : 'Ativar 2 colunas'}
-                  </button>
-                ) : null}
-              </div>
-            </div>
-          </div>
-        </div>
-      ) : null}
-
-      {isCifraV2(cifra) && structuredSections.length > 1 ? (
-        <div className="mb-6 hidden rounded-2xl sm:block border border-white/10 bg-background-secondary p-5">
-          <h2 className="text-lg font-semibold text-white">Navegacao por secoes</h2>
-          <p className="text-text-muted text-sm mt-2">
-            Pule direto para introducao, estrofes, coro e demais partes publicadas desta cifra.
-          </p>
-          <div className="mt-4 flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
-            {structuredSectionItems.map(({ section, index }) => (
-              <button
-                key={section.id}
-                type="button"
-                onClick={() => {
-                  if (studyModeEnabled) {
-                    setFocusedSectionIndex(index);
-                  }
-                  scrollToSection(index);
-                }}
-                className={`shrink-0 rounded-full border px-3 py-2 text-sm transition-colors ${
-                  focusedSectionIndex === index
-                    ? 'border-primary-500 bg-primary-500 text-black'
-                    : 'border-gray-700 bg-gray-800 text-gray-200 hover:border-primary-500/40 hover:text-white'
-                }`}
-              >
-                {section.section_label || `Secao ${index + 1}`}
-              </button>
-            ))}
-          </div>
-        </div>
-      ) : null}
-
-      {/* Toolbar */}
-      <div             className="hidden">
-        <div className="flex items-center gap-2 overflow-x-auto pb-1 -mb-1 scrollbar-hide sm:flex-wrap sm:overflow-visible">
+        <div className="flex items-center gap-2 overflow-x-auto pb-1 -mb-1 scrollbar-hide sm:flex-wrap sm:overflow-visible lg:flex-col lg:items-stretch lg:overflow-visible">
           {/* Instrument selector */}
           <select
             value={selectedInstrument}
@@ -2257,8 +1770,18 @@ const CifraPage: React.FC = () => {
         )}
       </div>
 
+      <main className="min-w-0 lg:col-start-2 lg:row-start-1">
+        <header className="mb-6 hidden sm:block print:hidden">
+          <Link to="/cifras" className="mb-4 inline-flex items-center gap-2 text-gray-400 transition-colors hover:text-white print:hidden">
+            <ArrowLeft className="h-4 w-4" />
+            Voltar
+          </Link>
+          <h1 className="text-2xl font-bold leading-tight text-white sm:text-3xl">{headerCifraTitle}</h1>
+          <p className="mt-2 text-lg font-bold text-primary-400">{headerCifraCategory}</p>
+        </header>
+        {renderChordDictionaryCarousel('mt-6 mb-6 hidden sm:block')}
+
       {/* Cifra Content */}
-      <div className="rounded-3xl border border-white/10 bg-background-secondary p-5 sm:p-7">
       <div
         ref={contentRef}
         className="font-mono leading-[1.62] tracking-[-0.01em] sm:leading-relaxed sm:tracking-normal print:text-[17px] print:leading-[1.6]"
@@ -2311,16 +1834,70 @@ const CifraPage: React.FC = () => {
           transposedContent.split('\n').map((line, idx) => renderLine(line, idx))
         )}
       </div>
-      </div>
+
+
+      {(relatedHymn || relatedLyric) && (
+        <div className="mb-6 hidden rounded-2xl sm:block border border-white/10 bg-background-secondary p-5">
+          <h2 className="text-lg font-semibold text-white">Letra e audio deste hino</h2>
+          <p className="text-text-muted text-sm mt-2">
+            Esta cifra agora se conecta diretamente com a pagina do hino e com a letra do Hinario quando a correspondencia foi encontrada.
+          </p>
+          <div className="flex flex-wrap gap-2 mt-4">
+            {relatedHymn ? (
+              <Link
+                to={buildHinoUrl(relatedHymn.id, relatedHymn.titulo, relatedHymn.numero)}
+                className="inline-flex w-full items-center justify-center rounded-full border border-primary-500/40 bg-primary-500/10 px-3 py-1.5 text-sm text-primary-300 transition-colors hover:bg-primary-500/20 sm:w-auto"
+              >
+                Pagina do Hino {relatedHymn.numero || relatedNumber || ''}
+              </Link>
+            ) : null}
+            {relatedHymnTrack ? (
+              <button
+                type="button"
+                onClick={() => handlePlayRelatedTrack()}
+                disabled={isRelatedTrackLoading || !canPlayRelatedTrack}
+                className="inline-flex w-full items-center justify-center gap-2 rounded-full border border-primary-500 bg-primary-500 px-3 py-1.5 text-sm font-semibold text-black transition-colors hover:bg-primary-600 disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
+              >
+                {isRelatedTrackActive && isPlayerPlaying ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
+                {isRelatedTrackActive && isPlayerPlaying ? 'Pausar hino' : 'Ouvir enquanto estuda'}
+              </button>
+            ) : null}
+            {relatedLyric ? (
+              <Link
+                to={`/hinario/${relatedLyric.numero}`}
+                className="inline-flex w-full items-center justify-center rounded-full border border-primary-500/40 bg-primary-500/10 px-3 py-1.5 text-sm text-primary-300 transition-colors hover:bg-primary-500/20 sm:w-auto"
+              >
+                Letra do Hino {relatedLyric.numero}
+              </Link>
+            ) : null}
+            <Link
+              to="/hinos-ccb"
+              className="inline-flex w-full items-center justify-center rounded-full border border-gray-700 bg-gray-800 px-3 py-1.5 text-sm text-gray-200 transition-colors hover:border-primary-500/40 hover:text-white sm:w-auto"
+            >
+              Hinos CCB
+            </Link>
+            {hinarioRange ? (
+              <Link
+                to={hinarioRange.path}
+                className="inline-flex w-full items-center justify-center rounded-full border border-gray-700 bg-gray-800 px-3 py-1.5 text-sm text-gray-200 transition-colors hover:border-primary-500/40 hover:text-white sm:w-auto"
+              >
+                Faixa {hinarioRange.shortLabel}
+              </Link>
+            ) : null}
+          </div>
+        </div>
+      )}
 
       {isCifraV2(cifra) && studyFacts.length > 0 ? (
-        <div className="mt-8 mb-6 hidden rounded-2xl border border-white/10 bg-background-secondary p-5 sm:block">
+        <div className="mb-6 hidden rounded-2xl sm:block border border-white/10 bg-background-secondary p-5">
           <div className="flex items-start justify-between gap-4">
             <div>
-              <h2 className="text-lg font-semibold text-white">Visão de estudo</h2>
-              <p className="mt-2 text-sm text-text-muted">Resumo rápido da versão publicada para ensaio, estudo por instrumento e leitura em tela pequena.</p>
+              <h2 className="text-lg font-semibold text-white">Visao de estudo</h2>
+              <p className="text-text-muted text-sm mt-2">
+                Resumo rapido da versao publicada para ensaio, estudo por instrumento e leitura em tela pequena.
+              </p>
             </div>
-            <Music className="hidden h-5 w-5 text-primary-400 sm:block" />
+            <Music className="hidden sm:block w-5 h-5 text-primary-400" />
           </div>
           <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
             {studyFacts.map((fact) => (
@@ -2332,32 +1909,301 @@ const CifraPage: React.FC = () => {
           </div>
           {cifra.intro_notes ? (
             <div className="mt-4 rounded-2xl border border-primary-500/20 bg-primary-500/10 px-4 py-3 text-sm text-white/90">
-              <span className="font-semibold text-primary-300">Observação editorial:</span> {cifra.intro_notes}
+              <span className="font-semibold text-primary-300">Observacao editorial:</span> {cifra.intro_notes}
             </div>
           ) : null}
         </div>
       ) : null}
 
-      {/* Contribution prompt shown at the end of every cifra */}
-      <section className="mt-12 border-t border-white/10 pt-6 pb-4 print:hidden" aria-label="Contribua com a correção da cifra">
-        <div className="rounded-3xl border border-white/10 bg-white/[0.03] px-5 py-6 sm:px-7">
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+      {supportsStudyTools ? (
+        <div className="mb-6 hidden rounded-2xl sm:block border border-primary-500/20 bg-primary-500/5 p-5">
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
             <div>
-              <p className="text-base font-medium text-gray-300">A Cifra desse Hino está errada?</p>
+              <div className="flex items-center gap-2">
+                <Target className="w-5 h-5 text-primary-400" />
+                <h2 className="text-lg font-semibold text-white">Modo estudo</h2>
+              </div>
+              <p className="mt-2 text-sm text-gray-400">
+                Foque por seção, mantenha o pulso com o metrônomo e adapte a leitura para estudo ou ensaio.
+              </p>
+              {editorialStudySectionLabel ? (
+                <p className="mt-2 text-xs text-primary-300">
+                  Abertura editorial: {editorialStudySectionLabel}
+                  {isCifraV2(cifra) && cifra.default_study_sync_audio ? ' · sync com áudio' : ''}
+                  {isCifraV2(cifra) && cifra.default_study_loop_section ? ' · loop da seção' : ''}
+                </p>
+              ) : null}
+            </div>
+            <div className="flex flex-wrap gap-2">
               <button
                 type="button"
-                onClick={() => setShowReportModal(true)}
-                className="mt-2 text-left text-base font-bold text-white underline decoration-primary-500/70 underline-offset-4 transition-colors hover:text-primary-300"
+                onClick={() => setStudyModeEnabled((current) => !current)}
+                className={`inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-sm font-medium transition-colors ${
+                  studyModeEnabled
+                    ? 'border-primary-500 bg-primary-500 text-black'
+                    : 'border-gray-700 bg-gray-800 text-gray-200 hover:border-primary-500/40 hover:text-white'
+                }`}
               >
-                Contribua com a correção
+                <Target className="w-4 h-4" />
+                {studyModeEnabled ? 'Estudo ativo' : 'Ativar estudo'}
+              </button>
+              <button
+                type="button"
+                onClick={() => setMetronomeEnabled((current) => !current)}
+                className={`inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-sm font-medium transition-colors ${
+                  metronomeEnabled
+                    ? 'border-primary-500 bg-primary-500 text-black'
+                    : 'border-gray-700 bg-gray-800 text-gray-200 hover:border-primary-500/40 hover:text-white'
+                }`}
+              >
+                <Gauge className="w-4 h-4" />
+                {metronomeEnabled ? 'Parar metrônomo' : 'Iniciar metrônomo'}
               </button>
             </div>
-            <div className="text-sm text-gray-500 sm:text-right">
-              Ajude-nos a manter esta cifra correta para toda a comunidade.
+          </div>
+
+          <div className="mt-4 grid gap-4 xl:grid-cols-[minmax(0,1.3fr)_minmax(280px,0.7fr)]">
+            <div className="rounded-2xl border border-white/10 bg-background-primary p-4">
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <p className="text-xs uppercase tracking-[0.18em] text-text-muted">Seções</p>
+                  <p className="mt-1 text-sm text-white">Selecione uma parte específica ou estude a cifra inteira.</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setFocusedSectionIndex(null);
+                    setStudyModeEnabled(true);
+                  }}
+                  className={`rounded-full border px-3 py-1 text-xs font-medium transition-colors ${
+                    focusedSectionIndex === null
+                      ? 'border-primary-500/50 bg-primary-500/10 text-primary-300'
+                      : 'border-gray-700 bg-gray-800 text-gray-200 hover:border-primary-500/40 hover:text-white'
+                  }`}
+                >
+                  Todas
+                </button>
+              </div>
+              <div className="mt-3 flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
+                {structuredSectionItems.map(({ section, index }) => (
+                  <button
+                    key={section.id}
+                    type="button"
+                    onClick={() => {
+                      setStudyModeEnabled(true);
+                      setFocusedSectionIndex(index);
+                      setTimeout(() => scrollToSection(index), 80);
+                    }}
+                    className={`shrink-0 rounded-full border px-3 py-2 text-sm transition-colors ${
+                      focusedSectionIndex === index
+                        ? 'border-primary-500 bg-primary-500 text-black'
+                        : 'border-gray-700 bg-gray-800 text-gray-200 hover:border-primary-500/40 hover:text-white'
+                    }`}
+                  >
+                    {section.section_label || `Seção ${index + 1}`}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="rounded-2xl border border-white/10 bg-background-primary p-4">
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <p className="text-xs uppercase tracking-[0.18em] text-text-muted">Pulso e leitura</p>
+                  <p className="mt-1 text-sm text-white">
+                    {metronomeBpm} BPM · {measureBeats}/4 · {showLeftHandedDiagrams ? 'Canhoto ativo' : 'Destro'} · {shouldRenderTwoColumns ? '2 colunas' : '1 coluna'}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => restartFocusedSection()}
+                  className="inline-flex items-center gap-2 rounded-full border border-gray-700 bg-gray-800 px-3 py-1.5 text-xs font-medium text-gray-200 transition-colors hover:border-primary-500/40 hover:text-white"
+                >
+                  <RefreshCw className="w-3.5 h-3.5" />
+                  Reiniciar leitura
+                </button>
+              </div>
+              {relatedHymnTrack ? (
+                <div className="mt-4 rounded-2xl border border-primary-500/15 bg-primary-500/5 p-4">
+                  <div className="flex flex-col gap-3">
+                    <div>
+                      <p className="text-xs uppercase tracking-[0.18em] text-text-muted">Áudio relacionado</p>
+                      <p className="mt-1 text-sm text-white">
+                        Use o hino publicado como guia de ensaio. A sincronização usa os marcadores editoriais quando disponíveis e cai para estimativa só como fallback.
+                      </p>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      <button
+                        type="button"
+                        onClick={() => handlePlayRelatedTrack()}
+                        disabled={isRelatedTrackLoading || !canPlayRelatedTrack}
+                        className="inline-flex items-center gap-2 rounded-full border border-primary-500 bg-primary-500 px-3 py-2 text-sm font-semibold text-black transition-colors hover:bg-primary-600 disabled:cursor-not-allowed disabled:opacity-60"
+                      >
+                        {isRelatedTrackActive && isPlayerPlaying ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
+                        {isRelatedTrackActive && isPlayerPlaying ? 'Pausar áudio' : 'Ouvir hino'}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleRestartRelatedTrack()}
+                        disabled={isRelatedTrackLoading || !canPlayRelatedTrack}
+                        className="inline-flex items-center gap-2 rounded-full border border-gray-700 bg-gray-800 px-3 py-2 text-sm font-medium text-gray-200 transition-colors hover:border-primary-500/40 hover:text-white disabled:cursor-not-allowed disabled:opacity-60"
+                      >
+                        <RotateCcw className="w-4 h-4" />
+                        Recomeçar áudio
+                      </button>
+                      {focusedSectionIndex !== null ? (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (!isRelatedTrackActive) {
+                              handlePlayRelatedTrack({ seekToFocusedSection: true });
+                              return;
+                            }
+
+                            seekToSectionStart(focusedSectionIndex);
+                            if (!isPlayerPlaying) {
+                              resume();
+                            }
+                          }}
+                          disabled={isRelatedTrackLoading || !canPlayRelatedTrack}
+                          className="inline-flex items-center gap-2 rounded-full border border-gray-700 bg-gray-800 px-3 py-2 text-sm font-medium text-gray-200 transition-colors hover:border-primary-500/40 hover:text-white disabled:cursor-not-allowed disabled:opacity-60"
+                        >
+                          <RefreshCw className="w-4 h-4" />
+                          Ir para este trecho
+                        </button>
+                      ) : null}
+                    </div>
+                    <div className="grid gap-2 sm:grid-cols-2">
+                      <button
+                        type="button"
+                        onClick={() => setSyncStudyWithAudio((current) => !current)}
+                        disabled={!canPlayRelatedTrack || !effectiveRelatedDuration}
+                        className={`flex items-center justify-between rounded-xl border px-3 py-2 text-sm transition-colors ${
+                          syncStudyWithAudio
+                            ? 'border-primary-500/50 bg-primary-500/10 text-primary-300'
+                            : 'border-gray-700 bg-gray-800 text-gray-200 hover:border-primary-500/40 hover:text-white'
+                        } disabled:cursor-not-allowed disabled:opacity-60`}
+                      >
+                        <span>Seguir áudio por seção</span>
+                        <Music className="w-4 h-4" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setLoopFocusedSection((current) => {
+                            const next = !current;
+                            if (next && focusedSectionIndex !== null) {
+                              seekToSectionStart(focusedSectionIndex);
+                              if (isRelatedTrackActive && !isPlayerPlaying) {
+                                resume();
+                              }
+                            }
+                            return next;
+                          });
+                        }}
+                        disabled={focusedSectionIndex === null || !canPlayRelatedTrack || !effectiveRelatedDuration}
+                        className={`flex items-center justify-between rounded-xl border px-3 py-2 text-sm transition-colors ${
+                          loopFocusedSection
+                            ? 'border-primary-500/50 bg-primary-500/10 text-primary-300'
+                            : 'border-gray-700 bg-gray-800 text-gray-200 hover:border-primary-500/40 hover:text-white'
+                        } disabled:cursor-not-allowed disabled:opacity-60`}
+                      >
+                        <span>Loop desta seção</span>
+                        <RefreshCw className="w-4 h-4" />
+                      </button>
+                    </div>
+                    {focusedSectionWindow ? (
+                      <p className="text-xs text-gray-400">
+                        {focusedSectionHasEditorialTiming ? 'Trecho editorial' : 'Trecho estimado'}: {Math.floor(focusedSectionWindow.start)}s até {Math.ceil(focusedSectionWindow.end)}s do áudio publicado.
+                      </p>
+                    ) : null}
+                  </div>
+                </div>
+              ) : null}
+              <div className="mt-4 flex items-center gap-3">
+                <button onClick={() => setMetronomeBpm((current) => Math.max(40, current - 2))} className="rounded-lg bg-gray-800 p-2 text-white transition-colors hover:bg-gray-700">
+                  <Minus className="w-4 h-4" />
+                </button>
+                <input
+                  type="range"
+                  min={40}
+                  max={180}
+                  step={1}
+                  value={metronomeBpm}
+                  onChange={(event) => setMetronomeBpm(Number(event.target.value))}
+                  className="flex-1 accent-primary-500"
+                />
+                <button onClick={() => setMetronomeBpm((current) => Math.min(180, current + 2))} className="rounded-lg bg-gray-800 p-2 text-white transition-colors hover:bg-gray-700">
+                  <Plus className="w-4 h-4" />
+                </button>
+              </div>
+              <div className="mt-4 grid gap-2 sm:grid-cols-2">
+                {selectedInstrument !== 'teclado' ? (
+                  <button
+                    type="button"
+                    onClick={() => setShowLeftHandedDiagrams((current) => !current)}
+                    className={`inline-flex items-center justify-center gap-2 rounded-xl border px-3 py-2 text-sm font-medium transition-colors ${
+                      showLeftHandedDiagrams
+                        ? 'border-primary-500 bg-primary-500/10 text-primary-300'
+                        : 'border-gray-700 bg-gray-800 text-gray-200 hover:border-primary-500/40 hover:text-white'
+                    }`}
+                  >
+                    <Hand className="w-4 h-4" />
+                    {showLeftHandedDiagrams ? 'Canhoto ativo' : 'Ativar canhoto'}
+                  </button>
+                ) : null}
+                {supportsTwoColumnLayout ? (
+                  <button
+                    type="button"
+                    onClick={() => setUseTwoColumnLayout((current) => !current)}
+                    className={`inline-flex items-center justify-center gap-2 rounded-xl border px-3 py-2 text-sm font-medium transition-colors ${
+                      useTwoColumnLayout
+                        ? 'border-primary-500 bg-primary-500/10 text-primary-300'
+                        : 'border-gray-700 bg-gray-800 text-gray-200 hover:border-primary-500/40 hover:text-white'
+                    }`}
+                  >
+                    <Eye className="w-4 h-4" />
+                    {useTwoColumnLayout ? 'Desativar 2 colunas' : 'Ativar 2 colunas'}
+                  </button>
+                ) : null}
+              </div>
             </div>
           </div>
         </div>
-      </section>
+      ) : null}
+
+      {isCifraV2(cifra) && structuredSections.length > 1 ? (
+        <div className="mb-6 hidden rounded-2xl sm:block border border-white/10 bg-background-secondary p-5">
+          <h2 className="text-lg font-semibold text-white">Navegacao por secoes</h2>
+          <p className="text-text-muted text-sm mt-2">
+            Pule direto para introducao, estrofes, coro e demais partes publicadas desta cifra.
+          </p>
+          <div className="mt-4 flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
+            {structuredSectionItems.map(({ section, index }) => (
+              <button
+                key={section.id}
+                type="button"
+                onClick={() => {
+                  if (studyModeEnabled) {
+                    setFocusedSectionIndex(index);
+                  }
+                  scrollToSection(index);
+                }}
+                className={`shrink-0 rounded-full border px-3 py-2 text-sm transition-colors ${
+                  focusedSectionIndex === index
+                    ? 'border-primary-500 bg-primary-500 text-black'
+                    : 'border-gray-700 bg-gray-800 text-gray-200 hover:border-primary-500/40 hover:text-white'
+                }`}
+              >
+                {section.section_label || `Secao ${index + 1}`}
+              </button>
+            ))}
+          </div>
+        </div>
+      ) : null}
+
+      </main>
+      </div>
 
       {/* Mobile quick controls */}
       <div className="fixed inset-x-3 bottom-3 z-30 grid grid-cols-5 overflow-hidden rounded-[1.75rem] border border-white/10 bg-[#111313]/95 px-2 py-3 shadow-2xl shadow-black/60 backdrop-blur-xl sm:hidden print:hidden">
@@ -2499,26 +2345,6 @@ const CifraPage: React.FC = () => {
           </div>
         </div>
       ) : null}
-
-      <section className="mt-10 rounded-3xl border border-white/10 bg-background-secondary p-6 sm:p-8">
-        <h2 className="text-xl font-bold text-white">A Cifra deste Hino está errada?</h2>
-        <p className="mt-2 max-w-2xl text-gray-400">Contribua com a correção e ajude a melhorar esta cifra para toda a comunidade.</p>
-        <button
-          type="button"
-          onClick={() => {
-            const songId = isCifraV2(cifra) ? cifra.song_id : cifra.id;
-            const versionId = isCifraV2(cifra) ? cifra.id : null;
-            if (!user) {
-              navigate(`/login?redirect=${encodeURIComponent(`/cifra/${slug}`)}`);
-              return;
-            }
-            navigate(`/contribuir-cifra?type=correction&songId=${encodeURIComponent(songId)}${versionId ? `&versionId=${encodeURIComponent(versionId)}` : ''}`);
-          }}
-          className="mt-5 rounded-2xl bg-primary-500 px-5 py-3 font-semibold text-black transition-colors hover:bg-primary-400"
-        >
-          Contribua com a correção
-        </button>
-      </section>
 
       {showReportModal && isCifraV2(cifra) ? (
         <div className="fixed inset-0 z-40 flex items-end justify-center bg-black/70 px-4 py-4 sm:items-center">

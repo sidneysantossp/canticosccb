@@ -69,7 +69,7 @@ const PAGE_CONFIG: Record<DownloadTopic, {
     path: '/baixar-cds-ccb',
     title: 'Baixar CDs CCB | Como Ouvir CDs e Coletâneas CCB',
     heading: 'Baixar CDs CCB',
-    description: 'Guia para quem procura baixar CDs CCB. Veja como ouvir coletâneas, álbuns, playlists e repertório relacionado da Congregação Cristã no Brasil.',
+    description: 'Guia para quem procura baixar CDs CCB. Veja como ouvir coletâneas, álbuns, playlists e repertório relacionado da comunidade CCB.',
     intro: 'Esta página atende a busca por baixar CDs CCB com foco honesto em descoberta de repertório: você encontra caminhos para coletâneas, álbuns, playlists e páginas canônicas do acervo.',
     keywords: 'baixar cds ccb, download cds ccb, cds ccb, coletaneas ccb, albuns ccb',
     relatedLinks: [

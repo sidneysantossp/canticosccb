@@ -204,7 +204,7 @@ const HinarioViewPage: React.FC = () => {
     <>
       <SEOHead
         title={`Hino ${hymn.numero} CCB - ${hymn.titulo} | Letra do Hinário`}
-        description={`Leia a letra do Hino ${hymn.numero} CCB - ${hymn.titulo}. Página do Hinário da Congregação Cristã no Brasil com navegação por número e título.`}
+        description={`Leia a letra do Hino ${hymn.numero} CCB - ${hymn.titulo}. Página do Hinário da comunidade CCB com navegação por número e título.`}
         keywords={`hino ${hymn.numero} ccb, ${hymn.titulo}, letra hino ${hymn.numero}, hino ${hymn.numero} ccb letra completa, cifra hino ${hymn.numero} ccb, hinário ccb, hinário 5`}
         canonical={`/hinario/${hymn.numero}`}
         schemaData={[

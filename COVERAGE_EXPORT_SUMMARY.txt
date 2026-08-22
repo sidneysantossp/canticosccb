@@ -1,0 +1,52 @@
+## Gr├бfico.csv [utf-8-sig]
+Data | Não indexadas | Indexados | Impressões
+2026-05-21 | 1171 | 681 | 831
+2026-05-22 | 1172 | 678 | 1007
+2026-05-23 | 1172 | 678 | 915
+2026-05-24 | 1172 | 678 | 946
+2026-05-25 | 1147 | 701 | 926
+2026-05-26 | 1147 | 701 | 1073
+2026-05-27 | 1147 | 701 | 1608
+2026-05-28 | 1147 | 701 | 814
+2026-05-29 | 1149 | 700 | 1048
+2026-05-30 | 1149 | 700 | 811
+2026-05-31 | 1149 | 700 | 758
+2026-06-01 | 1208 | 640 | 2400
+2026-06-02 | 1208 | 640 | 1978
+2026-06-03 | 1208 | 640 | 2027
+2026-06-04 | 1208 | 640 | 2987
+2026-06-05 | 1208 | 639 | 2925
+2026-06-06 | 1208 | 639 | 2174
+2026-06-07 | 1208 | 639 | 1868
+2026-06-08 | 1207 | 640 | 2165
+2026-06-09 | 1207 | 640 | 2117
+2026-06-10 | 1207 | 640 | 2404
+2026-06-11 | 1207 | 640 | 2618
+2026-06-12 | 1201 | 648 | 2121
+2026-06-13 | 1201 | 648 | 1765
+2026-06-14 | 1201 | 648 | 1955
+2026-06-15 | 1201 | 648 | 1702
+2026-06-16 | 1201 | 648 | 2370
+2026-06-17 | 1201 | 648 | 1756
+2026-06-18 | 1201 | 648 | 1847
+
+## Metadados.csv [utf-8-sig]
+Propriedade | Valor
+Sitemap | Todas as páginas conhecidas
+
+## Problemas cr├нticos.csv [utf-8-sig]
+Motivo | Fonte | Validação | Páginas
+Página alternativa com tag canônica adequada | Site | Não foi iniciado | 311
+Erro soft 404 | Site | Não foi iniciado | 30
+Erro no servidor (5xx) | Site | Não foi iniciado | 27
+Excluída pela tag "noindex" | Site | Não foi iniciado | 8
+Página com redirecionamento | Site | Não foi iniciado | 5
+Bloqueada pelo robots.txt | Site | Não foi iniciado | 2
+Não encontrado (404) | Site | Não foi iniciado | 1
+Rastreada, mas não indexada no momento | Sistemas do Google | Não foi iniciado | 100
+Cópia, o Google e o usuário selecionaram uma página canônica diferente | Sistemas do Google | Não foi iniciado | 3
+Detectada, mas não indexada no momento | Sistemas do Google | Aprovado | 629
+
+## Problemas n├гo cr├нticos.csv [utf-8-sig]
+Motivo | Fonte | Validação | Páginas
+

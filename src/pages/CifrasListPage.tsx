@@ -1,78 +1,96 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Search, Keyboard, Music, Music2, Music4, FileText, Eye, AlertCircle, RefreshCw } from 'lucide-react';
+import { FileText, AlertCircle, RefreshCw } from 'lucide-react';
+import { GiGuitar, GiBanjo, GiPianoKeys } from 'react-icons/gi';
+import type { IconType } from 'react-icons';
 import SEOHead from '@/components/SEO/SEOHead';
-import { generateItemListSchema, generateBreadcrumbSchema } from '@/utils/schemaGenerator';
-import { Cifra, INSTRUMENTS, CATEGORIES } from '@/api/cifras';
-import { fetchMergedPublicCifrasListDetailed, type PublicCifraPageData } from '@/lib/cifras-v2';
-import { fetchCifrasPageBanner, type HomeBanner } from '@/lib/homeApi';
 import HeroSection from '@/components/home/HeroSection';
-import { CIFRA_V2_INSTRUMENTS } from '@/types/cifras-v2';
+import { getCifrasBanner, type HomeBanner } from '@/lib/homeApi';
+import { generateItemListSchema, generateBreadcrumbSchema } from '@/utils/schemaGenerator';
+import { Cifra } from '@/api/cifras';
+import { fetchHinario5NumberMap } from '@/api/hinario';
+import { fetchMergedPublicCifrasListDetailed, type PublicCifraPageData } from '@/lib/cifras-v2';
 
 type DisplayCifra = Cifra | PublicCifraPageData;
-
-const PUBLIC_INSTRUMENTS = [
-  ...INSTRUMENTS,
-  ...CIFRA_V2_INSTRUMENTS.filter((entry) => !INSTRUMENTS.some((legacy) => legacy.value === entry.value)),
-];
 
 function isCifraV2(cifra: DisplayCifra): cifra is PublicCifraPageData {
   return 'source' in cifra && cifra.source === 'v2';
 }
 
-type GroupedCifra = {
-  key: string;
-  primary: DisplayCifra;
-  versions: PublicCifraPageData[];
-};
-
-function groupCifrasByHino(items: DisplayCifra[]): GroupedCifra[] {
-  const groups = new Map<string, GroupedCifra>();
-  const instrumentOrder = ['violao', 'ukulele', 'teclado'];
-
-  items.forEach((item) => {
-    const key = isCifraV2(item)
-      ? `song:${item.song_id || item.hinario_numero || item.title}`
-      : `legacy:${item.slug}`;
-    const current = groups.get(key);
-
-    if (!current) {
-      groups.set(key, {
-        key,
-        primary: item,
-        versions: isCifraV2(item) ? [item] : [],
-      });
-      return;
-    }
-
-    if (isCifraV2(item)) {
-      current.versions.push(item);
-      const currentRank = instrumentOrder.indexOf(isCifraV2(current.primary) ? current.primary.instrument : '');
-      const nextRank = instrumentOrder.indexOf(item.instrument);
-      if (nextRank !== -1 && (currentRank === -1 || nextRank < currentRank)) {
-        current.primary = item;
-      }
-    }
-  });
-
-  return Array.from(groups.values()).map((group) => ({
-    ...group,
-    versions: group.versions.sort((left, right) => instrumentOrder.indexOf(left.instrument) - instrumentOrder.indexOf(right.instrument)),
-  }));
+function normalizeHymnTitle(value: string): string {
+  return value
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9]+/g, ' ')
+    .replace(/\b(hino|hinario|ccb)\b/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
 }
 
+function resolveHinario5Number(title: string, numbers: Record<string, number>): number | null {
+  const normalizedTitle = normalizeHymnTitle(title);
+  if (!normalizedTitle) return null;
+  if (numbers[normalizedTitle]) return numbers[normalizedTitle];
+
+  const titleTokens = new Set(normalizedTitle.split(' ').filter(Boolean));
+  let bestMatch: { number: number; score: number } | null = null;
+
+  for (const [officialTitle, number] of Object.entries(numbers)) {
+    const officialTokens = new Set(officialTitle.split(' ').filter(Boolean));
+    const overlap = [...titleTokens].filter((token) => officialTokens.has(token)).length;
+    const containsAllTitleTokens = titleTokens.size >= 3 && overlap === titleTokens.size;
+    const score = containsAllTitleTokens ? 1 : overlap / Math.max(titleTokens.size, officialTokens.size);
+    if ((containsAllTitleTokens || score >= 0.75) && (!bestMatch || score > bestMatch.score)) {
+      bestMatch = { number, score };
+    }
+  }
+
+  return bestMatch?.number ?? null;
+}
+
+const INSTRUMENT_SHORTCUTS: Array<{ value: 'violao' | 'ukulele' | 'teclado'; label: string; Icon: IconType }> = [
+  { value: 'violao', label: 'Violão', Icon: GiGuitar },
+  { value: 'ukulele', label: 'Ukulele/Cavaquinho', Icon: GiBanjo },
+  { value: 'teclado', label: 'Teclado', Icon: GiPianoKeys },
+];
+
+function normalizeInstrument(value: string): 'violao' | 'ukulele' | 'teclado' {
+  const normalized = value.toLowerCase();
+  if (normalized.includes('ukulele')) return 'ukulele';
+  if (normalized.includes('teclado') || normalized.includes('piano')) return 'teclado';
+  return 'violao';
+}
+
+type CifraCardGroup = {
+  key: string;
+  title: string;
+  artist: string;
+  hinarioNumero: number | null;
+  versions: Partial<Record<'violao' | 'ukulele' | 'teclado', DisplayCifra>>;
+};
+
 const CifrasListPage: React.FC = () => {
-  const [cifras, setCifras] = useState<GroupedCifra[]>([]);
+  const [cifras, setCifras] = useState<DisplayCifra[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [filterInstrument, setFilterInstrument] = useState('');
-  const [filterCategory, setFilterCategory] = useState('');
   const [loadError, setLoadError] = useState<string | null>(null);
   const [loadWarning, setLoadWarning] = useState<string | null>(null);
-  const [pageBanner, setPageBanner] = useState<HomeBanner | null>(null);
+  const [heroBanners, setHeroBanners] = useState<HomeBanner[]>([]);
+  const [hinario5Numbers, setHinario5Numbers] = useState<Record<string, number>>({});
 
   useEffect(() => {
     loadCifras();
+    fetchHinario5NumberMap()
+      .then((items) => {
+        const numbers = Object.fromEntries(
+          Object.entries(items).map(([title, number]) => [normalizeHymnTitle(title), number])
+        );
+        setHinario5Numbers(numbers);
+      })
+      .catch((error) => console.error('Erro ao carregar a numeração do Hinário 5:', error));
+    getCifrasBanner()
+      .then(setHeroBanners)
+      .catch((error) => console.error('Erro ao carregar o banner de cifras:', error));
   }, []);
 
   const loadCifras = async () => {
@@ -81,12 +99,8 @@ const CifrasListPage: React.FC = () => {
       setLoadError(null);
       setLoadWarning(null);
 
-      const [result, banner] = await Promise.all([
-        fetchMergedPublicCifrasListDetailed(),
-        fetchCifrasPageBanner(),
-      ]);
-      setCifras(groupCifrasByHino(result.items));
-      setPageBanner(banner);
+      const result = await fetchMergedPublicCifrasListDetailed();
+      setCifras(result.items);
 
       if (result.unavailableSources.length > 0) {
         setLoadWarning('Parte do catálogo está temporariamente indisponível. Os resultados exibidos continuam disponíveis para estudo.');
@@ -100,31 +114,41 @@ const CifrasListPage: React.FC = () => {
     }
   };
 
-  const filtered = cifras.filter(({ primary, versions }) => {
-    const matchSearch = !searchTerm ||
-      primary.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      primary.artist.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchInstrument = !filterInstrument || versions.some((version) => version.instrument === filterInstrument) || (!isCifraV2(primary) && primary.instrument === filterInstrument);
-    const matchCategory = !filterCategory || primary.category === filterCategory;
-    return matchSearch && matchInstrument && matchCategory;
-  });
-
+  const grouped = Array.from(
+    cifras.reduce((map, cifra) => {
+      const groupKey = cifra.hino_id || `${cifra.title}::${cifra.artist}`;
+      const current = map.get(groupKey) || {
+        key: groupKey,
+        title: cifra.title,
+        artist: cifra.artist,
+        hinarioNumero: resolveHinario5Number(cifra.title, hinario5Numbers),
+        versions: {},
+      } satisfies CifraCardGroup;
+      if (!current.hinarioNumero) {
+        current.hinarioNumero = resolveHinario5Number(cifra.title, hinario5Numbers);
+      }
+      const instrument = normalizeInstrument(cifra.instrument);
+      if (!current.versions[instrument]) current.versions[instrument] = cifra;
+      map.set(groupKey, current);
+      return map;
+    }, new Map<string, CifraCardGroup>()).values()
+  );
 
   return (
     <>
     <SEOHead
       title="Cifras Musicais - Acordes e Tablaturas"
-      description="Encontre cifras com acordes para violão, guitarra, ukulele e teclado. Tablaturas de hinos da Congregação Cristã no Brasil."
+      description="Encontre cifras com acordes para violão, guitarra, ukulele e teclado. Tablaturas de hinos da comunidade CCB."
       keywords="cifras, acordes, tablatura, violão, guitarra, ukulele, teclado, hinos, CCB"
       canonical="/cifras"
       schemaData={[
-        ...(filtered.length > 0 ? [generateItemListSchema({
+        ...(cifras.length > 0 ? [generateItemListSchema({
           name: 'Cifras Musicais',
           description: 'Cifras com acordes para hinos da CCB',
           url: '/cifras',
-          items: filtered.slice(0, 20).map(({ primary }, i) => ({
-            name: primary.title,
-            url: `/cifra/${primary.slug}`,
+          items: cifras.slice(0, 20).map((c, i) => ({
+            name: c.title,
+            url: `/cifra/${c.slug}`,
             position: i + 1,
           })),
         })] : []),
@@ -134,42 +158,13 @@ const CifrasListPage: React.FC = () => {
         ]),
       ]}
     />
-    <div className="max-w-5xl mx-auto px-4 pt-0 pb-[calc(8rem+env(safe-area-inset-bottom))] sm:pb-8">
-      {pageBanner && <HeroSection banners={[pageBanner]} className="mx-0 mt-0" />}
-
-      {/* Search & Filters */}
-      <div className="flex flex-col sm:flex-row gap-3 mb-8">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-          <input
-            type="text"
-            placeholder="Buscar cifra por título ou artista..."
-            value={searchTerm}
-            onChange={e => setSearchTerm(e.target.value)}
-            className="w-full pl-10 pr-4 py-3 bg-gray-800/60 border border-gray-700 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary-500"
-          />
+    <div className="max-w-5xl mx-auto px-4 pt-0 pb-24 sm:pb-8">
+      {/* Único FullBanner da página de cifras, gerido na aba Categorias do admin */}
+      {heroBanners.length > 0 && (
+        <div className="mb-6">
+          <HeroSection banners={heroBanners.slice(0, 1)} variant="fullBanner" />
         </div>
-        <select
-          value={filterInstrument}
-          onChange={e => setFilterInstrument(e.target.value)}
-          className="w-full px-4 py-3 bg-gray-800/60 border border-gray-700 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-primary-500 sm:w-auto"
-        >
-          <option value="">Instrumento</option>
-          {PUBLIC_INSTRUMENTS.map(i => (
-            <option key={i.value} value={i.value}>{i.label}</option>
-          ))}
-        </select>
-        <select
-          value={filterCategory}
-          onChange={e => setFilterCategory(e.target.value)}
-          className="w-full px-4 py-3 bg-gray-800/60 border border-gray-700 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-primary-500 sm:w-auto"
-        >
-          <option value="">Categoria</option>
-          {CATEGORIES.map(c => (
-            <option key={c.value} value={c.value}>{c.label}</option>
-          ))}
-        </select>
-      </div>
+      )}
 
       {loadWarning && (
         <div className="mb-6 flex items-start gap-3 rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-100">
@@ -197,96 +192,53 @@ const CifrasListPage: React.FC = () => {
             Tentar novamente
           </button>
         </div>
-      ) : filtered.length === 0 ? (
+      ) : cifras.length === 0 ? (
         <div className="text-center py-20">
           <FileText className="w-16 h-16 text-gray-600 mx-auto mb-4" />
           <h3 className="text-xl text-gray-400 mb-2">
-            {searchTerm || filterInstrument || filterCategory ? 'Nenhuma cifra encontrada' : 'Ainda não há cifras verificadas neste catálogo'}
+            Ainda não há cifras verificadas neste catálogo
           </h3>
           <p className="text-gray-500">
-            {searchTerm || filterInstrument || filterCategory
-              ? 'Tente ajustar os filtros ou buscar pelo título do hino.'
-              : 'Quando uma cifra estiver pronta para estudo, ela aparecerá aqui.'}
+            Quando uma cifra estiver pronta para estudo, ela aparecerá aqui.
           </p>
         </div>
       ) : (
-        <div className="flex flex-col gap-3">
-          {filtered.map(({ key: groupKey, primary, versions }) => {
-            const instrumentOptions = [
-              { key: 'violao', label: 'Violão', Icon: Music4 },
-              { key: 'ukulele', label: 'Ukulele', Icon: Music2 },
-              { key: 'teclado', label: 'Teclado', Icon: Keyboard },
-            ];
-            const versionByInstrument = new Map(versions.map((version) => [version.instrument, version]));
-
-            return (
-              <article
-                key={groupKey}
-                className="group rounded-xl border border-gray-700/50 bg-gray-800/40 p-4 transition-all hover:border-gray-600 hover:bg-gray-800/70"
-              >
-                <div className="flex items-center gap-4">
-                  <Link
-                    to={`/cifra/${primary.slug}`}
-                    aria-label={`Abrir cifra de ${primary.title}`}
-                    className="flex h-14 w-14 flex-shrink-0 items-center justify-center rounded-lg bg-gray-700/50 text-gray-400 transition-colors hover:bg-primary-500/15 hover:text-primary-300"
-                  >
-                    {primary.cover_url ? (
-                      <img src={primary.cover_url} alt={`Cifra de ${primary.title}`} className="h-full w-full rounded-lg object-cover" />
-                    ) : (
-                      <Music className="h-6 w-6" />
-                    )}
-                  </Link>
-
-                  <div className="min-w-0 flex-1">
-                    <Link to={`/cifra/${primary.slug}`} className="block min-w-0">
-                      <h3 className="truncate font-semibold text-white transition-colors group-hover:text-primary-400">
-                        {primary.title}
-                      </h3>
+        <div className="flex flex-col gap-1">
+          {grouped.map(group => (
+            <article
+              key={group.key}
+              className="group flex min-h-[56px] items-center gap-2 rounded-lg border border-gray-700/50 bg-gray-800/40 px-2.5 py-1.5 transition-colors hover:border-gray-600 hover:bg-gray-800/70 sm:min-h-[60px] sm:px-3 sm:py-2"
+            >
+              <div className="min-w-0 flex-1">
+                <h3 className="line-clamp-1 text-sm font-semibold leading-5 text-white transition-colors group-hover:text-primary-400 sm:text-base">
+                  {group.title}
+                </h3>
+                <span className="mt-0.5 inline-flex items-center rounded-full border border-emerald-400/30 bg-emerald-500/15 px-1.5 py-0.5 text-[9px] font-semibold leading-3 text-emerald-300 sm:text-[10px]">
+                  {group.hinarioNumero ? `Hino ${group.hinarioNumero}` : 'Hino avulso'}
+                </span>
+                {group.artist && (
+                  <p className="mt-0.5 line-clamp-1 text-[10px] leading-3 text-gray-400 sm:text-[11px]">{group.artist}</p>
+                )}
+              </div>
+              <div className="flex shrink-0 items-center gap-0.5" aria-label={`Cifras de ${group.title}`}>
+                {INSTRUMENT_SHORTCUTS.map(({ value, label, Icon }) => {
+                  const version = group.versions[value];
+                  if (!version) return null;
+                  return (
+                    <Link
+                      key={`${group.key}-${value}`}
+                      to={`/cifra/${version.slug}`}
+                      aria-label={`${label}: ${group.title}`}
+                      title={`${label}: ${group.title}`}
+                      className="flex h-8 w-8 items-center justify-center rounded-md border border-gray-700/70 text-gray-300 transition-colors hover:border-primary-400 hover:bg-primary-500/15 hover:text-primary-300 sm:h-8 sm:w-8"
+                    >
+                      <Icon className="h-[18px] w-[18px] sm:h-5 sm:w-5" aria-hidden="true" />
                     </Link>
-                    <div className="mt-2 flex min-w-0 items-center gap-2">
-                      <span className="rounded-md bg-primary-500/15 px-2 py-0.5 text-xs font-medium text-primary-400">
-                        {primary.original_key}
-                      </span>
-                      <span className="truncate text-xs text-gray-500">
-                        {versions.length > 0 ? `${versions.length} instrumentos` : (PUBLIC_INSTRUMENTS.find(i => i.value === primary.instrument)?.label || primary.instrument)}
-                      </span>
-                      <span className="ml-auto hidden shrink-0 items-center gap-1 text-xs text-gray-600 sm:flex">
-                        <Eye className="h-3 w-3" />
-                        {isCifraV2(primary) ? 'V2' : primary.views_count}
-                      </span>
-                    </div>
-                  </div>
-
-                  <div className="flex shrink-0 items-center gap-1 sm:gap-2" aria-label="Instrumentos disponíveis">
-                    {instrumentOptions.map(({ key, label, Icon }) => {
-                      const version = versionByInstrument.get(key);
-                      return version ? (
-                        <Link
-                          key={key}
-                          to={`/cifra/${version.slug}`}
-                          title={`Abrir versão de ${label}`}
-                          aria-label={`Abrir versão de ${label}`}
-                          className="flex h-9 w-9 items-center justify-center rounded-lg border border-primary-500/30 bg-primary-500/10 text-primary-300 transition-colors hover:border-primary-400 hover:bg-primary-500/20"
-                        >
-                          <Icon className="h-4 w-4" />
-                        </Link>
-                      ) : (
-                        <span
-                          key={key}
-                          title={`${label}: versão indisponível`}
-                          aria-label={`${label}: versão indisponível`}
-                          className="flex h-9 w-9 cursor-not-allowed items-center justify-center rounded-lg border border-white/10 bg-white/5 text-white/25"
-                        >
-                          <Icon className="h-4 w-4" />
-                        </span>
-                      );
-                    })}
-                  </div>
-                </div>
-                <p className="mt-2 truncate pl-[4.5rem] text-sm text-gray-400">{primary.artist}</p>
-              </article>
-            );
-          })}
+                  );
+                })}
+              </div>
+            </article>
+          ))}
         </div>
       )}
     </div>

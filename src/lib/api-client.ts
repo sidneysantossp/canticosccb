@@ -10,6 +10,7 @@ import {
   supabaseAuthUpdate,
   supabaseDelete,
   supabaseFetch,
+  supabaseGetSignedUrl,
   supabaseInsert,
   supabaseUpdate,
 } from './supabaseRest';
@@ -80,7 +81,7 @@ export const hinosApi = {
     try {
       const filters: Record<string, string> = {
         select: 'id,numero,titulo,compositor_nome,compositor_id,categoria,cover_url,audio_url,duracao,status,ativo,created_at',
-        status: 'eq.pending',
+        status: 'eq.draft',
         order: 'created_at.desc',
       };
 
@@ -149,7 +150,12 @@ export const hinosApi = {
   create: async (data: any) => {
 
     try {
-      const resolvedStatus = data.status || (data.ativo === 1 ? 'published' : 'pending');
+      const requestedStatus = String(data.status || '').toLowerCase();
+      const resolvedStatus = requestedStatus === 'pending'
+        ? 'draft'
+        : (requestedStatus === 'draft' || requestedStatus === 'published' || requestedStatus === 'archived')
+          ? requestedStatus
+          : (data.ativo === 1 ? 'published' : 'draft');
       // Inserir hino sem categorias primeiro
       const hinoData: Record<string, any> = {
         titulo: data.titulo,
@@ -217,9 +223,14 @@ export const hinosApi = {
       if (data.letra !== undefined) updateData.letra = data.letra || null;
       if (data.ativo !== undefined) updateData.ativo = data.ativo;
       if (data.status !== undefined) {
-        updateData.status = data.status;
+        const requestedStatus = String(data.status || '').toLowerCase();
+        updateData.status = requestedStatus === 'pending'
+          ? 'draft'
+          : (requestedStatus === 'draft' || requestedStatus === 'published' || requestedStatus === 'archived')
+            ? requestedStatus
+            : 'draft';
       } else if (data.ativo !== undefined) {
-        updateData.status = data.ativo === 1 || data.ativo === true ? 'published' : 'pending';
+        updateData.status = data.ativo === 1 || data.ativo === true ? 'published' : 'draft';
       }
       if (data.youtube_source !== undefined) updateData.youtube_source = data.youtube_source || null;
       if (data.participacao_especial !== undefined) {
@@ -379,6 +390,9 @@ export const compositoresApi = {
         user_id: `eq.${userId}`,
         select: '*',
         limit: '1'
+      }).catch((error) => {
+        console.warn('⚠️ [getByUsuarioId] Consulta por user_id indisponível; tentando e-mail:', error);
+        return [] as any[];
       });
       if (rows.length > 0) {
         const r = rows[0];
@@ -398,19 +412,23 @@ export const compositoresApi = {
 
       // 2. Fallback: buscar por email e auto-vincular user_id
       if (userEmail) {
+        const normalizedEmail = String(userEmail).trim().toLowerCase();
         const byEmail = await supabaseFetch<any>('composers', {
-          email: `eq.${userEmail}`,
+          email: `ilike.${normalizedEmail}`,
           select: '*',
           limit: '1'
+        }).catch((error) => {
+          console.warn('⚠️ [getByUsuarioId] Consulta por e-mail indisponível:', error);
+          return [] as any[];
         });
         if (byEmail.length > 0) {
           const r = byEmail[0];
-          // Auto-vincular user_id para não precisar de fallback novamente
-          try {
-            await supabaseUpdate('composers', { id: `eq.${r.id}` }, { user_id: userId });
-          } catch (linkErr) {
-            console.warn('⚠️ [getByUsuarioId] Falha ao vincular user_id:', linkErr);
-          }
+          // Auto-vincular em segundo plano: a resolução do perfil não pode ficar
+          // bloqueada por uma escrita protegida ou por uma instabilidade de rede.
+          void supabaseUpdate('composers', { id: `eq.${r.id}` }, { user_id: userId })
+            .catch((linkErr) => {
+              console.warn('⚠️ [getByUsuarioId] Falha ao vincular user_id:', linkErr);
+            });
           return {
             data: {
               ...r,
@@ -1513,31 +1531,38 @@ export const documentReviewsApi = {
   getById: async () => null,
   getByCompositor: async (compositorId: string | number) => {
     try {
-
       const rows = await supabaseAuthFetch<any>('composer_documents', {
         composer_id: `eq.${compositorId}`,
-        select: '*',
+        // Evita select=*; o schema de produção pode conter colunas divergentes.
+        select: 'id,composer_id,document_type,document_number,expected_name,extracted_name,document_image,image_path,status,admin_notes,reviewed_by,reviewed_at,created_at',
         order: 'created_at.desc',
       });
       // Map composer_documents columns to the shape DocumentReviewSection expects
-      const mapped = (rows || []).map((row: any) => ({
-        id: row.id,
-        composer_id: row.composer_id,
-        document_type: row.document_type || 'documento',
-        document_number: row.document_number,
-        expected_name: row.expected_name || '',
-        extracted_name: row.extracted_name || '',
-        image_path: row.document_image || row.image_path || '',
-        status: row.status || 'pending',
-        admin_notes: row.admin_notes || '',
-        reviewed_by: row.reviewed_by || null,
-        reviewed_at: row.reviewed_at || null,
-        created_at: row.created_at || new Date().toISOString(),
+      const mapped = await Promise.all((rows || []).map(async (row: any) => {
+        const privatePath = row.document_image || row.image_path || '';
+        // A rota efetiva gera a URL através de documentStorage. Uma falha de
+        // assinatura nunca deve ocultar o registo documental válido.
+        const signedUrl = null;
+        return {
+          id: row.id,
+          composer_id: row.composer_id,
+          document_type: row.document_type || 'documento',
+          document_number: row.document_number,
+          expected_name: row.expected_name || '',
+          extracted_name: row.extracted_name || '',
+          image_path: privatePath,
+          signed_url: signedUrl,
+          status: row.status || 'pending',
+          admin_notes: row.admin_notes || '',
+          reviewed_by: row.reviewed_by || null,
+          reviewed_at: row.reviewed_at || null,
+          created_at: row.created_at || new Date().toISOString(),
+        };
       }));
       return { data: { documents: mapped }, error: null };
     } catch (error: any) {
       console.warn('[documentReviewsApi.getByCompositor] Error:', error?.message);
-      return { data: { documents: [] }, error: error?.message };
+      return { data: { documents: [], error: error?.message }, error: error?.message };
     }
   },
   review: async (documentId: number | string, data: { status: string; admin_notes?: string }) => {

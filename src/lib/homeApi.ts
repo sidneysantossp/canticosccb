@@ -266,8 +266,12 @@ const mapSupabaseBanner = (row: SupabaseBannerRow): HomeBanner => ({
   gradient_overlay: row.gradient_overlay ?? undefined,
 });
 
-export async function fetchCifrasPageBanner(): Promise<HomeBanner | null> {
-  if (!isSupabaseConfigured) return null;
+/**
+ * Banner exclusivo da página /cifras.
+ * Usa o tipo persistido `cifras` para não misturar os banners da Home com o FullBanner de cifras.
+ */
+export async function getCifrasBanner(): Promise<HomeBanner[]> {
+  if (!isSupabaseConfigured) return [];
 
   try {
     const rows = await supabaseFetch<SupabaseBannerRow>('banners', {
@@ -277,10 +281,14 @@ export async function fetchCifrasPageBanner(): Promise<HomeBanner | null> {
       order: 'position.asc',
       limit: '1',
     });
-    return rows.length > 0 ? mapSupabaseBanner(rows[0]) : null;
+
+    return rows
+      .filter((row) => hasUsableBannerMedia(row.image_url))
+      .slice(0, 1)
+      .map(mapSupabaseBanner);
   } catch (error) {
-    console.error('Erro ao carregar slide da página de cifras:', error);
-    return null;
+    console.error('Erro ao carregar banner de cifras:', error);
+    return [];
   }
 }
 

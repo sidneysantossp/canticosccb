@@ -49,9 +49,9 @@ const HUBS: Record<HymnHubType, HubConfig> = {
     path: '/hinos-cantados-ccb',
     heading: 'Hinos Cantados CCB',
     title: 'Hinos Cantados CCB | Ouça Hinos Cantados da CCB',
-    description: 'Explore hinos cantados da CCB com links para letra, áudio e navegação pelo repertório da Congregação Cristã no Brasil.',
+    description: 'Explore hinos cantados da CCB com links para letra, áudio e navegação pelo repertório da comunidade CCB.',
     intro: 'Página dedicada aos hinos cantados da CCB, com repertório navegável, links para letra e acesso rápido às páginas individuais de cada hino.',
-    keywords: 'hinos cantados ccb, ouvir hinos cantados ccb, hinos ccb cantados, hinos congregação cristã no brasil',
+    keywords: 'hinos cantados ccb, ouvir hinos cantados ccb, hinos ccb cantados, hinos comunidade CCB',
     icon: Mic2,
     accentClass: 'from-emerald-600/30 to-transparent',
     faq: [
@@ -88,10 +88,10 @@ const HUBS: Record<HymnHubType, HubConfig> = {
   avulsos: {
     path: '/hinos-avulsos-ccb',
     heading: 'Hinos Avulsos CCB',
-    title: 'Hinos Avulsos CCB | Repertório Avulso da Congregação Cristã',
+    title: 'Hinos Avulsos CCB | Repertório Avulso da comunidade CCB',
     description: 'Veja hinos avulsos da CCB com links para ouvir, acessar letra, cifra e navegar por compositor e repertório relacionado.',
     intro: 'Hub dedicado aos hinos avulsos da CCB, com acesso organizado às páginas individuais, letras, compositores e repertório relacionado.',
-    keywords: 'hinos avulsos ccb, ouvir hinos avulsos ccb, repertório avulso ccb, hinos congregação cristã',
+    keywords: 'hinos avulsos ccb, ouvir hinos avulsos ccb, repertório avulso ccb, hinos comunidade CCB',
     icon: Music4,
     accentClass: 'from-amber-500/30 to-transparent',
     faq: [

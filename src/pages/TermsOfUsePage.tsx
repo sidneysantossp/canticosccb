@@ -25,7 +25,7 @@ const TermsOfUsePage: React.FC = () => {
         <section>
           <h2 className="text-xl font-semibold text-white mb-3">2. Natureza do serviço</h2>
           <p>
-            A plataforma facilita a descoberta, organização e audição de hinos, composições e interpretações publicadas pela comunidade. É um serviço independente, sem vínculo com a Congregação Cristã no Brasil.
+            A plataforma facilita a descoberta, organização e audição de hinos, composições e interpretações publicadas pela comunidade. É um serviço independente, sem vínculo com a comunidade CCB.
           </p>
         </section>
 

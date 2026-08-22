@@ -325,7 +325,7 @@ const AdminCategoryForm: React.FC = () => {
                   rows={3}
                   maxLength={160}
                   className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-3 text-white resize-none focus:outline-none focus:border-green-600"
-                  placeholder="Ex: Explore nossa coleção de hinos de louvor da Congregação Cristã no Brasil..."
+                  placeholder="Ex: Explore nossa coleção de hinos de louvor da comunidade CCB..."
                 />
                 <p className="text-gray-500 text-xs mt-1">
                   Descrição que aparece nos resultados de busca (máx. 160 caracteres)

@@ -54,7 +54,7 @@ const CategoriesPage: React.FC = () => {
     <div className="min-h-screen bg-background-primary">
       <SEOHead
         title="Categorias de Hinos CCB"
-        description="Explore hinos da Congregação Cristã no Brasil por categorias, temas e repertórios relacionados."
+        description="Explore hinos da comunidade CCB por categorias, temas e repertórios relacionados."
         keywords="categorias hinos CCB, hinos cantados CCB, hinos tocados CCB, hinos avulsos CCB"
         canonical="/categorias"
       />

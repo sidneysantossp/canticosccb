@@ -108,7 +108,7 @@ const RUNTIME_CONFIG_STORAGE_KEY = 'canticosccb:runtime-config:v1';
 const defaultSeoSettings: RuntimeSeoSettings = {
   site_title: 'Cânticos CCB',
   site_description: 'Plataforma independente de hinos, cifras, compositores e playlists relacionados à CCB',
-  site_keywords: 'hinos CCB, hinário 5, congregação cristã no brasil',
+  site_keywords: 'hinos CCB, hinário 5, comunidade CCB',
   site_url: DEFAULT_SITE_URL,
   og_title: '',
   og_description: '',

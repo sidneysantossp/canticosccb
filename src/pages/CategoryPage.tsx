@@ -610,7 +610,7 @@ const CategoryPage: React.FC = () => {
       <SEOHead
         title={category.meta_title || `${category.name} - Cânticos CCB`}
         description={category.meta_description || category.description || `Explore hinos da categoria ${category.name} na Cânticos CCB`}
-        keywords={`${category.name}, hinos, CCB, congregação cristã, ${category.slug}`}
+        keywords={`${category.name}, hinos, CCB, comunidade CCB, ${category.slug}`}
         canonical={`/categoria/${slug}`}
         ogImage={category.image_url}
         schemaData={[

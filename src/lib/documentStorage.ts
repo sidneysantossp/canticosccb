@@ -1,4 +1,5 @@
 import { supabase } from './supabase-auth';
+import { supabaseGetSignedUrl } from './supabaseRest';
 
 const normalizePath = (path: string): string => path.replace(/\\/g, '/').replace(/^\/+/, '');
 
@@ -34,16 +35,28 @@ export async function getDocumentSignedUrl(imagePath: string, expiresInSeconds =
   }
 
   try {
-    const { data, error } = await supabase.storage
-      .from('documents')
-      .createSignedUrl(sanitized, expiresInSeconds);
-
-    if (error || !data?.signedUrl) {
-      console.warn('[documents] Não foi possível gerar URL assinada:', error?.message || 'resposta vazia');
-      return '';
+    const { data: sessionData } = await supabase.auth.getSession();
+    const accessToken = sessionData.session?.access_token || '';
+    if (accessToken) {
+      const response = await fetch('/api/document-signed-url', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${accessToken}` },
+        body: JSON.stringify({ path: sanitized, expiresIn: expiresInSeconds }),
+      });
+      if (response.ok) {
+        const payload = await response.json();
+        if (payload?.signedUrl) return payload.signedUrl;
+      } else {
+        console.warn('[documents] Endpoint server-side recusou assinatura:', response.status);
+      }
     }
 
-    return data.signedUrl;
+    const signedUrl = await supabaseGetSignedUrl('documents', sanitized, expiresInSeconds);
+    if (!signedUrl) {
+      console.warn('[documents] Não foi possível gerar URL assinada para o caminho:', sanitized);
+      return '';
+    }
+    return signedUrl;
   } catch (error) {
     console.warn('[documents] Erro ao gerar URL assinada:', error);
     return '';

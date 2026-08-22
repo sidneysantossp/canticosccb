@@ -316,12 +316,12 @@ const HomePage: React.FC = () => {
       answer: 'No Cânticos CCB você pode ouvir hinos publicados gratuitamente, tanto cantados quanto tocados (instrumentais). Basta acessar www.canticosccb.com.br e buscar pelo número ou nome do hino.'
     },
     {
-      question: 'O que é o Hinário 5 da CCB?',
-      answer: 'O Hinário 5, oficialmente chamado "Hinos de Louvores e Súplicas a Deus", é o livro de hinos utilizado nos cultos da Congregação Cristã no Brasil. Contém 480 hinos com letras e partituras musicais.'
+      question: 'Como funciona o catálogo de hinos?',
+      answer: 'O Cânticos CCB reúne hinos, letras e cifras publicados voluntariamente pelos membros da comunidade, organizados por título, categoria, compositor e instrumento.'
     },
     {
-      question: 'Quantos hinos tem o Hinário 5?',
-      answer: 'O Hinário 5 possui 480 hinos numerados, utilizados nos cultos e reuniões da Congregação Cristã no Brasil.'
+      question: 'Quem publica os conteúdos da plataforma?',
+      answer: 'Os conteúdos são publicados voluntariamente pelos membros da comunidade e passam pelos fluxos de revisão disponíveis na plataforma.'
     },
     {
       question: 'O que são cifras de hinos da CCB?',
@@ -633,7 +633,7 @@ const HomePage: React.FC = () => {
     ? homeData.albums.map(album => ({
         id: album.id,
         title: album.title,
-        subtitle: album.artist || 'Congregação Cristã',
+        subtitle: album.artist || 'Publicado pela comunidade',
         cover: album.cover_url || ''
       }))
     : [];
@@ -811,9 +811,9 @@ const HomePage: React.FC = () => {
   return (
     <>
       <SEOHead
-        title="Cânticos CCB — Ouça Hinos da Congregação Cristã no Brasil | Hinário 5, Cifras e Compositores"
-        description="Ouça hinos da CCB online grátis. Acesse hinos cantados, hinos tocados, hinos avulsos CCB, Hinário 5 completo, cifras, compositores e playlists da Congregação Cristã no Brasil."
-        keywords="hinos CCB, hinos avulsos ccb, hinário 5, congregação cristã no brasil, cifras CCB, hinos cantados, hinos tocados, compositores CCB, ouvir hinos CCB online grátis, hinos de louvores e súplicas a deus"
+        title="Cânticos CCB — Hinos, Cifras e Repertório Publicado pela Comunidade"
+        description="Explore hinos, cifras, letras, álbuns e playlists no Cânticos CCB. Todo o conteúdo é publicado voluntariamente pelos membros da comunidade."
+        keywords="hinos CCB, cifras CCB, letras de hinos, hinos cantados, hinos tocados, compositores, playlists, comunidade musical"
         canonical="/"
         ogImage="/logo-canticos-ccb.png"
         schemaData={schemas}

@@ -4,6 +4,7 @@ import { ArrowLeft, Music, Image as ImageIcon, Save, X } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { albunsApi, uploadApi, hinosApi, compositoresApi } from '@/lib/api-client';
 import { getSignedSupabaseUrl } from '@/lib/supabaseMedia';
+import { useActiveComposer } from '@/hooks/useActiveComposer';
 
 // Helper: garante que a URL de áudio utiliza Supabase Storage assinado
 const getSignedPreviewUrl = async (original: string): Promise<string> => {
@@ -28,6 +29,7 @@ interface FormData {
 
 const ComposerSongForm: React.FC = () => {
   const { user } = useAuth();
+  const { composer: activeComposer, loading: loadingActiveComposer } = useActiveComposer();
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
   const isEditMode = !!id;
@@ -219,8 +221,12 @@ const ComposerSongForm: React.FC = () => {
         throw new Error('Título é obrigatório');
       }
 
-      if (!(user as any)?.nome_artistico) {
-        throw new Error('Compositor não identificado');
+      if (loadingActiveComposer) {
+        throw new Error('Aguarde a identificação do compositor terminar e tente novamente.');
+      }
+
+      if (!activeComposer?.id || !activeComposer.nome_artistico) {
+        throw new Error('Compositor não identificado. Reabra o painel Composer e tente novamente.');
       }
 
       let coverUrl = isEditMode ? coverPreview : '';
@@ -242,7 +248,9 @@ const ComposerSongForm: React.FC = () => {
       const payload = {
         numero: formData.number ? parseInt(formData.number) : undefined,
         titulo: formData.title.trim(),
-        compositor: (user as any).nome_artistico, // Nome do compositor logado
+        compositor: activeComposer.nome_artistico,
+        compositor_nome: activeComposer.nome_artistico,
+        compositor_id: activeComposer.id,
         categoria: undefined,
         audio_url: audioUrl || undefined,
         cover_url: coverUrl || undefined,

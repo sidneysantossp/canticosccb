@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Plus, Layers, Megaphone, Layout, Music2, Image as ImageIcon } from 'lucide-react';
+import { Plus, Layers, Megaphone, Layout, Tags, Image as ImageIcon } from 'lucide-react';
 import {
   getAllBanners,
   createBanner,
@@ -261,7 +261,7 @@ const AdminBanners: React.FC = () => {
     { id: 'hero' as BannerType, label: 'Hero/Carousel', icon: Layers, description: 'Banners principais da home (rotativo, full-width)' },
     { id: 'promotional' as BannerType, label: 'Promocionais', icon: Megaphone, description: 'Banners de call-to-action e campanhas' },
     { id: 'contextual' as BannerType, label: 'Contextuais', icon: Layout, description: 'Banners de seções e páginas específicas' },
-    { id: 'cifras' as BannerType, label: 'Cifras', icon: Music2, description: 'Slide exclusivo da página de cifras' }
+    { id: 'cifras' as BannerType, label: 'Categorias', icon: Tags, description: 'FullBanner exclusivo da página de cifras' }
   ];
 
   // Removed page-level loading to render instantly

@@ -16,7 +16,6 @@ const EMERGENCY_FIRST_TABLES = new Set([
   'hino_categorias',
   'hinario',
   'site_config',
-  'cifras',
   'bible_narrated',
   'user_follows',
 ]);
@@ -124,11 +123,29 @@ function isTokenExpired(token: string): boolean {
 }
 
 async function buildAuthHeaders() {
-  let accessToken = sanitizeBearerToken(getStoredToken());
   const anonKey = sanitizeBearerToken(SUPABASE_ANON_KEY);
+  let accessToken = '';
+
+  // A sessão do cliente é a fonte de verdade. O localStorage pode ainda não
+  // ter sido atualizado quando o painel dispara as primeiras consultas.
+  try {
+    const sessionPromise = supabase.auth.getSession();
+    const sessionTimeout = new Promise<any>((resolve) => {
+      window.setTimeout(() => resolve({ data: { session: null }, error: new Error('Session read timeout') }), 2000);
+    });
+    const { data } = await Promise.race([sessionPromise, sessionTimeout]);
+    accessToken = sanitizeBearerToken(data.session?.access_token || '');
+  } catch (error) {
+    debugLog('[supabaseRest] Could not read Supabase session:', error);
+  }
+
+  // Fallback para sessões persistidas por versões anteriores do cliente.
+  if (!accessToken) {
+    accessToken = sanitizeBearerToken(getStoredToken());
+  }
 
   // Se o token está expirado, tentar refresh via Supabase client (com timeout)
-  if (accessToken !== anonKey && isTokenExpired(accessToken)) {
+  if (accessToken && accessToken !== anonKey && isTokenExpired(accessToken)) {
     debugLog('[supabaseRest] JWT expired, attempting refresh...');
     try {
       const refreshPromise = supabase.auth.refreshSession();
@@ -237,7 +254,9 @@ export async function supabaseFetchWithOptions<T>(
   debugLog(`[supabaseFetch] Cache miss for ${table}, fetching:`, url.toString());
 
   try {
-    const headers = buildHeaders();
+    // Leituras públicas continuam a funcionar com a anon key quando não há
+    // sessão; quando existe uma sessão, as rotas protegidas recebem o JWT.
+    const headers = await buildAuthHeaders();
     
     const response = await fetchWithTimeout(url.toString(), {
       method: 'GET',
@@ -650,7 +669,7 @@ export async function supabaseGetSignedUrl(bucket: string, path: string, expires
   try {
     const response = await fetch(url, {
       method: 'POST',
-      headers: buildHeaders(),
+      headers: await buildAuthHeaders(),
       body: JSON.stringify({ expiresIn }),
     });
 
@@ -661,7 +680,10 @@ export async function supabaseGetSignedUrl(bucket: string, path: string, expires
     }
 
     const result = await response.json();
-    return result.signedURL || result.signedUrl || null;
+    const signed = result.signedURL || result.signedUrl || null;
+    if (!signed) return null;
+    if (/^https?:\/\//i.test(signed)) return signed;
+    return `${SUPABASE_URL}${String(signed).startsWith('/') ? '' : '/'}${signed}`;
   } catch (error) {
     console.error(`[supabaseGetSignedUrl] Exception:`, error);
     return null;

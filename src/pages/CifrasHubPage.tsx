@@ -90,8 +90,8 @@ const CifrasHubPage: React.FC = () => {
   return (
     <div className="min-h-screen bg-background-primary">
       <SEOHead
-        title="Cifras Hinos CCB | Cifras da Congregacao Crista no Brasil"
-        description="Explore cifras de hinos CCB com links para violao, ukulele, teclado e paginas individuais de cifra da Congregacao Crista no Brasil."
+        title="Cifras Hinos CCB | Cifras da comunidade CCB"
+        description="Explore cifras de hinos CCB com links para violao, ukulele, teclado e paginas individuais de cifra da comunidade CCB."
         keywords="cifras hinos ccb, cifras ccb, cifra hino ccb, cifras violao ccb, cifras teclado ccb, cifras ukulele ccb"
         canonical="/cifras-hinos-ccb"
         schemaData={schemaData}

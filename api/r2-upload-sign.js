@@ -55,11 +55,38 @@ async function validateAccessToken(token) {
   if (!authResponse.ok) return null;
   const authUser = await authResponse.json();
   if (!authUser?.id || !UUID_RE.test(authUser.id)) return null;
-  const profileResponse = await fetch(`${SUPABASE_URL}/rest/v1/users?id=eq.${encodeURIComponent(authUser.id)}&select=is_admin,is_composer,status,is_blocked&limit=1`, { headers: { apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${token}` } });
-  if (!profileResponse.ok) return null;
-  const rows = await profileResponse.json();
-  const profile = rows[0] || {};
-  return { id: authUser.id, isAdmin: profile.is_admin === true, isComposer: profile.is_composer === true, active: profile.status === 'active' && profile.is_blocked !== true };
+  let profile = {};
+  try {
+    const profileResponse = await fetch(`${SUPABASE_URL}/rest/v1/users?id=eq.${encodeURIComponent(authUser.id)}&select=is_admin,is_composer,status,is_blocked&limit=1`, { headers: { apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${token}` } });
+    if (profileResponse.ok) {
+      const rows = await profileResponse.json();
+      profile = rows[0] || {};
+    }
+  } catch (error) {
+    console.warn('[r2-upload-sign] profile lookup failed:', error);
+  }
+
+  let approvedComposer = false;
+  const composerHeaders = { apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${token}` };
+  try {
+    const byUser = await fetch(`${SUPABASE_URL}/rest/v1/composers?user_id=eq.${encodeURIComponent(authUser.id)}&select=verified,status&limit=1`, { headers: composerHeaders });
+    let composerRows = byUser.ok ? await byUser.json() : [];
+    if ((!Array.isArray(composerRows) || composerRows.length === 0) && authUser.email) {
+      const byEmail = await fetch(`${SUPABASE_URL}/rest/v1/composers?email=ilike.${encodeURIComponent(String(authUser.email).trim().toLowerCase())}&select=verified,status&limit=1`, { headers: composerHeaders });
+      composerRows = byEmail.ok ? await byEmail.json() : [];
+    }
+    const composer = Array.isArray(composerRows) ? composerRows[0] : null;
+    approvedComposer = (composer?.verified === true || composer?.verified === 1) && composer?.status !== 'inactive';
+  } catch (error) {
+    console.warn('[r2-upload-sign] composer lookup failed:', error);
+  }
+
+  const isAdmin = profile.is_admin === true;
+  const isComposer = profile.is_composer === true || approvedComposer;
+  const active = profile.status
+    ? profile.status === 'active' && profile.is_blocked !== true
+    : isComposer;
+  return { id: authUser.id, isAdmin, isComposer, active };
 }
 function canUploadToFolder(user, folder) {
   if (!user?.active) return false;
