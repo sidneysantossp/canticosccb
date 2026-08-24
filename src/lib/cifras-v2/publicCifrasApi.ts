@@ -285,9 +285,10 @@ export interface MergedPublicCifrasResult {
 }
 
 export async function fetchMergedPublicCifrasListDetailed(): Promise<MergedPublicCifrasResult> {
-  const [catalogResult, legacyResult] = await Promise.allSettled([
+  const [catalogResult, legacyFirstPageResult, legacySecondPageResult] = await Promise.allSettled([
     fetchPublicCifraCatalog({ limit: 500 }),
-    fetchCifras({ is_active: true, limit: 500 }),
+    fetchCifras({ is_active: true, limit: 1000, offset: 0 }),
+    fetchCifras({ is_active: true, limit: 1000, offset: 1000 }),
   ]);
 
   const unavailableSources: Array<'catalog_v2' | 'legacy'> = [];
@@ -299,16 +300,17 @@ export async function fetchMergedPublicCifrasListDetailed(): Promise<MergedPubli
         return left.song_title.localeCompare(right.song_title, 'pt-BR');
       })
     : [];
-  const legacyCifras = legacyResult.status === 'fulfilled' ? legacyResult.value : [];
+  const legacyCifras = [legacyFirstPageResult, legacySecondPageResult]
+    .flatMap((result) => result.status === 'fulfilled' ? result.value : []);
 
   if (catalogResult.status === 'rejected') {
     unavailableSources.push('catalog_v2');
     console.warn('[cifras] Catálogo v2 indisponível:', catalogResult.reason);
   }
 
-  if (legacyResult.status === 'rejected') {
+  if (legacyFirstPageResult.status === 'rejected' && legacySecondPageResult.status === 'rejected') {
     unavailableSources.push('legacy');
-    console.warn('[cifras] Catálogo legado indisponível:', legacyResult.reason);
+    console.warn('[cifras] Catálogo legado indisponível:', legacyFirstPageResult.reason);
   }
 
   if (unavailableSources.length === 2) {

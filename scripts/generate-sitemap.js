@@ -264,12 +264,12 @@ async function main() {
 
   // Cifras
   console.log('  🎸 Fetching cifras...');
-  const cifras = await supabaseFetch('cifras', 'id,slug,updated_at,created_at', {
+  const cifras = await supabaseFetch('cifras', 'id,slug,instrument,updated_at,created_at', {
     'is_active': 'eq.true',
     'order': 'created_at.desc',
     'limit': '5000',
   });
-  const cifrasV2 = await supabaseFetch('cifra_public_catalog', 'public_slug,published_at', {
+  const cifrasV2 = await supabaseFetch('cifra_public_catalog', 'public_slug,instrument,published_at', {
     'order': 'hinario_numero.asc.nullslast,song_title.asc',
     'limit': '5000',
   });
@@ -280,14 +280,14 @@ async function main() {
     const mod = (ci.updated_at || ci.created_at || today).split('T')[0];
     const slug = ci.slug || ci.id;
     cifraSlugs.add(slug);
-    urls.push(urlEntry(`/cifra/${slug}`, mod, 'monthly', '0.7'));
+    urls.push(urlEntry(`/cifras/${ci.instrument || 'violao'}/${slug}`, mod, 'monthly', '0.7'));
   }
   for (const ci of cifrasV2) {
     const slug = ci.public_slug;
     if (!slug || cifraSlugs.has(slug)) continue;
     const mod = (ci.published_at || today).split('T')[0];
     cifraSlugs.add(slug);
-    urls.push(urlEntry(`/cifra/${slug}`, mod, 'monthly', '0.7'));
+    urls.push(urlEntry(`/cifras/${ci.instrument || 'violao'}/${slug}`, mod, 'monthly', '0.7'));
   }
 
   // Hinário (letras)

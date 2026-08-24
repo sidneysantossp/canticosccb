@@ -1,10 +1,12 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowLeft, Disc, Eye, Music2, Music4 } from 'lucide-react';
+import { ArrowLeft, Disc, Eye, Music2, Music4, Search } from 'lucide-react';
+import { GiBanjo, GiGuitar, GiPianoKeys } from 'react-icons/gi';
 import SEOHead from '@/components/SEO/SEOHead';
 import { type Cifra } from '@/api/cifras';
 import { fetchMergedPublicCifrasList, type PublicCifraPageData } from '@/lib/cifras-v2';
 import { generateBreadcrumbSchema, generateCifraSchema, generateFAQSchema, generateItemListSchema } from '@/utils/schemaGenerator';
+import { buildCifraUrl } from '@/utils/cifraUrl';
 
 type DisplayCifra = Cifra | PublicCifraPageData;
 
@@ -23,7 +25,7 @@ type InstrumentConfig = {
 
 const HUBS: Record<InstrumentHub, InstrumentConfig> = {
   violao: {
-    path: '/cifras-violao-ccb',
+    path: '/cifras/violao',
     heading: 'Cifras de Violao CCB',
     title: 'Cifras de Violao CCB | Hinos com Acordes para Violao',
     description: 'Veja cifras de hinos da CCB para violao, com acordes, tom original e links para repertorio relacionado.',
@@ -42,13 +44,13 @@ const HUBS: Record<InstrumentHub, InstrumentConfig> = {
     ],
   },
   ukulele: {
-    path: '/cifras-ukulele-ccb',
+    path: '/cifras/ukulele',
     heading: 'Cifras de Ukulele CCB',
-    title: 'Cifras de Ukulele CCB | Hinos com Acordes para Ukulele',
-    description: 'Acesse cifras de hinos da CCB para ukulele, com links para acordes, tom e repertorio relacionado.',
+    title: 'Cifras de Ukulele CCB | 480 Hinos para Tocar',
+    description: 'Explore os 480 hinos da CCB organizados para ukulele. Encontre cifras, acordes e o repertório completo para estudo e ensaio.',
     intro: 'Hub dedicado a cifras de ukulele da CCB, pensado para buscas especificas por instrumento e navegacao rapida por repertorio.',
     keywords: 'cifras ukulele ccb, cifra ukulele hinos ccb, acordes ukulele ccb',
-    icon: Music2,
+    icon: GiBanjo,
     faq: [
       {
         question: 'Existem cifras de ukulele da CCB nesta plataforma?',
@@ -61,13 +63,13 @@ const HUBS: Record<InstrumentHub, InstrumentConfig> = {
     ],
   },
   teclado: {
-    path: '/cifras-teclado-ccb',
+    path: '/cifras/teclado',
     heading: 'Cifras de Teclado CCB',
-    title: 'Cifras de Teclado CCB | Hinos com Acordes para Teclado',
-    description: 'Explore cifras de hinos da CCB para teclado, com tom original, repertorio relacionado e links para cada cifra.',
+    title: 'Cifras de Teclado CCB | 480 Hinos para Tocar',
+    description: 'Explore os 480 hinos da CCB organizados para teclado. Encontre cifras, acordes e o repertório completo para estudo e ensaio.',
     intro: 'Pagina focada em cifras de teclado da CCB para atender buscas especificas por instrumento e reforcar a navegacao por repertorio musical.',
     keywords: 'cifras teclado ccb, cifra teclado hinos ccb, acordes teclado ccb',
-    icon: Disc,
+    icon: GiPianoKeys,
     faq: [
       {
         question: 'Onde encontrar cifras de teclado da CCB?',
@@ -85,11 +87,31 @@ interface CifraInstrumentHubPageProps {
   instrument: InstrumentHub;
 }
 
+const getHymnNumber = (title: string) => {
+  const match = title.match(/^Hino\s+(\d{1,3})\b/i);
+  return match ? Number(match[1]) : null;
+};
+
+const getHymnName = (title: string) => title.replace(/^Hino\s+\d{1,3}\s*-\s*/i, '');
+
+const normalizeSearch = (value: string) => value
+  .normalize('NFD')
+  .replace(/[\u0300-\u036f]/g, '')
+  .toLocaleLowerCase('pt-BR');
+
+const HERO_IMAGES: Record<InstrumentHub, string> = {
+  violao: '/images/cifras/hero-violao.png',
+  ukulele: '/images/cifras/hero-ukulele.png',
+  teclado: '/images/cifras/hero-teclado.png',
+};
+
 const CifraInstrumentHubPage: React.FC<CifraInstrumentHubPageProps> = ({ instrument }) => {
   const config = HUBS[instrument];
   const Icon = config.icon;
   const [items, setItems] = useState<DisplayCifra[]>([]);
+  const [hinarioCatalog, setHinarioCatalog] = useState<DisplayCifra[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState('');
 
   useEffect(() => {
     let cancelled = false;
@@ -99,11 +121,18 @@ const CifraInstrumentHubPage: React.FC<CifraInstrumentHubPageProps> = ({ instrum
         setIsLoading(true);
         const data = await fetchMergedPublicCifrasList();
         if (!cancelled) {
-          setItems(data.filter((item) => item.instrument === instrument));
+          setHinarioCatalog(data.filter((item) => item.instrument === 'violao' && item.category === 'hinario'));
+          setItems(data.filter((item) => (
+            item.instrument === instrument
+            && (instrument !== 'violao' || item.category === 'hinario')
+          )));
         }
       } catch (error) {
         console.error(`Erro ao carregar cifras de ${instrument}:`, error);
-        if (!cancelled) setItems([]);
+        if (!cancelled) {
+          setItems([]);
+          setHinarioCatalog([]);
+        }
       } finally {
         if (!cancelled) setIsLoading(false);
       }
@@ -127,14 +156,14 @@ const CifraInstrumentHubPage: React.FC<CifraInstrumentHubPageProps> = ({ instrum
       url: config.path,
       items: items.slice(0, 80).map((item, index) => ({
         name: item.title,
-        url: `/cifra/${item.slug}`,
+        url: buildCifraUrl(item.instrument, item.slug),
         position: index + 1,
       })),
     }),
     generateFAQSchema(config.faq),
     ...items.slice(0, 20).map((item) => generateCifraSchema({
       name: item.title,
-      url: `/cifra/${item.slug}`,
+      url: buildCifraUrl(item.instrument, item.slug),
       artist: item.artist,
       description: item.content?.slice(0, 180),
       image: item.cover_url || undefined,
@@ -142,6 +171,163 @@ const CifraInstrumentHubPage: React.FC<CifraInstrumentHubPageProps> = ({ instrum
       instrument: instrument,
     })),
   ]), [config, instrument, items]);
+
+  const orderedItems = useMemo(() => [...items].sort((first, second) => {
+    const firstNumber = getHymnNumber(first.title) ?? Number.MAX_SAFE_INTEGER;
+    const secondNumber = getHymnNumber(second.title) ?? Number.MAX_SAFE_INTEGER;
+    return firstNumber - secondNumber || first.title.localeCompare(second.title, 'pt-BR');
+  }), [items]);
+
+  const orderedCatalog = useMemo(() => [...hinarioCatalog].sort((first, second) => {
+    const firstNumber = getHymnNumber(first.title) ?? Number.MAX_SAFE_INTEGER;
+    const secondNumber = getHymnNumber(second.title) ?? Number.MAX_SAFE_INTEGER;
+    return firstNumber - secondNumber || first.title.localeCompare(second.title, 'pt-BR');
+  }), [hinarioCatalog]);
+
+  const displayItems = instrument === 'violao' ? orderedItems : orderedCatalog;
+  const RowIcon = instrument === 'violao' ? GiGuitar : Icon;
+  const searchResults = useMemo(() => {
+    const term = searchTerm.trim();
+    if (!term) return [];
+
+    const requestedNumber = term.match(/^0*(\d{1,3})$/)?.[1];
+    if (requestedNumber) {
+      return displayItems.filter((item) => getHymnNumber(item.title) === Number(requestedNumber)).slice(0, 1);
+    }
+
+    const normalizedTerm = normalizeSearch(term);
+    return displayItems.filter((item) => normalizeSearch(item.title).includes(normalizedTerm)).slice(0, 8);
+  }, [displayItems, searchTerm]);
+
+  if (['violao', 'ukulele', 'teclado'].includes(instrument)) {
+    return (
+      <div className="min-h-screen bg-background-primary">
+        <SEOHead
+          title={config.title}
+          description={config.description}
+          keywords={config.keywords}
+          canonical={config.path}
+          schemaData={schemaData}
+          noindex={!isLoading && items.length === 0}
+        />
+
+        <section className="relative isolate min-h-[300px] overflow-hidden border-b border-white/10 sm:min-h-[360px]">
+          <img
+            src={HERO_IMAGES[instrument]}
+            alt={`Mãos tocando ${instrument === 'teclado' ? 'teclado' : `acordes em um ${instrument}`}`}
+            className="absolute inset-0 -z-20 h-full w-full object-cover object-[64%_center]"
+          />
+          <div className="absolute inset-0 -z-10 bg-gradient-to-r from-background-primary via-background-primary/85 to-background-primary/20" />
+          <div className="absolute inset-0 -z-10 bg-gradient-to-t from-background-primary/60 to-transparent" />
+
+          <div className="mx-auto flex min-h-[300px] max-w-6xl flex-col justify-center px-4 py-10 sm:min-h-[360px] sm:px-6">
+            <Link to="/cifras" className="mb-6 inline-flex w-fit items-center gap-2 text-white/80 transition-colors hover:text-primary-300">
+              <ArrowLeft className="h-4 w-4" />
+              Voltar para cifras
+            </Link>
+            <div className="max-w-xl">
+              <h1 className="text-4xl font-bold leading-tight text-primary-500 sm:text-5xl">{config.heading}</h1>
+              <p className="mt-3 text-base text-white/85 sm:text-lg">Os 480 hinos do Hinário CCB para estudar e tocar no {instrument === 'teclado' ? 'teclado' : instrument}.</p>
+            </div>
+          </div>
+        </section>
+
+        <main className="mx-auto max-w-5xl px-4 py-10 sm:px-6 sm:py-14">
+          <div className="mb-6 flex flex-wrap items-end justify-between gap-3">
+            <div>
+              <h2 className="text-2xl font-semibold text-white">Hinário CCB para {instrument === 'violao' ? 'Violão' : instrument === 'ukulele' ? 'Ukulele' : 'Teclado'}</h2>
+              <p className="mt-1 text-text-muted">Selecione um hino para {instrument === 'violao' ? 'abrir a cifra' : 'acompanhar as cifras deste instrumento'}.</p>
+            </div>
+            {!isLoading && <span className="text-sm text-primary-300">{displayItems.length} hinos</span>}
+          </div>
+
+          <section className="mb-6 overflow-hidden rounded-2xl border border-gray-700/80 bg-gray-800/75 shadow-lg shadow-black/20">
+            <div className="flex items-center gap-3 px-4 py-3">
+              <Search className="h-5 w-5 shrink-0 text-primary-400" />
+              <div className="min-w-0 flex-1">
+                <label htmlFor={`hymn-search-${instrument}`} className="sr-only">Buscar hino</label>
+                <input
+                  id={`hymn-search-${instrument}`}
+                  type="search"
+                  value={searchTerm}
+                  onChange={(event) => setSearchTerm(event.target.value)}
+                  placeholder="Digite o número ou nome do hino"
+                  className="w-full bg-transparent text-sm text-white outline-none placeholder:text-gray-500"
+                />
+              </div>
+            </div>
+            {searchTerm.trim() ? (
+              <div className="border-t border-gray-700/80">
+                {searchResults.length > 0 ? searchResults.map((item) => {
+                  const number = getHymnNumber(item.title);
+                  const publishedItem = items.find((published) => getHymnNumber(published.title) === number);
+                  const hasPublishedVersion = Boolean(publishedItem);
+                  const href = buildCifraUrl(instrument, publishedItem?.slug || item.slug);
+                  const label = getHymnName(item.title);
+
+                  return hasPublishedVersion ? (
+                    <Link key={item.id} to={href} className="flex items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-white/[0.05]" onClick={() => setSearchTerm('')}>
+                      <span className="w-10 font-mono text-sm text-primary-300">{String(number).padStart(2, '0')}</span>
+                      <span className="min-w-0 flex-1 truncate font-medium text-white">{label}</span>
+                      <RowIcon className="h-5 w-5 shrink-0 text-primary-300" />
+                    </Link>
+                  ) : (
+                    <div key={item.id} className="flex items-center gap-3 px-4 py-3 text-left">
+                      <span className="w-10 font-mono text-sm text-primary-300">{String(number).padStart(2, '0')}</span>
+                      <span className="min-w-0 flex-1 truncate font-medium text-white/70">{label}</span>
+                      <span className="text-xs text-gray-500">Em preparação</span>
+                    </div>
+                  );
+                }) : <p className="px-4 py-3 text-sm text-gray-400">Nenhum hino encontrado.</p>}
+              </div>
+            ) : null}
+          </section>
+
+          {isLoading ? (
+            <div className="overflow-hidden rounded-2xl border border-white/10 bg-background-secondary">
+              {Array.from({ length: 12 }).map((_, index) => <div key={index} className="h-[68px] border-b border-white/10 bg-white/[0.03] animate-pulse last:border-b-0" />)}
+            </div>
+          ) : displayItems.length === 0 ? (
+            <div className="rounded-2xl border border-white/10 bg-background-secondary p-6 text-text-muted">Ainda não foi possível carregar a lista do Hinário.</div>
+          ) : (
+            <div className="overflow-hidden rounded-2xl border border-white/10 bg-background-secondary">
+              {displayItems.map((item, index) => {
+                const number = getHymnNumber(item.title);
+                const name = getHymnName(item.title);
+                const publishedItem = items.find((published) => getHymnNumber(published.title) === number);
+                const hasPublishedVersion = Boolean(publishedItem);
+                const href = buildCifraUrl(instrument, publishedItem?.slug || item.slug);
+
+                return (
+                  <article key={item.id} className="group flex min-h-[68px] items-center border-b border-white/10 last:border-b-0 hover:bg-white/[0.04]">
+                    <span className="w-16 shrink-0 px-4 text-right font-mono text-sm text-primary-300 sm:w-20 sm:px-5">
+                      {String(number ?? index + 1).padStart(2, '0')}
+                    </span>
+                    {hasPublishedVersion ? (
+                      <Link to={href} className="min-w-0 flex-1 py-4 pr-4 text-base font-medium text-white transition-colors hover:text-primary-300 sm:text-lg">
+                        {name === item.title && number !== null ? `Hino ${number}` : name}
+                      </Link>
+                    ) : (
+                      <span className="min-w-0 flex-1 py-4 pr-4 text-base font-medium text-white/80 sm:text-lg">{name === item.title && number !== null ? `Hino ${number}` : name}</span>
+                    )}
+                    {hasPublishedVersion ? (
+                      <Link to={href} aria-label={`Abrir cifra de ${instrument}: ${item.title}`} title={`Abrir cifra de ${instrument}`} className="mr-3 inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-white/65 transition-colors group-hover:bg-primary-500/15 group-hover:text-primary-300 sm:mr-4">
+                        <RowIcon className="h-5 w-5" />
+                      </Link>
+                    ) : (
+                      <span title="Cifra em preparação" className="mr-3 inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-white/30 sm:mr-4">
+                        <RowIcon className="h-5 w-5" />
+                      </span>
+                    )}
+                  </article>
+                );
+              })}
+            </div>
+          )}
+        </main>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background-primary">
@@ -205,7 +391,7 @@ const CifraInstrumentHubPage: React.FC<CifraInstrumentHubPageProps> = ({ instrum
                     <div className="flex items-center justify-between gap-3">
                       <div className="min-w-0">
                         <h3 className="text-white font-semibold">
-                          <Link to={`/cifra/${item.slug}`} className="hover:text-primary-400 transition-colors">
+                          <Link to={buildCifraUrl(item.instrument, item.slug)} className="hover:text-primary-400 transition-colors">
                             {item.title}
                           </Link>
                         </h3>
@@ -214,7 +400,7 @@ const CifraInstrumentHubPage: React.FC<CifraInstrumentHubPageProps> = ({ instrum
                         </p>
                       </div>
                       <Link
-                        to={`/cifra/${item.slug}`}
+                        to={buildCifraUrl(item.instrument, item.slug)}
                         className="inline-flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full border border-white/10 bg-white/5 text-white/70 transition-colors hover:border-primary-500/40 hover:bg-primary-500/15 hover:text-primary-300"
                         aria-label={`Ver cifra ${item.title}`}
                         title="Ver cifra"

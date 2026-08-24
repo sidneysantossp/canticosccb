@@ -4,6 +4,7 @@ import { Music, Eye, AlertCircle } from 'lucide-react';
 import { Cifra, INSTRUMENTS } from '@/api/cifras';
 import { fetchMergedPublicCifrasListDetailed, type PublicCifraPageData } from '@/lib/cifras-v2';
 import { CIFRA_V2_INSTRUMENTS } from '@/types/cifras-v2';
+import { buildCifraUrl } from '@/utils/cifraUrl';
 
 type DisplayCifra = Cifra | PublicCifraPageData;
 
@@ -108,7 +109,7 @@ const CifrasHomeSection: React.FC = () => {
         {cifras.slice(0, maxCards).map(cifra => (
           <Link
             key={cifra.id}
-            to={`/cifra/${cifra.slug}`}
+            to={buildCifraUrl(cifra.instrument, cifra.slug)}
             className="group flex items-center gap-3 bg-gray-800/40 hover:bg-gray-800/70 border border-gray-700/40 hover:border-gray-600 rounded-xl px-3 py-3 transition-all"
           >
             {cifra.cover_url ? (

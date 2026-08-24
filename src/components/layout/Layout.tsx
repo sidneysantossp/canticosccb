@@ -74,7 +74,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
     .some(route => location.pathname.startsWith(route));
   
   const isAuthPage = ['/login', '/register', '/onboarding', '/composer/onboarding'].includes(location.pathname);
-  const isImmersiveCifraPage = location.pathname.startsWith('/cifra/');
+  const isImmersiveCifraPage = location.pathname.startsWith('/cifra/') || /^\/cifras\/(violao|ukulele|teclado)\/[^/]+/.test(location.pathname);
   
   // Área pública = home, search, library, etc (usa sidebar apropriada ao tipo de usuário)
   const isPublicArea = !isAdminPanel && !isComposerPanel && !isUserDashboard && !isAuthPage && !isImmersiveCifraPage;

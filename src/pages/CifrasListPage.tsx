@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { FileText, AlertCircle, RefreshCw } from 'lucide-react';
 import { GiGuitar, GiBanjo, GiPianoKeys } from 'react-icons/gi';
@@ -29,6 +29,12 @@ function normalizeHymnTitle(value: string): string {
 }
 
 function resolveHinario5Number(title: string, numbers: Record<string, number>): number | null {
+  const numberedTitle = title.match(/^\s*hino\s*(\d{1,3})\b/i);
+  if (numberedTitle) {
+    const number = Number(numberedTitle[1]);
+    if (number >= 1 && number <= 480) return number;
+  }
+
   const normalizedTitle = normalizeHymnTitle(title);
   if (!normalizedTitle) return null;
   if (numbers[normalizedTitle]) return numbers[normalizedTitle];
@@ -70,6 +76,10 @@ type CifraCardGroup = {
   versions: Partial<Record<'violao' | 'ukulele' | 'teclado', DisplayCifra>>;
 };
 
+type CifraTab = 'avulsos' | 'hinario';
+
+const PAGE_SIZE = 200;
+
 const CifrasListPage: React.FC = () => {
   const [cifras, setCifras] = useState<DisplayCifra[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -77,6 +87,11 @@ const CifrasListPage: React.FC = () => {
   const [loadWarning, setLoadWarning] = useState<string | null>(null);
   const [heroBanners, setHeroBanners] = useState<HomeBanner[]>([]);
   const [hinario5Numbers, setHinario5Numbers] = useState<Record<string, number>>({});
+  const [activeTab, setActiveTab] = useState<CifraTab>('avulsos');
+  const [visibleCounts, setVisibleCounts] = useState<Record<CifraTab, number>>({
+    avulsos: PAGE_SIZE,
+    hinario: PAGE_SIZE,
+  });
 
   useEffect(() => {
     loadCifras();
@@ -114,7 +129,7 @@ const CifrasListPage: React.FC = () => {
     }
   };
 
-  const grouped = Array.from(
+  const grouped = useMemo(() => Array.from(
     cifras.reduce((map, cifra) => {
       const groupKey = cifra.hino_id || `${cifra.title}::${cifra.artist}`;
       const current = map.get(groupKey) || {
@@ -132,7 +147,23 @@ const CifrasListPage: React.FC = () => {
       map.set(groupKey, current);
       return map;
     }, new Map<string, CifraCardGroup>()).values()
-  );
+  ), [cifras, hinario5Numbers]);
+
+  const groupedByTab = useMemo(() => ({
+    avulsos: grouped.filter((group) => group.hinarioNumero == null),
+    hinario: grouped.filter((group) => group.hinarioNumero != null)
+      .sort((left, right) => (left.hinarioNumero ?? 0) - (right.hinarioNumero ?? 0)),
+  }), [grouped]);
+
+  const activeGroups = groupedByTab[activeTab];
+  const visibleGroups = activeGroups.slice(0, visibleCounts[activeTab]);
+
+  const loadMore = () => {
+    setVisibleCounts((current) => ({
+      ...current,
+      [activeTab]: current[activeTab] + PAGE_SIZE,
+    }));
+  };
 
   return (
     <>
@@ -203,43 +234,93 @@ const CifrasListPage: React.FC = () => {
           </p>
         </div>
       ) : (
-        <div className="flex flex-col gap-1">
-          {grouped.map(group => (
-            <article
-              key={group.key}
-              className="group flex min-h-[56px] items-center gap-2 rounded-lg border border-gray-700/50 bg-gray-800/40 px-2.5 py-1.5 transition-colors hover:border-gray-600 hover:bg-gray-800/70 sm:min-h-[60px] sm:px-3 sm:py-2"
-            >
-              <div className="min-w-0 flex-1">
-                <h3 className="line-clamp-1 text-sm font-semibold leading-5 text-white transition-colors group-hover:text-primary-400 sm:text-base">
-                  {group.title}
-                </h3>
-                <span className="mt-0.5 inline-flex items-center rounded-full border border-emerald-400/30 bg-emerald-500/15 px-1.5 py-0.5 text-[9px] font-semibold leading-3 text-emerald-300 sm:text-[10px]">
-                  {group.hinarioNumero ? `Hino ${group.hinarioNumero}` : 'Hino avulso'}
-                </span>
-                {group.artist && (
-                  <p className="mt-0.5 line-clamp-1 text-[10px] leading-3 text-gray-400 sm:text-[11px]">{group.artist}</p>
-                )}
+        <section aria-label="Catálogo de cifras">
+          <div className="mb-3 flex gap-1 rounded-lg border border-gray-700/70 bg-gray-900/50 p-1" role="tablist" aria-label="Tipo de hino">
+            {([
+              { value: 'avulsos', label: 'Hinos Avulsos' },
+              { value: 'hinario', label: 'Hinos do Hinário' },
+            ] as Array<{ value: CifraTab; label: string }>).map((tab) => (
+              <button
+                key={tab.value}
+                type="button"
+                role="tab"
+                aria-selected={activeTab === tab.value}
+                onClick={() => setActiveTab(tab.value)}
+                className={`flex-1 rounded-md px-3 py-2 text-sm font-semibold transition-colors ${
+                  activeTab === tab.value
+                    ? 'bg-primary-500 text-white shadow-sm'
+                    : 'text-gray-400 hover:bg-gray-800 hover:text-gray-100'
+                }`}
+              >
+                {tab.label} <span className="text-xs font-medium opacity-80">({groupedByTab[tab.value].length})</span>
+              </button>
+            ))}
+          </div>
+
+          {activeGroups.length === 0 ? (
+            <div className="rounded-lg border border-gray-700/50 bg-gray-800/40 px-4 py-10 text-center text-sm text-gray-400">
+              Ainda não há cifras nesta aba.
+            </div>
+          ) : (
+            <>
+              <div className="flex flex-col gap-1" role="tabpanel">
+                {visibleGroups.map((group) => (
+                  <article
+                    key={group.key}
+                    className="group flex min-h-[44px] items-center gap-2 rounded-md border border-gray-700/50 bg-gray-800/40 px-2 py-1 transition-colors hover:border-gray-600 hover:bg-gray-800/70 sm:min-h-[48px] sm:px-2.5"
+                  >
+                    <span className="w-7 shrink-0 text-right font-mono text-[10px] font-semibold text-primary-300 sm:w-8 sm:text-xs">
+                      {group.hinarioNumero ? String(group.hinarioNumero).padStart(2, '0') : '—'}
+                    </span>
+                    <h3 className="min-w-0 flex-1 truncate text-sm font-semibold leading-5 text-white transition-colors group-hover:text-primary-400">
+                      {group.title}
+                    </h3>
+                    <div className="flex shrink-0 items-center gap-1" aria-label={`Cifras de ${group.title}`}>
+                      {INSTRUMENT_SHORTCUTS.map(({ value, label, Icon }) => {
+                        const version = group.versions[value];
+                        const icon = <Icon className="h-4 w-4" aria-hidden="true" />;
+
+                        return version ? (
+                          <Link
+                            key={`${group.key}-${value}`}
+                            to={`/cifra/${version.slug}`}
+                            aria-label={`${label}: ${group.title}`}
+                            title={`${label}: ${group.title}`}
+                            className="flex h-7 w-7 items-center justify-center rounded-md border border-gray-700/70 text-gray-300 transition-colors hover:border-primary-400 hover:bg-primary-500/15 hover:text-primary-300"
+                          >
+                            {icon}
+                          </Link>
+                        ) : (
+                          <span
+                            key={`${group.key}-${value}`}
+                            role="img"
+                            aria-label={`${label}: ainda não disponível para ${group.title}`}
+                            title={`${label}: em breve`}
+                            className="flex h-7 w-7 cursor-not-allowed items-center justify-center rounded-md border border-gray-800 bg-gray-900/40 text-gray-600"
+                          >
+                            {icon}
+                          </span>
+                        );
+                      })}
+                    </div>
+                  </article>
+                ))}
               </div>
-              <div className="flex shrink-0 items-center gap-0.5" aria-label={`Cifras de ${group.title}`}>
-                {INSTRUMENT_SHORTCUTS.map(({ value, label, Icon }) => {
-                  const version = group.versions[value];
-                  if (!version) return null;
-                  return (
-                    <Link
-                      key={`${group.key}-${value}`}
-                      to={`/cifra/${version.slug}`}
-                      aria-label={`${label}: ${group.title}`}
-                      title={`${label}: ${group.title}`}
-                      className="flex h-8 w-8 items-center justify-center rounded-md border border-gray-700/70 text-gray-300 transition-colors hover:border-primary-400 hover:bg-primary-500/15 hover:text-primary-300 sm:h-8 sm:w-8"
-                    >
-                      <Icon className="h-[18px] w-[18px] sm:h-5 sm:w-5" aria-hidden="true" />
-                    </Link>
-                  );
-                })}
-              </div>
-            </article>
-          ))}
-        </div>
+
+              {visibleGroups.length < activeGroups.length && (
+                <div className="mt-4 flex justify-center">
+                  <button
+                    type="button"
+                    onClick={loadMore}
+                    className="rounded-lg border border-primary-500/50 bg-primary-500/10 px-4 py-2 text-sm font-semibold text-primary-200 transition-colors hover:bg-primary-500/20 hover:text-white"
+                  >
+                    Carregar mais ({Math.min(PAGE_SIZE, activeGroups.length - visibleGroups.length)})
+                  </button>
+                </div>
+              )}
+            </>
+          )}
+        </section>
       )}
     </div>
     </>

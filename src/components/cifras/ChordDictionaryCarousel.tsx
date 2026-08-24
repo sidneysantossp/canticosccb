@@ -1,6 +1,6 @@
-import React, { useMemo, useRef, useState } from 'react';
-import { Play, X } from 'lucide-react';
-import { getChordDiagram, parseChord, type ChordDiagram } from '@/utils/chordUtils';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { ChevronLeft, ChevronRight, Play, X } from 'lucide-react';
+import { getChordDiagramForInstrument, parseChord, type ChordDiagram } from '@/utils/chordUtils';
 import {
   explainCifraChordNameMatch,
   resolveCifraVersionChordOverride,
@@ -9,7 +9,8 @@ import type { CifraChordShape, CifraVersionChordOverride } from '@/types/cifras-
 
 type VisibleChordCard =
   | { chord: string; kind: 'database'; shapes: CifraChordShape[]; selectedShape: CifraChordShape; editorialOverride: CifraVersionChordOverride | null }
-  | { chord: string; kind: 'fallback'; diagram: ChordDiagram };
+  | { chord: string; kind: 'fallback'; diagram: ChordDiagram }
+  | { chord: string; kind: 'keyboard' };
 
 interface ChordDictionaryCarouselProps {
   chords: string[];
@@ -24,6 +25,7 @@ interface ChordDictionaryCarouselProps {
   onSelectShape: (chord: string, shapeId: string) => void;
   limit?: number;
   className?: string;
+  bare?: boolean;
 }
 
 interface ChordDiagramSVGProps {
@@ -38,7 +40,7 @@ function mirrorStringValues<T>(values: T[], stringCount: number, enabled?: boole
 
 const ChordDiagramSVG: React.FC<ChordDiagramSVGProps> = ({ diagram, leftHanded = false }) => {
   const { name, baseFret, barres } = diagram;
-  const numStrings = 6;
+  const numStrings = diagram.stringCount || 6;
   const numFrets = 5;
   const stringSpacing = 13;
   const fretSpacing = 14;
@@ -161,6 +163,37 @@ const ChordDiagramSVG: React.FC<ChordDiagramSVGProps> = ({ diagram, leftHanded =
           }
           return null;
         })}
+      </svg>
+    </div>
+  );
+};
+
+const KeyboardChordDiagram: React.FC<{ chord: string }> = ({ chord }) => {
+  const parsed = parseChord(chord);
+  const roots: Record<string, number> = { C: 0, 'C#': 1, Db: 1, D: 2, 'D#': 3, Eb: 3, E: 4, F: 5, 'F#': 6, Gb: 6, G: 7, 'G#': 8, Ab: 8, A: 9, 'A#': 10, Bb: 10, B: 11 };
+  const root = parsed ? roots[parsed.root] ?? 0 : 0;
+  const isMinor = parsed?.suffix.toLowerCase().startsWith('m') ?? false;
+  const isSeventh = parsed?.suffix.includes('7') ?? false;
+  const active = new Set([root, (root + (isMinor ? 3 : 4)) % 12, (root + 7) % 12, ...(isSeventh ? [(root + 10) % 12] : [])]);
+  const whiteNotes = [0, 2, 4, 5, 7, 9, 11];
+  const blackNotes = [{ note: 1, x: 15 }, { note: 3, x: 31 }, { note: 6, x: 62 }, { note: 8, x: 78 }, { note: 10, x: 94 }];
+
+  return (
+    <div className="inline-flex flex-col items-center">
+      <span className="mb-1 text-[13px] font-bold tracking-wide text-primary-300">{chord}</span>
+      <svg width="112" height="50" viewBox="0 0 112 50" className="h-auto max-w-full">
+        {whiteNotes.map((note, index) => (
+          <g key={note}>
+            <rect x={index * 16} y="4" width="15" height="42" fill="none" stroke="#6B7280" strokeWidth="1" />
+            {active.has(note) ? <circle cx={index * 16 + 7.5} cy="37" r="3.5" fill="#10B981" /> : null}
+          </g>
+        ))}
+        {blackNotes.map(({ note, x }) => (
+          <g key={note}>
+            <rect x={x} y="4" width="10" height="25" rx="1" fill="#9CA3AF" />
+            {active.has(note) ? <circle cx={x + 5} cy="23" r="3" fill="#10B981" /> : null}
+          </g>
+        ))}
       </svg>
     </div>
   );
@@ -499,8 +532,10 @@ const ChordPopup: React.FC<ChordPopupProps> = ({ item, onClose }) => {
         <div className="relative mx-auto flex min-h-[92px] items-center justify-center overflow-hidden rounded-xl border border-white/10 bg-black/15 py-0.5">
           {item.kind === 'database' ? (
             databaseDiagram ? <FretboardShapeSVG diagram={databaseDiagram} /> : <span className="text-sm text-gray-400">Diagrama indisponível</span>
-          ) : (
+          ) : item.kind === 'fallback' ? (
             <ChordDiagramSVG diagram={item.diagram} />
+          ) : (
+            <span className="text-sm text-gray-400">Diagrama indisponível</span>
           )}
           <button
             type="button"
@@ -522,7 +557,6 @@ interface DatabaseChordShapeCardProps {
   selectedShapeId: string;
   onSelectShape: (chord: string, shapeId: string) => void;
   onOpen: () => void;
-  onMouseEnter?: () => void;
   leftHanded?: boolean;
   editorialOverride?: CifraVersionChordOverride | null;
   matchOptions: {
@@ -561,7 +595,6 @@ const DatabaseChordShapeCard: React.FC<DatabaseChordShapeCardProps> = ({
   selectedShapeId,
   onSelectShape,
   onOpen,
-  onMouseEnter,
   leftHanded = false,
   editorialOverride,
   matchOptions,
@@ -578,7 +611,6 @@ const DatabaseChordShapeCard: React.FC<DatabaseChordShapeCardProps> = ({
     <div
       className="group relative box-border w-[76px] flex-shrink-0 snap-start cursor-pointer rounded-lg border border-white/10 bg-[#171a1a] px-2 py-1.5 text-center shadow-lg shadow-black/10 transition-all hover:-translate-y-1 hover:border-primary-500/50 hover:bg-[#1c2020] sm:w-[76px] sm:min-w-0 sm:max-w-none sm:px-2 sm:py-1.5"
       onClick={onOpen}
-      onMouseEnter={onMouseEnter}
       onKeyDown={(event) => { if (event.key === 'Enter' || event.key === ' ') onOpen(); }}
       role="button"
       tabIndex={0}
@@ -664,8 +696,12 @@ const ChordDictionaryCarousel: React.FC<ChordDictionaryCarouselProps> = ({
   onSelectShape,
   limit = 12,
   className = '',
+  bare = false,
 }) => {
   const [activeChord, setActiveChord] = useState<VisibleChordCard | null>(null);
+  const [keyboardStart, setKeyboardStart] = useState(0);
+  const [keyboardPageSize, setKeyboardPageSize] = useState(3);
+  const keyboardRowRef = useRef<HTMLDivElement>(null);
 
   const visibleChordCards = useMemo<VisibleChordCard[]>(() => chords
     .slice(0, limit)
@@ -686,8 +722,12 @@ const ChordDictionaryCarousel: React.FC<ChordDictionaryCarouselProps> = ({
         };
       }
 
-      if (selectedInstrument === 'violao' || selectedInstrument === 'guitarra') {
-        const fallbackDiagram = getChordDiagram(chord);
+      if (selectedInstrument === 'teclado') {
+        return { chord, kind: 'keyboard' as const };
+      }
+
+      if (selectedInstrument === 'violao' || selectedInstrument === 'guitarra' || selectedInstrument === 'ukulele') {
+        const fallbackDiagram = getChordDiagramForInstrument(chord, selectedInstrument);
         if (fallbackDiagram) {
           return {
             chord,
@@ -709,22 +749,73 @@ const ChordDictionaryCarousel: React.FC<ChordDictionaryCarouselProps> = ({
       selectedShapeIds,
     ]);
 
+  const isCompactKeyboard = bare && selectedInstrument === 'teclado';
+  const hasKeyboardPagination = isCompactKeyboard && keyboardPageSize < visibleChordCards.length;
+
+  useEffect(() => {
+    if (!isCompactKeyboard || !keyboardRowRef.current) {
+      return;
+    }
+
+    const updateKeyboardPageSize = () => {
+      const width = keyboardRowRef.current?.clientWidth || 0;
+      if (width === 0) return;
+
+      const chordWidthWithGap = 118;
+      const fitsWithoutControls = Math.max(1, Math.floor((width + 6) / chordWidthWithGap));
+      const needsControls = fitsWithoutControls < visibleChordCards.length;
+      const controlsWidth = needsControls ? 144 : 0;
+      const availableWidth = Math.max(chordWidthWithGap, width - controlsWidth);
+      const count = Math.max(1, Math.floor((availableWidth + 6) / chordWidthWithGap));
+
+      setKeyboardPageSize(Math.min(visibleChordCards.length, count));
+    };
+
+    updateKeyboardPageSize();
+    const observer = new ResizeObserver(updateKeyboardPageSize);
+    observer.observe(keyboardRowRef.current);
+    return () => observer.disconnect();
+  }, [isCompactKeyboard, visibleChordCards.length]);
+
+  useEffect(() => {
+    setKeyboardStart((current) => Math.min(current, Math.max(0, visibleChordCards.length - keyboardPageSize)));
+  }, [keyboardPageSize, visibleChordCards.length]);
+
   if (visibleChordCards.length === 0) {
     return null;
   }
 
+  const displayedChordCards = isCompactKeyboard
+    ? visibleChordCards.slice(keyboardStart, keyboardStart + keyboardPageSize)
+    : visibleChordCards;
+  const canGoBack = keyboardStart > 0;
+  const canGoForward = keyboardStart + keyboardPageSize < visibleChordCards.length;
+
   return (
     <div className={`mb-7 -mx-1 print:hidden sm:mx-0 sm:mb-6 ${className}`}>
-      <div className="mb-3 hidden items-center justify-between gap-3 sm:flex">
+      {!bare ? <div className="mb-3 hidden items-center justify-between gap-3 sm:flex">
         <div>
           <h2 className="text-base font-semibold text-white">Dicionário de acordes</h2>
           <p className="text-xs text-gray-400">
             Visualização rápida dos acordes detectados para {instrumentLabel}.
           </p>
         </div>
-      </div>
-      <div className="flex snap-x snap-mandatory gap-1.5 overflow-x-auto scroll-px-6 px-6 pb-3 scrollbar-hide sm:scroll-px-0 sm:px-0">
-        {visibleChordCards.map((item) => (
+      </div> : null}
+      <div ref={keyboardRowRef} className={`flex items-center gap-2 ${isCompactKeyboard ? 'overflow-hidden' : ''}`}>
+        {hasKeyboardPagination ? (
+          <button
+            type="button"
+            onClick={() => setKeyboardStart((current) => Math.max(0, current - keyboardPageSize))}
+            disabled={!canGoBack}
+            aria-label="Ver acordes anteriores"
+            title="Ver acordes anteriores"
+            className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-white/10 text-gray-300 transition-colors hover:border-primary-500/50 hover:text-primary-300 disabled:cursor-not-allowed disabled:opacity-25"
+          >
+            <ChevronLeft className="h-4 w-4" />
+          </button>
+        ) : null}
+        <div className={`flex min-w-0 snap-x snap-mandatory gap-1.5 overflow-x-auto scrollbar-hide ${bare ? 'px-0 pb-0' : 'scroll-px-6 px-6 pb-3 sm:scroll-px-0 sm:px-0'} ${isCompactKeyboard && hasKeyboardPagination ? 'flex-none overflow-hidden' : 'flex-1'}`}>
+        {displayedChordCards.map((item) => (
           item.kind === 'database' ? (
             <DatabaseChordShapeCard
               key={`${item.chord}-${item.selectedShape.id}`}
@@ -733,7 +824,6 @@ const ChordDictionaryCarousel: React.FC<ChordDictionaryCarouselProps> = ({
               selectedShapeId={item.selectedShape.id}
               onSelectShape={onSelectShape}
               onOpen={() => setActiveChord(item)}
-              onMouseEnter={() => setActiveChord(item)}
               leftHanded={leftHanded}
               editorialOverride={item.editorialOverride}
               matchOptions={{
@@ -742,12 +832,17 @@ const ChordDictionaryCarousel: React.FC<ChordDictionaryCarouselProps> = ({
                 progression: chords,
               }}
             />
+          ) : item.kind === 'keyboard' ? (
+            <div key={item.chord} className={bare ? 'box-border w-[112px] flex-shrink-0 snap-start px-0 py-0 text-center sm:w-[112px]' : 'box-border w-[126px] flex-shrink-0 snap-start rounded-lg border border-white/10 bg-[#171a1a] px-2 py-1.5 text-center sm:w-[126px]'}>
+              <KeyboardChordDiagram chord={item.chord} />
+            </div>
           ) : (
             <div
               key={item.chord}
-              className="group relative box-border w-[76px] flex-shrink-0 snap-start cursor-pointer rounded-lg border border-white/10 bg-[#171a1a] px-2 py-1.5 text-center shadow-lg shadow-black/10 transition-all hover:-translate-y-1 hover:border-primary-500/50 hover:bg-[#1c2020] sm:w-[76px] sm:px-2 sm:py-1.5"
+              className={bare
+                ? 'group relative box-border w-[58px] flex-shrink-0 snap-start cursor-pointer px-0 py-0 text-center transition-transform hover:-translate-y-0.5 sm:w-[58px]'
+                : 'group relative box-border w-[76px] flex-shrink-0 snap-start cursor-pointer rounded-lg border border-white/10 bg-[#171a1a] px-2 py-1.5 text-center shadow-lg shadow-black/10 transition-all hover:-translate-y-1 hover:border-primary-500/50 hover:bg-[#1c2020] sm:w-[76px] sm:px-2 sm:py-1.5'}
               onClick={() => setActiveChord(item)}
-              onMouseEnter={() => setActiveChord(item)}
               onKeyDown={(event) => { if (event.key === 'Enter' || event.key === ' ') setActiveChord(item); }}
               role="button"
               tabIndex={0}
@@ -758,7 +853,27 @@ const ChordDictionaryCarousel: React.FC<ChordDictionaryCarouselProps> = ({
             </div>
           )
         ))}
+        </div>
+        {hasKeyboardPagination ? (
+          <>
+            <button
+              type="button"
+              onClick={() => setKeyboardStart((current) => Math.min(Math.max(0, visibleChordCards.length - keyboardPageSize), current + keyboardPageSize))}
+              disabled={!canGoForward}
+              aria-label="Ver próximos acordes"
+              title="Ver próximos acordes"
+              className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-primary-500/40 bg-primary-500/10 text-primary-300 transition-colors hover:bg-primary-500 hover:text-black disabled:cursor-not-allowed disabled:border-white/10 disabled:bg-transparent disabled:text-gray-500 disabled:opacity-35"
+            >
+              <ChevronRight className="h-4 w-4" />
+            </button>
+          </>
+        ) : null}
       </div>
+      {hasKeyboardPagination ? (
+        <p className="mt-1 text-center text-[11px] text-gray-500">
+          {keyboardStart + 1}–{Math.min(keyboardStart + keyboardPageSize, visibleChordCards.length)} de {visibleChordCards.length}
+        </p>
+      ) : null}
       {activeChord ? <ChordPopup item={activeChord} onClose={() => setActiveChord(null)} /> : null}
     </div>
   );

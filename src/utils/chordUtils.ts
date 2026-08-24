@@ -146,6 +146,39 @@ export function transposeCifraContent(content: string, semitones: number, target
   }).join('\n');
 }
 
+/**
+ * Reduces a chord chart to the four most approachable harmonic functions.
+ * It is a reading aid for beginners: the original chart is never changed.
+ */
+export function simplifyCifraContent(content: string, key: string): string {
+  const tonic = parseChord(key);
+  if (!tonic) return content;
+  const tonicIndex = noteIndex(tonic.root);
+  if (tonicIndex === -1) return content;
+  const isMinorKey = tonic.suffix.startsWith('m');
+
+  const simplifyChord = (chord: string) => {
+    const parsed = parseChord(chord.replace(/[()]/g, '').split('/')[0]);
+    if (!parsed) return chord;
+    const chordIndex = noteIndex(parsed.root);
+    if (chordIndex === -1) return chord;
+    const degree = (chordIndex - tonicIndex + 12) % 12;
+
+    const targetDegree = isMinorKey
+      ? ({ 0: 0, 2: 7, 3: 8, 5: 8, 7: 7, 8: 8, 10: 10 }[degree] ?? 7)
+      : ({ 0: 0, 2: 2, 4: 9, 5: 5, 7: 7, 9: 9, 11: 7 }[degree] ?? 0);
+    const root = transposeChord(tonic.root, targetDegree, key);
+    const minor = (isMinorKey && targetDegree === 0) || (!isMinorKey && targetDegree === 9);
+    const seventh = !isMinorKey && targetDegree === 2 && parsed.suffix.includes('7');
+    return `${root}${minor ? 'm' : seventh ? '7' : ''}`;
+  };
+
+  return content.split('\n').map((line) => {
+    if (!isChordLine(line)) return line;
+    return line.replace(/(?<![A-Za-z0-9#b])([A-G][#b]?(?:m|M|maj|min|dim|aug|sus|add)?[0-9]?(?:\/[A-G][#b]?)?)(?![A-Za-z0-9#b])/g, simplifyChord);
+  }).join('\n');
+}
+
 // =============================================
 // Chord Diagrams Data (Guitar/Violão)
 // =============================================
@@ -156,6 +189,7 @@ export interface ChordDiagram {
   barres: number[];    // barre positions
   baseFret: number;    // starting fret (1 = open position)
   fingers: number[];   // finger assignments (0 = not played)
+  stringCount?: number;
 }
 
 // Common guitar chord diagrams
@@ -195,20 +229,58 @@ export const GUITAR_CHORDS: Record<string, ChordDiagram> = {
   'B7':   { name: 'B7',   frets: [-1, 2, 1, 2, 0, 2], barres: [], baseFret: 1, fingers: [0, 2, 1, 3, 0, 4] },
 };
 
+// Standard ukulele tuning: G-C-E-A. These shapes are used when no editorial
+// shape has been registered in the database yet.
+export const UKULELE_CHORDS: Record<string, ChordDiagram> = {
+  C: { name: 'C', frets: [0, 0, 0, 3], barres: [], baseFret: 1, fingers: [0, 0, 0, 3], stringCount: 4 },
+  D: { name: 'D', frets: [2, 2, 2, 0], barres: [2], baseFret: 1, fingers: [1, 1, 1, 0], stringCount: 4 },
+  E: { name: 'E', frets: [1, 4, 0, 2], barres: [], baseFret: 1, fingers: [1, 4, 0, 2], stringCount: 4 },
+  F: { name: 'F', frets: [2, 0, 1, 0], barres: [], baseFret: 1, fingers: [2, 0, 1, 0], stringCount: 4 },
+  G: { name: 'G', frets: [0, 2, 3, 2], barres: [], baseFret: 1, fingers: [0, 1, 3, 2], stringCount: 4 },
+  A: { name: 'A', frets: [2, 1, 0, 0], barres: [], baseFret: 1, fingers: [2, 1, 0, 0], stringCount: 4 },
+  B: { name: 'B', frets: [4, 3, 2, 2], barres: [2], baseFret: 1, fingers: [3, 2, 1, 1], stringCount: 4 },
+  Am: { name: 'Am', frets: [2, 0, 0, 0], barres: [], baseFret: 1, fingers: [2, 0, 0, 0], stringCount: 4 },
+  Bm: { name: 'Bm', frets: [4, 2, 2, 2], barres: [2], baseFret: 1, fingers: [3, 1, 1, 1], stringCount: 4 },
+  Cm: { name: 'Cm', frets: [0, 3, 3, 3], barres: [3], baseFret: 1, fingers: [0, 1, 1, 1], stringCount: 4 },
+  Dm: { name: 'Dm', frets: [2, 2, 1, 0], barres: [], baseFret: 1, fingers: [2, 3, 1, 0], stringCount: 4 },
+  Em: { name: 'Em', frets: [0, 4, 3, 2], barres: [], baseFret: 1, fingers: [0, 3, 2, 1], stringCount: 4 },
+  Fm: { name: 'Fm', frets: [1, 0, 1, 3], barres: [], baseFret: 1, fingers: [1, 0, 2, 4], stringCount: 4 },
+  Gm: { name: 'Gm', frets: [0, 2, 3, 1], barres: [], baseFret: 1, fingers: [0, 2, 3, 1], stringCount: 4 },
+  'C#': { name: 'C#', frets: [1, 1, 1, 4], barres: [1], baseFret: 1, fingers: [1, 1, 1, 4], stringCount: 4 },
+  Db: { name: 'Db', frets: [1, 1, 1, 4], barres: [1], baseFret: 1, fingers: [1, 1, 1, 4], stringCount: 4 },
+  Eb: { name: 'Eb', frets: [3, 3, 3, 1], barres: [3], baseFret: 1, fingers: [2, 3, 4, 1], stringCount: 4 },
+  'F#': { name: 'F#', frets: [3, 1, 2, 1], barres: [], baseFret: 1, fingers: [3, 1, 2, 1], stringCount: 4 },
+  Gb: { name: 'Gb', frets: [3, 1, 2, 1], barres: [], baseFret: 1, fingers: [3, 1, 2, 1], stringCount: 4 },
+  Ab: { name: 'Ab', frets: [5, 3, 4, 3], barres: [], baseFret: 1, fingers: [3, 1, 2, 1], stringCount: 4 },
+  Bb: { name: 'Bb', frets: [3, 2, 1, 1], barres: [1], baseFret: 1, fingers: [3, 2, 1, 1], stringCount: 4 },
+  C7: { name: 'C7', frets: [0, 0, 0, 1], barres: [], baseFret: 1, fingers: [0, 0, 0, 1], stringCount: 4 },
+  D7: { name: 'D7', frets: [2, 2, 2, 3], barres: [2], baseFret: 1, fingers: [1, 1, 1, 2], stringCount: 4 },
+  E7: { name: 'E7', frets: [1, 2, 0, 2], barres: [], baseFret: 1, fingers: [1, 2, 0, 3], stringCount: 4 },
+  F7: { name: 'F7', frets: [2, 3, 1, 3], barres: [], baseFret: 1, fingers: [2, 3, 1, 4], stringCount: 4 },
+  G7: { name: 'G7', frets: [0, 2, 1, 2], barres: [], baseFret: 1, fingers: [0, 2, 1, 3], stringCount: 4 },
+  A7: { name: 'A7', frets: [0, 1, 0, 0], barres: [], baseFret: 1, fingers: [0, 1, 0, 0], stringCount: 4 },
+  B7: { name: 'B7', frets: [2, 3, 2, 2], barres: [2], baseFret: 1, fingers: [1, 2, 1, 1], stringCount: 4 },
+};
+
 /**
  * Get chord diagram for a chord name (attempts transposed lookup)
  */
 export function getChordDiagram(chordName: string): ChordDiagram | null {
+  return getChordDiagramForInstrument(chordName, 'violao');
+}
+
+export function getChordDiagramForInstrument(chordName: string, instrument: string): ChordDiagram | null {
+  const dictionary = instrument === 'ukulele' ? UKULELE_CHORDS : GUITAR_CHORDS;
   // Direct lookup
-  if (GUITAR_CHORDS[chordName]) {
-    return GUITAR_CHORDS[chordName];
+  if (dictionary[chordName]) {
+    return dictionary[chordName];
   }
 
   // Try without slash bass note
   if (chordName.includes('/')) {
     const base = chordName.split('/')[0];
-    if (GUITAR_CHORDS[base]) {
-      return { ...GUITAR_CHORDS[base], name: chordName };
+    if (dictionary[base]) {
+      return { ...dictionary[base], name: chordName };
     }
   }
 
@@ -216,12 +288,12 @@ export function getChordDiagram(chordName: string): ChordDiagram | null {
   const parsed = parseChord(chordName);
   if (parsed) {
     const simplified = parsed.root + (parsed.suffix.startsWith('m') ? 'm' : '');
-    if (GUITAR_CHORDS[simplified]) {
-      return { ...GUITAR_CHORDS[simplified], name: chordName };
+    if (dictionary[simplified]) {
+      return { ...dictionary[simplified], name: chordName };
     }
     // Just root
-    if (GUITAR_CHORDS[parsed.root]) {
-      return { ...GUITAR_CHORDS[parsed.root], name: chordName };
+    if (dictionary[parsed.root]) {
+      return { ...dictionary[parsed.root], name: chordName };
     }
   }
 

@@ -59,6 +59,7 @@ export const SubscriptionPage = lazyWithChunkRecovery(() => import('./Subscripti
 export const CreatePlaylistPage = lazyWithChunkRecovery(() => import('./CreatePlaylistPage'));
 export const CifraPage = lazyWithChunkRecovery(() => import('./CifraPage'));
 export const CifrasListPage = lazyWithChunkRecovery(() => import('./CifrasListPage'));
+export const CifrasLandingPage = lazyWithChunkRecovery(() => import('./CifrasLandingPage'));
 export const HinarioListPage = lazyWithChunkRecovery(() => import('./HinarioListPage'));
 export const HinarioTopicPage = lazyWithChunkRecovery(() => import('./HinarioTopicPage'));
 export const HinarioViewPage = lazyWithChunkRecovery(() => import('./HinarioViewPage'));

@@ -1,11 +1,13 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useParams, Link, useNavigate, useSearchParams } from 'react-router-dom';
-import { ArrowLeft, Minus, Plus, ScrollText, Settings2, Eye, Printer, Share2, Music, X, Heart, Flag, Gauge, Hand, Target, RefreshCw, Play, Pause, RotateCcw } from 'lucide-react';
+import { ArrowLeft, Minus, Plus, ScrollText, Settings2, Eye, Printer, Share2, Music, X, Heart, Flag, Gauge, Hand, Target, RefreshCw, Play, Pause, RotateCcw, PanelLeftClose, PanelLeftOpen, ListMusic, BookOpen, Library, ChevronRight, Columns, Type, Search } from 'lucide-react';
+import { GiGuitar } from 'react-icons/gi';
 import SEOHead from '@/components/SEO/SEOHead';
 import ChordDictionaryCarousel from '@/components/cifras/ChordDictionaryCarousel';
 import { generateCifraSchema, generateBreadcrumbSchema } from '@/utils/schemaGenerator';
-import { fetchCifraBySlug, incrementCifraViews, type Cifra, INSTRUMENTS, ALL_KEYS } from '@/api/cifras';
+import { fetchCifraByLegacyHinarioSlug, fetchCifraBySlug, fetchCifras, incrementCifraViews, type Cifra, INSTRUMENTS, ALL_KEYS } from '@/api/cifras';
 import { buildHinoUrl } from '@/utils/slugUrl';
+import { buildCifraUrl } from '@/utils/cifraUrl';
 import {
   addCifraFavorite,
   fetchCifraChordShapeVariants,
@@ -34,6 +36,7 @@ import {
   isSectionLine,
   extractChords,
   getSemitonesBetweenKeys,
+  simplifyCifraContent,
   transposeCifraContent,
 } from '@/utils/chordUtils';
 
@@ -317,7 +320,7 @@ function resolveDefaultStudySectionIndex(
 }
 
 const CifraPage: React.FC = () => {
-  const { slug } = useParams<{ slug: string }>();
+  const { slug, instrument: routeInstrument } = useParams<{ slug: string; instrument?: string }>();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { user } = useAuth();
@@ -355,9 +358,11 @@ const CifraPage: React.FC = () => {
   const [selectedInstrument, setSelectedInstrument] = useState('violao');
   const [fontSize, setFontSize] = useState(16);
   const [showChords, setShowChords] = useState(true);
+  const [useSimplifiedChords, setUseSimplifiedChords] = useState(true);
   const [autoScrollSpeed, setAutoScrollSpeed] = useState(0); // 0 = off
   const [showOptions, setShowOptions] = useState(false);
   const [showKeySelector, setShowKeySelector] = useState(false);
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [showLeftHandedDiagrams, setShowLeftHandedDiagrams] = useState(false);
   const [useTwoColumnLayout, setUseTwoColumnLayout] = useState(false);
   const [studyModeEnabled, setStudyModeEnabled] = useState(false);
@@ -366,6 +371,8 @@ const CifraPage: React.FC = () => {
   const [loopFocusedSection, setLoopFocusedSection] = useState(false);
   const [metronomeEnabled, setMetronomeEnabled] = useState(false);
   const [metronomeBpm, setMetronomeBpm] = useState(72);
+  const [sidebarSearchTerm, setSidebarSearchTerm] = useState('');
+  const [sidebarInstrumentCifras, setSidebarInstrumentCifras] = useState<Cifra[]>([]);
 
   const contentRef = useRef<HTMLDivElement>(null);
   const scrollIntervalRef = useRef<number | null>(null);
@@ -379,7 +386,13 @@ const CifraPage: React.FC = () => {
   useEffect(() => {
     if (slug) loadCifra(slug);
     return () => stopAutoScroll();
-  }, [slug]);
+  }, [slug, routeInstrument]);
+
+  useEffect(() => {
+    void fetchCifras({ instrument: selectedInstrument, category: 'hinario', is_active: true, limit: 520 })
+      .then(setSidebarInstrumentCifras)
+      .catch(() => setSidebarInstrumentCifras([]));
+  }, [selectedInstrument]);
 
   useEffect(() => {
     if (user?.email) {
@@ -697,6 +710,7 @@ const CifraPage: React.FC = () => {
 
     if (!ensureAudioContext()) {
       setMetronomeEnabled(false);
+      setUseSimplifiedChords(true);
       return;
     }
 
@@ -873,7 +887,7 @@ const CifraPage: React.FC = () => {
         return;
       }
 
-      const data = await fetchCifraBySlug(slug);
+      const data = await fetchCifraBySlug(slug, routeInstrument);
       if (data) {
         setCifra(data);
         setEngagement(null);
@@ -882,6 +896,11 @@ const CifraPage: React.FC = () => {
         setMetronomeBpm(72);
         incrementCifraViews(data.id);
       } else {
+        const redirectedCifra = await fetchCifraByLegacyHinarioSlug(slug);
+        if (redirectedCifra) {
+          navigate(buildCifraUrl(redirectedCifra.instrument, redirectedCifra.slug), { replace: true });
+          return;
+        }
         setEngagement(null);
         setError('Cifra não encontrada');
       }
@@ -1016,7 +1035,7 @@ const CifraPage: React.FC = () => {
     const matchingVersion = cifra.available_versions.find((version) => version.instrument === instrument);
 
     if (matchingVersion && matchingVersion.slug !== cifra.slug) {
-      navigate(`/cifra/${matchingVersion.slug}`);
+      navigate(buildCifraUrl(matchingVersion.instrument, matchingVersion.slug));
       return;
     }
 
@@ -1053,8 +1072,26 @@ const CifraPage: React.FC = () => {
 
   // Transposition
   const semitones = cifra ? getSemitonesBetweenKeys(cifra.original_key, selectedKey) : 0;
-  const transposedContent = cifra ? transposeCifraContent(cifra.content, semitones, selectedKey) : '';
+  const displayedContent = cifra && (selectedInstrument === 'violao' || selectedInstrument === 'ukulele') && useSimplifiedChords
+    ? simplifyCifraContent(cifra.content, cifra.original_key)
+    : cifra?.content || '';
+  const transposedContent = cifra ? transposeCifraContent(displayedContent, semitones, selectedKey) : '';
   const chords = extractChords(transposedContent);
+  const sidebarSearchResults = useMemo(() => {
+    const term = sidebarSearchTerm.trim();
+    if (!term) return [];
+    const number = term.match(/^0*(\d{1,3})$/)?.[1];
+    const normalize = (value: string) => value
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, ' ')
+      .trim();
+    if (number) {
+      return sidebarInstrumentCifras.filter((item) => new RegExp(`^Hino\\s+${Number(number)}\\b`, 'i').test(item.title)).slice(0, 1);
+    }
+    return sidebarInstrumentCifras.filter((item) => normalize(item.title).includes(normalize(term))).slice(0, 6);
+  }, [sidebarInstrumentCifras, sidebarSearchTerm]);
   const shouldRenderTwoColumns = supportsTwoColumnLayout && useTwoColumnLayout && !studyModeEnabled;
   const focusedSectionWindow = useMemo(() => {
     if (focusedSectionIndex === null || !effectiveRelatedDuration || structuredSectionItems.length === 0) {
@@ -1108,6 +1145,12 @@ const CifraPage: React.FC = () => {
   };
 
   const handlePrint = async () => {
+    if (!user) {
+      showToast('info', 'Cadastro necessário', 'Crie sua conta gratuita para imprimir a partitura.');
+      navigate(`/register?redirect=${encodeURIComponent(window.location.pathname + window.location.search)}`);
+      return;
+    }
+
     if (cifra && isCifraV2(cifra)) {
       try {
         await trackCifraUsageEvent(cifra.id, 'print', {
@@ -1275,22 +1318,11 @@ const CifraPage: React.FC = () => {
         }))
     : PUBLIC_INSTRUMENTS;
   const instrumentLabel = PUBLIC_INSTRUMENTS.find(i => i.value === cifra.instrument)?.label || cifra.instrument;
+  const seoInstrumentLabel = cifra.instrument === 'violao' ? 'Violão' : instrumentLabel;
   const editorialPreferredKey =
     isCifraV2(cifra) && cifra.preferred_key && cifra.preferred_key !== cifra.original_key
       ? cifra.preferred_key
       : null;
-  const studyFacts = isCifraV2(cifra)
-    ? [
-        { label: 'Instrumento', value: instrumentLabel },
-        { label: 'Tom principal', value: selectedKey },
-        ...(editorialPreferredKey ? [{ label: 'Tom editorial', value: editorialPreferredKey }] : []),
-        ...(cifra.tuning ? [{ label: 'Afinação', value: cifra.tuning }] : []),
-        ...(cifra.tempo_bpm ? [{ label: 'Andamento', value: `${cifra.tempo_bpm} BPM` }] : []),
-        ...(cifra.time_signature ? [{ label: 'Compasso', value: cifra.time_signature }] : []),
-        ...(cifra.difficulty_level ? [{ label: 'Dificuldade', value: cifra.difficulty_level }] : []),
-        ...(cifra.capo > 0 ? [{ label: 'Capotraste', value: `${cifra.capo}ª casa` }] : []),
-      ]
-    : [];
   const instrumentHubMap: Record<string, string> = {
     violao: '/cifras-violao-ccb',
     ukulele: '/cifras-ukulele-ccb',
@@ -1303,22 +1335,21 @@ const CifraPage: React.FC = () => {
     .replace(/^\s*(?:hino\s*)?\d+\s*(?:ccb)?\s*[-–—:.]\s*/i, '')
     .replace(/\s{2,}/g, ' ')
     .trim();
-  const headerCifraTitle = cifra.artist?.trim() && cifra.artist.trim().toLowerCase() !== displayCifraTitle.toLowerCase()
-    ? `${displayCifraTitle} (${cifra.artist.trim()})`
-    : displayCifraTitle;
+  // The artist/category remains available below the title; avoid repeating it
+  // in the visible hymn heading (for example, "(Hinário CCB)").
+  const headerCifraTitle = displayCifraTitle;
   const headerCifraCategory = getCifraCategoryLabel(cifra.category);
   const hinarioRange = getHinarioRangeForNumero(relatedNumber);
+  const isGenericHinarioTitle = relatedNumber !== null && new RegExp(`^hino\\s*${relatedNumber}\\s*$`, 'i').test(displayCifraTitle);
   const cifraTitle = relatedNumber
-    ? `CIFRA Hino ${relatedNumber} CCB - ${displayCifraTitle} - ${instrumentLabel} | Cânticos CCB`
-    : `CIFRA ${displayCifraTitle} - ${instrumentLabel} | Cânticos CCB`;
-  const cifraDescription = [
-    relatedNumber ? `Cifra Hino ${relatedNumber} CCB - ${displayCifraTitle} para ${instrumentLabel}.` : `Cifra CCB de ${displayCifraTitle} para ${instrumentLabel}.`,
-    cifra.artist ? `Artista: ${cifra.artist}.` : '',
-    `Tom: ${cifra.original_key}. Instrumento disponível: ${instrumentLabel}.`,
-    'Termos relacionados: cifras para Violão, Ukulele e Teclado, com acordes e transposição de tom quando publicados.',
-    relatedLyric ? `Letra disponível no Hinário ${relatedLyric.numero}.` : '',
-    relatedHymn ? 'Página de áudio relacionada disponível.' : '',
-  ].filter(Boolean).join(' ');
+    ? `Cifra Hino ${relatedNumber} CCB${isGenericHinarioTitle ? '' : ` - ${displayCifraTitle}`} para ${seoInstrumentLabel}. Aprenda a tocar!`
+    : `Cifra ${displayCifraTitle} para ${seoInstrumentLabel}. Aprenda a tocar!`;
+  const rawCifraDescription = relatedNumber
+    ? `Aprenda a tocar no ${seoInstrumentLabel.toLowerCase()} a cifra do Hino ${relatedNumber} CCB${isGenericHinarioTitle ? '' : `, ${displayCifraTitle}`}. Confira acordes, tom original, transposição e letra para estudar, ensaiar e tocar com segurança.`
+    : `Aprenda a tocar no ${seoInstrumentLabel.toLowerCase()} a cifra de ${displayCifraTitle}. Confira acordes, tom original, transposição e letra para estudar, ensaiar e tocar com segurança.`;
+  const cifraDescription = rawCifraDescription.length <= 180
+    ? rawCifraDescription
+    : `${rawCifraDescription.slice(0, 177).replace(/\s+\S*$/, '')}…`;
   const cifraKeywords = (isCifraV2(cifra) ? cifra.seo_keywords : null) || [
     cifra.title,
     cifra.artist,
@@ -1328,7 +1359,7 @@ const CifraPage: React.FC = () => {
     'cifras hinos ccb',
     instrumentLabel,
   ].filter(Boolean).join(', ');
-  const renderChordDictionaryCarousel = (className = '') => showChords ? (
+  const renderChordDiagrams = (className = '') => showChords ? (
     <ChordDictionaryCarousel
       chords={chords}
       chordShapeVariants={chordShapeVariants}
@@ -1336,26 +1367,26 @@ const CifraPage: React.FC = () => {
       selectedInstrument={selectedInstrument}
       selectedKey={selectedKey}
       originalKey={cifra.original_key}
-      instrumentLabel={PUBLIC_INSTRUMENTS.find((entry) => entry.value === selectedInstrument)?.label || selectedInstrument}
+      instrumentLabel={instrumentLabel}
       leftHanded={showLeftHandedDiagrams}
       chordOverrides={isCifraV2(cifra) ? cifra.chord_overrides : null}
       onSelectShape={handleShapeSelection}
       className={className}
+      bare
     />
   ) : null;
-
   return (
     <>
     <SEOHead
       title={cifraTitle}
       description={cifraDescription}
       keywords={cifraKeywords}
-      canonical={`/cifra/${slug}`}
+      canonical={buildCifraUrl(cifra.instrument, slug)}
       ogImage={cifra.cover_url}
       schemaData={[
         generateCifraSchema({
           name: displayCifraTitle,
-          url: `/cifra/${slug}`,
+          url: buildCifraUrl(cifra.instrument, slug),
           artist: cifra.artist,
           description: `Cifra e acordes de ${displayCifraTitle} - Tom: ${cifra.original_key}`,
           image: cifra.cover_url,
@@ -1367,7 +1398,7 @@ const CifraPage: React.FC = () => {
         generateBreadcrumbSchema([
           { name: 'Início', url: '/' },
           { name: 'Cifras', url: '/cifras' },
-          { name: displayCifraTitle, url: `/cifra/${slug}` },
+          { name: displayCifraTitle, url: buildCifraUrl(cifra.instrument, slug) },
         ]),
       ]}
     />
@@ -1402,7 +1433,11 @@ const CifraPage: React.FC = () => {
           </Link>
           <div className="min-w-0 flex-1">
             <h1 className="text-[28px] font-black leading-[1.02] tracking-[-0.04em] text-white">{headerCifraTitle}</h1>
-            <p className="mt-2 text-base font-bold text-primary-400">{headerCifraCategory}</p>
+            <nav aria-label="Breadcrumb" className="mt-2 flex items-center gap-1 text-sm">
+              <Link to="/cifras" className="text-primary-400 hover:text-primary-300">Cifras</Link>
+              <span className="text-gray-600">/</span>
+              <Link to={instrumentHubUrl} className="text-gray-300 hover:text-primary-300">{instrumentLabel}</Link>
+            </nav>
           </div>
           <button
             type="button"
@@ -1413,7 +1448,6 @@ const CifraPage: React.FC = () => {
             <Settings2 className="h-5 w-5" />
           </button>
         </div>
-        {renderChordDictionaryCarousel('mt-6 mb-5 sm:hidden')}
         <div className="mt-4 flex flex-wrap gap-2 pl-16">
           <button
             type="button"
@@ -1445,52 +1479,133 @@ const CifraPage: React.FC = () => {
         </div>
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-[240px,minmax(0,1fr)] lg:items-start">
+      <div className={`grid gap-6 lg:items-start ${isSidebarCollapsed ? 'lg:grid-cols-[60px,minmax(0,1fr)]' : 'lg:grid-cols-[240px,minmax(0,1fr)]'}`}>
       {/* Recursos e controlos */}
-      <div className="sticky top-16 z-40 hidden bg-background-primary/95 shadow-lg shadow-black/20 backdrop-blur-sm border-b border-gray-800 -mx-4 px-4 py-3 mb-6 sm:block lg:col-start-1 lg:row-start-1 lg:top-[88px] lg:mx-0 lg:mb-0 lg:rounded-2xl lg:border lg:p-4 print:hidden">
-        <div className="mb-4 space-y-2 border-b border-gray-800 pb-4 lg:space-y-2">
-          <p className="px-1 text-xs font-semibold uppercase tracking-[0.16em] text-gray-500">Recursos</p>
+      {!isSidebarCollapsed && (
+        <aside className="relative sticky top-[88px] z-40 col-start-1 row-start-1 hidden space-y-3 print:hidden lg:block">
+          <button type="button" onClick={() => setIsSidebarCollapsed(true)} title="Encolher barra lateral" aria-label="Encolher barra lateral" className="absolute -top-2 right-3 z-10 flex h-4 w-4 items-center justify-center rounded-md border border-gray-700 bg-[#080909] text-gray-400 transition-colors hover:border-primary-500/50 hover:text-white"><PanelLeftClose className="h-2 w-2" /></button>
+          <div className="flex items-center justify-between gap-2 px-1 pt-3">
+            <span className="text-xs font-semibold uppercase tracking-[0.18em] text-gray-500">Ferramentas</span>
+            <div className="flex items-center gap-1">
+              <button type="button" onClick={handlePrint} title="Imprimir" aria-label="Imprimir" className="flex h-8 w-8 items-center justify-center rounded-full bg-gray-800 text-gray-300 transition-colors hover:bg-gray-700 hover:text-white"><Printer className="h-4 w-4" /></button>
+              <button type="button" onClick={handleShare} title="Compartilhar" aria-label="Compartilhar" className="flex h-8 w-8 items-center justify-center rounded-full bg-gray-800 text-gray-300 transition-colors hover:bg-gray-700 hover:text-white"><Share2 className="h-4 w-4" /></button>
+            </div>
+          </div>
+
+          <section className="overflow-hidden rounded-2xl border border-gray-700/80 bg-gray-800/75 shadow-lg shadow-black/20">
+            <div className="flex items-center gap-2 px-3 py-2.5">
+              <Search className="h-4 w-4 shrink-0 text-primary-400" />
+              <label htmlFor="sidebar-hymn-search" className="sr-only">Buscar hino</label>
+              <input
+                id="sidebar-hymn-search"
+                type="search"
+                value={sidebarSearchTerm}
+                onChange={(event) => setSidebarSearchTerm(event.target.value)}
+                placeholder="Buscar hino"
+                className="min-w-0 flex-1 bg-transparent text-sm text-white outline-none placeholder:text-gray-500"
+              />
+            </div>
+            {sidebarSearchTerm.trim() ? (
+              <div className="max-h-56 overflow-y-auto border-t border-gray-700/80">
+                {sidebarSearchResults.length > 0 ? sidebarSearchResults.map((item) => {
+                  const number = item.title.match(/^Hino\s+(\d{1,3})\b/i)?.[1];
+                  const name = item.title.replace(/^Hino\s+\d{1,3}\s*-\s*/i, '');
+                  return <Link key={item.id} to={buildCifraUrl(item.instrument, item.slug)} onClick={() => setSidebarSearchTerm('')} className="flex items-center gap-2 px-3 py-2.5 text-sm transition-colors hover:bg-white/[0.05]"><span className="font-mono text-xs text-primary-300">{number?.padStart(2, '0')}</span><span className="min-w-0 flex-1 truncate text-white">{name}</span><ChevronRight className="h-4 w-4 text-gray-500" /></Link>;
+                }) : <p className="px-3 py-2.5 text-xs text-gray-400">Nenhum hino encontrado.</p>}
+              </div>
+            ) : null}
+          </section>
+
+          <div className="overflow-hidden rounded-2xl border border-gray-700/80 bg-gray-800/75 shadow-lg shadow-black/20">
+            <button type="button" onClick={() => setAutoScrollSpeed((current) => current === 0 ? 1 : 0)} className="flex w-full items-center gap-3 px-3 py-3 text-left text-sm text-gray-100 transition-colors hover:bg-gray-700/70">
+              <ScrollText className="h-4 w-4 text-gray-300" /><span className="flex-1 font-medium">Rolagem</span><span className="text-xs text-gray-400">{autoScrollSpeed > 0 ? `${autoScrollSpeed}x` : 'Desligada'}</span><ChevronRight className="h-4 w-4 text-gray-500" />
+            </button>
+            {supportsTwoColumnLayout ? <button type="button" onClick={() => setUseTwoColumnLayout((current) => !current)} className="flex w-full items-center gap-3 border-t border-gray-700/80 px-3 py-3 text-left text-sm text-gray-100 transition-colors hover:bg-gray-700/70"><Columns className="h-4 w-4 text-gray-300" /><span className="flex-1 font-medium">Dividir em colunas</span><span className="text-xs text-gray-400">{useTwoColumnLayout ? 'Ativo' : 'Desligado'}</span><ChevronRight className="h-4 w-4 text-gray-500" /></button> : null}
+          </div>
+
+          <div className="overflow-hidden rounded-2xl border border-gray-700/80 bg-gray-800/75 shadow-lg shadow-black/20">
+            <button type="button" onClick={() => setShowOptions(true)} className="flex w-full items-center gap-3 px-3 py-3 text-left text-sm text-gray-100 transition-colors hover:bg-gray-700/70"><GiGuitar className="h-4 w-4 text-gray-300" /><span className="flex-1 font-medium">Instrumento</span><span className="max-w-[90px] truncate text-xs text-gray-400">{instrumentLabel}</span><ChevronRight className="h-4 w-4 text-gray-500" /></button>
+            <div className="flex items-center gap-3 border-t border-gray-700/80 px-3 py-3 text-sm text-gray-100"><Music className="h-4 w-4 text-gray-300" /><span className="flex-1 font-medium">Tom</span><button type="button" onClick={transposeDown} aria-label="Diminuir tom" className="flex h-5 w-5 items-center justify-center rounded-full border border-gray-500 text-gray-300 hover:bg-gray-700"><Minus className="h-3 w-3" /></button><button type="button" onClick={() => setShowKeySelector(true)} className="font-semibold text-primary-300">{selectedKey}</button><button type="button" onClick={transposeUp} aria-label="Aumentar tom" className="flex h-5 w-5 items-center justify-center rounded-full border border-gray-500 text-gray-300 hover:bg-gray-700"><Plus className="h-3 w-3" /></button></div>
+            <div className="flex items-center gap-3 border-t border-gray-700/80 px-3 py-3 text-sm text-gray-100"><Target className="h-4 w-4 text-gray-300" /><span className="flex-1 font-medium">Capotraste</span><span className="text-xs text-gray-400">{cifra.capo > 0 ? `${cifra.capo}ª casa` : 'Sem capo'}</span></div>
+            <div className="flex items-center gap-3 border-t border-gray-700/80 px-3 py-3 text-sm text-gray-100"><Settings2 className="h-4 w-4 text-gray-300" /><span className="flex-1 font-medium">Afinação</span><span className="text-xs text-gray-400">{isCifraV2(cifra) && cifra.tuning ? cifra.tuning : 'Padrão'}</span></div>
+          </div>
+
+          <div className="overflow-hidden rounded-2xl border border-gray-700/80 bg-gray-800/75 shadow-lg shadow-black/20">
+            <button type="button" onClick={() => setShowChords((current) => !current)} className="flex w-full items-center gap-3 px-3 py-3 text-left text-sm text-gray-100 transition-colors hover:bg-gray-700/70"><Music className="h-4 w-4 text-gray-300" /><span className="flex-1 font-medium">Acordes</span><span className="text-xs text-gray-400">{showChords ? 'Mostrar' : 'Ocultar'}</span><ChevronRight className="h-4 w-4 text-gray-500" /></button>
+            {(selectedInstrument === 'violao' || selectedInstrument === 'ukulele') ? <button type="button" onClick={() => setUseSimplifiedChords((current) => !current)} className="flex w-full items-center gap-3 border-t border-gray-700/80 px-3 py-3 text-left text-sm text-gray-100 transition-colors hover:bg-gray-700/70"><Target className="h-4 w-4 text-gray-300" /><span className="flex-1 font-medium">Modo simplificado</span><span className="text-xs text-gray-400">{useSimplifiedChords ? 'Ativo' : 'Completo'}</span><ChevronRight className="h-4 w-4 text-gray-500" /></button> : null}
+            {selectedInstrument !== 'teclado' ? <button type="button" onClick={() => setShowLeftHandedDiagrams((current) => !current)} className="flex w-full items-center gap-3 border-t border-gray-700/80 px-3 py-3 text-left text-sm text-gray-100 transition-colors hover:bg-gray-700/70"><Hand className="h-4 w-4 text-gray-300" /><span className="flex-1 font-medium">Diagramas</span><span className="text-xs text-gray-400">{showLeftHandedDiagrams ? 'Canhoto' : 'Destro'}</span><ChevronRight className="h-4 w-4 text-gray-500" /></button> : null}
+            <div className="flex items-center gap-3 border-t border-gray-700/80 px-3 py-3 text-sm text-gray-100"><Type className="h-4 w-4 text-gray-300" /><span className="flex-1 font-medium">Texto</span><button type="button" onClick={() => setFontSize((current) => Math.max(10, current - 1))} aria-label="Diminuir fonte" className="text-gray-300 hover:text-white"><Minus className="h-4 w-4" /></button><span className="min-w-9 text-center text-xs text-gray-400">{fontSize}px</span><button type="button" onClick={() => setFontSize((current) => Math.min(24, current + 1))} aria-label="Aumentar fonte" className="text-gray-300 hover:text-white"><Plus className="h-4 w-4" /></button></div>
+          </div>
+
+          <div className="overflow-hidden rounded-2xl border border-gray-700/80 bg-gray-800/75 shadow-lg shadow-black/20">
+            <button type="button" onClick={() => setMetronomeEnabled((current) => !current)} className="flex w-full items-center gap-3 px-3 py-3 text-left text-sm text-gray-100 transition-colors hover:bg-gray-700/70"><Gauge className="h-4 w-4 text-gray-300" /><span className="flex-1 font-medium">Metrônomo</span><span className="text-xs text-gray-400">{metronomeEnabled ? `${metronomeBpm} BPM` : 'Desligado'}</span><ChevronRight className="h-4 w-4 text-gray-500" /></button>
+            <button type="button" onClick={() => setShowReportModal(true)} className="flex w-full items-center gap-3 border-t border-gray-700/80 px-3 py-3 text-left text-sm text-gray-100 transition-colors hover:bg-gray-700/70"><Flag className="h-4 w-4 text-gray-300" /><span className="flex-1 font-medium">Corrigir Cifra</span><ChevronRight className="h-4 w-4 text-gray-500" /></button>
+          </div>
+        </aside>
+      )}
+      <div className={`sticky top-16 z-40 hidden bg-background-primary/95 shadow-lg shadow-black/20 backdrop-blur-sm border-b border-gray-800 -mx-4 px-4 py-3 mb-6 sm:block lg:col-start-1 lg:row-start-1 lg:top-[88px] lg:mx-0 lg:mb-0 lg:rounded-2xl lg:border print:hidden ${isSidebarCollapsed ? 'lg:p-2' : 'lg:hidden'}`}>
+        {isSidebarCollapsed && (
+          <div className="hidden flex-col items-stretch gap-1.5 lg:flex">
+            <button type="button" onClick={() => setIsSidebarCollapsed(false)} title="Expandir barra lateral" aria-label="Expandir barra lateral" className="flex h-9 w-full items-center justify-center rounded-lg border border-gray-700 bg-gray-800 text-gray-300 transition-colors hover:border-primary-500/50 hover:text-white"><PanelLeftOpen className="h-4 w-4" /></button>
+            <button type="button" onClick={handlePrint} title="Imprimir" aria-label="Imprimir" className="flex h-9 w-full items-center justify-center rounded-lg border border-gray-700 bg-gray-800 text-gray-300 transition-colors hover:border-primary-500/50 hover:text-white"><Printer className="h-4 w-4" /></button>
+            <button type="button" onClick={handleShare} title="Compartilhar" aria-label="Compartilhar" className="flex h-9 w-full items-center justify-center rounded-lg border border-gray-700 bg-gray-800 text-gray-300 transition-colors hover:border-primary-500/50 hover:text-white"><Share2 className="h-4 w-4" /></button>
+            <button type="button" onClick={() => setAutoScrollSpeed((current) => current === 0 ? 1 : 0)} title="Rolagem" aria-label="Rolagem" className="flex h-9 w-full items-center justify-center rounded-lg border border-gray-700 bg-gray-800 text-gray-300 transition-colors hover:border-primary-500/50 hover:text-white"><ScrollText className="h-4 w-4" /></button>
+            {supportsTwoColumnLayout ? <button type="button" onClick={() => setUseTwoColumnLayout((current) => !current)} title="Dividir em colunas" aria-label="Dividir em colunas" className="flex h-9 w-full items-center justify-center rounded-lg border border-gray-700 bg-gray-800 text-gray-300 transition-colors hover:border-primary-500/50 hover:text-white"><Columns className="h-4 w-4" /></button> : null}
+            <button type="button" onClick={() => setShowOptions(true)} title="Instrumento" aria-label="Instrumento" className="flex h-9 w-full items-center justify-center rounded-lg border border-gray-700 bg-gray-800 text-gray-300 transition-colors hover:border-primary-500/50 hover:text-white"><GiGuitar className="h-4 w-4" /></button>
+            <button type="button" onClick={() => setShowKeySelector(true)} title="Tom" aria-label="Tom" className="flex h-9 w-full items-center justify-center rounded-lg border border-gray-700 bg-gray-800 text-gray-300 transition-colors hover:border-primary-500/50 hover:text-white"><Music className="h-4 w-4" /></button>
+            <span title={cifra.capo > 0 ? `Capotraste: ${cifra.capo}ª casa` : 'Sem capotraste'} className="flex h-9 w-full items-center justify-center rounded-lg border border-gray-700 bg-gray-800 text-gray-300"><Target className="h-4 w-4" /></span>
+            <span title={isCifraV2(cifra) && cifra.tuning ? `Afinação: ${cifra.tuning}` : 'Afinação padrão'} className="flex h-9 w-full items-center justify-center rounded-lg border border-gray-700 bg-gray-800 text-gray-300"><Settings2 className="h-4 w-4" /></span>
+            <button type="button" onClick={() => setShowChords((current) => !current)} title="Acordes" aria-label="Acordes" className="flex h-9 w-full items-center justify-center rounded-lg border border-gray-700 bg-gray-800 text-gray-300 transition-colors hover:border-primary-500/50 hover:text-white"><Music className="h-4 w-4" /></button>
+            {(selectedInstrument === 'violao' || selectedInstrument === 'ukulele') ? <button type="button" onClick={() => setUseSimplifiedChords((current) => !current)} title="Modo simplificado" aria-label="Modo simplificado" className={`flex h-9 w-full items-center justify-center rounded-lg border transition-colors ${useSimplifiedChords ? 'border-primary-500/60 bg-primary-500/15 text-primary-300' : 'border-gray-700 bg-gray-800 text-gray-300 hover:border-primary-500/50 hover:text-white'}`}><Target className="h-4 w-4" /></button> : null}
+            {selectedInstrument !== 'teclado' ? <button type="button" onClick={() => setShowLeftHandedDiagrams((current) => !current)} title="Diagramas" aria-label="Diagramas" className="flex h-9 w-full items-center justify-center rounded-lg border border-gray-700 bg-gray-800 text-gray-300 transition-colors hover:border-primary-500/50 hover:text-white"><Hand className="h-4 w-4" /></button> : null}
+            <button type="button" onClick={() => setShowOptions(true)} title="Texto" aria-label="Texto" className="flex h-9 w-full items-center justify-center rounded-lg border border-gray-700 bg-gray-800 text-gray-300 transition-colors hover:border-primary-500/50 hover:text-white"><Type className="h-4 w-4" /></button>
+            <button type="button" onClick={() => setMetronomeEnabled((current) => !current)} title="Metrônomo" aria-label="Metrônomo" className="flex h-9 w-full items-center justify-center rounded-lg border border-gray-700 bg-gray-800 text-gray-300 transition-colors hover:border-primary-500/50 hover:text-white"><Gauge className="h-4 w-4" /></button>
+            <button type="button" onClick={() => setShowReportModal(true)} title="Corrigir Cifra" aria-label="Corrigir Cifra" className="flex h-9 w-full items-center justify-center rounded-lg border border-gray-700 bg-gray-800 text-gray-300 transition-colors hover:border-primary-500/50 hover:text-white"><Flag className="h-4 w-4" /></button>
+          </div>
+        )}
+        <div className={`mb-4 space-y-2 border-b border-gray-800 pb-4 lg:space-y-2 lg:hidden ${isSidebarCollapsed ? 'lg:mb-2 lg:pb-2' : ''}`}>
+          <div className={`flex items-center justify-between px-1 ${isSidebarCollapsed ? 'lg:justify-center' : ''}`}>
+            <p className={`text-xs font-semibold uppercase tracking-[0.16em] text-gray-500 ${isSidebarCollapsed ? 'lg:hidden' : ''}`}>Recursos</p>
+            <button
+              type="button"
+              onClick={() => setIsSidebarCollapsed((current) => !current)}
+              aria-label={isSidebarCollapsed ? 'Expandir barra lateral' : 'Encolher barra lateral'}
+              title={isSidebarCollapsed ? 'Expandir barra lateral' : 'Encolher barra lateral'}
+              className="flex h-8 w-8 items-center justify-center rounded-lg border border-gray-700 bg-gray-800 text-gray-300 transition-colors hover:border-primary-500/50 hover:text-white"
+            >
+              {isSidebarCollapsed ? <PanelLeftOpen className="h-4 w-4" /> : <PanelLeftClose className="h-4 w-4" />}
+            </button>
+          </div>
           {isCifraV2(cifra) ? (
             <>
-              <button type="button" onClick={() => void handleToggleFavorite()} disabled={isFavoriteLoading} className={`flex w-full items-center gap-2 rounded-xl border px-3 py-2 text-left text-sm transition-colors ${engagement?.isFavorited ? 'border-red-500/50 bg-red-500/15 text-red-300' : 'border-gray-700 bg-gray-800 text-gray-200 hover:border-red-500/40 hover:text-white'}`}>
-                <Heart className={`h-4 w-4 ${engagement?.isFavorited ? 'fill-current' : ''}`} /> {engagement?.isFavorited ? 'Favoritada' : 'Favoritar'}
+              <button type="button" onClick={() => void handleToggleFavorite()} disabled={isFavoriteLoading} title={engagement?.isFavorited ? 'Favoritada' : 'Favoritar'} className={`flex w-full items-center gap-2 rounded-xl border px-3 py-2 text-left text-sm transition-colors ${isSidebarCollapsed ? 'lg:justify-center lg:px-2' : ''} ${engagement?.isFavorited ? 'border-red-500/50 bg-red-500/15 text-red-300' : 'border-gray-700 bg-gray-800 text-gray-200 hover:border-red-500/40 hover:text-white'}`}>
+                <Heart className={`h-4 w-4 ${engagement?.isFavorited ? 'fill-current' : ''}`} /> <span className={isSidebarCollapsed ? 'lg:hidden' : ''}>{engagement?.isFavorited ? 'Favoritada' : 'Favoritar'}</span>
               </button>
-              <button type="button" onClick={() => setShowReportModal(true)} className="flex w-full items-center gap-2 rounded-xl border border-gray-700 bg-gray-800 px-3 py-2 text-left text-sm text-gray-200 transition-colors hover:border-primary-500/40 hover:text-white"><Flag className="h-4 w-4" /> Reportar problema</button>
+              <button type="button" onClick={() => setShowReportModal(true)} title="Reportar problema" className={`flex w-full items-center gap-2 rounded-xl border border-gray-700 bg-gray-800 px-3 py-2 text-left text-sm text-gray-200 transition-colors hover:border-primary-500/40 hover:text-white ${isSidebarCollapsed ? 'lg:justify-center lg:px-2' : ''}`}><Flag className="h-4 w-4" /> <span className={isSidebarCollapsed ? 'lg:hidden' : ''}>Reportar problema</span></button>
             </>
           ) : null}
-          {relatedHymn ? <Link to={buildHinoUrl(relatedHymn.id, relatedHymn.titulo, relatedHymn.numero)} className="flex w-full items-center gap-2 rounded-xl border border-primary-500/40 bg-primary-500/10 px-3 py-2 text-sm text-primary-300 transition-colors hover:bg-primary-500/20"><Play className="h-4 w-4" /> Ouvir este hino</Link> : null}
-          {relatedLyric ? <Link to={`/hinario/${relatedLyric.numero}`} className="flex w-full items-center gap-2 rounded-xl border border-primary-500/40 bg-primary-500/10 px-3 py-2 text-sm text-primary-300 transition-colors hover:bg-primary-500/20"><Music className="h-4 w-4" /> Letra no Hinário</Link> : null}
-          <Link to={instrumentHubUrl} className="flex w-full items-center gap-2 rounded-xl border border-primary-500/40 bg-primary-500/10 px-3 py-2 text-sm text-primary-300 transition-colors hover:bg-primary-500/20"><Music className="h-4 w-4" /> Mais cifras de {instrumentLabel}</Link>
-          <Link to="/cifras" className="flex w-full items-center gap-2 rounded-xl border border-gray-700 bg-gray-800 px-3 py-2 text-sm text-gray-200 transition-colors hover:border-primary-500/40 hover:text-white">Todas as cifras</Link>
-          <Link to="/hinario" className="flex w-full items-center gap-2 rounded-xl border border-gray-700 bg-gray-800 px-3 py-2 text-sm text-gray-200 transition-colors hover:border-primary-500/40 hover:text-white">Letras do Hinário</Link>
-          <Link to="/cifras-hinos-ccb" className="flex w-full items-center gap-2 rounded-xl border border-gray-700 bg-gray-800 px-3 py-2 text-sm text-gray-200 transition-colors hover:border-primary-500/40 hover:text-white">Cifras de Hinos</Link>
-          {hinarioRange ? <Link to={hinarioRange.path} className="flex w-full items-center gap-2 rounded-xl border border-gray-700 bg-gray-800 px-3 py-2 text-sm text-gray-200 transition-colors hover:border-primary-500/40 hover:text-white">{hinarioRange.label}</Link> : null}
+          {relatedHymn ? <Link to={buildHinoUrl(relatedHymn.id, relatedHymn.titulo, relatedHymn.numero)} title="Ouvir este hino" className={`flex w-full items-center gap-2 rounded-xl border border-primary-500/40 bg-primary-500/10 px-3 py-2 text-sm text-primary-300 transition-colors hover:bg-primary-500/20 ${isSidebarCollapsed ? 'lg:justify-center lg:px-2' : ''}`}><Play className="h-4 w-4" /> <span className={isSidebarCollapsed ? 'lg:hidden' : ''}>Ouvir este hino</span></Link> : null}
+          {relatedLyric ? <Link to={`/hinario/${relatedLyric.numero}`} title="Letra no Hinário" className={`flex w-full items-center gap-2 rounded-xl border border-primary-500/40 bg-primary-500/10 px-3 py-2 text-sm text-primary-300 transition-colors hover:bg-primary-500/20 ${isSidebarCollapsed ? 'lg:justify-center lg:px-2' : ''}`}><Music className="h-4 w-4" /> <span className={isSidebarCollapsed ? 'lg:hidden' : ''}>Letra no Hinário</span></Link> : null}
+          <Link to={instrumentHubUrl} title={`Mais cifras de ${instrumentLabel}`} className={`flex w-full items-center gap-2 rounded-xl border border-primary-500/40 bg-primary-500/10 px-3 py-2 text-sm text-primary-300 transition-colors hover:bg-primary-500/20 ${isSidebarCollapsed ? 'lg:justify-center lg:px-2' : ''}`}><Music className="h-4 w-4" /> <span className={isSidebarCollapsed ? 'lg:hidden' : ''}>Mais cifras de {instrumentLabel}</span></Link>
+          <Link to="/cifras" title="Todas as cifras" className={`flex w-full items-center gap-2 rounded-xl border border-gray-700 bg-gray-800 px-3 py-2 text-sm text-gray-200 transition-colors hover:border-primary-500/40 hover:text-white ${isSidebarCollapsed ? 'lg:justify-center lg:px-2' : ''}`}><ListMusic className="h-4 w-4" /> <span className={isSidebarCollapsed ? 'lg:hidden' : ''}>Todas as cifras</span></Link>
+          <Link to="/hinario" title="Letras do Hinário" className={`flex w-full items-center gap-2 rounded-xl border border-gray-700 bg-gray-800 px-3 py-2 text-sm text-gray-200 transition-colors hover:border-primary-500/40 hover:text-white ${isSidebarCollapsed ? 'lg:justify-center lg:px-2' : ''}`}><BookOpen className="h-4 w-4" /> <span className={isSidebarCollapsed ? 'lg:hidden' : ''}>Letras do Hinário</span></Link>
+          <Link to="/cifras-hinos-ccb" title="Cifras de Hinos" className={`flex w-full items-center gap-2 rounded-xl border border-gray-700 bg-gray-800 px-3 py-2 text-sm text-gray-200 transition-colors hover:border-primary-500/40 hover:text-white ${isSidebarCollapsed ? 'lg:justify-center lg:px-2' : ''}`}><Library className="h-4 w-4" /> <span className={isSidebarCollapsed ? 'lg:hidden' : ''}>Cifras de Hinos</span></Link>
+          {hinarioRange ? <Link to={hinarioRange.path} title={hinarioRange.label} className={`flex w-full items-center gap-2 rounded-xl border border-gray-700 bg-gray-800 px-3 py-2 text-sm text-gray-200 transition-colors hover:border-primary-500/40 hover:text-white ${isSidebarCollapsed ? 'lg:justify-center lg:px-2' : ''}`}><BookOpen className="h-4 w-4" /> <span className={isSidebarCollapsed ? 'lg:hidden' : ''}>{hinarioRange.label}</span></Link> : null}
         </div>
-        <div className="flex items-center gap-2 overflow-x-auto pb-1 -mb-1 scrollbar-hide sm:flex-wrap sm:overflow-visible lg:flex-col lg:items-stretch lg:overflow-visible">
-          {/* Instrument selector */}
-          <select
-            value={selectedInstrument}
-            onChange={e => handleInstrumentChange(e.target.value)}
-            className="shrink-0 px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
-          >
-            {instrumentOptions.map(i => (
-              <option key={i.value} value={i.value}>{i.label}</option>
-            ))}
-          </select>
-
+        <div className={`flex items-center gap-2 overflow-x-auto pb-1 -mb-1 scrollbar-hide sm:flex-wrap sm:overflow-visible lg:flex-col lg:items-stretch lg:overflow-visible lg:hidden ${isSidebarCollapsed ? 'lg:gap-1.5' : ''}`}>
           {/* Transpose controls */}
-          <div className="flex shrink-0 items-center gap-1 bg-gray-800 border border-gray-700 rounded-lg">
-            <button onClick={transposeDown} className="px-3 py-2 hover:bg-gray-700 rounded-l-lg transition-colors text-white">
+          <div className={`flex shrink-0 items-center gap-1 bg-gray-800 border border-gray-700 rounded-lg ${isSidebarCollapsed ? 'lg:flex-col lg:gap-0' : ''}`}>
+            <button onClick={transposeDown} title="Diminuir tom" aria-label="Diminuir tom" className={`px-3 py-2 hover:bg-gray-700 transition-colors text-white ${isSidebarCollapsed ? 'lg:w-full lg:rounded-t-lg' : 'rounded-l-lg'}`}>
               <Minus className="w-4 h-4" />
             </button>
             <button
               onClick={() => setShowKeySelector(!showKeySelector)}
-              className="px-3 py-2 hover:bg-gray-700 transition-colors text-sm font-medium min-w-[60px] text-center"
+              className={`px-3 py-2 hover:bg-gray-700 transition-colors text-sm font-medium min-w-[60px] text-center ${isSidebarCollapsed ? 'lg:hidden' : ''}`}
             >
               <span className="text-gray-400 text-xs">Tom </span>
               <span className="text-primary-400 font-bold">{selectedKey}</span>
             </button>
-            <button onClick={transposeUp} className="px-3 py-2 hover:bg-gray-700 rounded-r-lg transition-colors text-white">
+            <button onClick={transposeUp} title="Aumentar tom" aria-label="Aumentar tom" className={`px-3 py-2 hover:bg-gray-700 transition-colors text-white ${isSidebarCollapsed ? 'lg:w-full lg:rounded-b-lg' : 'rounded-r-lg'}`}>
               <Plus className="w-4 h-4" />
             </button>
           </div>
@@ -1498,94 +1613,86 @@ const CifraPage: React.FC = () => {
           {editorialPreferredKey ? (
             <button
               onClick={() => setSelectedKey(editorialPreferredKey)}
-              className={`shrink-0 px-3 py-2 rounded-lg border text-sm transition-colors ${
+              title={`Tom editorial ${editorialPreferredKey}`}
+              className={`shrink-0 px-3 py-2 rounded-lg border text-sm transition-colors ${isSidebarCollapsed ? 'lg:flex lg:w-full lg:justify-center' : ''} ${
                 selectedKey === editorialPreferredKey
                   ? 'bg-primary-500/20 border-primary-500/50 text-primary-400'
                   : 'bg-gray-800 border-gray-700 text-gray-400 hover:text-white hover:border-primary-500/40'
               }`}
             >
-              Tom editorial {editorialPreferredKey}
+              <Music className={`h-4 w-4 ${isSidebarCollapsed ? '' : 'hidden'}`} />
+              <span className={isSidebarCollapsed ? 'lg:hidden' : ''}>Tom editorial {editorialPreferredKey}</span>
             </button>
           ) : null}
-
-          {/* Font size */}
-          <div className="flex shrink-0 items-center gap-1 bg-gray-800 border border-gray-700 rounded-lg">
-            <button
-              onClick={() => setFontSize(prev => Math.max(10, prev - 1))}
-              className="px-2 py-2 hover:bg-gray-700 rounded-l-lg transition-colors text-white text-xs"
-            >
-              A
-            </button>
-            <button
-              onClick={() => setFontSize(prev => Math.min(24, prev + 1))}
-              className="px-2 py-2 hover:bg-gray-700 rounded-r-lg transition-colors text-white text-base font-bold"
-            >
-              A
-            </button>
-          </div>
 
           {/* Auto scroll */}
           <button
             onClick={() => setAutoScrollSpeed(prev => prev === 0 ? 1 : prev === 1 ? 2 : prev === 2 ? 3 : 0)}
-            className={`shrink-0 px-3 py-2 rounded-lg border text-sm transition-colors ${
+            title={autoScrollSpeed > 0 ? `Rolagem ${autoScrollSpeed}x` : 'Ativar rolagem automática'}
+            className={`shrink-0 px-3 py-2 rounded-lg border text-sm transition-colors ${isSidebarCollapsed ? 'lg:flex lg:w-full lg:justify-center' : ''} ${
               autoScrollSpeed > 0
                 ? 'bg-primary-500/20 border-primary-500/50 text-primary-400'
                 : 'bg-gray-800 border-gray-700 text-gray-400 hover:text-white'
             }`}
           >
-            <ScrollText className="w-4 h-4 inline mr-1" />
-            {autoScrollSpeed > 0 ? `${autoScrollSpeed}x` : 'Rolagem'}
+            <ScrollText className={`w-4 h-4 ${isSidebarCollapsed ? '' : 'inline mr-1'}`} />
+            <span className={isSidebarCollapsed ? 'lg:hidden' : ''}>{autoScrollSpeed > 0 ? `${autoScrollSpeed}x` : 'Rolagem'}</span>
           </button>
 
           {/* Toggle chords */}
           <button
             onClick={() => setShowChords(!showChords)}
-            className={`shrink-0 px-3 py-2 rounded-lg border text-sm transition-colors ${
+            title={showChords ? 'Ocultar acordes' : 'Mostrar acordes'}
+            className={`shrink-0 px-3 py-2 rounded-lg border text-sm transition-colors ${isSidebarCollapsed ? 'lg:flex lg:w-full lg:justify-center' : ''} ${
               showChords
                 ? 'bg-primary-500/20 border-primary-500/50 text-primary-400'
                 : 'bg-gray-800 border-gray-700 text-gray-400'
             }`}
           >
-            Acordes
+            <Music className={`h-4 w-4 ${isSidebarCollapsed ? '' : 'hidden'}`} />
+            <span className={isSidebarCollapsed ? 'lg:hidden' : ''}>Acordes</span>
           </button>
 
           <button
             onClick={() => setMetronomeEnabled((current) => !current)}
-            className={`shrink-0 px-3 py-2 rounded-lg border text-sm transition-colors ${
+            title={metronomeEnabled ? `Metrônomo ${metronomeBpm} BPM` : 'Iniciar metrônomo'}
+            className={`shrink-0 px-3 py-2 rounded-lg border text-sm transition-colors ${isSidebarCollapsed ? 'lg:flex lg:w-full lg:justify-center' : ''} ${
               metronomeEnabled
                 ? 'bg-primary-500/20 border-primary-500/50 text-primary-400'
                 : 'bg-gray-800 border-gray-700 text-gray-400 hover:text-white'
             }`}
           >
-            <Gauge className="w-4 h-4 inline mr-1" />
-            {metronomeEnabled ? `${metronomeBpm} BPM` : 'Metrônomo'}
+            <Gauge className={`w-4 h-4 ${isSidebarCollapsed ? '' : 'inline mr-1'}`} />
+            <span className={isSidebarCollapsed ? 'lg:hidden' : ''}>{metronomeEnabled ? `${metronomeBpm} BPM` : 'Metrônomo'}</span>
           </button>
 
           {selectedInstrument !== 'teclado' ? (
             <button
               onClick={() => setShowLeftHandedDiagrams((current) => !current)}
-              className={`shrink-0 px-3 py-2 rounded-lg border text-sm transition-colors ${
+              title={showLeftHandedDiagrams ? 'Desativar modo canhoto' : 'Ativar modo canhoto'}
+              className={`shrink-0 px-3 py-2 rounded-lg border text-sm transition-colors ${isSidebarCollapsed ? 'lg:flex lg:w-full lg:justify-center' : ''} ${
                 showLeftHandedDiagrams
                   ? 'bg-primary-500/20 border-primary-500/50 text-primary-400'
                   : 'bg-gray-800 border-gray-700 text-gray-400 hover:text-white'
               }`}
             >
-              <Hand className="w-4 h-4 inline mr-1" />
-              Canhoto
+              <Hand className={`w-4 h-4 ${isSidebarCollapsed ? '' : 'inline mr-1'}`} />
+              <span className={isSidebarCollapsed ? 'lg:hidden' : ''}>Canhoto</span>
             </button>
           ) : null}
 
           {supportsTwoColumnLayout ? (
             <button
               onClick={() => setUseTwoColumnLayout((current) => !current)}
-              className={`shrink-0 px-3 py-2 rounded-lg border text-sm transition-colors ${
+              title={useTwoColumnLayout ? 'Usar uma coluna' : 'Usar duas colunas'}
+              className={`shrink-0 px-3 py-2 rounded-lg border text-sm transition-colors ${isSidebarCollapsed ? 'lg:flex lg:w-full lg:justify-center' : ''} ${
                 useTwoColumnLayout
                   ? 'bg-primary-500/20 border-primary-500/50 text-primary-400'
                   : 'bg-gray-800 border-gray-700 text-gray-400 hover:text-white'
               }`}
             >
-              <Eye className="w-4 h-4 inline mr-1" />
-              2 colunas
+              <Eye className={`w-4 h-4 ${isSidebarCollapsed ? '' : 'inline mr-1'}`} />
+              <span className={isSidebarCollapsed ? 'lg:hidden' : ''}>2 colunas</span>
             </button>
           ) : null}
 
@@ -1600,21 +1707,24 @@ const CifraPage: React.FC = () => {
                   return next;
                 });
               }}
-              className={`shrink-0 px-3 py-2 rounded-lg border text-sm transition-colors ${
+              title={studyModeEnabled ? 'Desativar modo estudo' : 'Ativar modo estudo'}
+              className={`shrink-0 px-3 py-2 rounded-lg border text-sm transition-colors ${isSidebarCollapsed ? 'lg:flex lg:w-full lg:justify-center' : ''} ${
                 studyModeEnabled
                   ? 'bg-primary-500/20 border-primary-500/50 text-primary-400'
                   : 'bg-gray-800 border-gray-700 text-gray-400 hover:text-white'
               }`}
             >
-              <Target className="w-4 h-4 inline mr-1" />
-              Estudo
+              <Target className={`w-4 h-4 ${isSidebarCollapsed ? '' : 'inline mr-1'}`} />
+              <span className={isSidebarCollapsed ? 'lg:hidden' : ''}>Estudo</span>
             </button>
           ) : null}
 
           {/* Options */}
           <button
             onClick={() => setShowOptions(!showOptions)}
-            className="shrink-0 px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-gray-400 hover:text-white transition-colors sm:ml-auto"
+            title="Opções da cifra"
+            aria-label="Opções da cifra"
+            className={`shrink-0 px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-gray-400 hover:text-white transition-colors sm:ml-auto ${isSidebarCollapsed ? 'lg:flex lg:w-full lg:justify-center lg:px-2' : ''}`}
           >
             <Settings2 className="w-4 h-4" />
           </button>
@@ -1772,15 +1882,18 @@ const CifraPage: React.FC = () => {
 
       <main className="min-w-0 lg:col-start-2 lg:row-start-1">
         <header className="mb-6 hidden sm:block print:hidden">
-          <Link to="/cifras" className="mb-4 inline-flex items-center gap-2 text-gray-400 transition-colors hover:text-white print:hidden">
+          <Link to="/cifras" className="mb-4 inline-flex items-center gap-2 text-primary-400 transition-colors hover:text-primary-300 print:hidden">
             <ArrowLeft className="h-4 w-4" />
             Voltar
           </Link>
           <h1 className="text-2xl font-bold leading-tight text-white sm:text-3xl">{headerCifraTitle}</h1>
-          <p className="mt-2 text-lg font-bold text-primary-400">{headerCifraCategory}</p>
+          <nav aria-label="Breadcrumb" className="mt-2 flex items-center gap-1 text-sm">
+            <Link to="/cifras" className="text-primary-400 transition-colors hover:text-primary-300">Cifras</Link>
+            <span className="text-gray-600">/</span>
+            <Link to={instrumentHubUrl} className="text-gray-300 transition-colors hover:text-primary-300">{instrumentLabel}</Link>
+          </nav>
         </header>
-        {renderChordDictionaryCarousel('mt-6 mb-6 hidden sm:block')}
-
+        {renderChordDiagrams('mb-5 hidden sm:block')}
       {/* Cifra Content */}
       <div
         ref={contentRef}
@@ -1834,86 +1947,6 @@ const CifraPage: React.FC = () => {
           transposedContent.split('\n').map((line, idx) => renderLine(line, idx))
         )}
       </div>
-
-
-      {(relatedHymn || relatedLyric) && (
-        <div className="mb-6 hidden rounded-2xl sm:block border border-white/10 bg-background-secondary p-5">
-          <h2 className="text-lg font-semibold text-white">Letra e audio deste hino</h2>
-          <p className="text-text-muted text-sm mt-2">
-            Esta cifra agora se conecta diretamente com a pagina do hino e com a letra do Hinario quando a correspondencia foi encontrada.
-          </p>
-          <div className="flex flex-wrap gap-2 mt-4">
-            {relatedHymn ? (
-              <Link
-                to={buildHinoUrl(relatedHymn.id, relatedHymn.titulo, relatedHymn.numero)}
-                className="inline-flex w-full items-center justify-center rounded-full border border-primary-500/40 bg-primary-500/10 px-3 py-1.5 text-sm text-primary-300 transition-colors hover:bg-primary-500/20 sm:w-auto"
-              >
-                Pagina do Hino {relatedHymn.numero || relatedNumber || ''}
-              </Link>
-            ) : null}
-            {relatedHymnTrack ? (
-              <button
-                type="button"
-                onClick={() => handlePlayRelatedTrack()}
-                disabled={isRelatedTrackLoading || !canPlayRelatedTrack}
-                className="inline-flex w-full items-center justify-center gap-2 rounded-full border border-primary-500 bg-primary-500 px-3 py-1.5 text-sm font-semibold text-black transition-colors hover:bg-primary-600 disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
-              >
-                {isRelatedTrackActive && isPlayerPlaying ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
-                {isRelatedTrackActive && isPlayerPlaying ? 'Pausar hino' : 'Ouvir enquanto estuda'}
-              </button>
-            ) : null}
-            {relatedLyric ? (
-              <Link
-                to={`/hinario/${relatedLyric.numero}`}
-                className="inline-flex w-full items-center justify-center rounded-full border border-primary-500/40 bg-primary-500/10 px-3 py-1.5 text-sm text-primary-300 transition-colors hover:bg-primary-500/20 sm:w-auto"
-              >
-                Letra do Hino {relatedLyric.numero}
-              </Link>
-            ) : null}
-            <Link
-              to="/hinos-ccb"
-              className="inline-flex w-full items-center justify-center rounded-full border border-gray-700 bg-gray-800 px-3 py-1.5 text-sm text-gray-200 transition-colors hover:border-primary-500/40 hover:text-white sm:w-auto"
-            >
-              Hinos CCB
-            </Link>
-            {hinarioRange ? (
-              <Link
-                to={hinarioRange.path}
-                className="inline-flex w-full items-center justify-center rounded-full border border-gray-700 bg-gray-800 px-3 py-1.5 text-sm text-gray-200 transition-colors hover:border-primary-500/40 hover:text-white sm:w-auto"
-              >
-                Faixa {hinarioRange.shortLabel}
-              </Link>
-            ) : null}
-          </div>
-        </div>
-      )}
-
-      {isCifraV2(cifra) && studyFacts.length > 0 ? (
-        <div className="mb-6 hidden rounded-2xl sm:block border border-white/10 bg-background-secondary p-5">
-          <div className="flex items-start justify-between gap-4">
-            <div>
-              <h2 className="text-lg font-semibold text-white">Visao de estudo</h2>
-              <p className="text-text-muted text-sm mt-2">
-                Resumo rapido da versao publicada para ensaio, estudo por instrumento e leitura em tela pequena.
-              </p>
-            </div>
-            <Music className="hidden sm:block w-5 h-5 text-primary-400" />
-          </div>
-          <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            {studyFacts.map((fact) => (
-              <div key={fact.label} className="rounded-2xl border border-white/10 bg-background-primary px-4 py-3">
-                <p className="text-xs uppercase tracking-[0.18em] text-text-muted">{fact.label}</p>
-                <p className="mt-2 text-sm font-semibold text-white">{fact.value}</p>
-              </div>
-            ))}
-          </div>
-          {cifra.intro_notes ? (
-            <div className="mt-4 rounded-2xl border border-primary-500/20 bg-primary-500/10 px-4 py-3 text-sm text-white/90">
-              <span className="font-semibold text-primary-300">Observacao editorial:</span> {cifra.intro_notes}
-            </div>
-          ) : null}
-        </div>
-      ) : null}
 
       {supportsStudyTools ? (
         <div className="mb-6 hidden rounded-2xl sm:block border border-primary-500/20 bg-primary-500/5 p-5">

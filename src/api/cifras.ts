@@ -118,16 +118,41 @@ export async function fetchCifraById(id: number): Promise<Cifra | null> {
   }
 }
 
-export async function fetchCifraBySlug(slug: string): Promise<Cifra | null> {
+export async function fetchCifraBySlug(slug: string, instrument?: string): Promise<Cifra | null> {
   try {
     const rows = await supabaseFetch<any>('cifras', {
       slug: `eq.${slug}`,
       select: '*',
       limit: '1',
+      ...(instrument ? { instrument: `eq.${instrument}` } : {}),
     });
     return rows.length > 0 ? mapRow(rows[0]) : null;
   } catch (error) {
     console.error('[cifras] fetchCifraBySlug error:', error);
+    return null;
+  }
+}
+
+/**
+ * Resolves the former imported Hinário URL so existing shared links can be
+ * replaced in the client with the current descriptive URL.
+ */
+export async function fetchCifraByLegacyHinarioSlug(slug: string): Promise<Cifra | null> {
+  const match = slug.match(/^(?:cifra-)?hino-(\d{1,3})-ccb(?:-.+)?(?:-violao)?$/i);
+  if (!match) return null;
+
+  try {
+    const number = Number(match[1]);
+    const rows = await supabaseFetch<any>('cifras', {
+      select: '*',
+      title: `ilike.Hino ${number} - %`,
+      instrument: 'eq.violao',
+      category: 'eq.hinario',
+      limit: '1',
+    });
+    return rows.length > 0 ? mapRow(rows[0]) : null;
+  } catch (error) {
+    console.error('[cifras] fetchCifraByLegacyHinarioSlug error:', error);
     return null;
   }
 }

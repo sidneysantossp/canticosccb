@@ -25,6 +25,7 @@ import {
   CifrasHubPage,
   CifraPage,
   CifrasListPage,
+  CifrasLandingPage,
   CompositorCadastroPage,
   CompositorPublicarPage,
   ComposerPublicProfilePage,
@@ -197,6 +198,14 @@ const RedirectToCifra: React.FC = () => {
   return <Navigate to={`/cifra/${slug}`} replace />;
 };
 
+const CifraInstrumentRoute: React.FC = () => {
+  const { instrument } = useRouteParams();
+  if (instrument !== 'violao' && instrument !== 'ukulele' && instrument !== 'teclado') {
+    return <Navigate to="/cifras" replace />;
+  }
+  return <CifraInstrumentHubPage instrument={instrument} />;
+};
+
 const NOINDEX_EXACT_PATHS = new Set([
   '/login',
   '/register',
@@ -296,11 +305,13 @@ const AppContent: React.FC = () => {
           <Route path="search" element={<SearchPage />} />
           <Route path="hino/:id" element={<HymnDetailPage />} />
           <Route path="hymn/:id" element={<HymnDetailPage />} />
-          <Route path="cifras" element={<CifrasListPage />} />
+          <Route path="cifras" element={<CifrasLandingPage />} />
+          <Route path="cifras/:instrument" element={<CifraInstrumentRoute />} />
           <Route path="cifras-hinos-ccb" element={<CifrasHubPage />} />
           <Route path="cifras-violao-ccb" element={<CifraInstrumentHubPage instrument="violao" />} />
           <Route path="cifras-ukulele-ccb" element={<CifraInstrumentHubPage instrument="ukulele" />} />
           <Route path="cifras-teclado-ccb" element={<CifraInstrumentHubPage instrument="teclado" />} />
+          <Route path="cifras/:instrument/:slug" element={<CifraPage />} />
           <Route path="cifra/:slug" element={<CifraPage />} />
           <Route path="profile/cifras/contribuir" element={<ProtectedRoute><CifraContributionPage /></ProtectedRoute>} />
           <Route path="hinario" element={<HinarioListPage />} />
