@@ -145,6 +145,7 @@ import {
   AdminHymns,
   AdminImport,
   AdminImportForm,
+  AdminArchiveRecovery,
   AdminLogs,
   AdminLogos,
   AdminMenus,
@@ -617,6 +618,7 @@ const AppContent: React.FC = () => {
           <Route path="admin/import" element={<ProtectedRoute requireAdmin><AdminImport /></ProtectedRoute>} />
           <Route path="admin/import/criar" element={<ProtectedRoute requireAdmin><AdminImportForm /></ProtectedRoute>} />
           <Route path="admin/import/create" element={<ProtectedRoute requireAdmin><AdminImportForm /></ProtectedRoute>} />
+          <Route path="admin/recuperacao-midias" element={<ProtectedRoute requireAdmin><AdminArchiveRecovery /></ProtectedRoute>} />
           <Route path="admin/exportar" element={<ProtectedRoute requireAdmin><AdminExport /></ProtectedRoute>} />
           <Route path="admin/export" element={<ProtectedRoute requireAdmin><AdminExport /></ProtectedRoute>} />
           <Route path="admin/export/criar" element={<ProtectedRoute requireAdmin><AdminExportForm /></ProtectedRoute>} />

@@ -87,7 +87,8 @@ const UserSidebar: React.FC = () => {
         { icon: Mic, label: 'Cantados', path: '/hinos-cantados-ccb' },
         { icon: Music, label: 'Instrumentais', path: '/instrumentais' },
         { icon: FileText, label: 'Cifras', path: '/cifras' },
-        { icon: BookOpen, label: 'Hinário', path: '/hinario' }
+        { icon: BookOpen, label: 'Hinário', path: '/hinario' },
+        { icon: BookOpen, label: 'Bíblia Digital', path: '/biblia-ccb' }
       ]
     },
     ...(isManager ? [{

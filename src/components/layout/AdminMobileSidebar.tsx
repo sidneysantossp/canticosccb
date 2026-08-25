@@ -33,6 +33,7 @@ import {
   ChevronDown,
   ChevronRight,
   FileText,
+  Search,
   Layers,
   Book,
   BookOpen,
@@ -244,6 +245,7 @@ const AdminMobileSidebar: React.FC<AdminMobileSidebarProps> = ({ isOpen, onClose
       icon: Wrench,
       items: [
         { path: '/admin/import', label: 'Importação', icon: Database },
+        { path: '/admin/recuperacao-midias', label: 'Recuperação de mídias', icon: Search },
         { path: '/admin/export', label: 'Exportação', icon: Database },
         { path: '/admin/backup', label: 'Backup', icon: Shield },
         { path: '/admin/api', label: 'API', icon: Wrench }

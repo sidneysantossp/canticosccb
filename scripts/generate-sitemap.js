@@ -208,6 +208,9 @@ async function main() {
   urls.push(urlEntry('/search', staticLastmod, 'daily', '0.9'));
   urls.push(urlEntry('/cifras', staticLastmod, 'daily', '0.9'));
   urls.push(urlEntry('/cifras-hinos-ccb', staticLastmod, 'weekly', '0.8'));
+  urls.push(urlEntry('/cifras/violao', staticLastmod, 'weekly', '0.8'));
+  urls.push(urlEntry('/cifras/ukulele', staticLastmod, 'weekly', '0.8'));
+  urls.push(urlEntry('/cifras/teclado', staticLastmod, 'weekly', '0.8'));
   urls.push(urlEntry('/hinario', staticLastmod, 'daily', '0.9'));
   urls.push(urlEntry('/hinos-ccb', staticLastmod, 'weekly', '0.9'));
   urls.push(urlEntry('/hinos-1-a-120-ccb', staticLastmod, 'weekly', '0.8'));
@@ -233,9 +236,6 @@ async function main() {
   urls.push(urlEntry('/albuns', staticLastmod, 'weekly', '0.8'));
   urls.push(urlEntry('/playlists', staticLastmod, 'weekly', '0.7'));
   urls.push(urlEntry('/radio', staticLastmod, 'weekly', '0.6'));
-  urls.push(urlEntry('/cifras-violao-ccb', staticLastmod, 'weekly', '0.7'));
-  urls.push(urlEntry('/cifras-ukulele-ccb', staticLastmod, 'weekly', '0.7'));
-  urls.push(urlEntry('/cifras-teclado-ccb', staticLastmod, 'weekly', '0.7'));
   urls.push(urlEntry('/baixar-hinos-ccb', staticLastmod, 'monthly', '0.6'));
   urls.push(urlEntry('/baixar-albuns-ccb', staticLastmod, 'monthly', '0.6'));
   urls.push(urlEntry('/baixar-cds-ccb', staticLastmod, 'monthly', '0.6'));
@@ -355,7 +355,7 @@ async function main() {
   // Hubs de cifras sem qualquer item publicado não devem ser promovidos no índice.
   // As rotas continuam acessíveis na aplicação e podem ser reexpostas quando houver conteúdo real.
   if (cifras.length === 0 && cifrasV2.length === 0) {
-    const emptyCifraHubs = new Set(['/cifras', '/cifras-hinos-ccb', '/cifras-violao-ccb', '/cifras-ukulele-ccb', '/cifras-teclado-ccb']);
+    const emptyCifraHubs = new Set(['/cifras', '/cifras-hinos-ccb', '/cifras/violao', '/cifras/ukulele', '/cifras/teclado']);
     urls = urls.filter((entry) => ![...emptyCifraHubs].some((pathPart) => entry.includes(`<loc>${SITE_URL}${pathPart}</loc>`)));
   }
 

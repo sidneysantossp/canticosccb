@@ -21,6 +21,21 @@
     <priority>0.8</priority>
   </url>
   <url>
+    <loc>https://www.canticosccb.com.br/cifras/violao</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://www.canticosccb.com.br/cifras/ukulele</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://www.canticosccb.com.br/cifras/teclado</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
     <loc>https://www.canticosccb.com.br/hinario</loc>
     <changefreq>daily</changefreq>
     <priority>0.9</priority>
@@ -459,21 +474,6 @@
     <loc>https://www.canticosccb.com.br/radio</loc>
     <changefreq>weekly</changefreq>
     <priority>0.6</priority>
-  </url>
-  <url>
-    <loc>https://www.canticosccb.com.br/cifras-violao-ccb</loc>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://www.canticosccb.com.br/cifras-ukulele-ccb</loc>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://www.canticosccb.com.br/cifras-teclado-ccb</loc>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/baixar-hinos-ccb</loc>
@@ -4459,3157 +4459,3157 @@
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/ezequiel-seguro-estou-2-acervo-canticos-ccb-cbe4321c-3cc9-4ee0-9e3d-3f07c9baf705</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/hinos-piano-hinario-5-acervo-canticos-ccb-840704d2-d5c3-4d54-a95b-9e08ab0537d9</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/ferreira-alves-orquestra-acervo-canticos-ccb-a3ddc371-8a72-4ab5-b75a-851bdce49e2b</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/hinos-orquestrados-acervo-canticos-ccb-e388377a-5fbd-4b9e-84a1-18a0d7a7b1f2</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/caipira-acervo-canticos-ccb-155b806c-77a7-49f6-aa98-406451f5a637</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/piano-em-louvor-2-acervo-canticos-ccb-8d275dfd-a08f-4a2d-a24d-f89749c4a95f</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/dorival-e-evandro-mococa-os-gargantas-de-ouro-acervo-canticos-ccb-ca960687-0652-4726-beb8-a66b774a728b</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/sax-baritono-floreados-acervo-canticos-ccb-a7fcba1c-bb0c-40e0-8d40-8d150cee6efd</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/rony-cardoso-coletania-jovens-e-menores-parte-1-acervo-canticos-ccb-52e33440-3736-4b13-a135-24c1ea7fe278</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/marcos-miranda-1-acervo-canticos-ccb-98d5e54c-6e28-4e90-98cc-182d9d7b2d8f</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/piano-hinos-ccb-i-acervo-canticos-ccb-56a554ca-3fd1-49b1-81c0-fe6a15ced073</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/10-declamacoes-inspiradas-vol-10-2014-luiz-paulo-de-ribeirao-preto-acervo-canticos-ccb-4125326b-d723-4479-96b4-befab52120e9</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/sax-clarinete-em-louvor-vol-2-acervo-canticos-ccb-66316eb7-36ff-4b29-92be-717dd8939208</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/edilson-e-daniel-acervo-canticos-ccb-d0eff9c7-b7bf-47ed-bbfc-a16e9229e45b</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/piano-digital-5-acervo-canticos-ccb-5ab9ea92-3b57-4be6-9787-a2e4bf75b469</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/coletania-126-a-150-acervo-canticos-ccb-728cf9d1-fc78-441c-aa0c-bf1ce6d8fc61</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/mauricio-acervo-canticos-ccb-568a6673-2a71-4c26-9b9d-4303054d21b5</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/sax-tenor-acervo-canticos-ccb-5189399e-f3cd-41d0-b26c-597bd6378402</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/voz-violao-e-cavaquinho-acervo-canticos-ccb-3112993f-e303-401a-8d48-c21ad5f0d5eb</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/coletania-226-a-250-acervo-canticos-ccb-cea88186-2ae7-4555-8913-b7dc6eaa869e</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/ismael-e-jose-edson-hinos-de-batismos-acervo-canticos-ccb-9112a4ff-2010-42ac-98bd-34d634d48468</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/coletania-276-a-300-acervo-canticos-ccb-19795cf4-96d6-4b6e-897a-dab96193b824</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/ismael-e-jose-edson-sax-e-volao-acervo-canticos-ccb-8daecc36-99bb-44e1-b09e-2c5c6544378a</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/coletania-426-a-450-acervo-canticos-ccb-fbf5079a-43a5-473f-84bd-c6ff6d21dca8</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/coletania-101-a-125-acervo-canticos-ccb-5d68c5a9-cd37-4e9e-ae8d-86b1dd76256c</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/coletania-351-a-375-acervo-canticos-ccb-73bbf766-5fcf-4f2d-9f86-1b309e792df6</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/coletania-201-a-225-acervo-canticos-ccb-56d54882-0937-4537-a83f-2a50b2235abc</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/sax-piano-acervo-canticos-ccb-21a53c44-c225-49e3-9a36-d4a6493b9531</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/coletania-326-a-350-acervo-canticos-ccb-07bd2ddb-cd4f-4057-9f0f-34cb8dcbb3c0</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/ensaio-local-em-barra-de-guabiraba-pe-acervo-canticos-ccb-328fb21e-daed-421e-8021-b29c5a091cc6</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/coletania-376-a-400-acervo-canticos-ccb-0b76ebe1-cc13-4ec9-935e-3ddc66968f6f</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/thiago-de-mattos-a-minha-alma-acervo-canticos-ccb-070f9704-eff5-4e50-bbd2-2968c5295454</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/coletania-301-a-325-acervo-canticos-ccb-9e5e6a48-4be8-4d04-ad35-243c07cd608c</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/louvores-em-sax-tenor-2-acervo-canticos-ccb-32bafd10-2580-49e2-b322-97eeeac771e9</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/tocata-cerejeiras-ro-01-acervo-canticos-ccb-c93b4e1d-4917-42e8-986c-0a361acd3daa</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/everton-rodrigues-sorocaba-sp-12-acervo-canticos-ccb-beb2470e-9cba-4ee9-a654-e9e699f146d6</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/everton-rodrigues-sorocaba-sp-15-acervo-canticos-ccb-6a443cf9-fa2b-4e21-bad5-500bd2ed3b67</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/tocata-sax-baritono-e-acordeon-acervo-canticos-ccb-e613d3dd-204e-4040-b135-d65935a60e4d</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/tocata-maringa-betinho-acervo-canticos-ccb-71fd8a14-e0b3-4abf-8243-88597a50409b</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/everton-rodrigues-sorocaba-sp-14-acervo-canticos-ccb-6069e96b-354d-4d6d-b5b0-94c3823c8d96</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/tocata-cacoal-ro-acervo-canticos-ccb-8e18f602-0100-4c68-b002-827f68dcfced</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/solos-de-flauta-doce-vol-2-ezequiel-finkell-acervo-canticos-ccb-3941a0b1-d976-43e4-ba74-81344a2fc62a</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/flautas-em-louvor-acervo-canticos-ccb-3de30fd9-ca61-44ae-9c85-d85aecba09c6</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/marciel-dias-acervo-canticos-ccb-2aa32e75-10a8-4d52-a53e-c0851574ca0b</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/flauta-e-violao-acervo-canticos-ccb-848cdfb3-d675-48f4-bbdc-cd4883996ba0</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/joney-violino-cascav-pr-acervo-canticos-ccb-2719cba6-cc8b-4204-a9a6-4b851e0e429a</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/irmao-toninho-e-irmao-vitor-acervo-canticos-ccb-0822bf56-5c08-489f-b727-3b4c819063eb</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/flauta-e-violino-1-acervo-canticos-ccb-e3831357-dde5-478d-ba3e-ac13174d97be</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/guitarra-havaiana-acervo-canticos-ccb-b2d09359-d075-41c2-a875-deb416b8418d</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/flauta-transversal-e-clarinete-acervo-canticos-ccb-e1368c17-10e0-4e0e-89b8-81c3c69e14a7</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/rodrigo-mendes-acervo-canticos-ccb-5b7ea10b-0de3-4240-94c5-b0d36bf16a44</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/meninos-de-limeira-acervo-canticos-ccb-9d88b02d-84d2-4fbc-8f76-c320fab45b70</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/daniel-dobre-guitarra-hinario-5-acervo-canticos-ccb-f86b380e-fdd1-4952-9acd-3f6775bdc847</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/daniel-dobre-luthier-guitarra-acervo-canticos-ccb-f1133f79-80ab-46b8-8880-5501f18b98df</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/violino-ccb-hinario-4-acervo-canticos-ccb-72545db8-db50-4102-a1df-91634bc04d54</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/bruno-diedrichs-3-acervo-canticos-ccb-ed502854-d2e6-4af2-80c7-2de13abbf44f</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/evaldo-guilherme-acervo-canticos-ccb-c07e71d8-0d22-49fc-9243-8e16c1def8cb</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/bruno-diedrichs-2012-guitarra-acervo-canticos-ccb-b4987bec-9246-460c-a0cf-9971d5a8e8c0</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/douglas-lopes-2-acervo-canticos-ccb-e5d91746-958f-4b2a-8cdf-f6540a710329</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/dueto-de-cordas-acervo-canticos-ccb-42c99c98-2b43-43b0-b489-0071839a6521</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/violino-sax-tenor-trompete-teclado-acervo-canticos-ccb-a2106dc5-7884-4f43-890c-5078ac81640f</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/violino-e-clarone-vol-03-acervo-canticos-ccb-c04b7887-1c05-406b-9f46-b43f158c9b45</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/douglas-lopes-acervo-canticos-ccb-98866b8a-c780-47b3-9d4a-24ad2cb46e1b</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/irma-sandra-acervo-canticos-ccb-465955e4-bb4a-4562-a0c1-1c933990af6e</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/joelson-acervo-canticos-ccb-442fc38b-2cc4-4cde-bf2a-55648719af7f</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/duetos-de-flauta-doce-acervo-canticos-ccb-b3464a20-c6dd-4a25-9d61-a0b694674350</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/flauta-transversal-acervo-canticos-ccb-73c9b5e4-45af-4b82-9e5c-2544eec51f2f</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/robson-cosmopolis-sp-acervo-canticos-ccb-f87be2b3-e66d-498b-b489-0704bc127d76</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/flauta-boliviana-acervo-canticos-ccb-6acb1f9a-e90d-4bea-ba71-becde7adbdcb</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/emy-e-marlon-acervo-canticos-ccb-2f9dbe48-7678-4b34-bc5d-fba6a57920c3</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/eduardo-conforte-volume-02-acervo-canticos-ccb-95f632b8-40ad-464d-a747-a41b37cac432</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/play-back-hinos-acervo-canticos-ccb-b6211107-0dbb-4597-9acc-acac6a2c5b9b</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/rony-cardoso-playbacks-acervo-canticos-ccb-85eb87bf-d3ee-42a2-832e-deeef4e6bbe1</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/tiele-meire-tiele-playbacks-acervo-canticos-ccb-0d81fa71-27ec-437d-a9ba-f8a3c4b261c5</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/daniel-pereira-jau-acervo-canticos-ccb-c3f727e5-369a-4253-a257-093e5db56df8</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/play-back-hinario-5-hino-1-acervo-canticos-ccb-19684521-acaa-4d87-9091-c9f5cf5573b7</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/eduardo-conforte-acervo-canticos-ccb-65462dc9-8241-4d1e-aad5-b5d42bfad707</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/play-back-hinos-2-acervo-canticos-ccb-40bfd57f-f759-49e9-97e5-8d48f75c5994</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/eduardo-conforte-volume-03-acervo-canticos-ccb-0ffd2c15-689d-46ef-9a50-4925fb33f776</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/eduardo-conforte-volume-04-acervo-canticos-ccb-2ca4d9dd-48a0-4a32-83f3-c5a78831d97b</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/banda-municipal-acervo-canticos-ccb-13d8fa7f-f367-486d-9055-a4e16f7a5964</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/roberto-sax-alto-fernandotrompetista-2-acervo-canticos-ccb-61a5f0ee-a3d7-451c-abf0-7a43d229c0da</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/gaita-acervo-canticos-ccb-81a95590-071a-4f17-ac3a-6ff8ecc6bf9e</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/trio-de-sax-e-tuba-acervo-canticos-ccb-6cf06abf-6749-4a49-8a8b-9aebd7fa2c6c</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/orquestra-limoeiro-vol-1-acervo-canticos-ccb-5d05dd06-621b-46ee-9173-21d450d74ad4</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/angelo-antonio-acervo-canticos-ccb-f4adf745-ba5d-42d7-8753-d08c1fc39007</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/solos-de-gaita-diatonica-acervo-canticos-ccb-083eb239-e09e-4093-8282-2fe09c806555</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/clayton-gease-1-acervo-canticos-ccb-f6e0b4f9-e716-4103-a9e1-b3a92a97ecdc</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/v-e-g-a-acervo-canticos-ccb-b60a2f56-fc56-4fc0-a522-08c67d45997a</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/denise-mazzaro-e-tiele-acervo-canticos-ccb-a1825229-fec2-420a-b00d-90c2ff6a9ae9</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/walter-fawcet-acervo-canticos-ccb-b3cfa27d-2a69-4694-8a73-a6bae99deb43</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/himnos-nuevos-en-espanol-acervo-canticos-ccb-a9737cec-fca7-4690-93ae-881c179e871e</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/g-e-e-m-italia-acervo-canticos-ccb-b02a7b02-5bbc-403a-97f2-7b71a934ff18</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/elias-e-eliziana-orgao-claudio-acervo-canticos-ccb-e48ab06e-9835-4459-b4d3-4358b199457d</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/cantados-italiano-1-acervo-canticos-ccb-43ca397d-4fe4-4d0b-80bf-5cfdfbcdd9d3</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/samuel-de-camargo-um-peregrino-sou-aqui-acervo-canticos-ccb-47dd4597-3378-40ff-a54c-ea796eff5708</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/os-mais-belos-hinos-da-fe-crista-acervo-canticos-ccb-996eb582-3e18-400d-9743-6f286cc4c108</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/everton-rodrigues-e-fernando-lopez-trompete-acervo-canticos-ccb-347ce2c8-7652-4baa-ab52-2c1ecad024d5</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/tradionais-himns-sacred-acervo-canticos-ccb-75998026-a3dc-4069-ae77-73a7abb7d5e6</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/eliseu-davi-acervo-canticos-ccb-cf0bd1c5-d946-4383-9d4d-7363d4196a26</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/adriel-aline-e-jac-2-acervo-canticos-ccb-33483031-7d60-4d69-8e77-6027f09113ef</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/adriana-ariane-regineia-e-regiane-acervo-canticos-ccb-902fe18d-6701-40f4-8737-5d967458f0c3</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/emerson-silva-piano-eletrico-e-flauta-acervo-canticos-ccb-eaab0b91-3220-4c36-bc56-570292c55a10</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/o-rosa-de-saron-saron-gilson-xavier-acervo-canticos-ccb-9c79465e-4caf-4ea6-bc6d-830fc0b03af6</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/um-tenor-da-c-c-b-acervo-canticos-ccb-97f7bb2f-dfe8-4177-8bdf-77ab674b6fb5</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/ir-antonio-deficiente-visual-baln-camboriu-sc-apiuna-acervo-canticos-ccb-9e457f02-7ac2-4673-a6e9-1f7b5eb0e7d4</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/hinos-de-jovens-2-acervo-canticos-ccb-633921f2-2381-4f6a-a022-1ff5201d92a1</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/louvores-e-suplica-a-deus-orquestrados-acervo-canticos-ccb-01a26a89-4e25-4f25-9d21-175db4daf402</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/a-d-a-acervo-canticos-ccb-719814fe-79f5-4e6a-a690-3ba8c4d524b1</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/bernard-smith-flauta-pan-instrumental-guarulhos-centro-acervo-canticos-ccb-46088d23-68b5-4119-a51d-b120d466f1ec</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/fernando-lopez-e-russian-philarmonic-acervo-canticos-ccb-34049963-f40c-4a4d-949b-a54ea8d1cdb4</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/family-simeone-city-of-astorga-and-little-londres-acervo-canticos-ccb-d5f5f302-7cbf-4258-a164-ad0254bf7fd6</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/samuel-guimaraes-3-acervo-canticos-ccb-e89199e5-268e-4a64-b041-268570178bda</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/celso-e-renan-acervo-canticos-ccb-13abe8fe-f6b7-4f79-9769-795f1c00f3ed</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/the-statler-brothers-acervo-canticos-ccb-fa112409-d341-40c7-a4fb-df09d68df09a</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/cantados-5-acervo-canticos-ccb-08994099-5b6f-425d-a4a3-fe71176b2af6</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/jane-adolfo-silvio-e-juninho-acervo-canticos-ccb-162cf8c1-977c-4e64-b838-f67ff75f48ad</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/instrumental-praise-da-ccb-acervo-canticos-ccb-7bc2e192-d0e5-4b51-8bfd-c266dc1e91c7</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/hinos-ingles-e-espanhol-hinario-5-acervo-canticos-ccb-33ef5c2b-a2f6-41e0-a025-07dbe89bd851</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/irmao-salvador-petrolina-acervo-canticos-ccb-c1591759-e83b-4d7a-b382-a8e7a0fcef17</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/polyana-nelly-e-vilson-2-acervo-canticos-ccb-5c241689-8d0e-4800-a91a-4521fdc4e1c2</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/danilo-de-carapicuiba-6-acervo-canticos-ccb-4d94fdc9-572f-4016-a200-9a0e5ccb1aa4</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/os-mais-belos-hinos-orquestrado-acervo-canticos-ccb-04b5c557-e567-47cb-81ab-ccad2b9d90db</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/sueli-1-acervo-canticos-ccb-baaa26d1-7473-4e4a-9c82-a31feae93bfb</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/marciano-3-acervo-canticos-ccb-43d932f0-2fdd-4468-bd04-6a7a8818d9da</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/sitio-beleza-acervo-canticos-ccb-6a52e2f6-f575-411c-be06-660e1564d843</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/cantados-4-acervo-canticos-ccb-ea9fc3e4-4c45-4c29-8d45-466c95bf8a10</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/mormon-tabernacle-choir-guarulhos-centro-acervo-canticos-ccb-9a3c15ff-f796-421a-8468-587a5593578d</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/ensaio-regional-na-ccb-lapa-sao-paulo-19-01-14-acervo-canticos-ccb-8e83d8cf-774d-44f9-8cb0-6ee73793ca5b</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/hinos-em-ingles-cristo-meu-mestre-hinario-5-acervo-canticos-ccb-83fb3503-0c7d-489a-9904-566b438251fe</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/waldemiro-lemke-guarulhos-centro-acervo-canticos-ccb-c0599847-f5bb-46cd-837a-2f483d5459aa</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/cantados-ingles-acervo-canticos-ccb-4a008aa3-a95f-459d-b1aa-dbc655f4b57e</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/andre-araraquara-acervo-canticos-ccb-d92cf805-a07b-4a10-aaef-678d19d8d82a</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/isaias-farias-acervo-canticos-ccb-33ceb95d-9873-4d05-a23e-5051a4a19de4</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/louvor-com-jubilo-vol-5-ezequiel-finkell-acervo-canticos-ccb-eb480d22-be79-4158-be6c-e88b3794614a</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/orgao-piano-e-orquestra-guarulhos-centro-acervo-canticos-ccb-f1f6e77c-c6c4-4d2d-8c88-bb368c63366b</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/julio-tiago-acervo-canticos-ccb-77c824da-22cf-4875-a8ff-0b257f94926b</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/cantados-ingles-1-acervo-canticos-ccb-8b55a671-2868-4d11-afaa-b5be8509468a</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/samuel-de-camargo-1-acervo-canticos-ccb-ba29272f-9b52-4b1b-9111-648bc1c9bc1a</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/osias-paulo-da-silva-hinos-de-louvores-e-suplicas-a-deus-7-acervo-canticos-ccb-e3a4d5ed-5d5a-4f5b-b24e-2e2dfed8bef0</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/the-hymn-makers-fanny-crosby-guarulhos-centro-acervo-canticos-ccb-05614952-19ec-4e53-9b1b-0125ec715531</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/sax-soprano-e-sax-tenor-em-louvor-acervo-canticos-ccb-39e1f952-1b25-4a17-b1fc-3bb6ed223ef7</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/histhalhen-saxofonista-acervo-canticos-ccb-8b91fc6b-9d78-4169-8e47-8253837a4c5c</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/coral-ingles-acervo-canticos-ccb-4578f86a-4dd7-4bf8-b41c-49ebe27b7190</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/the-hymns-collection-guarulhos-centro-acervo-canticos-ccb-5186edb2-b06c-47bc-a5b2-7bee6d492186</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/hinos-em-ingles-hinario-5-acervo-canticos-ccb-4e83dfe7-6fa2-4583-864b-39ba3ec14bdc</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/ebner-crispim-e-u-a-2-acervo-canticos-ccb-535c1002-fd6b-4022-849a-2c0507257e9a</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/reddo-acervo-canticos-ccb-cc9c1c09-c6da-4086-93c0-873a4ddcddfc</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/o-som-da-alma-acervo-canticos-ccb-1d719614-83bd-41c8-ba2a-946650e65781</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/paulo-nascimento-30-hinos-novos-completo-acervo-canticos-ccb-0f3f7493-be3b-4c3d-a345-e995b2a5ebae</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/the-hymn-makers-herbert-booth-guarulhos-centro-acervo-canticos-ccb-ea5c3491-3ca0-452c-8b5d-19685283011e</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.canticosccb.com.br/album/the-hymn-writers_-ira-d-sankey-guarulhos-centro-acervo-canticos-ccb-bdee0585-298b-4937-8e70-95adca162588</loc>
-    <lastmod>2026-03-25</lastmod>
+    <loc>https://www.canticosccb.com.br/album/the-hymn-writers-ira-d-sankey-guarulhos-centro-acervo-canticos-ccb-bdee0585-298b-4937-8e70-95adca162588</loc>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/mormon-tabernacle-choir-2-guarulhos-centro-acervo-canticos-ccb-914d5a26-ff80-4891-bf5a-3ddb81b30c63</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/a-d-a-2-acervo-canticos-ccb-47670a67-3aeb-4815-8d43-bad589067346</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/50-most-loved-hymns-guarulhos-centro-acervo-canticos-ccb-74035c6c-bc8c-4e79-81aa-2c22c4b42f83</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/hinos-celestiais-waldemiro-lemke-guarulhos-centro-acervo-canticos-ccb-e187da12-3913-4732-b684-c81a9c9ea959</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/piano-guarulhos-centro-acervo-canticos-ccb-9874675d-a105-4e99-b16d-893b7f1cc933</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/piano-eletronico-e-flauta-acervo-canticos-ccb-de87c13f-7c23-4ec3-bf69-dece5d3717ba</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/piano-hin-5-acervo-canticos-ccb-baa2c70e-3c92-4e63-b9e5-6da6e1520ead</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/marcelo-2-acervo-canticos-ccb-b8dd987e-3233-4ab4-987d-43c0b9f6c3eb</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/solos-de-escaleta-melodica-acervo-canticos-ccb-0bba3ae0-5e6d-41c7-9caf-b9b079d3cecd</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/violao-arranjos-jonas-de-astorga-acervo-canticos-ccb-61eb4952-2238-45d3-bfd8-fe5358abd5b4</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/sax-em-louvor-2-acervo-canticos-ccb-7dae82a4-ffbf-4cae-86d9-df4f763cca9c</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/the-statler-brothers-1-acervo-canticos-ccb-a95431d1-7200-413a-b0b7-6f7671dcc5d1</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/piano-eletronico-e-flauta-hinos-de-batismo-acervo-canticos-ccb-cc4ddc76-0ad6-4292-8e10-35e427da0d25</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/jane-11-acervo-canticos-ccb-f4f679e3-2f93-44d4-9ee4-d157d2b728d6</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/vozes-ingles-letra-ccb-oxford-uk-acervo-canticos-ccb-43e29f6c-037b-4991-ac29-d7162fe2d664</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/somente-gaita-solo-aislan-molina-arapongas-pr-acervo-canticos-ccb-8e031d9a-6eec-45e0-84d4-d29517d801f7</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/adailton-elton-e-edinisio-acervo-canticos-ccb-fd1e2d84-a6f8-48d7-9552-3a1108035842</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/violao-classico-hin-5-acervo-canticos-ccb-417ce987-efe6-48ec-90b2-f12e53e367fd</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/lorenna-tocando-acervo-canticos-ccb-7069d48e-f9bd-4475-b1d6-7ff90ead2fad</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/servo-de-deus-ao-orgao-1-acervo-canticos-ccb-16b3062e-0368-4d73-acf3-c92ebea7b4e9</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/orgao-para-meditar-by-daniel-terra-acervo-canticos-ccb-012c1e81-3c58-4639-8686-484a818fdf35</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/orgao-minami-m4-acervo-canticos-ccb-e51a2c21-0f4d-4d92-b470-bb485f51647f</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/samuel-guimaraes-9-acervo-canticos-ccb-20d73502-9144-4749-a398-5f271b66ace6</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/samuel-guimaraes-4-acervo-canticos-ccb-28c4607b-287c-4509-b1e4-9a011edee722</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/orgao-em-louvor-hinos-sacros-tradicionais-acervo-canticos-ccb-ed0425cb-1a3b-485f-9d5a-fbe04f19b71a</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/samuel-guimaraes-vol-7-acervo-canticos-ccb-3372b362-184f-443e-a4c7-80ec301862c5</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/orgao-minami-m4-rjm-acervo-canticos-ccb-6657f4d3-0da5-4c7f-ad6c-877d07541d2b</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/jane-7-acervo-canticos-ccb-40001ead-3cb8-4fc9-8459-f1c47867cffa</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/jane-8-acervo-canticos-ccb-c7ed836c-502f-4fb7-b344-64160b4ec7e5</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/weslei-e-ana-paula-2-acervo-canticos-ccb-0f0ce49b-851c-4c06-9be3-51b967fb7081</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/rosieli-daiane-orgao-hinario-5-acervo-canticos-ccb-43a1cd5e-5a41-4f1f-8f05-6b97d9128245</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/samuel-guimaraes-acervo-canticos-ccb-f4653a11-a73a-4850-903d-44dece3cb24f</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/tocata-vera-cruz-acervo-canticos-ccb-92007253-459d-4e9b-86c0-be76cbe1bb09</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/jane-9-acervo-canticos-ccb-74931019-8340-409a-88f4-44c71e097e7c</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/jane-6-acervo-canticos-ccb-6beb180a-3590-482c-bc3b-292f5dfd94e0</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/tiele-mazzaro-orgao-e-adoracao-vol-i-acervo-canticos-ccb-4fc1cd68-b394-4c26-a494-2ffc55b0be46</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/derly-e-alexander-acervo-canticos-ccb-f2334679-e5bd-4790-9bd8-de9ae7a591ad</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/tabernacle-choir-orgao-de-tubos-guarulhos-centro-acervo-canticos-ccb-68f346df-6aba-40f1-8b88-c6d1e971ba8f</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/regis-azevedo-e-celso-nery-acervo-canticos-ccb-44e7b594-182a-4321-b637-ffc868773e23</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/hinos-de-louvores-suplicas-deus-acervo-canticos-ccb-e10bfe11-1716-4cd9-b44f-76166f341ec0</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/orgao-liturgico-acervo-canticos-ccb-27155ad1-15eb-4551-99d5-1e22debe0350</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/hinos-hinario-5-parte-3-acervo-canticos-ccb-9c0258df-3adc-4c0a-ac1b-638fdf826d8f</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/jane-rodrigues-santo-santo-santo-acervo-canticos-ccb-5259d148-cc1f-4a42-9f15-5c955d0eff1e</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/samuel-guimaraes-5-acervo-canticos-ccb-c66b5e2b-b879-4f27-b7a4-73a8ec5d916c</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/samuel-guimaraes-2-acervo-canticos-ccb-908e3ccf-500f-4e78-bbd4-ba45244cd35b</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/tocata-ritimada-itapetinga-ba-acervo-canticos-ccb-a145470c-4363-4fec-9759-fd09a8040417</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/john-carlos-05-acervo-canticos-ccb-06811731-171e-4dea-82bd-8ef6358e4af7</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/rony-cardoso-sou-feliz-acervo-canticos-ccb-29b59f51-a127-4526-9ff6-932bfa135ac5</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/tocata-de-sao-paulo-guarulhos-centro-acervo-canticos-ccb-e517802b-9241-417e-b834-bab8e118bf5c</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/louvores-a-deus-3-acervo-canticos-ccb-0a53a4e0-8285-4e39-b8d8-6b1d65744e8f</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/irmaos-no-carcere-acervo-canticos-ccb-9253279d-71bf-40cd-8bfb-77187d4b5eba</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/evandro-zona-leste-sp-2-acervo-canticos-ccb-1148ddc5-3b2f-4305-ab37-05c8bc38853c</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/samuel-guimaraes-8-acervo-canticos-ccb-bab04f6d-cf7b-4db5-a4a9-037adbc7cc53</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/hinario-5-som-de-orgao-e-voz-acervo-canticos-ccb-72ea6345-0619-41d7-bc89-abd7ac96149c</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/acompanhamentos-orquestrados-021-040-acervo-canticos-ccb-8c111769-2fed-4128-abd3-e3a286e9172c</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/tocata-itupeva-acervo-canticos-ccb-c08d8e14-a342-4b5c-88bf-a40f39c274bb</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/gabriel-ferreira-volume-7-acervo-canticos-ccb-24b0ada5-d969-4467-a887-8246b187cd3d</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/gilson-xavier-divina-fonte-e-jesus-acervo-canticos-ccb-33417db5-bb78-421c-be0f-fc326f6e9b7a</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/fernando-lopez-trompete-2-acervo-canticos-ccb-8f19a873-1a4a-4ed1-8f61-76076a22d6ad</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/hinos-ccb-em-ingles-acervo-canticos-ccb-0cc62cac-7e92-4c58-8093-77925f1ae0f0</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/orquestra-de-cordas-flautas-e-demais-instrumentos-acervo-canticos-ccb-dc1a38e8-a130-4830-978b-e6a02d88e21b</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/marcelo-3-acervo-canticos-ccb-5b35a9c5-cc4d-4177-9753-ab54b7f0a2a1</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/tonhao-e-rodriguinho-do-baritono-foz-acervo-canticos-ccb-ec1ce4df-89ef-4cce-a525-3fcc8b42bf17</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/roberto-sax-fernandotrompetista-acervo-canticos-ccb-bce8b154-68a6-4877-a9bb-65a5bd661afc</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/ezequiel-finkell-duetos-de-flauta-doce-vol-2-acervo-canticos-ccb-3ca3761a-530e-4a43-8969-343e111c3949</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/jane-e-jonas-vol-16-acervo-canticos-ccb-e82b75ac-9587-4a47-a2ba-0b15fcab20ba</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/called-to-serve-guarulhos-centro-acervo-canticos-ccb-d0b4eab6-8a96-48ff-adda-679b592f9c72</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/fabricio-acervo-canticos-ccb-3993695c-9e71-45a4-ba14-20c77b406fb2</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/jhideki-e-eliezer-sorocaba-acervo-canticos-ccb-72b965ca-0f34-455a-bb21-aa98e9d65f75</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/bruno-sax-alto-sax-classico-ariquemes-ro-acervo-canticos-ccb-b80ccc15-a4d8-459a-abef-ed4444879613</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/lilian-de-sumare-sp-acervo-canticos-ccb-0a7dacfc-f979-4ebc-9ac0-e68fe3a34cab</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/tocata-camacari-ba-acervo-canticos-ccb-e710bbfb-34af-447b-b2a0-7dde536f4128</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/tocata-campina-guarulhos-centro-acervo-canticos-ccb-9c86fb18-357b-4f56-993b-56a683b82418</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/quarteto-de-cordas-acervo-canticos-ccb-5fc573bc-db35-435f-b30b-4027fb23bb76</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/tocata-guarulhos-centro-acervo-canticos-ccb-7f4cf8ec-4b5f-4fe4-a45f-0aa403c579ee</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/turma-de-carapicuiba-acervo-canticos-ccb-0f94df54-0e9d-4504-ad16-8283f2a69475</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/tocata-familia-teixeira-2-guarulhos-centro-acervo-canticos-ccb-c4be96f0-6b1d-4b41-b03a-72f778bc5c9d</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/batismo-no-bras-acervo-canticos-ccb-356e1f8d-630a-44fe-bfa3-2cecae22dead</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/hinario-5-vol-3-islandy-limeira-sp-acervo-canticos-ccb-be66b508-ea52-40e1-8121-a530da296979</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/jaime-silva-santa-amelia-curitiba-acervo-canticos-ccb-d28e257f-00d5-4951-b050-bb2f84834b96</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/quarteto-de-cordas-2-acervo-canticos-ccb-f0fbe806-5ebb-44d1-be61-7c57e658a512</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/violino-2-acervo-canticos-ccb-3ed6d304-ddc6-4aff-92a6-dbe7ac484f5e</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/jd-veneza-fazenda-rio-grande-acervo-canticos-ccb-ea22a04f-b004-4872-82d7-5ae43df7477a</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/flauta-e-violino-acervo-canticos-ccb-1cb895ae-6c5f-4fe2-96ca-835847239872</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/quarteto-de-cordas-3-acervo-canticos-ccb-e29e95f3-c5a1-4f9d-95e0-913da3cebd20</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/violino-violao-carlinhos-magner-e-renato-acervo-canticos-ccb-4991bc2a-8765-47a8-99fb-35e79f9996b0</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/hinos-instrumentais-9-hinario-5-acervo-canticos-ccb-589b41b0-deb9-4e86-8e64-810fb9a18fe4</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/pregacoes-acervo-canticos-ccb-58b57b9c-f264-4225-acb4-1e4fd342d241</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/trombone-e-orquestra-acervo-canticos-ccb-4fab3520-11bf-465b-9b34-b5d5305a0d3b</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/everton-rodrigues-sorocaba-sp-10-acervo-canticos-ccb-4b61a6b8-520e-42a9-894f-81d0f7a9604a</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/os-mais-belos-hinos-orquestrados-da-fe-crista-acervo-canticos-ccb-dee3cfb2-c3fa-42cf-801d-5624bffca3cc</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/abner-gabriel-e-jose-roberto-o-clamor-dos-santos-acervo-canticos-ccb-20202713-5428-40b1-8614-a4a489e15d94</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/o-tesouro-escondido-a-grande-perola-e-a-rede-claudio-martins-acervo-canticos-ccb-d35d587e-32bf-46a0-a2b0-1f93f7389a2d</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/pavao-bonito-a-melhor-fita-de-matheus-e-jairo-acervo-canticos-ccb-03834211-c462-41eb-b5b5-178a8a7e5f70</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/hinos-instrumentais-3-acervo-canticos-ccb-3c56af6f-5aa1-4c85-9fa0-62043c9b2143</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/claudinei-franca-1-acervo-canticos-ccb-75d020ba-7a44-41de-9d8a-c71653c8a3c4</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/leandro-santos-clarineta-4-vozes-acervo-canticos-ccb-b64c7b15-f722-498b-9fc0-2a65ff9ff76c</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/andre-araraquara-2-acervo-canticos-ccb-36c5f680-557c-4f70-b589-e09659e185eb</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/novos-hinos-cantados-com-violao-acervo-canticos-ccb-4775bc7b-6896-46f5-a6aa-407342db0de6</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/j-c-itaporanga-pb-acervo-canticos-ccb-60bd2d01-bb1b-482e-8af1-b86217f0325c</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/roberto-saxofone-elias-saxofone-acervo-canticos-ccb-95e08985-19e7-4f79-9f96-8a4aae138e55</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/tocata-linda-accordeon-sax-e-baixo-hinario-5-acervo-canticos-ccb-07224e6e-642b-4118-85bc-7404f5440537</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/violino-e-viola-acervo-canticos-ccb-1098e27c-3d9e-495c-95f8-e313b3a8c244</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/cleiton-e-mazinho-sorocaba-louvores-eternos-h-5-acervo-canticos-ccb-f7e5a981-d3c8-4455-b1a7-08010955a995</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/tocata-de-lins-guarulhos-centro-acervo-canticos-ccb-32498a0f-dbb8-4d83-a809-071ff9c4fef3</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/cd-2-ir-antonio-deficiente-visual-baln-camboriu-sc-apiuna-acervo-canticos-ccb-2001a93e-2a1f-42db-8b99-8d02a3a30878</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/tocata-sorocaba-acervo-canticos-ccb-934a310e-5474-4ddd-9f0d-7fc411e7ee4c</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/irmao-e-irma-atibaia-sp-2-acervo-canticos-ccb-0e5c7c8e-e074-43e4-b8f7-b3d8955ba995</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/fabricio-e-samuel-chagas-acervo-canticos-ccb-f16b6ff8-9239-4db9-8d4f-fc75d78f30da</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/dalila-e-silvana-acervo-canticos-ccb-584755f6-6668-4ae3-bede-4f7bf3afdd77</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/noemia-hinario-5-2-acervo-canticos-ccb-11417b7f-b664-4398-90c9-3693b1756553</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/louvores-ao-deus-altissimo-acervo-canticos-ccb-a16390e3-66c6-4c12-93dc-84ef3bbf77b0</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/tocata-curitiba-guarulhos-centro-acervo-canticos-ccb-8079edba-46ce-48aa-af85-1444e0e2aef1</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/tocata-capim-grosso-acervo-canticos-ccb-81a5dad6-8e2d-40b8-bd74-1bbbeed0d453</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/the-quartet-brass-guarulhos-centro-acervo-canticos-ccb-475d1046-df15-4b1d-9eeb-684420fe6ba7</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/quarteto-de-cordas-1-acervo-canticos-ccb-c0861c7c-7fb9-4205-bd67-b8425d075387</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/louvores-ao-eterno-acervo-canticos-ccb-e07e6fe4-3e9a-4354-a986-db53db84512b</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/liliane-1-acervo-canticos-ccb-ec99bab1-8591-458b-95e2-efd9eabbbb9b</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/gilson-xavier-peregrino-sou-no-mundo-acervo-canticos-ccb-9e00af86-6a7b-46a4-85eb-9de927ea250b</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/canticos-com-violao-acervo-canticos-ccb-edc5cc7d-7fd1-4989-8095-22c7f0beb009</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/voz-e-violao-5-acervo-canticos-ccb-444073ed-b077-4002-b742-4daaca248cb4</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/coral-de-marilia-acervo-canticos-ccb-c5bec820-a103-41d7-8232-03704f93aaa2</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/irmao-toninho-acervo-canticos-ccb-5e41b3c8-6aef-4ba8-aa72-3c01d32774f7</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/a-capela-acervo-canticos-ccb-8e633de2-a096-467b-b691-2f3f2b3b896f</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/weslei-e-ana-paula-4-acervo-canticos-ccb-683ae14f-cf06-4c09-be86-1331a01d07a1</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/acordeon-e-floreados-acervo-canticos-ccb-c59d1e56-a76f-4388-9540-962be0512931</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/solo-de-acordeon-acervo-canticos-ccb-852127da-b272-4369-a9f6-5f5cedfcb6ee</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/daniel-acervo-canticos-ccb-0141847b-18e7-4af2-9624-9fee7dbf20e2</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/oboe-renato-vieira-acervo-canticos-ccb-b9e2daac-0063-41e5-936b-569a5daaa975</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/hinos-sacros-tradicionais-em-solos-de-acordeon-acervo-canticos-ccb-e3523152-ca9c-4369-9990-9137992d8279</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/daiane-acervo-canticos-ccb-452dff14-6611-4e7a-8b53-3d1aced1c285</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/romulo-e-acordeon-acervo-canticos-ccb-cf11e188-3410-4743-8bfe-c442cad84737</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/adriano-santa-rita-de-minas-acervo-canticos-ccb-97e48e96-5a4a-47d3-9ede-9718b60fb929</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/acordeon-acervo-canticos-ccb-d4052e2e-4287-4a67-bdc7-35f494f68ca6</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/porque-para-deus-nada-e-impossivel-servo-de-deus-claudio-martins-acervo-canticos-ccb-bc89a378-9aab-4dfe-85bd-d9661fca83de</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/ccb-hinos-de-louvores-acervo-canticos-ccb-e8ac61c7-fb86-47a1-bb1b-49587b6869c5</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/murilo-bauru-acervo-canticos-ccb-df1b2dd9-2b9e-4220-96e3-0eb9bbe184fd</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/ismael-de-arapongas-doutrina-da-graca-acervo-canticos-ccb-41b21dd9-503f-4c56-9def-102f51af76be</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/o-livro-dos-salmos-acervo-canticos-ccb-ae3813e8-63d2-4171-94f1-0952fe1ac571</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/lindos-hinos-avulsos-e-h-4-acervo-canticos-ccb-0be2275b-84dd-4fca-bc75-ec1cfdd4aa63</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/tudo-tem-um-tempo-determinado-por-deus-servo-de-deus-claudio-martins-acervo-canticos-ccb-e22f2a83-f775-461b-9c15-9f844767c730</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/hinos-novos-quinteto-de-cellos-acervo-canticos-ccb-6d577703-70f9-454b-b4f0-8a8797a3e0f7</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/depressao-tem-cura-servo-de-deus-claudio-martins-acervo-canticos-ccb-8bc022b3-3be1-4b4b-9086-e01c1f933688</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/playback-mazinho-sorocaba-acervo-canticos-ccb-2106199e-192f-4170-a02d-78d5cff76064</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/declamacao-de-sabedoria-palavra-de-deus-acervo-canticos-ccb-78f7ab04-6f70-4308-b17a-e5f19a55d727</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/a-volta-de-cristo-jesus-acervo-canticos-ccb-969d0cd0-5b9b-4e00-8330-7d4c311d888f</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/rubinho-do-violao-e-mauricio-acervo-canticos-ccb-a1a7888d-05f2-4170-ba2a-0b4d314f5707</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/fabricio-michel-johnny-no-teclado-2-acervo-canticos-ccb-a9c5c676-e8b8-467b-a35b-e44153093fce</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/salmo-91-24-02-14-servo-de-deus-claudio-martins-acervo-canticos-ccb-cb0c9f7c-a70a-4bb7-be02-4254d9e44b7e</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/ruy-leiras-jessica-cristina-nanda-cunha-e-mocidade-de-urupes-acervo-canticos-ccb-bbd503ba-dac5-4934-b2fd-bd671d99de06</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/o-amor-jamais-acaba-servo-de-deus-claudio-martins-acervo-canticos-ccb-0981d7ce-e318-4ed1-be69-7f2e8b7ea04e</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/elias-andrade-e-alberto-acervo-canticos-ccb-ed8977e2-9d81-478d-bbfc-d0b32f3a4b29</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/ensaio-local-na-parada-do-alto-sorocaba-sp-2-acervo-canticos-ccb-db5c6f1d-5c97-4f31-ae9f-4b0c53a15a02</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/ensaio-regional-sp-15-acervo-canticos-ccb-4d362216-e83f-495e-b5d9-fdcf6089ecad</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/ensaio-regional-sp-21-acervo-canticos-ccb-092e8741-c1f4-432d-b0a3-dc70e675c626</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/ensaio-no-bairros-dos-morros-sorocaba-sp-acervo-canticos-ccb-9d4b3fa0-cac8-41ee-b7a3-373231e84c8e</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/samuel-coutinho-ensaio-regional-em-portao-acervo-canticos-ccb-b1728a95-d4f1-4252-b258-570e6228f439</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/ensaio-regional-sp-23-acervo-canticos-ccb-215ffc02-7e8b-4ab6-bb03-37d683e7b7af</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/ensaio-local-conjunto-joao-de-barro-marialva-parana-acervo-canticos-ccb-3f68b084-2ab4-4e70-8600-b4fc650ba9e7</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/ensaio-regional-sp-17-acervo-canticos-ccb-479e5e31-653a-4575-98ea-320476b44302</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/ensaio-regional-sao-jose-do-rio-preto-24-11-2013-acervo-canticos-ccb-72a737ee-1e75-47a2-b648-befd3ce17063</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/ensaio-em-paranavai-pr-acervo-canticos-ccb-a69e3dba-c7e7-4b9a-86af-e5d38483eddf</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/fazenda-rio-grande-curitiba-1997-pimenta-companhia-acervo-canticos-ccb-8b0e70bc-4f6e-4f14-94a6-2c4e6bfe396d</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/ensaio-local-na-parada-do-alto-sorocaba-sp-acervo-canticos-ccb-42274f6e-082f-4562-843e-5e1d163137cd</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/viola-caipira-acervo-canticos-ccb-01546758-8d95-46ab-8b28-386d513669d1</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/saxgil-3-acervo-canticos-ccb-e5c9fb02-156f-49ae-9f07-a26e288f9c33</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/ensaio-regional-no-ipanema-ville-sorocaba-sp-acervo-canticos-ccb-6f82e713-1d3f-4498-ad84-d3a6036ac199</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/ensaio-regional-sp-13-acervo-canticos-ccb-7bac2790-e863-4bff-b9c6-35f67bca76cd</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/ensaio-regional-na-manoel-lopes-sorocaba-sp-acervo-canticos-ccb-3f8314b8-69fd-4667-86b2-ed4694facf6f</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/ensaio-regional-sp-22-acervo-canticos-ccb-f214b5f9-ea93-4c5f-bbc9-13f719b31fba</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/ensaio-regional-sp-11-acervo-canticos-ccb-5380efc3-bebb-451b-a082-50495a8251ab</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/samuel-coutinho-orquestra-ccb-acervo-canticos-ccb-93e4b96a-3c6b-4ee1-8c2d-d1047af7b43e</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/ensaio-regional-sp-14-acervo-canticos-ccb-f553f586-b22f-43a2-8925-a27437bbe411</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/trio-de-cordas-presidente-prudente-ii-acervo-canticos-ccb-22d3691e-89a5-4e25-ae9f-d558e35a317a</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/irmao-carlinhos-paranavai-acervo-canticos-ccb-0d9daf04-f427-49c1-b689-e947d5ebd363</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/nalisson-sax-alto-acervo-canticos-ccb-c7cee1c1-345c-49c3-ab5a-8058d41cb589</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/vozes-de-flauta-acervo-canticos-ccb-c4fe6dee-6cee-4e3e-9eaa-d1fc0b5f4923</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/rick-viola-de-arco-acervo-canticos-ccb-fa40149e-0d84-4cc9-9a43-290a2ddfc4b5</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/nalisson-sax-alto-2-acervo-canticos-ccb-7d30f68b-92c6-459b-922c-352090e461a0</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/fernando-lopez-trompete-acervo-canticos-ccb-f14a3a02-e0c6-4b6c-a07a-bef1aef818ff</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/fernando-lopez-e-orgaos-guarulhos-centro-acervo-canticos-ccb-47c19874-9a26-4d23-97b7-fa4b390a8eb6</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/betinho-e-jefao-chimit-acervo-canticos-ccb-1af2768e-88be-4a29-95cd-e976195aa04f</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/jose-carlos-e-victor-hugo-teclado-violinos-1-e-2-hinario-novo-acervo-canticos-ccb-fcdd8f50-4257-4d0a-83fa-03779e7182b1</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/rio-de-janeiro-hinos-avulsos-v3-acervo-canticos-ccb-88a80025-79f9-4d87-a84c-cd68fd6025e3</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/fernando-lopez-cd-alma-e-coracao-acervo-canticos-ccb-dc021bd4-d098-4f76-b6a4-06bbc6a33ebb</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/roberto-sax-fernandotrompetista-2-acervo-canticos-ccb-a9b013f3-2c42-40a2-9299-1a885caabb0b</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/sax-alto-e-teclado-acervo-canticos-ccb-8eb934d5-ca6d-4a46-b866-02db4c8d15eb</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.canticosccb.com.br/album/r_b_n-trombone-orquestra-ccb-02-acervo-canticos-ccb-e5f47946-6302-4dec-99c0-e71af1237490</loc>
-    <lastmod>2026-03-25</lastmod>
+    <loc>https://www.canticosccb.com.br/album/r-b-n-trombone-orquestra-ccb-02-acervo-canticos-ccb-e5f47946-6302-4dec-99c0-e71af1237490</loc>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/fernando-lopez-jazz-guarulhos-centro-acervo-canticos-ccb-be1da458-6e00-4b58-80b1-fbcb0f2e9981</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/cd-historico-ir-sanderson-de-votorantim-sax-em-louvor-acervo-canticos-ccb-7afa375c-12e5-449d-9891-ddecf1e7e493</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/baixo-hinario-5-lindos-hinos-3-acervo-canticos-ccb-5da19eab-a038-4450-96f9-e86ba33c4ee3</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/clarine-e-orgao-acervo-canticos-ccb-76206a5b-afb6-4bf7-82e5-6d7d97c75e73</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/sax-alto-trambone-teclado-e-fagote-acervo-canticos-ccb-722a4429-e0f9-4bc9-b5c6-98d351009ae1</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/colecao-jovens-e-menores-vol-2-acervo-canticos-ccb-79d10fe3-4001-48d1-8620-a41d4cc07a13</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/fernando-lopez-hinario-5-acervo-canticos-ccb-a2789c89-a805-4961-8b14-e8f05c29d9af</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/weslei-e-ana-paula-3-acervo-canticos-ccb-ed7909fb-6bb5-4056-986a-9406fc65e238</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/sax-gil-6-acervo-canticos-ccb-0324b3a6-a809-46b2-b1c0-32059f793e69</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/sax-alto-joaz-costa-acervo-canticos-ccb-c4609eda-b89a-46b4-940f-175291f3e840</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/trompete-trombone-e-orquestra-acervo-canticos-ccb-54ae6bdb-8ebb-46dd-a23b-baeae840676c</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/roberto-sax-e-fernandotrompetista-acervo-canticos-ccb-c675d814-10cb-4f1c-89bd-8109096331b1</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/trio-de-cordas-presidente-prudente-i-acervo-canticos-ccb-997258f6-ad42-43ba-afc0-954f81dce04d</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/flauta-sax-e-bombardao-acervo-canticos-ccb-c58c0be4-3318-4108-abe5-1ba0892a3910</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/apredendo-a-louvar-2-acervo-canticos-ccb-4b2aa039-e972-4291-934a-e355988ad261</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/alceu-marchi-acervo-canticos-ccb-a220939c-ed13-4bab-9886-8fa9f303a52e</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/daniel-naassom-aprendendo-a-louvar-acervo-canticos-ccb-b1792358-aa3b-443e-b7bc-ed74f4fa44f8</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/fernando-lopez-2-acervo-canticos-ccb-8c128b9f-0a57-4f3a-b47b-e7aea92e3a00</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/trompete-2-acervo-canticos-ccb-b3c18ccc-eccd-4043-a12d-c92d30f20c7e</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/elionai-sax-e-edinho-teclado-acervo-canticos-ccb-1bfe132a-cd83-4499-ae1b-c1f5bb37dc54</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/tributo-ao-rei-da-gloria-acervo-canticos-ccb-530f3063-4f0e-4d86-a968-bf177ede50f0</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/norival-fortuna-acervo-canticos-ccb-a2d7cc56-03b1-4a81-8fe6-ff8755304026</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/meninos-de-itapetininga-3-acervo-canticos-ccb-5c24a470-a714-4b43-b4dc-d29c12d24f99</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/roberto-do-sax-e-fernandotrompetista-8-acervo-canticos-ccb-15a3dbe4-00d4-48ee-9187-d1cbc3282f18</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/andre-silva-acervo-canticos-ccb-bf353fa2-2263-4d0c-847f-e3e7bd8238db</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/jovens-da-zatt-cassio-e-vitor-de-sao-vicente-acervo-canticos-ccb-878f8658-a06a-43e1-bfbe-36f526421c48</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/fernando-lopez-e-guilherme-barbosa-acervo-canticos-ccb-d52c4c1c-e860-4aff-91dd-97ad5ff88f6f</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/50-hino-de-jovens-e-menores-roberto-sax-alto-fernando-trompete-acervo-canticos-ccb-c2b62bff-f58e-4eb9-bb45-35abe54f48aa</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/paullynho-sax-hinario-5-acervo-canticos-ccb-95cea9fb-5900-4ce8-91a9-6e3cdf334823</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/alana-acervo-canticos-ccb-e94bbae8-347d-4268-b172-7c607fae3e0a</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/gamaliel-e-flori-rio-verde-go-acervo-canticos-ccb-fb6f9848-1987-4c31-93a6-2765442b0db6</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/marcos-2-acervo-canticos-ccb-ca91032d-c46f-40f7-8f81-be2cde08afa5</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/trumpet-rc-acervo-canticos-ccb-aafbb29a-c7fa-46f9-b8db-04b801471fd5</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/mariana-paraiso-do-norte-pr-acervo-canticos-ccb-869957a2-7387-4803-a886-5863311e220d</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/meninos-de-hortolandia-vol-2-acervo-canticos-ccb-d0b45c40-b518-4fe2-9550-7d6dc969ebc6</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/menina-de-7-anos-cantando-hinos-novos-acervo-canticos-ccb-25807035-c4b5-4c64-9dd4-c5ca59daf99a</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/conselhos-espirituais-vol-10-acervo-canticos-ccb-2be2515e-aabd-45a8-b91b-0b10f6e3f061</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/soldadinho-de-jesus-5-acervo-canticos-ccb-8b1c5d8f-c245-40e1-85d2-5a8dff2ed2e7</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/triunfo-do-amor-rio-preto-acervo-canticos-ccb-899cc83b-bb9f-4b77-be46-75407005cf25</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/loana-cianorte-pr-2-acervo-canticos-ccb-e93bd8ae-f59a-4640-ab8f-07f9ede20f5c</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/mensagens-espirituais-vol-9-acervo-canticos-ccb-bfede7ad-aefb-4804-ab37-6add64ba4b1c</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/jean-hideki-sorocaba-avulsos-acustico-acervo-canticos-ccb-62746e4b-64b6-4584-a7ae-d32ae2228b16</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/soldadinho-de-jesus-um-sopranino-em-louvor-1-acervo-canticos-ccb-c826c724-13cf-401a-8fb1-d1bb2b0307dc</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/bona-audio-solfejado-acervo-canticos-ccb-b0258d2d-013d-4fed-9664-d581408aa66e</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/jovens-da-zatt-e-participacoes-acervo-canticos-ccb-c64532cb-ed02-491a-94c2-e29efa2fcfcd</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/jovens-da-zatt-4-acervo-canticos-ccb-fb9ded0f-3c05-4a46-988b-b1b368441dc1</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/soldadinho-de-jesus-2-acervo-canticos-ccb-df89e548-4267-4022-a79f-38652e554fdc</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/edi-mogi-5-acervo-canticos-ccb-25c01837-f5e4-4cbd-b53d-ee25e5f1220a</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/abner-e-alan-acervo-canticos-ccb-cade3424-d4f3-45dd-a063-6cb428641001</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/itamar-silva-voz-e-violao-acervo-canticos-ccb-2ff986b3-957a-4689-a238-0ac4fc1a776a</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/loana-cianorte-pr-acervo-canticos-ccb-af2e3468-71ef-4421-b1be-5905ed6c5f11</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/novo-cd-devanir-assis-vol-15-acervo-canticos-ccb-8dbcdba2-e33e-4939-b8b8-f416b25c5c33</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/agnes-junior-katlhyn-e-thuane-acervo-canticos-ccb-a52a92a0-fd18-4b98-a0fc-74c78b644450</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/soldadinho-de-jesus-6-acervo-canticos-ccb-3c713017-a80f-49a7-99f1-c3a1787d4f16</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/alana-e-carlos-acervo-canticos-ccb-7276c98a-399b-42e6-8334-0ab1acec3ce4</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/agnes-junior-e-katlhyn-acervo-canticos-ccb-3d9ec323-df6b-4968-83be-cfa60493e132</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/licoes-sax-metodo-amadeu-russo-oficializacao-acervo-canticos-ccb-ecb0cc98-7c7b-4606-b1de-563a542685a9</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/jovens-da-zatt-3-acervo-canticos-ccb-42612c1e-3f30-447d-b832-8265c9dd5370</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/teclado-em-louvor-acervo-canticos-ccb-835ca79c-0724-428b-9578-171051a43385</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/kallyne-acervo-canticos-ccb-8ba3f048-e3ac-4513-b591-dac3281fe66e</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/julinho-2014-acervo-canticos-ccb-53c05313-5ed0-41f0-82c7-389f3f45eaaf</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/beatriz-tossani-e-ana-luiza-tossani-acervo-canticos-ccb-89c24164-98ff-48ad-9021-a879ce1eea21</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/isac-rio-preto-acervo-canticos-ccb-f8cedb76-c69d-4076-aa85-e912b5a6e108</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/folha-de-papel-nathanael-lucas-acervo-canticos-ccb-7bf45a97-57de-4a7b-9449-7521d83a077c</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/loana-cianorte-pr-4-acervo-canticos-ccb-f741b1c3-f9a4-4a82-8e79-e4b1ae353ea0</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/mensagens-espirituais-vol-10-acervo-canticos-ccb-445854fe-a536-4904-9d4d-81a4182d7fde</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/soldadinho-de-jesus-3-acervo-canticos-ccb-0ee65759-333a-4827-9ea8-35d93d38c948</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/loana-cianorte-pr-3-acervo-canticos-ccb-537415fb-fd53-4183-a36c-f9f5c9fdf14e</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/soldadinho-de-jesus-1-acervo-canticos-ccb-16f07e43-aa82-456d-84a0-91b8b339fc31</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/cd-pedro-e-tiago-criancas-acervo-canticos-ccb-02203bfa-a04a-4211-a4ad-7b0952ccf90d</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/waguinho-fernando-acervo-canticos-ccb-e2ec1368-ef8c-4802-a143-6086b724aeee</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/lucas-souza-acervo-canticos-ccb-32e8a589-5d61-415d-93d7-fdb8f434f08c</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/carlos-pedrinho-com-luciana-acervo-canticos-ccb-4d2a9852-a728-441d-bfb7-32cae3f0acaf</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/time-of-praise-violin-violino-e-orquestra-acervo-canticos-ccb-e1ab8019-0b9e-49cd-bef7-cb31f6b35cf6</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/hinos-de-louvores-a-deus-bairro-independencia-montes-claros-mg-acervo-canticos-ccb-dcc8f55c-7eda-47b8-b16e-39e51afd067f</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/triunfo-do-amor-2-nayara-natalia-acervo-canticos-ccb-6bef2ac8-baf9-4c9b-b75e-4ed81624dc97</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/hymnstyles-cello-guarulhos-centro-acervo-canticos-ccb-e0cf05d0-77bc-48b1-8c07-b2c10d9a0ecd</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/hinos-de-louvores-e-suplicas-a-deus-acervo-canticos-ccb-2e356b10-5c2a-4a94-9583-6d34d602c81b</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/mazinho-o-vituperio-de-jesus-acervo-canticos-ccb-a3177250-aa4f-4c66-a37f-4a16ee02dc7f</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/derly-soa-a-trombeta-oh-escutai-acervo-canticos-ccb-782ba1e6-2e0b-4058-8cbf-02eaf0551db0</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/sax-clarineta-classico-ccb-acervo-canticos-ccb-e500c92c-bbd7-4186-99fb-1dc6711f385a</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/chora-viola-embu-guacu-acervo-canticos-ccb-209650f6-57ba-4ee0-8aee-3b8b302be209</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/odiel-e-leandro-acervo-canticos-ccb-05a991b4-f5aa-4717-848b-a494cee8d236</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/andando-com-deus-para-ser-abencoado-servo-de-deus-claudio-martins-acervo-canticos-ccb-ccc99e63-91d2-4890-b826-9b591ab8939f</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/a-botija-quebrada-14-servo-de-deus-claudio-martins-acervo-canticos-ccb-f3a03d16-46e5-4921-ade3-ce8bcabf1c08</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/a-armadura-de-deus-servo-de-deus-claudio-martins-acervo-canticos-ccb-6ee244da-34a4-450e-a8d6-6f2089aaa4e8</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.canticosccb.com.br/album/r_b_n-trombone-orquestra-ccb-03-acervo-canticos-ccb-2a4e60b4-aaad-4bb1-b872-86deac5e2d78</loc>
-    <lastmod>2026-03-25</lastmod>
+    <loc>https://www.canticosccb.com.br/album/r-b-n-trombone-orquestra-ccb-03-acervo-canticos-ccb-2a4e60b4-aaad-4bb1-b872-86deac5e2d78</loc>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/ismael-de-arapongas-16-acervo-canticos-ccb-5fc99162-7b0b-439d-b038-87c90d51a0c1</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/hinos-ingles-instrumental-guarulhos-centro-acervo-canticos-ccb-354393a9-1d25-46aa-b83d-079161e9fccb</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/ensaio-local-na-parada-do-alto-sorocaba-sp-3-acervo-canticos-ccb-9f0f601d-e051-4a11-8b07-c2f48aeb84db</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/quarteto-de-clarinetes-na-comunhao-acervo-canticos-ccb-039991f7-243e-4820-95da-b038548b6cbc</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/the-salvation-army-sunday-morning-guarulhos-centro-acervo-canticos-ccb-faa2e650-8495-45c4-866e-44c3f263d63a</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/violino-violao-e-acordeon-acervo-canticos-ccb-56a24426-a555-49b5-a0fe-c890dd9fc04a</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/replica-da-fita-de-andrelandia-mg-anciaes-natanael-gurgel-e-elizeu-acervo-canticos-ccb-4fd2b49a-0803-49e5-a121-1d9ff314d848</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/violao-paulo-nascimento-acervo-canticos-ccb-5f0d5e44-c57a-4405-b9ea-467a007ad632</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/mauro-ferrari-violao-acervo-canticos-ccb-611fc23a-162c-42db-b596-1c03b581892a</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/andre-de-araraquara-acervo-canticos-ccb-b744eff0-02b8-4a29-b3be-b81fb9843dc3</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/jovens-capim-grosso-ba-acervo-canticos-ccb-53e2147e-a2e0-46c6-b10a-a5da4abadcc4</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/jane-rodrigues-acervo-canticos-ccb-52dca940-57ca-4d64-a76b-d41f8c56dae4</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/jane-1-acervo-canticos-ccb-ee91fb2f-7244-4241-b329-9b122ab95d7e</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/hinos-espanhol-acervo-canticos-ccb-c347137d-989c-4dae-b486-7597fd395f93</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/wesley-e-danilo-cossani-acervo-canticos-ccb-bfd81127-b6c3-430d-81a1-467e25b93995</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/sandra-diniz-e-gelisson-acervo-canticos-ccb-13fd63c1-9476-45f2-b7bf-fae345b9ac0b</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/paulo-e-branco-acervo-canticos-ccb-4bbe9dbc-e8f1-4a5a-b593-f79e01ff71a3</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/louvar-a-deus-sempre-sax-alto-e-teclado-acervo-canticos-ccb-ab258de5-503c-4608-b670-031b12c9998c</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/sax-violao-e-acordeon-acervo-canticos-ccb-468ce160-9669-4d6a-b19d-f444ba3d9f09</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/louvores-hinario-5-2-acervo-canticos-ccb-ba0525d8-de0d-42c2-95a1-63e2ed80da72</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/sax-gil-3-acervo-canticos-ccb-f5d71e1d-8638-45a0-84af-a70f35b3f9f2</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/sax-gil-acervo-canticos-ccb-d4b04461-7acd-4b3c-94df-13778e5820e2</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/sax-em-louvor-acervo-canticos-ccb-a4008366-de79-4665-9011-5b4054ceed0c</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/gerson-de-minas-gerais-acervo-canticos-ccb-5811f525-31a7-431b-a75d-e2f3bb8262b8</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/felipe-ccb-acervo-canticos-ccb-dee873b2-a8dd-4899-9cf8-b1e9244e3b50</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/sax-e-violao-matheus-e-alex-acervo-canticos-ccb-a4dcb117-caa9-4661-9d5a-5a85a8f1d081</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/rony-cardoso-4-acervo-canticos-ccb-d0543579-f409-4a35-84d1-81843a7135f9</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/ezequiel-com-viviane-e-erik-9-acervo-canticos-ccb-51ae099d-7840-4076-9edc-5247c0fde9a6</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/hinos-ccb-hinario-1-parte-3-acervo-canticos-ccb-26936775-76eb-4659-87fa-9d435c1cdec3</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/violao-e-violoncelo-suzano-acervo-canticos-ccb-764aefaf-f285-4efa-8a57-9dfb27b1fbaa</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/decio-4-vozes-hinos-401-a-420-acervo-canticos-ccb-a94ef99e-fd21-40c7-9b5b-ee1b9ee583a0</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/orquestra-celestial-2-acervo-canticos-ccb-a96afb2b-c543-4351-899d-aeae103a5f94</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/hinos-orquestrados-2-acervo-canticos-ccb-c78a4e3a-853e-471c-9c95-f6ffe1a35812</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/luis-antonio-avulsos-vol-1-acervo-canticos-ccb-ae2ac4d7-e3bd-441b-90fe-a0409c3742a3</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/decio-4-vozes-hinos-381-a-400-acervo-canticos-ccb-e043254b-a0e6-48bc-a915-f6b2f75821f9</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/acompanhamentos-orquestrados-hinos-001-020-acervo-canticos-ccb-6982d51d-a9c6-4b10-aaf1-b7b343162ab5</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/hinos-ccb-hinario-1-parte-4-acervo-canticos-ccb-fac6c7e1-52d6-45bd-b736-67f00f8dfa87</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/marcos-chagas-hinario-5-pedranopolis-acervo-canticos-ccb-ae73091a-a0e3-4c03-98b1-68203efbc27b</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/sax-soprano-curvo-em-louvor-acervo-canticos-ccb-6889f8c3-5d67-464b-bc67-2bc5e9e5ab90</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/marco-aurelio-jaborandi-2013-acervo-canticos-ccb-3d08ef22-b489-4bcc-a0db-b9f38f23e344</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/louvores-de-harpa-acervo-canticos-ccb-c26ecbf5-73e3-4242-9d10-e5746b791691</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/ezequiel-finkell-louvor-com-jubilo-acervo-canticos-ccb-801be7c3-05c6-4c6e-8311-f1cb75b24c17</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/cordas-country-acervo-canticos-ccb-5a216c79-e5f6-4105-bbc5-14fc21aab52e</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/orquestra-de-cascavel-pr-acervo-canticos-ccb-4a2d8c17-9615-4bb7-bb57-ef1d7946b001</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/rony-cardoso-sax-melodi-acervo-canticos-ccb-a29b7ff4-9b57-4fc1-a57e-9c00821624a8</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/violino-e-violao-rc-sp-acervo-canticos-ccb-e4fca13e-7dc2-45c3-9498-ccccd0b5071e</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/sax-soprano-acervo-canticos-ccb-896165d4-3ba2-4847-8f36-a54d713ff1e7</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/hinos-encore-potirendaba-sp-acervo-canticos-ccb-d934ac54-43e2-408f-87a3-d07103634d87</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/hinario-5-4-acervo-canticos-ccb-4a364f2a-a8ff-4200-bc54-b0f42cf3a993</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/andre-marques-2-acervo-canticos-ccb-90a28116-270a-4e71-b966-7571aa0febe0</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/the-best-of-saxofone-canada-acervo-canticos-ccb-9a3a2c8b-18f4-450c-92c1-7b805f5b64d1</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/hinos-ccb-hinario-1-hinario-5-acervo-canticos-ccb-4f11fc85-e895-4a95-9b6a-9ea3bc1232b9</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/natalia-acervo-canticos-ccb-9d33f219-214e-4790-82d5-7eead549e8d9</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/elias-veiga-hinario-5-sax-acervo-canticos-ccb-09d6eef6-f73b-4f3b-9332-221efb9e3b2e</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/flugel-e-orgao-acervo-canticos-ccb-25440ae0-77e4-4ce7-935d-4c14f3794830</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.canticosccb.com.br/album/hinos-novos_carlo-santos-acervo-canticos-ccb-de098980-b915-41fa-9a74-8d3b86d7e131</loc>
-    <lastmod>2026-03-25</lastmod>
+    <loc>https://www.canticosccb.com.br/album/hinos-novos-carlo-santos-acervo-canticos-ccb-de098980-b915-41fa-9a74-8d3b86d7e131</loc>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/isaac-duarte-e-fabio-militao-acervo-canticos-ccb-8187f361-9725-48e5-a7c7-4a9809d35e21</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/sax-suavidade-sax-teclado-acervo-canticos-ccb-fa8c7c38-784f-4f86-9b38-8f494d3a52df</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/hymn-brass-guarulhos-centro-acervo-canticos-ccb-647e362b-309c-492c-8f6e-c20d3ecbeed5</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/berg-rj-quarteto-de-sax-hinario-5-acervo-canticos-ccb-f477f23e-bc84-4f5c-9fe2-c2574f8319c6</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/hinos-orquestrados-hinario-05-acervo-canticos-ccb-27ecbfdd-3230-438d-b21c-8c8f5f854316</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/orquestrado-acervo-canticos-ccb-b88a563c-29d1-4134-9889-d15f386f359b</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/betinho-e-joao-elias-acervo-canticos-ccb-da295c2f-6ed7-4eb9-892f-e451e51c2d79</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/jaqueline-acervo-canticos-ccb-ed793fe0-17f1-4ee0-932a-b0e8b0e4e49a</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/betinho-j-b-e-neto-acervo-canticos-ccb-5569b365-9eb0-46c0-8d9a-cdec4100075e</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/quinteto-sorocaba-acervo-canticos-ccb-f47c3eed-0996-4fc1-b349-056373aa6f68</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/ensaio-regional-jd-transilvania-diadema-21-07-13-acervo-canticos-ccb-b1418dc2-968f-4927-9327-fe648058828a</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/jefferson-de-oliveira-acervo-canticos-ccb-30b0759c-044b-45d6-af13-e627eed93afb</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/ferreira-alves-acervo-canticos-ccb-9f2cd540-7856-44ed-851f-b5badd391092</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/samuel-de-camargo-e-dayane-de-mattos-acervo-canticos-ccb-10e41558-8a5c-48a3-96a2-40a84c9aa003</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/melodias-orquestradas-volume-3-acervo-canticos-ccb-e792b796-c11e-48bf-8c8c-7a0a78ac0aee</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/viola-de-arco-2-acervo-canticos-ccb-3beb7127-3394-423c-a1c9-697e23622240</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/rony-cardoso-voz-em-louvor-6-acervo-canticos-ccb-c03d4acb-fe76-44be-8b23-a128ede677d6</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/novos-hinos-quarteto-de-cordas-acervo-canticos-ccb-e966ebd0-082e-4b49-9254-3accee2f810b</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/hinos-tocados-hinario-5-acervo-canticos-ccb-867b0979-c387-40a1-9a9c-cac850b88b4d</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/ssoldadinho-de-jesus-um-sopranino-em-louvor-1-acervo-canticos-ccb-d6c3990e-7e01-44dc-be81-82cbe2117e61</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/selecao-saxofonistas-acervo-canticos-ccb-6df736fb-5e38-4c5f-89fd-c8770232f56a</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/daniel-barao-hinos-ccb-hinario-1-parte-2-acervo-canticos-ccb-a93943fd-45f0-48ba-b5bc-cf2a488105c2</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/hinos-orquestrados-hinario-5-melodias-acervo-canticos-ccb-1626ed9b-2d59-45dd-8c6e-23ff90d28e72</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/decio-4-vozes-hinos-461-a-480-coros-acervo-canticos-ccb-b7dad59b-ea54-4432-835c-a636b8a80e44</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/decio-4-vozes-361-a380-acervo-canticos-ccb-2f7f965a-a41b-4380-84ab-e11eceb13220</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/dimension-orquestra-acervo-canticos-ccb-87772e3a-93ff-47d3-ba6f-ba811a26cd65</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/melodias-orquestradas-hinario-5-acervo-canticos-ccb-69d24afc-b1e2-4d4a-9374-221a51806832</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/hinos-orquestrados-hinario-n-4-acervo-canticos-ccb-b12665ae-af85-4179-9321-cb245640e27a</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/marcelo-hinario-livro-5-acervo-canticos-ccb-9991ec3c-b939-4082-9517-f86f8a690501</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/tocados-montes-claros-hinos-na-comunhao-hinario-05-acervo-canticos-ccb-b92c1124-28d5-4b65-b04a-4e6398503a10</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/gilmar-itaquera-acervo-canticos-ccb-a5060421-d502-4867-8b91-018fe28846cf</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/josefino-acervo-canticos-ccb-75f817ea-3845-4f17-846f-1b30f9b50a83</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/violino-e-clarone-acervo-canticos-ccb-427d6610-c83d-49de-84f1-d80e0fb0855a</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/bruno-diedrichs-cresca-o-teu-coracao-acervo-canticos-ccb-e4de1d12-13e4-4b4a-8dad-8e3eb9cab15a</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/elbis-moises-acervo-canticos-ccb-539b8f6c-3de7-47bb-8e24-ef5dee0298e6</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/coletania-26-a-50-acervo-canticos-ccb-62c373d1-52c2-47fb-934d-d9f456366611</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/everton-rodrigues-sorocaba-sp-violao-e-voz-acervo-canticos-ccb-0f6d06e3-2e2d-4bc2-bdb6-fad957e3457f</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/joel-nonato-sax-louvores-acervo-canticos-ccb-87e24821-e5dc-4bfb-8766-79c6e4b47ec0</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/everton-rodrigues-sorocaba-sp-violao-voz-e-tuba-acervo-canticos-ccb-2e645ec1-6aa7-4400-a988-6d345d8feb9d</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/tocata-fernandopolis-sp-acervo-canticos-ccb-d9aa048b-3a42-4fa2-88af-f2c7011554f2</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/paulo-cesar-uberlandia-mg-acervo-canticos-ccb-ec638383-c6d4-481a-9c7b-1d721d4ef6cb</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/betinho-2-acervo-canticos-ccb-7350abaa-57b8-443f-bfb6-f9fab928fae2</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/album/ruy-leiras-hinos-de-louvores-e-suplicas-a-deus-04-08-2013-acervo-canticos-ccb-c4c5b5ea-f524-45ac-b823-da158e58266c</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>

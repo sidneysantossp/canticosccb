@@ -10,9 +10,20 @@ const PUBLIC_EXACT = new Set([
   '/baixar-cds-ccb', '/trends', '/tendencias', '/about', '/sobre', '/search', '/buscar',
   '/termos', '/premium', '/privacidade', '/privacy', '/cookies', '/disclaimer', '/lgpd',
   '/avisos', '/ajuda', '/contato', '/instrumentais', '/biblia-ccb', '/biblia-narrada',
-  '/radio', '/biblia', '/biblia/'
+  '/radio', '/biblia', '/biblia/', '/cifras/violao', '/cifras/ukulele', '/cifras/teclado'
 ]);
-const PUBLIC_PREFIXES = [/^\/hino\//, /^\/compositor\//, /^\/album\//, /^\/categoria\//, /^\/playlist\//, /^\/cifra\//, /^\/hinario\/\d+$/];
+const PUBLIC_PREFIXES = [
+  /^\/hino\//,
+  /^\/compositor\//,
+  /^\/album\//,
+  /^\/categoria\//,
+  /^\/playlist\//,
+  /^\/cifra\//,
+  /^\/hinario\/\d+$/,
+  /^\/hinario\/hino-\d+-ccb(?:-[^/]+)?$/,
+  /^\/cifras\/(?:violao|ukulele|teclado)\//,
+  /^\/biblia-ccb\//,
+];
 const PRIVATE_PREFIXES = ['/admin', '/composer', '/compositor/cadastro', '/perfil', '/profile', '/biblioteca', '/library', '/favoritos', '/liked', '/historico', '/history', '/downloads', '/notifications', '/notificacoes', '/chat', '/suporte', '/support', '/configuracoes', '/settings', '/login', '/register', '/onboarding', '/subscription', '/edit-profile'];
 
 export const config = { matcher: '/:path*' };
@@ -32,10 +43,34 @@ function notFoundResponse(pathname: string) {
 
 export default function middleware(request: Request) {
   const url = new URL(request.url);
+  const userAgent = request.headers.get('user-agent') || '';
+  const isBot = BOT_UA_PATTERN.test(userAgent);
+  const isCifraInstrumentHub = /^\/cifras\/(?:violao|ukulele|teclado)$/.test(url.pathname);
+  const isCifraInstrumentDetail = /^\/cifras\/(?:violao|ukulele|teclado)\/.+/.test(url.pathname);
+  const isBibleRoute = url.pathname === '/biblia-ccb' || url.pathname.startsWith('/biblia-ccb/');
+
+  // These pages must remain available to the SPA for people, while search
+  // engines receive the server-rendered, canonical document.
+  if (isCifraInstrumentHub || isCifraInstrumentDetail) {
+    if (isBot) {
+      const ssrUrl = new URL('/api/ssr', request.url);
+      ssrUrl.searchParams.set('path', url.pathname);
+      return rewrite(ssrUrl);
+    }
+    return next();
+  }
+
+  // Bíblia is an SSR-first reading experience for every visitor, preventing
+  // the hub and chapter URLs from falling through to the 404 guard.
+  if (isBibleRoute) {
+    const ssrUrl = new URL('/api/ssr', request.url);
+    ssrUrl.searchParams.set('path', url.pathname);
+    return rewrite(ssrUrl);
+  }
+
   if (isIgnoredPath(url.pathname) || isKnownAppRoute(url.pathname)) {
     if (url.pathname === '/') {
-      const userAgent = request.headers.get('user-agent') || '';
-      if (BOT_UA_PATTERN.test(userAgent)) return rewrite(new URL('/api/ssr?path=/', request.url));
+      if (isBot) return rewrite(new URL('/api/ssr?path=/', request.url));
     }
     if (PUBLIC_PREFIXES.some((pattern) => pattern.test(url.pathname)) && !PRIVATE_PREFIXES.some((prefix) => url.pathname === prefix || url.pathname.startsWith(prefix + "/"))) {
       const ssrUrl = new URL("/api/ssr", request.url);

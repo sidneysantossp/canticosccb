@@ -820,7 +820,7 @@ async function handleHinarioView(routeParam: string): Promise<PageMeta | null> {
   };
 }
 
-async function handleCifra(slug: string): Promise<PageMeta | null> {
+async function handleCifra(slug: string, canonicalPath?: string): Promise<PageMeta | null> {
   const publicRows = await supaFetch('cifra_public_catalog', {
     public_slug: `eq.${slug}`,
     select: 'version_id,public_slug,version_title,instrument,arrangement_type,difficulty_level,original_key,preferred_key,capo,tempo_bpm,time_signature,publication_label,is_primary,published_at,song_id,song_slug,song_title,song_subtitle,composer_name,hino_id,hinario_numero,source_type,cover_url,seo_title,seo_description,seo_keywords,sections_count,lines_count,chords_index',
@@ -865,7 +865,7 @@ async function handleCifra(slug: string): Promise<PageMeta | null> {
       relatedHymn ? `Página do hino ${relatedHymn.numero || ''} disponível.` : '',
       relatedLyric ? `Letra disponível no Hinário ${relatedLyric.numero}.` : '',
     ].filter(Boolean).join(' ');
-    const canonical = `${SITE_URL}/cifra/${slug}`;
+    const canonical = `${SITE_URL}${canonicalPath || `/cifra/${slug}`}`;
 
     const schema = {
       '@context': 'https://schema.org', '@type': 'CreativeWork',
@@ -941,7 +941,7 @@ async function handleCifra(slug: string): Promise<PageMeta | null> {
     relatedHymn ? `Página do hino ${relatedHymn.numero || ''} disponível.` : '',
     relatedLyric ? `Letra disponível no Hinário ${relatedLyric.numero}.` : '',
   ].filter(Boolean).join(' ');
-  const canonical = `${SITE_URL}/cifra/${slug}`;
+  const canonical = `${SITE_URL}${canonicalPath || `/cifra/${slug}`}`;
 
   const schema = {
     '@context': 'https://schema.org', '@type': 'CreativeWork',
@@ -1556,6 +1556,24 @@ async function handleHinarioRangePage(pathname: string): Promise<PageMeta | null
 }
 
 const CIFRA_HUBS: Record<string, { instrument: string; heading: string; title: string; description: string }> = {
+  '/cifras/violao': {
+    instrument: 'violao',
+    heading: 'Cifras de Violao CCB',
+    title: 'Cifras de Violao CCB | Hinos com Acordes para Violao | Cânticos CCB',
+    description: 'Veja cifras de hinos da CCB para violao, com links para tom, acordes e repertório relacionado.',
+  },
+  '/cifras/ukulele': {
+    instrument: 'ukulele',
+    heading: 'Cifras de Ukulele CCB',
+    title: 'Cifras de Ukulele CCB | Hinos com Acordes para Ukulele | Cânticos CCB',
+    description: 'Acesse cifras de hinos da CCB para ukulele com links diretos para cada página individual.',
+  },
+  '/cifras/teclado': {
+    instrument: 'teclado',
+    heading: 'Cifras de Teclado CCB',
+    title: 'Cifras de Teclado CCB | Hinos com Acordes para Teclado | Cânticos CCB',
+    description: 'Explore cifras de hinos da CCB para teclado com tom original, acordes e repertório relacionado.',
+  },
   '/cifras-violao-ccb': {
     instrument: 'violao',
     heading: 'Cifras de Violao CCB',
@@ -1997,7 +2015,14 @@ export default async function handler(req: Request): Promise<Response> {
   const url = new URL(req.url);
 
   // The "path" query param is set by vercel.json rewrite
-  const pathname = url.searchParams.get('path') || url.pathname.replace(/^\/api\/ssr/, '') || '/';
+  // Vercel may preserve a catch-all token when an optional `:path*` segment
+  // matches an empty suffix (for example, `/biblia-ccb/:path*`). Normalize it
+  // so the hub itself is resolved instead of being rendered as a false 404.
+  const requestedPath = url.searchParams.get('path') || url.pathname.replace(/^\/api\/ssr/, '') || '/';
+  const pathname = requestedPath
+    .replace(/\/:path\*$/, '')
+    .replace(/\/:slug\*$/, '')
+    || '/';
   const isUniversalHinarioRoute = pathname === '/hinario'
     || /^\/hinario\/(?:hino-\d+-ccb(?:-[^/]+)?|\d+)$/i.test(pathname);
   const isUniversalBibleRoute = pathname === '/biblia-ccb' || pathname.startsWith('/biblia-ccb/');
@@ -2050,13 +2075,14 @@ export default async function handler(req: Request): Promise<Response> {
     const albumMatch = pathname.match(/^\/album\/(.+)$/);
     const hinarioNumMatch = pathname.match(/^\/hinario\/(hino-\d+-ccb(?:-[^/]+)?|\d+)$/i);
     const cifraMatch = pathname.match(/^\/cifra\/(.+)$/);
+    const cifraInstrumentDetailMatch = pathname.match(/^\/cifras\/(violao|ukulele|teclado)\/(.+)$/);
     const categoriaMatch = pathname.match(/^\/categoria\/([^/]+)$/);
     const playlistMatch = pathname.match(/^\/playlist\/([^/]+)$/);
     const hinarioRangeMatch = pathname.match(/^\/hinos-(1-a-120|121-a-240|241-a-360|361-a-480)-ccb$/);
     const broadHinosHubMatch = pathname === '/hinos-ccb';
     const broadCifrasHubMatch = pathname === '/cifras-hinos-ccb';
     const hymnHubMatch = pathname.match(/^\/hinos-(cantados|tocados|avulsos)-ccb$/);
-    const cifraHubMatch = pathname.match(/^\/cifras-(violao|ukulele|teclado)-ccb$/);
+    const cifraHubMatch = pathname.match(/^\/cifras\/(violao|ukulele|teclado)$/) || pathname.match(/^\/cifras-(violao|ukulele|teclado)-ccb$/);
 
     if (isUniversalBibleRoute) {
       pageMeta = handleBibleRoute(pathname);
@@ -2068,6 +2094,8 @@ export default async function handler(req: Request): Promise<Response> {
       pageMeta = await handleAlbum(albumMatch[1]);
     } else if (hinarioNumMatch) {
       pageMeta = await handleHinarioView(hinarioNumMatch[1]);
+    } else if (cifraInstrumentDetailMatch) {
+      pageMeta = await handleCifra(cifraInstrumentDetailMatch[2], pathname);
     } else if (cifraMatch) {
       pageMeta = await handleCifra(cifraMatch[1]);
     } else if (categoriaMatch) {
@@ -2103,6 +2131,34 @@ export default async function handler(req: Request): Promise<Response> {
     }
   }
   if (dependencyError) {
+    const cifraInstrumentRoute = pathname.match(/^\/cifras\/(violao|ukulele|teclado)\/(.+)$/);
+    if (cifraInstrumentRoute) {
+      const instrumentLabel = ({ violao: 'Violão', ukulele: 'Ukulele', teclado: 'Teclado' } as Record<string, string>)[cifraInstrumentRoute[1]];
+      const displayTitle = decodeURIComponent(cifraInstrumentRoute[2])
+        .replace(/^hino-(\d+)-ccb-?/i, 'Hino $1 - ')
+        .replace(/-(violao|ukulele|teclado)$/i, '')
+        .replace(/-/g, ' ')
+        .replace(/\s+/g, ' ')
+        .replace(/\b\w/g, (letter) => letter.toUpperCase())
+        .trim();
+      const canonical = `${SITE_URL}${pathname}`;
+      const fallbackMeta: PageMeta = {
+        title: `Cifra ${displayTitle} para ${instrumentLabel} | Cânticos CCB`,
+        description: `Acesse a cifra ${displayTitle} para ${instrumentLabel}, com acordes, tom e recursos de estudo no Cânticos CCB.`,
+        canonical,
+        schemas: [{ '@context': 'https://schema.org', '@type': 'CreativeWork', name: `Cifra ${displayTitle} para ${instrumentLabel}`, url: canonical, inLanguage: 'pt-BR' }],
+        bodyHtml: `<nav><a href="${SITE_URL}/cifras/${cifraInstrumentRoute[1]}">Cifras de ${instrumentLabel}</a></nav><h1>Cifra ${esc(displayTitle)} para ${esc(instrumentLabel)}</h1><p>Esta página de cifra continua disponível. Os detalhes musicais serão carregados assim que o catálogo sincronizar.</p>`,
+      };
+      return new Response(buildFullHtml(fallbackMeta), {
+        status: 200,
+        headers: {
+          'Content-Type': 'text/html; charset=utf-8',
+          'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=3600',
+          'Vary': 'User-Agent',
+          'X-Robots-Tag': 'index, follow',
+        },
+      });
+    }
     return new Response("<html><head><title>Serviço temporariamente indisponível | Cânticos CCB</title><meta name=\"robots\" content=\"noindex, follow\"></head><body><h1>Serviço temporariamente indisponível</h1><p>Tente novamente mais tarde.</p></body></html>", {
       status: 503,
       headers: {

@@ -50,6 +50,7 @@ const PublicMobileSidebar: React.FC<PublicMobileSidebarProps> = ({ isOpen, onClo
       { path: '/instrumentais', icon: Music, label: 'Instrumentais' },
       { path: '/cifras', icon: FileText, label: 'Cifras' },
       { path: '/hinario', icon: BookOpen, label: 'Hinário' },
+      { path: '/biblia-ccb', icon: BookOpen, label: 'Bíblia Digital' },
     ];
 
     // Adicionar painel específico do usuário

@@ -19,6 +19,7 @@ const Sidebar: React.FC = () => {
     { path: '/instrumentais', icon: Music, label: 'Instrumentais' },
     { path: '/cifras', icon: FileText, label: 'Cifras' },
     { path: '/hinario', icon: BookOpen, label: 'Hinário' },
+    { path: '/biblia-ccb', icon: BookOpen, label: 'Bíblia Digital' },
   ];
 
   // Sidebar pública (guest): sem itens pessoais

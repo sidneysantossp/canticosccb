@@ -10,7 +10,8 @@ import {
   User,
   Settings,
   X,
-  Users
+  Users,
+  BookOpen
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { compositorGerentesApi } from '@/lib/api-client';
@@ -71,7 +72,8 @@ const UserMobileSidebar: React.FC<UserMobileSidebarProps> = ({ isOpen, onClose }
       items: [
         { icon: Home, label: 'Início', path: '/' },
         { icon: Search, label: 'Buscar', path: '/search' },
-        { icon: Library, label: 'Biblioteca', path: '/library' }
+        { icon: Library, label: 'Biblioteca', path: '/library' },
+        { icon: BookOpen, label: 'Bíblia Digital', path: '/biblia-ccb' }
       ]
     },
     {

@@ -72,6 +72,7 @@ export const AdminBackup = lazyWithChunkRecovery(() => import('./AdminBackup'));
 export const AdminBackupForm = lazyWithChunkRecovery(() => import('./AdminBackupForm'));
 export const AdminImport = lazyWithChunkRecovery(() => import('./AdminImport'));
 export const AdminImportForm = lazyWithChunkRecovery(() => import('./AdminImportForm'));
+export const AdminArchiveRecovery = lazyWithChunkRecovery(() => import('./AdminArchiveRecovery'));
 export const AdminExport = lazyWithChunkRecovery(() => import('./AdminExport'));
 export const AdminExportForm = lazyWithChunkRecovery(() => import('./AdminExportForm'));
 export const AdminAPI = lazyWithChunkRecovery(() => import('./api/AdminAPI'));
