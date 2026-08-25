@@ -30,6 +30,11 @@ function getStatusMeta(status: SupportThreadStatus) {
         label: 'Resolvido',
         className: 'bg-emerald-500/10 text-emerald-300 border-emerald-500/20',
       };
+    case 'archived':
+      return {
+        label: 'Arquivado',
+        className: 'bg-gray-500/10 text-gray-300 border-gray-500/20',
+      };
   }
 }
 
@@ -96,6 +101,9 @@ const SupportThreadConversation: React.FC<SupportThreadConversationProps> = ({
     if (thread.status === 'resolved') {
       return 'Este chamado foi marcado como resolvido. Se necessário, abra um novo chamado.';
     }
+    if (thread.status === 'archived') {
+      return 'Este chamado foi arquivado pela equipe.';
+    }
     if (role === 'user' && thread.waitingForAdmin) {
       return 'Sua mensagem foi enviada. Aguarde a resposta da equipe para continuar.';
     }
@@ -105,6 +113,7 @@ const SupportThreadConversation: React.FC<SupportThreadConversationProps> = ({
   const canSendMessage = Boolean(
     thread &&
     thread.status !== 'resolved' &&
+    thread.status !== 'archived' &&
     (role === 'admin' || !thread.waitingForAdmin)
   );
 

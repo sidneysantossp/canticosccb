@@ -197,6 +197,7 @@ const AdminSidebar: React.FC = () => {
         { path: '/admin/approvals', label: 'Aprovações', icon: CheckCircle, badge: approvalsCount },
         { path: '/admin/reports', label: 'Denúncias', icon: Flag, badge: openReportsCount },
         { path: '/admin/copyright-claims', label: 'Direitos Autorais', icon: Copyright, badge: getPendingClaimsCount() },
+        { path: '/admin/moderation/chat', label: 'Chat de Suporte', icon: MessageSquare, badge: supportUnreadCount },
         { path: '/admin/comments', label: 'Comentários', icon: MessageSquare }
       ]
     },
@@ -205,7 +206,6 @@ const AdminSidebar: React.FC = () => {
       title: 'Notificações',
       icon: Bell,
       items: [
-        { path: '/admin/chat', label: 'Chat', icon: MessageSquare, badge: supportUnreadCount },
         { path: '/admin/notices', label: 'Avisos', icon: Megaphone }
       ]
     },

@@ -86,7 +86,7 @@ export function getEmergencyArchiveRouteForTrack(track?: TrackLike | null): stri
   const segment = getEmergencyArchiveZipSegmentByNumber(number);
   if (!segment) return '';
 
-  return buildPlaybackApiUrl('/api/emergency-audio-track', {
+  return buildPlaybackApiUrl('/api/media-stream', {
     segment: segment.id,
     number: String(number),
     title: String(track?.title || ''),

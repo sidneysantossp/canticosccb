@@ -31,6 +31,11 @@ function getStatusMeta(status: SupportThread['status']) {
         label: 'Resolvido',
         className: 'bg-emerald-500/10 text-emerald-300 border-emerald-500/20',
       };
+    case 'archived':
+      return {
+        label: 'Arquivado',
+        className: 'bg-gray-500/10 text-gray-300 border-gray-500/20',
+      };
   }
 }
 
@@ -132,7 +137,7 @@ const ChatPage: React.FC = () => {
   }, [activeThread?.id, activeThread?.hasUnreadForUser, actor, upsertThread]);
 
   const unreadCount = threads.filter((thread) => thread.hasUnreadForUser).length;
-  const openCount = threads.filter((thread) => thread.status !== 'resolved').length;
+  const openCount = threads.filter((thread) => thread.status !== 'resolved' && thread.status !== 'archived').length;
 
   const handleCreateThread = async (event: React.FormEvent) => {
     event.preventDefault();

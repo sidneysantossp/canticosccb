@@ -57,7 +57,7 @@ function buildEmergencyTrackUrl(number: number, title: string): string {
   const segment = getEmergencyArchiveZipSegmentByNumber(number);
   if (!segment) return '';
 
-  const url = new URL('/api/emergency-audio-track', SITE_BASE_URL);
+  const url = new URL('/api/media-stream', SITE_BASE_URL);
   url.searchParams.set('segment', segment.id);
   url.searchParams.set('number', String(number));
   if (title) url.searchParams.set('title', title);

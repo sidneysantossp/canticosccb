@@ -179,7 +179,8 @@ const mapEmergencyHymnToPopular = (hymn: EmergencyHymn, index: number): PopularH
 const isServerMediatedPlaybackUrl = (value?: string | null) => {
   const normalized = String(value || '').trim();
   return (
-    normalized.includes('/api/emergency-audio-track')
+    normalized.includes('/api/media-stream')
+    || normalized.includes('/api/emergency-audio-track')
     || normalized.includes('/api/hino-audio-fallback')
   );
 };

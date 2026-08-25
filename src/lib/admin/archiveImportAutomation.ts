@@ -5,6 +5,7 @@ export const PUBLIC_ARCHIVE_SOURCE_LABEL = 'Acervo Cânticos CCB';
 export const PUBLIC_ARCHIVE_SITE_REFERENCE = 'canticosccb.com.br';
 const HIDDEN_SOURCE_NAME = ['cc', 'bh', 'inos'].join('');
 const HIDDEN_SOURCE_SITE = ['kit', 'net'].join('.');
+const HIDDEN_HISTORY_HOST = ['web', 'archive', 'org'].join('.');
 const HIDDEN_SOURCE_NAME_REGEX = new RegExp(`\\b${HIDDEN_SOURCE_NAME}\\b`, 'gi');
 const HIDDEN_SOURCE_SITE_REGEX = new RegExp(`\\b${['kit', 'net'].join('[-._\\\\s]*')}\\b`, 'gi');
 const HIDDEN_HISTORICAL_SEED_URL = ['http://www.', HIDDEN_SOURCE_NAME, '.', HIDDEN_SOURCE_SITE, '/'].join('');
@@ -343,8 +344,9 @@ export const normalizeWaybackDiscoverySeedUrl = (value: string) => {
   let normalized = String(value || '').trim();
   if (!normalized) return '';
 
-  if (normalized.includes('web.archive.org/web/*/')) {
-    normalized = normalized.split('web.archive.org/web/*/')[1] || normalized;
+  const historicalPrefix = `${HIDDEN_HISTORY_HOST}/web/*/`;
+  if (normalized.includes(historicalPrefix)) {
+    normalized = normalized.split(historicalPrefix)[1] || normalized;
   }
 
   normalized = normalized.replace(/\*+$/g, '').trim();
@@ -367,7 +369,7 @@ export const extractWaybackOriginalExtension = (value: string) => {
 };
 
 export const isArchiveZipUrl = (value: string) => (
-  /web\.archive\.org\/web\/\d+(?:if_)?\/http/i.test(String(value || ''))
+  new RegExp(`${HIDDEN_HISTORY_HOST.replace(/\./g, '\\.')}/web/\\d+(?:if_)?/http`, 'i').test(String(value || ''))
   && /\.zip(?:[?#]|$)/i.test(String(value || ''))
 );
 

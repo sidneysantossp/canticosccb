@@ -180,6 +180,7 @@ const AdminMobileSidebar: React.FC<AdminMobileSidebarProps> = ({ isOpen, onClose
         { path: '/admin/approvals', label: 'Aprovações', icon: CheckCircle, badge: approvalsCount },
         { path: '/admin/reports', label: 'Denúncias', icon: Flag, badge: openReportsCount },
         { path: '/admin/copyright-claims', label: 'Direitos Autorais', icon: Copyright, badge: getPendingClaimsCount() },
+        { path: '/admin/moderation/chat', label: 'Chat de Suporte', icon: MessageSquare, badge: supportUnreadCount },
         { path: '/admin/comments', label: 'Comentários', icon: MessageSquare }
       ]
     },
@@ -188,7 +189,6 @@ const AdminMobileSidebar: React.FC<AdminMobileSidebarProps> = ({ isOpen, onClose
       title: 'Notificações',
       icon: MessageSquare,
       items: [
-        { path: '/admin/chat', label: 'Chat', icon: MessageSquare, badge: supportUnreadCount },
         { path: '/admin/notices', label: 'Avisos', icon: Megaphone }
       ]
     },

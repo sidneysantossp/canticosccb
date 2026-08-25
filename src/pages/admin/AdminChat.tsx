@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Filter, MessageSquare, RefreshCw, Search } from 'lucide-react';
+import { Archive, Filter, MessageSquare, RefreshCw, Search } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import SupportThreadConversation from '@/components/support/SupportThreadConversation';
 import {
@@ -29,6 +29,11 @@ function getStatusMeta(status: SupportThread['status']) {
         label: 'Resolvido',
         className: 'bg-emerald-500/10 text-emerald-300 border-emerald-500/20',
       };
+    case 'archived':
+      return {
+        label: 'Arquivado',
+        className: 'bg-gray-500/10 text-gray-300 border-gray-500/20',
+      };
   }
 }
 
@@ -50,6 +55,7 @@ const AdminChat: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
   const [updatingStatus, setUpdatingStatus] = useState(false);
+  const [archivingId, setArchivingId] = useState<string | null>(null);
   const [error, setError] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | SupportThreadStatus>('all');
@@ -175,6 +181,20 @@ const AdminChat: React.FC = () => {
     }
   };
 
+  const handleArchive = async (threadId: string) => {
+    try {
+      setArchivingId(threadId);
+      setError('');
+      await updateSupportThreadStatus(threadId, 'archived', actor);
+      setThreads((current) => current.filter((thread) => thread.id !== threadId));
+      setSelectedId((current) => (current === threadId ? null : current));
+    } catch (archiveError: any) {
+      setError(archiveError?.message || 'Não foi possível arquivar o chamado.');
+    } finally {
+      setArchivingId(null);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-background-primary p-6 space-y-6">
       <div className="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
@@ -268,35 +288,52 @@ const AdminChat: React.FC = () => {
                   const active = thread.id === selectedId;
 
                   return (
-                    <button
+                    <div
                       key={thread.id}
-                      type="button"
-                      onClick={() => setSelectedId(thread.id)}
-                      className={`w-full text-left border-b border-gray-800 px-4 py-4 transition-colors ${
+                      className={`relative border-b border-gray-800 transition-colors ${
                         active ? 'bg-primary-500/10' : 'hover:bg-white/5'
                       }`}
                     >
-                      <div className="flex items-start justify-between gap-3">
-                        <div className="min-w-0">
-                          <div className="flex items-center gap-2 flex-wrap">
-                            <p className="font-semibold text-white truncate">{thread.subjectLabel}</p>
-                            <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] font-medium ${statusMeta.className}`}>
-                              {statusMeta.label}
-                            </span>
+                      <button
+                        type="button"
+                        onClick={() => setSelectedId(thread.id)}
+                        className="w-full text-left px-4 py-4"
+                      >
+                        <div className={`flex items-start justify-between gap-3 ${thread.status === 'resolved' ? 'pr-9' : ''}`}>
+                          <div className="min-w-0">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <p className="font-semibold text-white truncate">{thread.subjectLabel}</p>
+                              <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] font-medium ${statusMeta.className}`}>
+                                {statusMeta.label}
+                              </span>
+                            </div>
+                            <p className="text-sm text-gray-300 mt-2 truncate">{thread.requesterName}</p>
+                            <p className="text-xs text-gray-500 truncate">{thread.requesterEmail}</p>
+                            <p className="text-sm text-gray-400 line-clamp-2 mt-2">
+                              {thread.lastMessagePreview || thread.initialMessage}
+                            </p>
+                            <p className="text-xs text-gray-500 mt-2">{formatDate(thread.lastMessageAt || thread.updatedAt)}</p>
                           </div>
-                          <p className="text-sm text-gray-300 mt-2 truncate">{thread.requesterName}</p>
-                          <p className="text-xs text-gray-500 truncate">{thread.requesterEmail}</p>
-                          <p className="text-sm text-gray-400 line-clamp-2 mt-2">
-                            {thread.lastMessagePreview || thread.initialMessage}
-                          </p>
-                          <p className="text-xs text-gray-500 mt-2">{formatDate(thread.lastMessageAt || thread.updatedAt)}</p>
-                        </div>
 
-                        {thread.hasUnreadForAdmin && (
-                          <span className="mt-1 h-2.5 w-2.5 rounded-full bg-primary-400 flex-shrink-0" />
-                        )}
-                      </div>
-                    </button>
+                          {thread.hasUnreadForAdmin && (
+                            <span className="mt-1 h-2.5 w-2.5 rounded-full bg-primary-400 flex-shrink-0" />
+                          )}
+                        </div>
+                      </button>
+
+                      {thread.status === 'resolved' && (
+                        <button
+                          type="button"
+                          onClick={() => void handleArchive(thread.id)}
+                          disabled={archivingId === thread.id}
+                          aria-label="Arquivar chamado resolvido"
+                          title="Arquivar chamado"
+                          className="absolute right-3 top-3 inline-flex h-8 w-8 items-center justify-center rounded-lg text-gray-400 transition-colors hover:bg-white/10 hover:text-primary-400 focus:outline-none focus:ring-2 focus:ring-primary-500 disabled:cursor-wait disabled:opacity-50"
+                        >
+                          <Archive className="h-4 w-4" />
+                        </button>
+                      )}
+                    </div>
                   );
                 })
               )}

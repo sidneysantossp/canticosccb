@@ -88,6 +88,7 @@ wayback-zip-urls.txt
 !/api/emergency-audio-track.ts
 !/api/emergency-audio-archive.ts
 !/api/hino-audio-fallback.ts
+!/api/media-stream.ts
 vendor/
 media/
 media_protegida/

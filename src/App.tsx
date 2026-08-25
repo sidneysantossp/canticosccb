@@ -485,6 +485,7 @@ const AppContent: React.FC = () => {
           <Route path="admin/composers/edit/:id" element={<ProtectedRoute requireAdmin><AdminComposerForm /></ProtectedRoute>} />
           <Route path="admin/chat" element={<ProtectedRoute requireAdmin><AdminChat /></ProtectedRoute>} />
           <Route path="admin/support" element={<ProtectedRoute requireAdmin><AdminChat /></ProtectedRoute>} />
+          <Route path="admin/moderation/chat" element={<ProtectedRoute requireAdmin><AdminChat /></ProtectedRoute>} />
 
           {/* Content Management */}
           <Route path="admin/hinos" element={<ProtectedRoute requireAdmin><AdminHymns /></ProtectedRoute>} />

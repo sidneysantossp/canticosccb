@@ -18,6 +18,7 @@ const PUBLIC_SITE = 'canticosccb.com.br';
 const PUBLIC_URL = 'https://www.canticosccb.com.br';
 const SOURCE_LABEL = 'Acervo Cânticos CCB';
 const MEDIA_EXTENSION_REGEX = /\.(mp3|wma|mid|midi|wav|ogg|aac|m4a|zip)$/i;
+const EXTERNAL_SOURCE_REGEX = /(?:archive\.org|ccbhinos(?:\.kit\.net)?)/i;
 
 if (!SUPABASE_URL || !SUPABASE_KEY) {
   throw new Error('VITE_SUPABASE_URL e VITE_SUPABASE_ANON_KEY são obrigatórios em .env.local');
@@ -35,6 +36,12 @@ function stripExternalSourceMarkers(value = '') {
     .replace(/-+/g, ' ')
     .replace(/\s+/g, ' ')
     .trim();
+}
+
+function containsExternalSource(value) {
+  return EXTERNAL_SOURCE_REGEX.test(
+    typeof value === 'string' ? value : JSON.stringify(value || '')
+  );
 }
 
 function slugify(text = '') {
@@ -204,7 +211,10 @@ async function patchHinosWithCollisionFallback(rows, albumTitleByHinoId, concurr
 
       for (const candidate of candidates) {
         try {
-          await patchRow('hinos', row.id, { titulo: candidate });
+          await patchRow('hinos', row.id, {
+            titulo: candidate,
+            ...(containsExternalSource(row.audio_url) ? { audio_url: null } : {}),
+          });
           lastError = undefined;
           break;
         } catch (error) {
@@ -229,9 +239,10 @@ async function patchHinosWithCollisionFallback(rows, albumTitleByHinoId, concurr
   await Promise.all(Array.from({ length: Math.min(concurrency, rows.length || 1) }, () => worker()));
 }
 
-const albums = await fetchAll((offset, limit) => (
-  `albums?select=id,title,slug,description,metadata&or=(slug.ilike.*ccbhinos*,metadata->>source_site.ilike.*ccbhinos.kit.net*)&order=id.asc&limit=${limit}&offset=${offset}`
+const allAlbums = await fetchAll((offset, limit) => (
+  `albums?select=id,title,slug,description,metadata&order=id.asc&limit=${limit}&offset=${offset}`
 ));
+const albums = allAlbums.filter((row) => containsExternalSource(row));
 
 await patchRows('albums', albums, (row) => ({
   title: sanitizeAlbumTitle(row.title),
@@ -244,14 +255,15 @@ await patchRows('albums', albums, (row) => ({
     source_label: SOURCE_LABEL,
     source_site: PUBLIC_SITE,
     public_url: PUBLIC_URL,
-    source_path: row?.metadata?.source_path || '',
+    source_path: '',
     category_names: Array.isArray(row?.metadata?.category_names) ? row.metadata.category_names : [],
   },
 }));
 
-const hinos = await fetchAll((offset, limit) => (
-  `hinos?select=id,titulo,numero,slug&or=(slug.ilike.*ccbhinos*,titulo.ilike.*ccbhinos*)&order=id.asc&limit=${limit}&offset=${offset}`
+const allHinos = await fetchAll((offset, limit) => (
+  `hinos?select=id,titulo,numero,slug,audio_url&order=id.asc&limit=${limit}&offset=${offset}`
 ));
+const hinos = allHinos.filter((row) => containsExternalSource(row));
 const albumTitleByHinoId = await fetchAlbumTitlesByHinoIds(hinos.map((row) => row.id));
 await patchHinosWithCollisionFallback(hinos, albumTitleByHinoId, 30);
 
@@ -265,15 +277,17 @@ await patchRows('hinos', remainingHinosWithDirtySlug, (row) => {
   };
 }, 30);
 
-const remainingAlbumTextLeaks = await fetchAll((offset, limit) => (
-  `albums?select=id&or=(title.ilike.*ccbhinos*,slug.ilike.*ccbhinos*,description.ilike.*ccbhinos*)&order=id.asc&limit=${limit}&offset=${offset}`
+const remainingAlbums = await fetchAll((offset, limit) => (
+  `albums?select=id,title,slug,description,metadata&order=id.asc&limit=${limit}&offset=${offset}`
 ));
-const remainingAlbumMetadataLeaks = await fetchAll((offset, limit) => (
-  `albums?select=id&metadata->>source_site=ilike.*ccbhinos.kit.net*&order=id.asc&limit=${limit}&offset=${offset}`
+const remainingHinos = await fetchAll((offset, limit) => (
+  `hinos?select=id,titulo,slug,audio_url&order=id.asc&limit=${limit}&offset=${offset}`
 ));
-const remainingHinoLeaks = await fetchAll((offset, limit) => (
-  `hinos?select=id&or=(titulo.ilike.*ccbhinos*,slug.ilike.*ccbhinos*)&order=id.asc&limit=${limit}&offset=${offset}`
-));
+const remainingAlbumTextLeaks = remainingAlbums.filter((row) =>
+  containsExternalSource([row.title, row.slug, row.description])
+);
+const remainingAlbumMetadataLeaks = remainingAlbums.filter((row) => containsExternalSource(row.metadata));
+const remainingHinoLeaks = remainingHinos.filter((row) => containsExternalSource(row));
 
 console.log(JSON.stringify({
   updated_albums: albums.length,

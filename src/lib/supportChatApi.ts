@@ -18,7 +18,7 @@ export const SUPPORT_SUBJECT_OPTIONS = [
 ] as const;
 
 export type SupportSubjectKey = (typeof SUPPORT_SUBJECT_OPTIONS)[number]['key'];
-export type SupportThreadStatus = 'pending' | 'in_review' | 'resolved';
+export type SupportThreadStatus = 'pending' | 'in_review' | 'resolved' | 'archived';
 export type SupportSenderRole = 'admin' | 'user';
 
 export interface SupportMessage {
@@ -71,6 +71,7 @@ export interface ListSupportThreadsOptions {
   userId?: string;
   userEmail?: string;
   includeResolved?: boolean;
+  includeArchived?: boolean;
 }
 
 export interface SupportInboxStats {
@@ -133,7 +134,7 @@ function normalizeSubjectKey(value: string | null | undefined): SupportSubjectKe
 }
 
 function normalizeStatus(value: unknown): SupportThreadStatus {
-  if (value === 'in_review' || value === 'resolved') {
+  if (value === 'in_review' || value === 'resolved' || value === 'archived') {
     return value;
   }
   return 'pending';
@@ -255,8 +256,8 @@ function mapSupportThread(rows: any[]): SupportThread {
     coverUrl: DEFAULT_SUPPORT_COVER,
     messages,
     lastMessagePreview: lastMessage?.message || firstRow.message || '',
-    waitingForAdmin: status !== 'resolved' && Boolean(lastMessage) && lastMessage.senderRole === 'user',
-    waitingForUser: status !== 'resolved' && Boolean(lastMessage) && lastMessage.senderRole === 'admin',
+    waitingForAdmin: status !== 'resolved' && status !== 'archived' && Boolean(lastMessage) && lastMessage.senderRole === 'user',
+    waitingForUser: status !== 'resolved' && status !== 'archived' && Boolean(lastMessage) && lastMessage.senderRole === 'admin',
   };
 }
 
@@ -340,6 +341,8 @@ function buildStatusSystemMessage(status: SupportThreadStatus) {
       return 'Seu chamado está em atendimento pela equipe.';
     case 'resolved':
       return 'Seu chamado foi marcado como resolvido.';
+    case 'archived':
+      return 'Este chamado foi arquivado pela equipe.';
     case 'pending':
     default:
       return 'Seu chamado voltou para a fila de atendimento.';
@@ -358,6 +361,10 @@ export async function listSupportThreads(options: ListSupportThreadsOptions = {}
 
   if (!options.includeResolved) {
     threads = threads.filter((thread) => thread.status !== 'resolved');
+  }
+
+  if (!options.includeArchived) {
+    threads = threads.filter((thread) => thread.status !== 'archived');
   }
 
   return threads;
