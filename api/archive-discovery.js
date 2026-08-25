@@ -1,3 +1,5 @@
+import { EMERGENCY_AUDIO_INDEX } from './_emergencyAudioIndex.js';
+
 const ALLOWED_ORIGINAL_HOSTS = new Set(['canticosccb.com.br', 'www.canticosccb.com.br']);
 const MEDIA_EXTENSIONS = new Set(['mp3', 'wma', 'wav', 'ogg', 'aac', 'm4a', 'mid', 'midi', 'zip', 'mp4']);
 
@@ -26,6 +28,27 @@ function resolveOriginalUrl(value) {
 
 function extensionOf(url) {
   try { return new URL(url).pathname.split('.').pop().toLowerCase(); } catch { return ''; }
+}
+
+function filesFromRecoveryCatalog() {
+  return Object.values(EMERGENCY_AUDIO_INDEX).flatMap((archive) => {
+    const snapshotUrl = String(archive?.snapshotUrl || '').trim();
+    const entries = Array.isArray(archive?.entries) ? archive.entries : [];
+    if (!snapshotUrl) return [];
+    return entries
+      .map((entry) => {
+        const name = String(entry?.name || '').trim();
+        const extension = name.split('.').pop()?.toLowerCase() || '';
+        return {
+          name,
+          extension,
+          mimeType: extension === 'mp3' ? 'audio/mpeg' : 'application/octet-stream',
+          replayUrl: snapshotUrl,
+          container: String(archive?.segment?.albumTitle || 'Pacote histórico'),
+        };
+      })
+      .filter((entry) => entry.name && MEDIA_EXTENSIONS.has(entry.extension));
+  });
 }
 
 async function fetchArchiveRows(cdxUrl) {
@@ -77,9 +100,15 @@ export default async function handler(req, res) {
     const originalUrl = resolveOriginalUrl(req.body?.sourceUrl);
     const baseUrl = originalUrl.endsWith('*') ? originalUrl : `${originalUrl}*`;
     const cdxUrl = `https://web.archive.org/cdx/search/cdx?url=${encodeURIComponent(baseUrl)}&output=json&fl=timestamp,original,statuscode,mimetype&filter=statuscode:200&collapse=urlkey&limit=3000`;
-    const rows = await fetchArchiveRows(cdxUrl);
+    let rows = [];
+    let externalError = '';
+    try {
+      rows = await fetchArchiveRows(cdxUrl);
+    } catch (error) {
+      externalError = String(error?.message || 'Consulta externa indisponível.');
+    }
     const dataRows = Array.isArray(rows) ? rows.slice(1) : [];
-    const files = dataRows
+    let files = dataRows
       .map(([timestamp, original, status, mimeType]) => ({ timestamp, original, status, mimeType, extension: extensionOf(original) }))
       .filter((item) => MEDIA_EXTENSIONS.has(item.extension))
       .map((item) => ({
@@ -88,7 +117,17 @@ export default async function handler(req, res) {
         mimeType: item.mimeType || 'desconhecido',
         replayUrl: `https://web.archive.org/web/${item.timestamp}id_/${item.original}`,
       }));
-    return json(res, 200, { sourceUrl: originalUrl, total: files.length, files });
+    const catalogFallback = files.length === 0 && Boolean(externalError);
+    if (catalogFallback) files = filesFromRecoveryCatalog();
+    return json(res, 200, {
+      sourceUrl: originalUrl,
+      total: files.length,
+      files,
+      catalogFallback,
+      warning: catalogFallback
+        ? `A consulta externa não respondeu. Exibindo ${files.length} arquivos do catálogo de recuperação já validado.`
+        : '',
+    });
   } catch (error) {
     const message = String(error.message || 'Não foi possível analisar a origem.');
     const status = /Sessão|Acesso/i.test(message) ? 403 : /Wayback|acervo/i.test(message) ? 502 : 400;
