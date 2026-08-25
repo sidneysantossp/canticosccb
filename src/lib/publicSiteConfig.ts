@@ -32,6 +32,7 @@ export interface RuntimeSeoSettings {
   robots_index: boolean;
   robots_follow: boolean;
   google_search_console_id: string;
+  google_analytics_id: string;
 }
 
 export interface PublicPromotion {
@@ -96,6 +97,7 @@ const SITE_CONFIG_KEYS = [
   'robots_index',
   'robots_follow',
   'google_search_console_id',
+  'google_analytics_id',
   'admin_theme_settings',
   'admin_promotions',
   'admin_tags',
@@ -118,6 +120,7 @@ const defaultSeoSettings: RuntimeSeoSettings = {
   robots_index: true,
   robots_follow: true,
   google_search_console_id: '',
+  google_analytics_id: '',
 };
 
 export const defaultRuntimeTheme: RuntimeThemeSettings = {
@@ -359,6 +362,7 @@ export async function getSiteRuntimeConfig(force = false): Promise<SiteRuntimeCo
             config.google_search_console_id,
             defaultSeoSettings.google_search_console_id
           ),
+          google_analytics_id: toNonEmptyString(config.google_analytics_id, defaultSeoSettings.google_analytics_id),
         },
         theme: parseThemeSettings(config.admin_theme_settings),
         promotions: parsePromotions(config.admin_promotions),

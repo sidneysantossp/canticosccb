@@ -402,12 +402,35 @@ interface PageMeta {
   bodyHtml: string;
   noindex?: boolean;
   status?: number;
+  favicon?: string;
+  keywords?: string;
+  googleVerification?: string;
+  robotsIndex?: boolean;
+  robotsFollow?: boolean;
+}
+
+async function applyHomeRuntimeSeo(meta: PageMeta, isHome = true): Promise<PageMeta> {
+  try {
+    const [configRows, logoRows] = await Promise.all([
+      supaFetch('site_config', { select: 'config_key,config_value', config_key: 'in.(site_title,site_description,site_keywords,site_url,og_title,og_description,og_image,robots_index,robots_follow,google_search_console_id,schema_name,schema_type)' }),
+      supaFetch('site_logos', { select: 'url', type: 'eq.favicon', limit: '1' }),
+    ]);
+    const config = configRows.reduce<Record<string, string>>((acc, row) => { acc[row.config_key] = String(row.config_value || ''); return acc; }, {});
+    const bool = (value: string | undefined, fallback: boolean) => value == null || value === '' ? fallback : ['true', '1', 'yes', 'on'].includes(value.toLowerCase());
+    const siteTitle = config.site_title?.trim() || meta.title;
+    const description = config.site_description?.trim() || meta.description;
+    const ogTitle = config.og_title?.trim() || siteTitle;
+    const ogDescription = config.og_description?.trim() || description;
+    const canonical = config.site_url?.trim().replace(/\/+$/, '') || meta.canonical;
+    const favicon = String(logoRows[0]?.url || '').trim() || undefined;
+    return { ...meta, ...(isHome ? { title: ogTitle, description: ogDescription, canonical, ogImage: config.og_image?.trim() || meta.ogImage, keywords: config.site_keywords?.trim() || undefined, schemas: [{ '@context': 'https://schema.org', '@type': config.schema_type?.trim() || 'Organization', name: config.schema_name?.trim() || siteTitle, url: canonical, logo: favicon || `${SITE_URL}/favicon-96x96.png` }, ...(meta.schemas || [])] } : {}), favicon, googleVerification: config.google_search_console_id?.trim() || undefined, robotsIndex: bool(config.robots_index, true), robotsFollow: bool(config.robots_follow, true) };
+  } catch { return meta; }
 }
 
 function buildFullHtml(meta: PageMeta): string {
   const ogType = meta.ogType || 'website';
   const ogImage = meta.ogImage || `${SITE_URL}/logo-canticos-ccb.png`;
-  const robotsContent = meta.noindex ? 'noindex, follow' : 'index, follow';
+  const robotsContent = meta.noindex || meta.robotsIndex === false ? `noindex, ${meta.robotsFollow === false ? 'nofollow' : 'follow'}` : `index, ${meta.robotsFollow === false ? 'nofollow' : 'follow'}`;
   const schemasHtml = (meta.schemas || [])
     .map(s => '<script type="application/ld+json">' + JSON.stringify(s) + '</script>')
     .join('\n    ');
@@ -418,9 +441,8 @@ function buildFullHtml(meta: PageMeta): string {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="icon" type="image/png" sizes="96x96" href="${SITE_URL}/favicon-96x96.png">
-    <link rel="icon" type="image/svg+xml" href="${SITE_URL}/icons/favicon.svg">
-    <link rel="apple-touch-icon" sizes="180x180" href="${SITE_URL}/icons/apple-touch-icon.png">
+    <link rel="icon" href="${esc(meta.favicon || `${SITE_URL}/favicon-96x96.png`)}">
+    <link rel="apple-touch-icon" href="${esc(meta.favicon || `${SITE_URL}/favicon-96x96.png`)}">
     <title>${esc(meta.title)}</title>
     <meta name="description" content="${esc(meta.description)}">
     <meta name="robots" content="${robotsContent}">
@@ -429,7 +451,8 @@ function buildFullHtml(meta: PageMeta): string {
     <link rel="describedby" href="${SITE_URL}/llms.txt" type="text/markdown">
     ${canonicalHtml}
     <meta name="author" content="Cânticos CCB">
-    <meta name="keywords" content="hinos CCB, hinário 5, comunidade CCB, cifras CCB, hinos cantados, hinos tocados, compositores CCB">
+    <meta name="keywords" content="${esc(meta.keywords || 'hinos CCB, hinário 5, comunidade CCB, cifras CCB, hinos cantados, hinos tocados, compositores CCB')}">
+    ${meta.googleVerification ? `<meta name="google-site-verification" content="${esc(meta.googleVerification)}">` : ''}
 
     <meta property="og:type" content="${ogType}">
     <meta property="og:site_name" content="Cânticos CCB">
@@ -2020,7 +2043,7 @@ export default async function handler(req: Request): Promise<Response> {
 
   try {
     if (pathname === '/') {
-      pageMeta = handleHome();
+      pageMeta = await applyHomeRuntimeSeo(handleHome());
     } else {
     const hinoMatch = pathname.match(/^\/hino\/(.+)$/);
     const compositorMatch = pathname.match(/^\/compositor\/(.+)$/);
@@ -2089,6 +2112,10 @@ export default async function handler(req: Request): Promise<Response> {
         "Retry-After": "120",
       },
     });
+  }
+
+  if (pageMeta && pathname !== '/') {
+    pageMeta = await applyHomeRuntimeSeo(pageMeta, false);
   }
 
   // If no page meta found, return an actual 404/noindex page to avoid soft 404 indexing.

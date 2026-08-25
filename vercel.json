@@ -7,6 +7,8 @@
     { "source": "/index.php", "destination": "/", "permanent": true }
   ],
   "rewrites": [
+    { "source": "/favicon.ico", "destination": "/api/favicon" },
+    { "source": "/robots.txt", "destination": "/api/robots" },
     {
       "source": "/playlist/:path*",
       "destination": "/index.html"
