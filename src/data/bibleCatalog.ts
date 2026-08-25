@@ -50,7 +50,10 @@ export const bibleBooks: BibleBook[] = [
 export const bibleBooksBySlug = new Map(bibleBooks.map((book) => [book.slug, book]));
 
 const chapterTitles: Record<string, Record<number, string>> = {
-  genesis: { 1: 'A Criação do Mundo' },
+  genesis: {
+    1: 'A Criação do Mundo',
+    2: 'A Criação do Homem e da Mulher',
+  },
 };
 
 export const getBibleBook = (slug?: string) => slug ? bibleBooksBySlug.get(slug) : undefined;

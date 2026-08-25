@@ -3,7 +3,6 @@ import { Link } from 'react-router-dom';
 import { ArrowRight, Clock3, Headphones, Heart, Quote, Search, Sparkles, Users } from 'lucide-react';
 import SEOHead from '@/components/SEO/SEOHead';
 import BibleSearchBox from '@/components/bible/BibleSearchBox';
-import BibleTopNav from '@/components/bible/BibleTopNav';
 import { bibleBooks } from '@/data/bibleCatalog';
 import { generateBreadcrumbSchema, generateItemListSchema } from '@/utils/schemaGenerator';
 
@@ -36,8 +35,6 @@ const BibleHubPage: React.FC = () => {
   return (
     <div className="min-h-screen bg-[#0d0f0e] text-white">
       <SEOHead exactTitle title="Bíblia Online CCB | Leia por Livro, Capítulo e Tema" description="Leia a Bíblia Online CCB com navegação rápida por livros e capítulos, busca inteligente, recursos de leitura, temas, personagens e referência ACF." keywords="bíblia online ccb, bíblia ccb, bíblia acf online, livros da bíblia, capítulos da bíblia" canonical="/biblia-ccb" ogImage="/images/bible/hero-bible-online.webp" schemaData={schemaData} />
-      <BibleTopNav />
-
       <section className="relative isolate min-h-[520px] overflow-hidden border-b border-white/10 sm:min-h-[610px]">
         <img src="/images/bible/hero-bible-online.webp" alt="Bíblia aberta sobre uma mesa de madeira" className="absolute inset-0 -z-30 h-full w-full object-cover object-[68%_center]" />
         <div className="absolute inset-0 -z-20 bg-[linear-gradient(90deg,rgba(8,10,9,0.98)_0%,rgba(8,10,9,0.9)_34%,rgba(8,10,9,0.34)_72%,rgba(8,10,9,0.28)_100%)]" />

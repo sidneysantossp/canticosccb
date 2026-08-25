@@ -80,6 +80,7 @@ export const AdminNotices = lazyWithChunkRecovery(() => import('./AdminNotices')
 export const AdminNoticeForm = lazyWithChunkRecovery(() => import('./AdminNoticeForm'));
 export const AdminBibleNarrated = lazyWithChunkRecovery(() => import('./AdminBibleNarrated'));
 export const AdminBibleNarratedForm = lazyWithChunkRecovery(() => import('./AdminBibleNarratedForm'));
+export const AdminBibleAudio = lazyWithChunkRecovery(() => import('./AdminBibleAudio'));
 export const AdminCifras = lazyWithChunkRecovery(() => import('./AdminCifras'));
 export const AdminCifraForm = lazyWithChunkRecovery(() => import('./AdminCifraForm'));
 export const AdminCifraMigrationPage = lazyWithChunkRecovery(() => import('./AdminCifraMigrationPage'));

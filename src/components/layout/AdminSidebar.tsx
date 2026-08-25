@@ -160,6 +160,7 @@ const AdminSidebar: React.FC = () => {
         { path: '/admin/albums', label: 'Álbuns', icon: Album },
         { path: '/admin/collections', label: 'Coletâneas', icon: Layers },
         { path: '/admin/bible-narrated', label: 'Bíblia Narrada', icon: Book },
+        { path: '/admin/biblia-em-audio', label: 'Bíblia em Áudio', icon: Book },
         { path: '/admin/cifras', label: 'Cifras', icon: FileText },
         { path: '/admin/cifras-v2/revisao', label: 'Revisão Cifras', icon: CheckCircle },
         { path: '/admin/hinario', label: 'Hinário', icon: BookOpen },

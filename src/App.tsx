@@ -109,6 +109,7 @@ import {
   AdminBanners,
   AdminBibleNarrated,
   AdminBibleNarratedForm,
+  AdminBibleAudio,
   AdminCampaignForm,
   AdminCampaigns,
   AdminChat,
@@ -633,6 +634,8 @@ const AppContent: React.FC = () => {
           <Route path="admin/bible-narrated/create" element={<ProtectedRoute requireAdmin><AdminBibleNarratedForm /></ProtectedRoute>} />
           <Route path="admin/bible-narrated/editar/:id" element={<ProtectedRoute requireAdmin><AdminBibleNarratedForm /></ProtectedRoute>} />
           <Route path="admin/bible-narrated/edit/:id" element={<ProtectedRoute requireAdmin><AdminBibleNarratedForm /></ProtectedRoute>} />
+          <Route path="admin/biblia-em-audio" element={<ProtectedRoute requireAdmin><AdminBibleAudio /></ProtectedRoute>} />
+          <Route path="admin/bible-audio" element={<ProtectedRoute requireAdmin><AdminBibleAudio /></ProtectedRoute>} />
 
           {/* Cifras Management */}
           <Route path="admin/cifras" element={<ProtectedRoute requireAdmin><AdminCifras /></ProtectedRoute>} />

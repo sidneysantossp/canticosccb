@@ -1,0 +1,40 @@
+import { useEffect, useMemo, useState } from 'react';
+import { Edit3, Eye, EyeOff, Plus, Trash2, Video, X } from 'lucide-react';
+import { bibleBooks } from '@/data/bibleCatalog';
+import { deleteBibleChapterAudio, fetchBibleChapterAudios, resolveBibleChapterId, saveBibleChapterAudio, type BibleChapterAudioAdmin } from '@/api/bibleAudio';
+import { extractYouTubeVideoId } from '@/utils/youtubeApi';
+
+const emptyForm = { bookSlug: 'genesis', chapter: 1, youtube_url: '', title: '', is_active: true };
+
+const AdminBibleAudio = () => {
+  const [items, setItems] = useState<BibleChapterAudioAdmin[]>([]);
+  const [form, setForm] = useState(emptyForm);
+  const [editing, setEditing] = useState<BibleChapterAudioAdmin | null>(null);
+  const [open, setOpen] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState('');
+  const book = useMemo(() => bibleBooks.find((item) => item.slug === form.bookSlug) ?? bibleBooks[0], [form.bookSlug]);
+  const load = async () => { setLoading(true); try { setItems(await fetchBibleChapterAudios()); } catch (err) { setError(err instanceof Error ? err.message : 'Não foi possível carregar os áudios.'); } finally { setLoading(false); } };
+  useEffect(() => { void load(); }, []);
+  const openCreate = () => { setEditing(null); setForm(emptyForm); setError(''); setOpen(true); };
+  const openEdit = (item: BibleChapterAudioAdmin) => { const itemBook = item.chapter?.book; setEditing(item); setForm({ bookSlug: itemBook?.slug || 'genesis', chapter: item.chapter?.chapter_number || 1, youtube_url: item.youtube_url, title: item.title || '', is_active: item.is_active }); setError(''); setOpen(true); };
+  const save = async (event: React.FormEvent) => {
+    event.preventDefault(); setError(''); const videoId = extractYouTubeVideoId(form.youtube_url);
+    if (!videoId) { setError('Informe uma URL válida do YouTube.'); return; }
+    setSaving(true);
+    try { const chapterId = await resolveBibleChapterId(book.slug, form.chapter); await saveBibleChapterAudio({ id: editing?.id, chapter_id: chapterId, youtube_video_id: videoId, youtube_url: form.youtube_url.trim(), title: form.title.trim() || `${book.name} ${form.chapter}`, thumbnail_url: `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`, duration_seconds: null, is_active: form.is_active }); setOpen(false); await load(); }
+    catch (err) { setError(err instanceof Error ? err.message : 'Não foi possível salvar o áudio.'); }
+    finally { setSaving(false); }
+  };
+  const remove = async (item: BibleChapterAudioAdmin) => { if (!window.confirm(`Excluir o áudio de ${item.chapter?.book?.name || 'este capítulo'} ${item.chapter?.chapter_number || ''}?`)) return; await deleteBibleChapterAudio(item.id); await load(); };
+  const toggle = async (item: BibleChapterAudioAdmin) => { await saveBibleChapterAudio({ ...item, is_active: !item.is_active, chapter_id: item.chapter_id }); await load(); };
+
+  return <div className="min-h-screen p-6 text-white"><div className="mb-6 flex flex-wrap items-center justify-between gap-4"><div><h1 className="text-3xl font-bold">Bíblia em Áudio</h1><p className="mt-1 text-gray-400">Áudios do YouTube vinculados a cada capítulo bíblico.</p></div><button type="button" onClick={openCreate} className="inline-flex items-center gap-2 rounded-lg bg-green-600 px-4 py-2 font-semibold transition-colors hover:bg-green-700"><Plus className="h-5 w-5" /> Novo áudio</button></div>
+    {error && !open ? <p className="mb-4 rounded-lg border border-red-500/30 bg-red-500/10 p-3 text-red-300">{error}</p> : null}
+    {loading ? <p className="py-16 text-center text-gray-400">Carregando áudios…</p> : <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">{items.map((item) => <article key={item.id} className="overflow-hidden rounded-xl border border-gray-800 bg-gray-900/50"><img src={item.thumbnail_url || `https://i.ytimg.com/vi/${item.youtube_video_id}/hqdefault.jpg`} alt="" className="aspect-video w-full object-cover" /><div className="p-4"><p className="text-sm font-semibold text-green-400">{item.chapter?.book?.name || 'Livro'} {item.chapter?.chapter_number || ''}</p><h2 className="mt-1 font-bold">{item.title || 'Bíblia em áudio'}</h2><div className="mt-4 flex items-center justify-between"><span className={`text-xs ${item.is_active ? 'text-green-400' : 'text-gray-500'}`}>{item.is_active ? 'Publicado' : 'Oculto'}</span><div className="flex gap-2"><button type="button" onClick={() => void toggle(item)} className="rounded-lg p-2 text-gray-300 hover:bg-white/10">{item.is_active ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}</button><button type="button" onClick={() => openEdit(item)} className="rounded-lg p-2 text-gray-300 hover:bg-white/10"><Edit3 className="h-4 w-4" /></button><button type="button" onClick={() => void remove(item)} className="rounded-lg p-2 text-red-400 hover:bg-red-500/10"><Trash2 className="h-4 w-4" /></button></div></div></div></article>)}{items.length === 0 ? <div className="col-span-full rounded-xl border border-dashed border-gray-700 p-12 text-center text-gray-400"><Video className="mx-auto mb-3 h-10 w-10" />Nenhum capítulo com áudio cadastrado.</div> : null}</div>}
+    {open ? <div className="fixed inset-0 z-50 overflow-y-auto bg-black/75 p-4 backdrop-blur-sm"><form onSubmit={save} className="mx-auto my-10 max-w-xl rounded-2xl border border-gray-700 bg-[#171a18] p-6 shadow-2xl"><div className="mb-6 flex items-center justify-between"><div><h2 className="text-xl font-bold">{editing ? 'Editar áudio' : 'Novo áudio por capítulo'}</h2><p className="mt-1 text-sm text-gray-400">O vídeo é exibido somente como áudio no leitor.</p></div><button type="button" onClick={() => setOpen(false)} className="rounded-lg p-2 hover:bg-white/10"><X className="h-5 w-5" /></button></div>{error ? <p className="mb-4 rounded-lg border border-red-500/30 bg-red-500/10 p-3 text-sm text-red-300">{error}</p> : null}<div className="space-y-4"><label className="block text-sm font-medium text-gray-300">Livro<select value={form.bookSlug} onChange={(e) => setForm({ ...form, bookSlug: e.target.value, chapter: 1 })} className="mt-1 w-full rounded-lg border border-gray-700 bg-gray-800 px-3 py-3 text-white">{bibleBooks.map((item) => <option key={item.slug} value={item.slug}>{item.name}</option>)}</select></label><label className="block text-sm font-medium text-gray-300">Capítulo<select value={form.chapter} onChange={(e) => setForm({ ...form, chapter: Number(e.target.value) })} className="mt-1 w-full rounded-lg border border-gray-700 bg-gray-800 px-3 py-3 text-white">{Array.from({ length: book.chapters }, (_, index) => index + 1).map((number) => <option key={number} value={number}>{number}</option>)}</select></label><label className="block text-sm font-medium text-gray-300">URL do YouTube<input required type="url" value={form.youtube_url} onChange={(e) => setForm({ ...form, youtube_url: e.target.value })} placeholder="https://www.youtube.com/watch?v=..." className="mt-1 w-full rounded-lg border border-gray-700 bg-gray-800 px-3 py-3 text-white" /></label><label className="block text-sm font-medium text-gray-300">Título<input value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} placeholder={`${book.name} ${form.chapter} em áudio`} className="mt-1 w-full rounded-lg border border-gray-700 bg-gray-800 px-3 py-3 text-white" /></label><label className="flex items-center gap-2 text-sm text-gray-300"><input type="checkbox" checked={form.is_active} onChange={(e) => setForm({ ...form, is_active: e.target.checked })} /> Publicar imediatamente</label></div><div className="mt-6 flex gap-3"><button type="button" onClick={() => setOpen(false)} className="flex-1 rounded-lg bg-gray-800 px-4 py-3 font-semibold">Cancelar</button><button disabled={saving} className="flex-1 rounded-lg bg-green-600 px-4 py-3 font-semibold disabled:opacity-50">{saving ? 'Salvando…' : 'Salvar áudio'}</button></div></form></div> : null}
+  </div>;
+};
+
+export default AdminBibleAudio;

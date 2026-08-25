@@ -145,6 +145,7 @@ const AdminMobileSidebar: React.FC<AdminMobileSidebarProps> = ({ isOpen, onClose
         { path: '/admin/cifras', label: 'Cifras', icon: FileText },
         { path: '/admin/cifras-v2/revisao', label: 'Revisão Cifras', icon: CheckCircle },
         { path: '/admin/bible-narrated', label: 'Bíblia Narrada', icon: Book },
+        { path: '/admin/biblia-em-audio', label: 'Bíblia em Áudio', icon: Book },
         { path: '/admin/hinario', label: 'Hinário', icon: BookOpen },
         { path: '/admin/categories', label: 'Categorias', icon: Grid },
         { path: '/admin/genres', label: 'Gêneros', icon: List },

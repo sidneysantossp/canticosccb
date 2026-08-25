@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
-  Bookmark, BookOpen, ChevronRight, Headphones, Minus, Moon, PanelLeftClose,
+  Bookmark, BookOpen, ChevronRight, Minus, Moon, PanelLeftClose,
   PanelLeftOpen, Play, Plus, Printer, ScrollText, Search, Share2, StickyNote, Sun, Type,
+  Video,
 } from 'lucide-react';
 import BibleSearchBox from './BibleSearchBox';
 
@@ -16,10 +17,12 @@ interface BibleToolsSidebarProps {
   onFontSize: (size: number) => void;
   onShare: () => void;
   onTheme: () => void;
+  hasAudio?: boolean;
+  onAudio?: () => void;
 }
 
 const BibleToolsSidebar: React.FC<BibleToolsSidebarProps> = ({
-  autoScroll, bookmarked, fontSize, theme, onAutoScroll, onBookmark, onFontSize, onShare, onTheme,
+  autoScroll, bookmarked, fontSize, theme, onAutoScroll, onBookmark, onFontSize, onShare, onTheme, hasAudio = false, onAudio,
 }) => {
   const [collapsed, setCollapsed] = useState(false);
 
@@ -33,7 +36,7 @@ const BibleToolsSidebar: React.FC<BibleToolsSidebarProps> = ({
             { label: 'Expandir barra lateral', icon: PanelLeftOpen, action: () => setCollapsed(false) },
             { label: 'Buscar', icon: Search, action: () => setCollapsed(false) },
             { label: 'Rolagem', icon: ScrollText, action: onAutoScroll, active: autoScroll },
-            { label: 'Ouvir', icon: Headphones, action: () => undefined },
+            { label: hasAudio ? 'Ouvir capítulo' : 'Áudio indisponível', icon: Video, action: () => onAudio?.() },
             { label: 'Texto', icon: Type, action: () => setCollapsed(false) },
             { label: 'Tema', icon: theme === 'dark' ? Moon : Sun, action: onTheme },
             { label: 'Marcar', icon: Bookmark, action: onBookmark, active: bookmarked },
@@ -68,8 +71,8 @@ const BibleToolsSidebar: React.FC<BibleToolsSidebarProps> = ({
         <button type="button" onClick={onAutoScroll} className="flex w-full items-center gap-3 px-3 py-3 text-left text-sm text-gray-100 transition-colors hover:bg-gray-700/70">
           <ScrollText className="h-4 w-4 text-gray-300" /><span className="flex-1 font-medium">Rolagem</span><span className={`text-xs ${autoScroll ? 'text-primary-300' : 'text-gray-400'}`}>{autoScroll ? 'Ativa' : 'Desligada'}</span><ChevronRight className="h-4 w-4 text-gray-500" />
         </button>
-        <button type="button" disabled className="flex w-full cursor-not-allowed items-center gap-3 border-t border-gray-700/80 px-3 py-3 text-left text-sm text-gray-400 opacity-70">
-          <Headphones className="h-4 w-4" /><span className="flex-1 font-medium">Ouvir capítulo</span><span className="text-xs">Em breve</span><Play className="h-4 w-4 text-gray-600" />
+        <button type="button" disabled={!hasAudio} onClick={onAudio} className={`flex w-full items-center gap-3 border-t border-gray-700/80 px-3 py-3 text-left text-sm transition-colors ${hasAudio ? 'text-gray-100 hover:bg-gray-700/70' : 'cursor-not-allowed text-gray-400 opacity-70'}`}>
+          <Video className="h-4 w-4" /><span className="flex-1 font-medium">Bíblia em Áudio</span><span className="text-xs">{hasAudio ? 'Ouvir' : 'Em breve'}</span><Play className={`h-4 w-4 ${hasAudio ? 'text-primary-300' : 'text-gray-600'}`} />
         </button>
       </div>
 
@@ -100,4 +103,3 @@ const BibleToolsSidebar: React.FC<BibleToolsSidebarProps> = ({
 };
 
 export default BibleToolsSidebar;
-
