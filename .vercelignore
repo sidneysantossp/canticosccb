@@ -22,6 +22,8 @@ vendor/
 # Backend/PHP e media (não subir para Vercel)
 /api/*
 !/api/ssr.ts
+!/api/favicon.ts
+!/api/robots.ts
 !/api/archive-proxy.ts
 !/api/r2-upload-sign.js
 !/api/_emergencyAudioArchives.js
