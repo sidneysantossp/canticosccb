@@ -36,7 +36,7 @@ function filesFromRecoveryCatalog() {
     const entries = Array.isArray(archive?.entries) ? archive.entries : [];
     if (!snapshotUrl) return [];
     return entries
-      .map((entry) => {
+      .map((entry, index) => {
         const name = String(entry?.name || '').trim();
         const extension = name.split('.').pop()?.toLowerCase() || '';
         return {
@@ -45,6 +45,9 @@ function filesFromRecoveryCatalog() {
           mimeType: extension === 'mp3' ? 'audio/mpeg' : 'application/octet-stream',
           replayUrl: snapshotUrl,
           container: String(archive?.segment?.albumTitle || 'Pacote histórico'),
+          segmentId: String(archive?.segment?.id || ''),
+          trackNumber: Number(archive?.segment?.start || 1) + index,
+          sourceUrl: String(archive?.segment?.originalUrl || snapshotUrl),
         };
       })
       .filter((entry) => entry.name && MEDIA_EXTENSIONS.has(entry.extension));

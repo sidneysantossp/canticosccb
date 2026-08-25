@@ -1,5 +1,5 @@
 import { albunsApi } from '@/lib/api-client';
-import { supabaseFetch } from '@/lib/supabaseRest';
+import { supabaseAuthUpdate, supabaseFetch } from '@/lib/supabaseRest';
 
 export interface Album {
   id: string;
@@ -163,6 +163,33 @@ export const approveAlbum = async (id: string): Promise<{ success: boolean }> =>
   const response = await albunsApi.update(id, { is_published: true, ativo: 1 } as any);
   if (response.error) {
     throw new Error(response.error);
+  }
+
+  const relations = await supabaseFetch<any>('album_hinos', {
+    select: 'hino_id',
+    album_id: `eq.${id}`,
+  });
+  const hinoIds = [...new Set((relations || []).map((item: any) => String(item.hino_id)).filter(Boolean))];
+  if (hinoIds.length > 0) {
+    await supabaseAuthUpdate<any>('hinos', { id: `in.(${hinoIds.join(',')})` }, {
+      status: 'published',
+      ativo: true,
+      updated_at: new Date().toISOString(),
+    });
+  }
+
+  // Álbuns criados pela recuperação usam a mesma aprovação do painel.
+  // Instalações antigas podem ainda não ter a tabela; isso não bloqueia
+  // a aprovação de um álbum criado por outros fluxos.
+  try {
+    const now = new Date().toISOString();
+    await supabaseAuthUpdate<any>('archive_recovery_imports', { album_id: `eq.${id}` }, {
+      status: 'approved',
+      approved_at: now,
+      updated_at: now,
+    });
+  } catch (error) {
+    console.warn('[approveAlbum] Recovery status was not updated:', error);
   }
 
   return { success: true };

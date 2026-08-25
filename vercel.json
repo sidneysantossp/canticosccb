@@ -2,6 +2,9 @@
   "functions": {
     "api/archive-discovery.js": {
       "maxDuration": 120
+    },
+    "api/archive-import.js": {
+      "maxDuration": 120
     }
   },
   "redirects": [

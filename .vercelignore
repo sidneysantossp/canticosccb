@@ -26,6 +26,7 @@ vendor/
 !/api/robots.ts
 !/api/archive-proxy.ts
 !/api/archive-discovery.js
+!/api/archive-import.js
 !/api/r2-upload-sign.js
 !/api/_emergencyAudioArchives.js
 !/api/_emergencyAudioIndex.js
