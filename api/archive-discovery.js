@@ -9,9 +9,12 @@ function json(res, status, body) {
 }
 
 function resolveOriginalUrl(value) {
-  const parsed = new URL(String(value || '').trim());
+  const rawValue = String(value || '').trim();
+  if (!rawValue) throw new Error('Informe uma URL do arquivo histórico.');
+  const normalizedValue = /^https?:\/\//i.test(rawValue) ? rawValue : `https://${rawValue}`;
+  const parsed = new URL(normalizedValue);
   if (parsed.hostname.toLowerCase() !== 'web.archive.org') throw new Error('Informe uma URL do arquivo histórico.');
-  const snapshot = parsed.pathname.match(/^\/web\/\d+(?:[a-z_]+)?\/(https?:\/\/.*)$/i);
+  const snapshot = parsed.pathname.match(/^\/web\/(?:\*|\d+(?:[a-z_]+)?)\/(https?:\/\/.*)$/i);
   const original = snapshot ? decodeURIComponent(snapshot[1]) : '';
   if (!original) throw new Error('Informe uma URL de captura de um arquivo ou página original.');
   const originalUrl = new URL(original);
