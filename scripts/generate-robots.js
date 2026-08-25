@@ -211,6 +211,13 @@ async function fetchSiteConfig() {
 }
 
 async function main() {
+  // Na Vercel, /robots.txt é atendido por api/robots.ts para refletir o
+  // conteúdo salvo no Admin sem exigir uma nova publicação.
+  if (process.env.VERCEL) {
+    console.log('🤖 robots.txt dinâmico será atendido pela API em produção.');
+    return;
+  }
+
   const { siteUrl, robotsTxt } = await fetchSiteConfig();
   const content = normalizeRobotsContent(robotsTxt, siteUrl);
   const outPath = path.resolve(__dirname, '..', 'public', 'robots.txt');
