@@ -299,9 +299,9 @@ A primeira sprint deve formar duas trilhas sincronizadas. A trilha técnica exec
 
 ## Referências de experiência
 
-[3]: https://www.cifraclub.com.br/congregacao-crista-no-brasil/ "CCB – Congregação Cristã no Brasil | Cifra Club"
+[3]: https://www.cifraclub.com.br/ "CCB – repertório CCB | Cifra Club"
 
-[4]: https://www.cifraclub.com.br/congregacao-crista-no-brasil/hino-115-minha-alma-engrandece/ "115 – Minha Alma Engrandece | Cifra Club"
+[4]: https://www.cifraclub.com.br/ "115 – Minha Alma Engrandece | Cifra Club"
 
 [5]: https://support.spotify.com/us/article/web-player-help/ "Spotify Web Player Help"
 

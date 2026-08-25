@@ -20,6 +20,6 @@ ORDER BY position ASC;
 -- 5. Se não houver banners, inserir alguns de exemplo
 -- INSERT INTO banners (title, description, image_url, type, position, is_active, button_text)
 -- VALUES 
---   ('Bem-vindo ao Canticos CCB', 'Descubra os melhores hinos da Congregação Cristã', 'https://picsum.photos/seed/banner1/1200/400', 'hero', 1, true, 'Explorar'),
+--   ('Bem-vindo ao Canticos CCB', 'Descubra hinos publicados pela comunidade', 'https://picsum.photos/seed/banner1/1200/400', 'hero', 1, true, 'Explorar'),
 --   ('Novos Hinos Publicados', 'Confira os últimos hinos adicionados', 'https://picsum.photos/seed/banner2/1200/400', 'promotional', 2, true, 'Ver Novos'),
 --   ('Compositores em Destaque', 'Conheça os compositores mais populares', 'https://picsum.photos/seed/banner3/1200/400', 'featured', 3, true, 'Conhecer');

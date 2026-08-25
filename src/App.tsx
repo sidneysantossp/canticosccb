@@ -17,6 +17,9 @@ import {
   AvisoDetailPage,
   AvisosPage,
   BibleHubPage,
+  BibleBookPage,
+  BibleChapterPage,
+  BibleExplorePage,
   BibliaNarradaPage,
   CategoriesPage,
   CategoryPage,
@@ -321,7 +324,7 @@ const AppContent: React.FC = () => {
           <Route path="hinos-241-a-360-ccb" element={<HinarioRangePage rangeKey="241-360" />} />
           <Route path="hinos-361-a-480-ccb" element={<HinarioRangePage rangeKey="361-480" />} />
           <Route path="hinario-5-ccb" element={<HinarioTopicPage topic="hinario5" />} />
-          <Route path="hinario/:numero" element={<HinarioViewPage />} />
+          <Route path="hinario/:slug" element={<HinarioViewPage />} />
           <Route path="letras-hinos-ccb" element={<HinarioTopicPage topic="letras" />} />
           <Route path="hinos-cantados-ccb" element={<HymnHubPage hub="cantados" />} />
           <Route path="hinos-tocados-ccb" element={<HymnHubPage hub="tocados" />} />
@@ -358,6 +361,12 @@ const AppContent: React.FC = () => {
           <Route path="premium" element={<Navigate to="/cadastro" replace />} />
           <Route path="instrumentais" element={<InstrumentaisPage />} />
           <Route path="biblia-ccb" element={<BibleHubPage />} />
+          <Route path="biblia-ccb/busca" element={<BibleExplorePage section="busca" />} />
+          <Route path="biblia-ccb/temas" element={<BibleExplorePage section="temas" />} />
+          <Route path="biblia-ccb/personagens" element={<BibleExplorePage section="personagens" />} />
+          <Route path="biblia-ccb/dicionario" element={<BibleExplorePage section="dicionario" />} />
+          <Route path="biblia-ccb/:bookSlug/:chapterSlug" element={<BibleChapterPage />} />
+          <Route path="biblia-ccb/:bookSlug" element={<BibleBookPage />} />
           <Route path="biblia-narrada" element={<BibliaNarradaPage />} />
           <Route path="baixar-hinos-ccb" element={<DownloadIntentPage topic="hinos" />} />
           <Route path="baixar-albuns-ccb" element={<DownloadIntentPage topic="albuns" />} />

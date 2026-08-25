@@ -1,6 +1,6 @@
 # 🎵 Cânticos CCB - Plataforma de Hinos
 
-Plataforma web moderna para ouvir, descobrir e compartilhar hinos da Congregação Cristã no Brasil.
+Plataforma web moderna para ouvir, descobrir e compartilhar hinos CCB publicados pela comunidade.
 
 [![Firebase](https://img.shields.io/badge/Firebase-FFCA28?style=for-the-badge&logo=firebase&logoColor=black)](https://firebase.google.com)
 [![React](https://img.shields.io/badge/React-20232A?style=for-the-badge&logo=react&logoColor=61DAFB)](https://reactjs.org)
@@ -260,7 +260,7 @@ Este projeto está sob a licença MIT. Veja o arquivo [LICENSE](LICENSE) para ma
 
 ## 🙏 Agradecimentos
 
-- Congregação Cristã no Brasil
+- Repertório de hinos CCB
 - Comunidade Open Source
 - Todos os compositores e usuários da plataforma
 

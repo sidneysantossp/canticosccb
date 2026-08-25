@@ -59,7 +59,7 @@ ON DUPLICATE KEY UPDATE `nome` = VALUES(`nome`);
 -- 5. ÁLBUM EXEMPLO
 -- ============================================
 INSERT INTO `albuns` (`titulo`, `descricao`, `ano`, `compositor_id`, `ativo`) VALUES
-('Hinário CCB', 'Hinário oficial da Congregação Cristã no Brasil', 2024, 1, 1)
+('Hinário CCB', 'Hinário digital com repertório de hinos CCB', 2024, 1, 1)
 ON DUPLICATE KEY UPDATE `titulo` = VALUES(`titulo`);
 
 -- ============================================

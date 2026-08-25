@@ -37,13 +37,19 @@
       "destination": "/api/ssr?path=/categoria/:path*"
     },
     {
+      "source": "/biblia-ccb/:path*",
+      "destination": "/api/ssr?path=/biblia-ccb/:path*"
+    },
+    {
+      "source": "/biblia-ccb",
+      "destination": "/api/ssr?path=/biblia-ccb"
+    },
+    {
       "source": "/hinario/:numero",
-      "has": [{ "type": "header", "key": "user-agent", "value": ".*(googlebot|bingbot|yandexbot|duckduckbot|slurp|baiduspider|facebookexternalhit|twitterbot|linkedinbot|whatsapp|telegrambot|discordbot|applebot|pinterest|redditbot|gptbot|oai-searchbot|chatgpt-user|claudebot|google-extended|applebot-extended|perplexitybot|perplexity-user|bytespider|ccbot|amazonbot|meta-externalagent|petalbot|semrushbot|ahrefsbot|mj12bot|embedly|quora|showyoubot|outbrain|rogerbot|screaming.frog).*" }],
       "destination": "/api/ssr?path=/hinario/:numero"
     },
     {
       "source": "/hinario",
-      "has": [{ "type": "header", "key": "user-agent", "value": ".*(googlebot|bingbot|yandexbot|duckduckbot|slurp|baiduspider|facebookexternalhit|twitterbot|linkedinbot|whatsapp|telegrambot|discordbot|applebot|pinterest|redditbot|gptbot|oai-searchbot|chatgpt-user|claudebot|google-extended|applebot-extended|perplexitybot|perplexity-user|bytespider|ccbot|amazonbot|meta-externalagent|petalbot|semrushbot|ahrefsbot|mj12bot|embedly|quora|showyoubot|outbrain|rogerbot|screaming.frog).*" }],
       "destination": "/api/ssr?path=/hinario"
     },
     {
@@ -78,7 +84,8 @@
         { "key": "X-Content-Type-Options", "value": "nosniff" },
         { "key": "X-Frame-Options", "value": "SAMEORIGIN" },
         { "key": "Referrer-Policy", "value": "strict-origin-when-cross-origin" },
-        { "key": "Permissions-Policy", "value": "camera=(), microphone=(), geolocation=()" }
+        { "key": "Permissions-Policy", "value": "camera=(), microphone=(), geolocation=()" },
+        { "key": "Link", "value": "</llms.txt>; rel=\"describedby\"; type=\"text/markdown\"" }
       ]
     },
     {

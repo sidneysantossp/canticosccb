@@ -75,19 +75,21 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   
   const isAuthPage = ['/login', '/register', '/onboarding', '/composer/onboarding'].includes(location.pathname);
   const isImmersiveCifraPage = location.pathname.startsWith('/cifra/') || /^\/cifras\/(violao|ukulele|teclado)\/[^/]+/.test(location.pathname);
+  const isImmersiveBiblePage = location.pathname === '/biblia-ccb' || location.pathname.startsWith('/biblia-ccb/');
+  const isImmersiveContentPage = isImmersiveCifraPage || isImmersiveBiblePage;
   
   // Área pública = home, search, library, etc (usa sidebar apropriada ao tipo de usuário)
-  const isPublicArea = !isAdminPanel && !isComposerPanel && !isUserDashboard && !isAuthPage && !isImmersiveCifraPage;
+  const isPublicArea = !isAdminPanel && !isComposerPanel && !isUserDashboard && !isAuthPage && !isImmersiveContentPage;
 
   return (
     <ToastProvider>
     <PlayerFeedbackBridge />
     <div className="min-h-screen bg-background-primary flex flex-col">
       {/* Header - Ocultar em páginas de auth */}
-      {!isAuthPage && !isImmersiveCifraPage && <Header />}
+      {!isAuthPage && !isImmersiveContentPage && <Header />}
       
       {/* Sidebars Fixas - Desktop Only */}
-      {!isAuthPage && !isImmersiveCifraPage && (
+      {!isAuthPage && !isImmersiveContentPage && (
         <>
           {isAdminPanel && <AdminSidebar />}
           {isComposerPanel && user && <ComposerSidebar />}
@@ -101,11 +103,11 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
       )}
       
       {/* Main Content Area */}
-      <div className={`flex-1 ${isAuthPage || isImmersiveCifraPage ? '' : 'lg:pl-64'} ${isImmersiveCifraPage ? 'pb-0 pt-0' : `pb-20 ${currentTrack ? 'pb-32' : 'lg:pb-0'} pt-5 md:pt-0`}`}>
+      <div className={`flex-1 ${isAuthPage || isImmersiveContentPage ? '' : 'lg:pl-64'} ${isImmersiveContentPage ? 'pb-0 pt-0' : `pb-20 ${currentTrack ? 'pb-32' : 'lg:pb-0'} pt-5 md:pt-0`}`}>
         {/* Tarja de gerenciamento: apenas no painel do compositor */}
         {!isAuthPage && isComposerPanel && <ManagingComposerBanner />}
 
-        <main className={isImmersiveCifraPage ? 'bg-background-primary' : 'bg-background-primary px-4 sm:px-6 lg:px-8'}>
+        <main className={isImmersiveContentPage ? 'bg-background-primary' : 'bg-background-primary px-4 sm:px-6 lg:px-8'}>
           {children || <Outlet />}
         </main>
         
@@ -114,10 +116,10 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
       </div>
       
       {/* Mobile Navigation - Mobile Only */}
-      {!isImmersiveCifraPage && <MobileNav />}
+      {!isImmersiveContentPage && <MobileNav />}
       
       {/* Audio Player - Always visible when track is playing */}
-      {currentTrack && !isAdminPanel && !isImmersiveCifraPage && <Player isHidden={isMenuOpen} />}
+      {currentTrack && !isAdminPanel && !isImmersiveContentPage && <Player isHidden={isMenuOpen} />}
       
       {/* Toast Notifications removed for silent UX */}
       

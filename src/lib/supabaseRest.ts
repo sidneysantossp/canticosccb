@@ -14,7 +14,6 @@ const EMERGENCY_FIRST_TABLES = new Set([
   'playlists',
   'album_hinos',
   'hino_categorias',
-  'hinario',
   'site_config',
   'bible_narrated',
   'user_follows',

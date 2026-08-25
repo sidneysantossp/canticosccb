@@ -92,6 +92,13 @@ function buildHinoUrl(id, titulo, numero) {
   return `/hino/${parts.join('-')}-${id}`;
 }
 
+function buildHinarioUrl(numero, titulo) {
+  const officialTitle = normalizeHymnTitleForSlug(titulo, numero)
+    .replace(/\s*[-–—]\s*Elias Brandão\s*$/i, '')
+    .trim();
+  return `/hinario/hino-${numero}-ccb-${slugify(officialTitle)}`;
+}
+
 function buildAlbumUrl(id, titulo, artista) {
   if (!titulo) return `/album/${id}`;
   const parts = [slugify(titulo)];
@@ -135,7 +142,8 @@ async function supabaseFetch(table, select = '*', filters = {}) {
 
     if (!res.ok) {
       console.warn(`⚠️ Failed to fetch ${table}: ${res.status} ${res.statusText}`);
-      hadFetchFailure = true;
+      const isOptionalTable = table === 'composer_public_profiles';
+      if (!isOptionalTable) hadFetchFailure = true;
       if ([502, 503, 504, 522].includes(res.status)) {
         isSupabaseUnavailable = true;
       }
@@ -151,7 +159,8 @@ async function supabaseFetch(table, select = '*', filters = {}) {
       ? `request timed out after ${FETCH_TIMEOUT_MS}ms`
       : error?.message || error;
     console.warn(`⚠️ Failed to fetch ${table}:`, message);
-    hadFetchFailure = true;
+    const isOptionalTable = table === 'composer_public_profiles';
+    if (!isOptionalTable) hadFetchFailure = true;
     isSupabaseUnavailable = true;
     if (table === 'composer_public_profiles' && process.env.SITEMAP_STRICT === 'true') throw error;
     return [];
@@ -178,6 +187,16 @@ function urlEntry(loc, lastmod, changefreq, priority) {
   </url>`;
 }
 
+const BIBLE_BOOK_SLUGS = [
+  'genesis', 'exodo', 'levitico', 'numeros', 'deuteronomio', 'josue', 'juizes', 'rute', '1-samuel', '2-samuel',
+  '1-reis', '2-reis', '1-cronicas', '2-cronicas', 'esdras', 'neemias', 'ester', 'jo', 'salmos', 'proverbios',
+  'eclesiastes', 'cantares', 'isaias', 'jeremias', 'lamentacoes', 'ezequiel', 'daniel', 'oseias', 'joel', 'amos',
+  'obadias', 'jonas', 'miqueias', 'naum', 'habacuque', 'sofonias', 'ageu', 'zacarias', 'malaquias', 'mateus',
+  'marcos', 'lucas', 'joao', 'atos', 'romanos', '1-corintios', '2-corintios', 'galatas', 'efesios', 'filipenses',
+  'colossenses', '1-tessalonicenses', '2-tessalonicenses', '1-timoteo', '2-timoteo', 'tito', 'filemom', 'hebreus',
+  'tiago', '1-pedro', '2-pedro', '1-joao', '2-joao', '3-joao', 'judas', 'apocalipse',
+];
+
 async function main() {
   console.log('🗺️  Generating sitemap.xml...');
   const today = new Date().toISOString().split('T')[0];
@@ -202,6 +221,9 @@ async function main() {
   urls.push(urlEntry('/hinos-avulsos-ccb', staticLastmod, 'weekly', '0.8'));
   urls.push(urlEntry('/instrumentais', staticLastmod, 'weekly', '0.8'));
   urls.push(urlEntry('/biblia-ccb', staticLastmod, 'weekly', '0.8'));
+  for (const bookSlug of BIBLE_BOOK_SLUGS) {
+    urls.push(urlEntry(`/biblia-ccb/${bookSlug}`, staticLastmod, 'monthly', '0.7'));
+  }
   urls.push(urlEntry('/biblia-narrada', staticLastmod, 'weekly', '0.8'));
   urls.push(urlEntry('/trends', staticLastmod, 'daily', '0.8'));
   urls.push(urlEntry('/about', staticLastmod, 'monthly', '0.5'));
@@ -292,7 +314,7 @@ async function main() {
 
   // Hinário (letras)
   console.log('  📖 Fetching hinário...');
-  const hinario = await supabaseFetch('hinario', 'id,numero,updated_at,created_at', {
+  const hinario = await supabaseFetch('hinario', 'id,numero,titulo,updated_at,created_at', {
     'is_active': 'eq.true',
     'order': 'numero.asc',
     'limit': '500',
@@ -300,7 +322,7 @@ async function main() {
   console.log(`     Found ${hinario.length} hinário entries`);
   for (const h of hinario) {
     const mod = (h.updated_at || h.created_at || today).split('T')[0];
-    urls.push(urlEntry(`/hinario/${h.numero}`, mod, 'monthly', '0.7'));
+    urls.push(urlEntry(buildHinarioUrl(h.numero, h.titulo), mod, 'monthly', '0.7'));
   }
 
   // Categorias (buscar do banco)

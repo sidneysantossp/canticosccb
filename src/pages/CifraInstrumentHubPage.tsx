@@ -30,7 +30,7 @@ const HUBS: Record<InstrumentHub, InstrumentConfig> = {
     title: 'Cifras de Violao CCB | Hinos com Acordes para Violao',
     description: 'Veja cifras de hinos da CCB para violao, com acordes, tom original e links para repertorio relacionado.',
     intro: 'Hub de cifras de violao da CCB com repertorio especifico para quem busca acordes, tom original e navegacao por hino.',
-    keywords: 'cifras violao ccb, cifra violao hinos ccb, acordes ccb violao, cifras congregacao cristã violao',
+    keywords: 'cifras violao ccb, cifra violao hinos ccb, acordes ccb violao, cifras de hinos no violao',
     icon: Music4,
     faq: [
       {

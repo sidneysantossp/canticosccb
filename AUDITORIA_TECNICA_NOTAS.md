@@ -277,7 +277,7 @@ No detalhe do hino 115, a Cifra Club oferece controles de tom/transposição, ro
 | Revisão comunitária moderada | P1 | Botão `Sugerir correção` com comparação de versões, atribuição ao colaborador e fila administrativa; não publicar automaticamente. |
 | Ausência de anúncios | Diferencial estratégico | Definir `Sem interrupções publicitárias durante a leitura, o ensaio e a audição` como promessa de produto. Monetização futura não deve sobrepor mídia/cifra nem deslocar o conteúdo. |
 
-**Fonte de evidência:** `https://www.cifraclub.com.br/congregacao-crista-no-brasil/hino-115-minha-alma-engrandece/`.
+**Fonte de evidência:** `https://www.cifraclub.com.br/
 
 
 ## Qualidade de build e dependências

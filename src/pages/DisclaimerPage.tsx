@@ -19,7 +19,7 @@ const DisclaimerPage: React.FC = () => {
           <h2 className="text-xl font-semibold text-white mb-3">1. Natureza independente da plataforma</h2>
           <p>
             A plataforma Cânticos CCB é um projeto independente e não possui qualquer vínculo, parceria, endosso, patrocínio ou relação institucional com a comunidade CCB (“CCB”).
-            O uso das letras “CCB” no domínio e na denominação do projeto é de caráter referencial e descritivo, refletindo a forma como os membros da comunidade se referem a hinos e conteúdos relacionados à congregação.
+            O uso das letras “CCB” no domínio e na denominação do projeto é de caráter referencial e descritivo, refletindo a forma como os usuários pesquisam e organizam esse repertório de hinos.
             Não visamos nos passar por, substituir ou competir com quaisquer canais oficiais ou institucionais.
           </p>
         </section>

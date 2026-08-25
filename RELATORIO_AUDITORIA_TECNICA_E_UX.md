@@ -212,9 +212,9 @@ O primeiro marco de produto deve ser: **“todo hino publicado no hinário é co
 
 ## Referências
 
-[1]: https://www.cifraclub.com.br/congregacao-crista-no-brasil/ "CCB – Congregação Cristã no Brasil | Cifra Club"
+[1]: https://www.cifraclub.com.br/ "CCB – repertório CCB | Cifra Club"
 
-[2]: https://www.cifraclub.com.br/congregacao-crista-no-brasil/hino-115-minha-alma-engrandece/ "115 – Minha Alma Engrandece | Cifra Club"
+[2]: https://www.cifraclub.com.br/ "115 – Minha Alma Engrandece | Cifra Club"
 
 [3]: https://support.spotify.com/us/article/web-player-help/ "Spotify Web Player Help"
 

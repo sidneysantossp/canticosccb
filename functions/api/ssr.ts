@@ -359,7 +359,7 @@ function buildFullHtml(meta: PageMeta): string {
     <meta name="google-adsense-account" content="ca-pub-3459130972339055">
     <link rel="canonical" href="${esc(meta.canonical)}">
     <meta name="author" content="Cânticos CCB">
-    <meta name="keywords" content="hinos CCB, hinário 5, congregação cristã no brasil, cifras CCB, hinos cantados, hinos tocados, compositores CCB">
+    <meta name="keywords" content="hinos CCB, hinário 5, repertório CCB, cifras CCB, hinos cantados, hinos tocados, compositores CCB">
 
     <meta property="og:type" content="${ogType}">
     <meta property="og:site_name" content="Cânticos CCB">
@@ -413,7 +413,7 @@ async function handleHino(idParam: string): Promise<PageMeta | null> {
     ? `Hino ${num} CCB - ${titulo} | Ouça, Letra e Cifra | Cânticos CCB`
     : `${titulo} | Ouça, Letra e Cifra | Cânticos CCB`;
   const desc = truncate(
-    `Ouça o Hino ${num} CCB ${titulo}${h.compositor_nome ? `, composto por ${h.compositor_nome}` : ''}.${relatedLyric ? ` Leia a letra no Hinário ${num}.` : ''}${relatedCifra ? ` Veja também a cifra${relatedCifra.original_key ? ` em ${relatedCifra.original_key}` : ''}.` : ''} Navegue pelo repertório da Congregação Cristã no Brasil.`,
+    `Ouça o Hino ${num} CCB ${titulo}${h.compositor_nome ? `, composto por ${h.compositor_nome}` : ''}.${relatedLyric ? ` Leia a letra no Hinário ${num}.` : ''}${relatedCifra ? ` Veja também a cifra${relatedCifra.original_key ? ` em ${relatedCifra.original_key}` : ''}.` : ''} Navegue pelo repertório do repertório CCB.`,
     158
   );
 
@@ -455,7 +455,7 @@ async function handleHino(idParam: string): Promise<PageMeta | null> {
       ${h.duracao ? `<p><strong>Duração:</strong> ${esc(h.duracao)}</p>` : ''}
       <p>${relatedLinks}</p>
       ${letraHtml}
-      <footer><p><a href="${SITE_URL}">Cânticos CCB</a> — Plataforma de hinos da Congregação Cristã no Brasil</p></footer>`,
+      <footer><p><a href="${SITE_URL}">Cânticos CCB</a> — Plataforma de hinos do repertório CCB</p></footer>`,
   };
 }
 
@@ -475,7 +475,7 @@ async function handleCompositor(idParam: string): Promise<PageMeta | null> {
   const title = `${nome} | Hinos, Biografia e Repertório CCB | Cânticos CCB`;
   const desc = bio
     ? truncate(bio, 158)
-    : truncate(`Conheça ${nome}, compositor de hinos da Congregação Cristã no Brasil. Veja biografia, repertório, letras e hinos associados.`, 158);
+    : truncate(`Conheça ${nome}, compositor de hinos do repertório CCB. Veja biografia, repertório, letras e hinos associados.`, 158);
   const image = c.photo_url || c.avatar_url || undefined;
 
   const hinos = await supaFetch('hinos', {
@@ -525,7 +525,7 @@ async function handleCompositor(idParam: string): Promise<PageMeta | null> {
       ${c.category ? `<p><strong>Categoria:</strong> ${esc(c.category)}</p>` : ''}
       ${bio ? `<section><h2>Biografia</h2><p>${esc(bio)}</p></section>` : ''}
       ${hinosHtml}
-      <footer><p><a href="${SITE_URL}">Cânticos CCB</a> — Plataforma de hinos da Congregação Cristã no Brasil</p></footer>`,
+      <footer><p><a href="${SITE_URL}">Cânticos CCB</a> — Plataforma de hinos do repertório CCB</p></footer>`,
   };
 }
 
@@ -544,7 +544,7 @@ async function handleAlbum(idParam: string): Promise<PageMeta | null> {
   const canonical = `${SITE_URL}${canonicalPath}`;
   const title = `${albumTitle}${albumArtist ? ` - ${albumArtist}` : ''} | Álbum de Hinos CCB | Cânticos CCB`;
   const desc = truncate(
-    stripHtml(a.description || '') || `Ouça o álbum ${albumTitle}${albumArtist ? ` de ${albumArtist}` : ''}. Repertório de hinos da Congregação Cristã no Brasil.`,
+    stripHtml(a.description || '') || `Ouça o álbum ${albumTitle}${albumArtist ? ` de ${albumArtist}` : ''}. Repertório de hinos do repertório CCB.`,
     158
   );
 
@@ -571,7 +571,7 @@ async function handleAlbum(idParam: string): Promise<PageMeta | null> {
       <h1>${esc(albumTitle)}</h1>
       ${albumArtist ? `<p><strong>Artista:</strong> ${esc(albumArtist)}</p>` : ''}
       ${a.description ? `<p>${esc(stripHtml(a.description))}</p>` : ''}
-      <footer><p><a href="${SITE_URL}">Cânticos CCB</a> — Plataforma de hinos da Congregação Cristã no Brasil</p></footer>`,
+      <footer><p><a href="${SITE_URL}">Cânticos CCB</a> — Plataforma de hinos do repertório CCB</p></footer>`,
   };
 }
 
@@ -592,7 +592,7 @@ async function handleHinarioView(numero: string): Promise<PageMeta | null> {
     findRelatedCifraForSsr({ numero: num, title: titulo }),
   ]);
   const title = `Hino ${h.numero} — ${titulo} | Letra Completa do Hinário 5 | Cânticos CCB`;
-  const desc = `Leia a letra completa do Hino ${h.numero} "${titulo}" do Hinário 5 da Congregação Cristã no Brasil.${relatedHymn ? ' Página de áudio relacionada disponível.' : ''}${relatedCifra ? ` Cifra relacionada${relatedCifra.original_key ? ` em ${relatedCifra.original_key}` : ''} disponível.` : ''}${h.subtitulo ? ` ${h.subtitulo}.` : ''}`;
+  const desc = `Leia a letra completa do Hino ${h.numero} "${titulo}" do Hinário 5 do repertório CCB.${relatedHymn ? ' Página de áudio relacionada disponível.' : ''}${relatedCifra ? ` Cifra relacionada${relatedCifra.original_key ? ` em ${relatedCifra.original_key}` : ''} disponível.` : ''}${h.subtitulo ? ` ${h.subtitulo}.` : ''}`;
   const canonical = `${SITE_URL}/hinario/${h.numero}`;
 
   const schema = {
@@ -633,7 +633,7 @@ async function handleHinarioView(numero: string): Promise<PageMeta | null> {
         ${num > 1 ? `<a href="${SITE_URL}/hinario/${num - 1}">&larr; Hino ${num - 1}</a> ` : ''}
         ${num < 480 ? `<a href="${SITE_URL}/hinario/${num + 1}">Hino ${num + 1} &rarr;</a>` : ''}
       </nav>
-      <footer><p><a href="${SITE_URL}">Cânticos CCB</a> — Plataforma de hinos da Congregação Cristã no Brasil</p></footer>`,
+      <footer><p><a href="${SITE_URL}">Cânticos CCB</a> — Plataforma de hinos do repertório CCB</p></footer>`,
   };
 }
 
@@ -702,7 +702,7 @@ async function handleCifra(slug: string): Promise<PageMeta | null> {
         ${c.original_key ? `<p><strong>Tom:</strong> ${esc(c.original_key)}</p>` : ''}
         <p>${relatedLinks}</p>
         ${buildV2CifraContentHtml(sectionRows)}
-        <footer><p><a href="${SITE_URL}">Cânticos CCB</a> — Plataforma de hinos da Congregação Cristã no Brasil</p></footer>`,
+        <footer><p><a href="${SITE_URL}">Cânticos CCB</a> — Plataforma de hinos do repertório CCB</p></footer>`,
     };
   }
 
@@ -765,7 +765,7 @@ async function handleCifra(slug: string): Promise<PageMeta | null> {
       ${c.original_key ? `<p><strong>Tom:</strong> ${esc(c.original_key)}</p>` : ''}
       <p>${relatedLinks}</p>
       ${contentHtml}
-      <footer><p><a href="${SITE_URL}">Cânticos CCB</a> — Plataforma de hinos da Congregação Cristã no Brasil</p></footer>`,
+      <footer><p><a href="${SITE_URL}">Cânticos CCB</a> — Plataforma de hinos do repertório CCB</p></footer>`,
   };
 }
 
@@ -784,7 +784,7 @@ async function handleCifrasList(): Promise<PageMeta> {
     }),
   ]);
   const title = 'Cifras de Hinos da CCB — Cifras com Transposição de Tom | Cânticos CCB';
-  const desc = 'Encontre cifras de hinos da Congregação Cristã no Brasil. Cifras com transposição de tom em tempo real para violão, teclado e outros instrumentos.';
+  const desc = 'Encontre cifras de hinos do repertório CCB. Cifras com transposição de tom em tempo real para violão, teclado e outros instrumentos.';
   const canonical = `${SITE_URL}/cifras`;
   const publicItems = publicCifras.map((c: any) => ({
     slug: c.public_slug,
@@ -807,14 +807,14 @@ async function handleCifrasList(): Promise<PageMeta> {
       <nav><a href="${SITE_URL}">Início</a> &rsaquo; Cifras</nav>
       <h1>Cifras de Hinos da CCB</h1><p>${esc(desc)}</p>
       <section><h2>Todas as Cifras</h2>${listHtml}</section>
-      <footer><p><a href="${SITE_URL}">Cânticos CCB</a> — Plataforma de hinos da Congregação Cristã no Brasil</p></footer>`,
+      <footer><p><a href="${SITE_URL}">Cânticos CCB</a> — Plataforma de hinos do repertório CCB</p></footer>`,
   };
 }
 
 async function handleHinarioList(): Promise<PageMeta> {
   const hinos = await supaFetch('hinario', { select: 'numero,titulo', order: 'numero.asc', limit: '500' });
   const title = 'Hinário 5 — Letras dos Hinos da CCB | Hinos de Louvores e Súplicas a Deus | Cânticos CCB';
-  const desc = 'Leia as letras completas dos 480 hinos do Hinário 5 (Hinos de Louvores e Súplicas a Deus) da Congregação Cristã no Brasil.';
+  const desc = 'Leia as letras completas dos 480 hinos do Hinário 5 (Hinos de Louvores e Súplicas a Deus) do repertório CCB.';
   const canonical = `${SITE_URL}/hinario`;
   const listHtml = hinos.length > 0
     ? `<ul>${hinos.map((h: any) => `<li><a href="${SITE_URL}/hinario/${h.numero}">Hino ${h.numero}${h.titulo ? ` — ${esc(h.titulo)}` : ''}</a></li>`).join('')}</ul>`
@@ -826,7 +826,7 @@ async function handleHinarioList(): Promise<PageMeta> {
       <nav><a href="${SITE_URL}">Início</a> &rsaquo; Hinário</nav>
       <h1>Hinário 5 — Hinos de Louvores e Súplicas a Deus</h1><p>${esc(desc)}</p>
       <section><h2>Todos os Hinos</h2>${listHtml}</section>
-      <footer><p><a href="${SITE_URL}">Cânticos CCB</a> — Plataforma de hinos da Congregação Cristã no Brasil</p></footer>`,
+      <footer><p><a href="${SITE_URL}">Cânticos CCB</a> — Plataforma de hinos do repertório CCB</p></footer>`,
   };
 }
 
@@ -847,7 +847,7 @@ async function handleBroadHinosHub(): Promise<PageMeta> {
   ]);
 
   const title = 'Hinos CCB | Ouça Hinos, Letras do Hinário 5 e Cifras | Cânticos CCB';
-  const description = 'Explore hinos CCB com letras do Hinário 5, páginas para ouvir, cifras e hubs temáticos da Congregação Cristã no Brasil.';
+  const description = 'Explore hinos CCB com letras do Hinário 5, páginas para ouvir, cifras e hubs temáticos do repertório CCB.';
   const canonical = `${SITE_URL}/hinos-ccb`;
 
   const hinarioHtml = hinario.length > 0
@@ -890,7 +890,7 @@ async function handleBroadHinosHub(): Promise<PageMeta> {
       <p><a href="${SITE_URL}/hinario-5-ccb">Hinário 5 CCB</a> · <a href="${SITE_URL}/letras-hinos-ccb">Letras dos Hinos</a> · <a href="${SITE_URL}/hinos-cantados-ccb">Hinos Cantados</a> · <a href="${SITE_URL}/cifras-hinos-ccb">Cifras de Hinos CCB</a></p>
       <section><h2>Números do Hinário</h2>${hinarioHtml}</section>
       <section><h2>Hinos publicados para ouvir</h2>${hymnsHtml}</section>
-      <footer><p><a href="${SITE_URL}">Cânticos CCB</a> — Plataforma de hinos da Congregação Cristã no Brasil</p></footer>`,
+      <footer><p><a href="${SITE_URL}">Cânticos CCB</a> — Plataforma de hinos do repertório CCB</p></footer>`,
   };
 }
 
@@ -943,8 +943,8 @@ async function fetchMergedSsrCifras(params: { instrument?: string; limit?: numbe
 async function handleBroadCifrasHub(): Promise<PageMeta> {
   const cifras = await fetchMergedSsrCifras({ limit: 500 });
 
-  const title = 'Cifras Hinos CCB | Cifras da Congregação Cristã no Brasil | Cânticos CCB';
-  const description = 'Explore cifras de hinos CCB com links para violão, ukulele, teclado e páginas individuais de cifra da Congregação Cristã no Brasil.';
+  const title = 'Cifras Hinos CCB | Cifras do repertório CCB | Cânticos CCB';
+  const description = 'Explore cifras de hinos CCB com links para violão, ukulele, teclado e páginas individuais de cifra do repertório CCB.';
   const canonical = `${SITE_URL}/cifras-hinos-ccb`;
 
   const counts = cifras.reduce<Record<string, number>>((acc, item: any) => {
@@ -985,7 +985,7 @@ async function handleBroadCifrasHub(): Promise<PageMeta> {
       <p>${esc(description)}</p>
       <p><a href="${SITE_URL}/cifras">Ver todas as cifras</a> · <a href="${SITE_URL}/cifras-violao-ccb">Violão (${counts.violao || 0})</a> · <a href="${SITE_URL}/cifras-ukulele-ccb">Ukulele (${counts.ukulele || 0})</a> · <a href="${SITE_URL}/cifras-teclado-ccb">Teclado (${counts.teclado || 0})</a></p>
       <section><h2>Cifras publicadas</h2>${cifrasHtml}</section>
-      <footer><p><a href="${SITE_URL}">Cânticos CCB</a> — Plataforma de hinos da Congregação Cristã no Brasil</p></footer>`,
+      <footer><p><a href="${SITE_URL}">Cânticos CCB</a> — Plataforma de hinos do repertório CCB</p></footer>`,
   };
 }
 
@@ -1001,7 +1001,7 @@ async function handleCategoria(slug: string): Promise<PageMeta | null> {
   const categoryId = String(category.id);
   const categoryName = compactWhitespace(category.nome || slug);
   const description = truncate(
-    stripHtml(category.descricao || '') || `Explore hinos da categoria ${categoryName} na Congregação Cristã no Brasil, com letras, áudio e navegação por repertório.`,
+    stripHtml(category.descricao || '') || `Explore hinos da categoria ${categoryName} no repertório CCB, com letras, áudio e navegação por repertório.`,
     158
   );
   const canonical = `${SITE_URL}/categoria/${slug}`;
@@ -1083,7 +1083,7 @@ async function handleCategoria(slug: string): Promise<PageMeta | null> {
       <h1>${esc(categoryName)}</h1>
       <p>${esc(description)}</p>
       <section><h2>Hinos desta categoria</h2>${songListHtml}</section>
-      <footer><p><a href="${SITE_URL}">Cânticos CCB</a> — Plataforma de hinos da Congregação Cristã no Brasil</p></footer>`,
+      <footer><p><a href="${SITE_URL}">Cânticos CCB</a> — Plataforma de hinos do repertório CCB</p></footer>`,
   };
 }
 
@@ -1244,7 +1244,7 @@ async function handleHymnHub(pathname: string): Promise<PageMeta | null> {
       <h1>${esc(config.heading)}</h1>
       <p>${esc(config.description)}</p>
       <section><h2>Hinos publicados</h2>${songListHtml}</section>
-      <footer><p><a href="${SITE_URL}">Cânticos CCB</a> — Plataforma de hinos da Congregação Cristã no Brasil</p></footer>`,
+      <footer><p><a href="${SITE_URL}">Cânticos CCB</a> — Plataforma de hinos do repertório CCB</p></footer>`,
   };
 }
 
@@ -1384,7 +1384,7 @@ async function handleCifraInstrumentHub(pathname: string): Promise<PageMeta | nu
       <h1>${esc(config.heading)}</h1>
       <p>${esc(config.description)}</p>
       <section><h2>Cifras publicadas</h2>${listHtml}</section>
-      <footer><p><a href="${SITE_URL}">Cânticos CCB</a> — Plataforma de hinos da Congregação Cristã no Brasil</p></footer>`,
+      <footer><p><a href="${SITE_URL}">Cânticos CCB</a> — Plataforma de hinos do repertório CCB</p></footer>`,
   };
 }
 
@@ -1396,7 +1396,7 @@ async function handlePlaylistsList(): Promise<PageMeta> {
     limit: '200',
   });
   const canonical = `${SITE_URL}/playlists`;
-  const description = 'Explore playlists públicas de hinos da Congregação Cristã no Brasil, com seleções temáticas para ouvir e compartilhar.';
+  const description = 'Explore playlists públicas de hinos do repertório CCB, com seleções temáticas para ouvir e compartilhar.';
   const listHtml = playlists.length > 0
     ? `<ul>${playlists.map((playlist: any) => `<li><a href="${SITE_URL}/playlist/${playlist.id}">${esc(playlist.name || 'Playlist')}</a>${playlist.description ? ` — ${esc(truncate(playlist.description, 100))}` : ''}</li>`).join('')}</ul>`
     : '<p>Nenhuma playlist pública foi publicada ainda.</p>';
@@ -1419,7 +1419,7 @@ async function handlePlaylistsList(): Promise<PageMeta> {
       <h1>Playlists de Hinos CCB</h1>
       <p>${esc(description)}</p>
       <section><h2>Playlists públicas</h2>${listHtml}</section>
-      <footer><p><a href="${SITE_URL}">Cânticos CCB</a> — Plataforma de hinos da Congregação Cristã no Brasil</p></footer>`,
+      <footer><p><a href="${SITE_URL}">Cânticos CCB</a> — Plataforma de hinos do repertório CCB</p></footer>`,
   };
 }
 
@@ -1442,7 +1442,7 @@ async function handlePlaylistDetail(idParam: string): Promise<PageMeta | null> {
 
   const playlistTitle = compactWhitespace(playlist.name || 'Playlist CCB');
   const description = truncate(
-    stripHtml(playlist.description || '') || `Ouça a playlist ${playlistTitle} com hinos da Congregação Cristã no Brasil.`,
+    stripHtml(playlist.description || '') || `Ouça a playlist ${playlistTitle} com hinos do repertório CCB.`,
     158
   );
   const canonical = `${SITE_URL}/playlist/${playlist.id}`;
@@ -1481,13 +1481,13 @@ async function handlePlaylistDetail(idParam: string): Promise<PageMeta | null> {
       <h1>${esc(playlistTitle)}</h1>
       <p>${esc(description)}</p>
       <section><h2>Faixas da playlist</h2>${trackListHtml}</section>
-      <footer><p><a href="${SITE_URL}">Cânticos CCB</a> — Plataforma de hinos da Congregação Cristã no Brasil</p></footer>`,
+      <footer><p><a href="${SITE_URL}">Cânticos CCB</a> — Plataforma de hinos do repertório CCB</p></footer>`,
   };
 }
 
 function handleHome(): PageMeta {
-  const title = 'Cânticos CCB — Ouça Hinos da Congregação Cristã no Brasil | Hinário 5, Cifras e Compositores';
-  const description = 'Ouça hinos da CCB online grátis. Hinário 5 completo, hinos cantados e tocados, cifras, compositores e playlists da Congregação Cristã no Brasil. Crie sua conta e salve seus hinos favoritos.';
+  const title = 'Cânticos CCB — Ouça Hinos do repertório CCB | Hinário 5, Cifras e Compositores';
+  const description = 'Ouça hinos da CCB online grátis. Hinário 5 completo, hinos cantados e tocados, cifras, compositores e playlists do repertório CCB. Crie sua conta e salve seus hinos favoritos.';
   return {
     title,
     description,
@@ -1495,78 +1495,78 @@ function handleHome(): PageMeta {
     schemas: [],
     bodyHtml: `
       <nav><a href="${SITE_URL}">Início</a></nav>
-      <h1>Cânticos CCB — Hinos da Congregação Cristã no Brasil</h1>
-      <p>Ouça hinos da Congregação Cristã no Brasil. Louvor e adoração em um só lugar.</p>
+      <h1>Cânticos CCB — Hinos do repertório CCB</h1>
+      <p>Ouça hinos do repertório CCB. Louvor e adoração em um só lugar.</p>
       <section>
         <h2>Explore o acervo CCB</h2>
         <p><a href="${SITE_URL}/hinos-ccb">Hinos CCB</a> · <a href="${SITE_URL}/hinario">Hinário 5</a> · <a href="${SITE_URL}/cifras-hinos-ccb">Cifras de Hinos CCB</a></p>
         <p><a href="${SITE_URL}/hinos-cantados-ccb">Hinos Cantados</a> · <a href="${SITE_URL}/hinos-tocados-ccb">Hinos Tocados</a> · <a href="${SITE_URL}/hinos-avulsos-ccb">Hinos Avulsos</a></p>
         <p><a href="${SITE_URL}/compositores">Compositores</a> · <a href="${SITE_URL}/albuns">Álbuns</a> · <a href="${SITE_URL}/playlists">Playlists</a></p>
       </section>
-      <footer><p><a href="${SITE_URL}">Cânticos CCB</a> — Plataforma de hinos da Congregação Cristã no Brasil</p></footer>`,
+      <footer><p><a href="${SITE_URL}">Cânticos CCB</a> — Plataforma de hinos do repertório CCB</p></footer>`,
   };
 }
 function handleStaticPage(path: string): PageMeta | null {
   const pages: Record<string, { title: string; desc: string; h1: string; body: string; noindex?: boolean }> = {
     '/trends': {
       title: 'Tendências — Hinos Mais Ouvidos da CCB | Cânticos CCB',
-      desc: 'Veja os hinos mais ouvidos e as tendências da Congregação Cristã no Brasil.',
+      desc: 'Veja os hinos mais ouvidos e as tendências do repertório CCB.',
       h1: 'Tendências — Hinos Mais Ouvidos',
-      body: '<p>Descubra os hinos mais ouvidos e as tendências da Congregação Cristã no Brasil no Cânticos CCB.</p>',
+      body: '<p>Descubra os hinos mais ouvidos e as tendências do repertório CCB no Cânticos CCB.</p>',
     },
     '/tendencias': {
       title: 'Tendências — Hinos Mais Ouvidos da CCB | Cânticos CCB',
-      desc: 'Veja os hinos mais ouvidos e as tendências da Congregação Cristã no Brasil.',
+      desc: 'Veja os hinos mais ouvidos e as tendências do repertório CCB.',
       h1: 'Tendências — Hinos Mais Ouvidos',
-      body: '<p>Descubra os hinos mais ouvidos e as tendências da Congregação Cristã no Brasil no Cânticos CCB.</p>',
+      body: '<p>Descubra os hinos mais ouvidos e as tendências do repertório CCB no Cânticos CCB.</p>',
     },
     '/about': {
       title: 'Sobre o Cânticos CCB — Plataforma de Hinos da CCB',
-      desc: 'Conheça o Cânticos CCB, a plataforma digital de hinos da Congregação Cristã no Brasil.',
+      desc: 'Conheça o Cânticos CCB, a plataforma digital de hinos do repertório CCB.',
       h1: 'Sobre o Cânticos CCB',
-      body: '<p>O Cânticos CCB é a plataforma digital mais completa para ouvir, ler e estudar hinos da Congregação Cristã no Brasil (CCB). Oferecemos acesso gratuito a hinos cantados e tocados do Hinário 5, cifras musicais, perfis de compositores, letras do hinário e playlists temáticas.</p>',
+      body: '<p>O Cânticos CCB é a plataforma digital mais completa para ouvir, ler e estudar hinos do repertório CCB (CCB). Oferecemos acesso gratuito a hinos cantados e tocados do Hinário 5, cifras musicais, perfis de compositores, letras do hinário e playlists temáticas.</p>',
     },
     '/sobre': {
       title: 'Sobre o Cânticos CCB — Plataforma de Hinos da CCB',
-      desc: 'Conheça o Cânticos CCB, a plataforma digital de hinos da Congregação Cristã no Brasil.',
+      desc: 'Conheça o Cânticos CCB, a plataforma digital de hinos do repertório CCB.',
       h1: 'Sobre o Cânticos CCB',
-      body: '<p>O Cânticos CCB é a plataforma digital mais completa para ouvir, ler e estudar hinos da Congregação Cristã no Brasil (CCB).</p>',
+      body: '<p>O Cânticos CCB é a plataforma digital mais completa para ouvir, ler e estudar hinos do repertório CCB (CCB).</p>',
     },
     '/search': {
       title: 'Buscar Hinos da CCB — Pesquise por Título, Número ou Compositor | Cânticos CCB',
-      desc: 'Busque hinos da Congregação Cristã no Brasil por título, número ou compositor.',
+      desc: 'Busque hinos do repertório CCB por título, número ou compositor.',
       h1: 'Buscar Hinos da CCB',
       body: '<p>Pesquise hinos por título, número ou compositor. Encontre hinos cantados, tocados, cifras e letras do Hinário 5.</p>',
     },
     '/buscar': {
       title: 'Buscar Hinos da CCB | Cânticos CCB',
-      desc: 'Busque hinos da Congregação Cristã no Brasil por título, número ou compositor.',
+      desc: 'Busque hinos do repertório CCB por título, número ou compositor.',
       h1: 'Buscar Hinos da CCB',
       body: '<p>Pesquise hinos por título, número ou compositor.</p>',
     },
     '/hinario-5-ccb': {
-      title: 'Hinário 5 CCB | Letras dos Hinos da Congregação Cristã | Cânticos CCB',
-      desc: 'Acesse o Hinário 5 CCB com letras dos hinos, navegação por número e links para ouvir hinos da Congregação Cristã no Brasil.',
+      title: 'Hinário 5 CCB | Letras dos Hinos da comunidade Cristã | Cânticos CCB',
+      desc: 'Acesse o Hinário 5 CCB com letras dos hinos, navegação por número e links para ouvir hinos do repertório CCB.',
       h1: 'Hinário 5 CCB',
       body: '<p>Página-hub do Hinário 5 CCB com links para as letras dos hinos, navegação por número e atalhos para ouvir hinos e explorar cifras relacionadas.</p><p><a href="https://canticosccb.com.br/hinario">Abrir Hinário</a> · <a href="https://canticosccb.com.br/letras-hinos-ccb">Letras dos Hinos</a> · <a href="https://canticosccb.com.br/hinos-cantados-ccb">Hinos Cantados</a></p>',
     },
     '/letras-hinos-ccb': {
       title: 'Letras dos Hinos CCB | Hino 1 ao 480 com Letra | Cânticos CCB',
-      desc: 'Veja letras dos hinos CCB com navegação por número, título e acesso ao Hinário da Congregação Cristã no Brasil.',
+      desc: 'Veja letras dos hinos CCB com navegação por número, título e acesso ao Hinário do repertório CCB.',
       h1: 'Letras dos Hinos CCB',
       body: '<p>Landing dedicada às letras dos hinos CCB, com foco em buscas por número, título e navegação rápida no repertório do Hinário.</p><p><a href="https://canticosccb.com.br/hinario">Ver números do Hinário</a> · <a href="https://canticosccb.com.br/hinario-5-ccb">Hinário 5 CCB</a> · <a href="https://canticosccb.com.br/cifras">Cifras</a></p>',
     },
     '/compositores': {
       title: 'Compositores de Hinos da CCB — Biografias e Discografias | Cânticos CCB',
-      desc: 'Conheça os compositores de hinos da Congregação Cristã no Brasil. Biografias, discografias e hinos.',
+      desc: 'Conheça os compositores de hinos do repertório CCB. Biografias, discografias e hinos.',
       h1: 'Compositores de Hinos da CCB',
-      body: '<p>Conheça os compositores de hinos da Congregação Cristã no Brasil. Acesse biografias, discografias e todos os hinos associados a cada compositor.</p>',
+      body: '<p>Conheça os compositores de hinos do repertório CCB. Acesse biografias, discografias e todos os hinos associados a cada compositor.</p>',
     },
     '/albuns': {
       title: 'Álbuns de Hinos da CCB — Hinos Cantados e Tocados | Cânticos CCB',
-      desc: 'Ouça álbuns de hinos cantados e tocados da Congregação Cristã no Brasil.',
+      desc: 'Ouça álbuns de hinos cantados e tocados do repertório CCB.',
       h1: 'Álbuns de Hinos da CCB',
-      body: '<p>Ouça álbuns completos de hinos cantados e tocados da Congregação Cristã no Brasil.</p>',
+      body: '<p>Ouça álbuns completos de hinos cantados e tocados do repertório CCB.</p>',
     },
     '/termos': {
       title: 'Termos de Uso | Cânticos CCB',
@@ -1582,9 +1582,9 @@ function handleStaticPage(path: string): PageMeta | null {
     },
     '/categorias': {
       title: 'Categorias de Hinos CCB | Explore Hinos por Tema | Cânticos CCB',
-      desc: 'Explore hinos da Congregação Cristã no Brasil por categorias, temas e repertórios relacionados.',
+      desc: 'Explore hinos do repertório CCB por categorias, temas e repertórios relacionados.',
       h1: 'Categorias de Hinos CCB',
-      body: '<p>Navegue pelas categorias de hinos da Congregação Cristã no Brasil e encontre repertórios por tema, estilo e uso.</p>',
+      body: '<p>Navegue pelas categorias de hinos do repertório CCB e encontre repertórios por tema, estilo e uso.</p>',
     },
     '/privacy': {
       title: 'Política de Privacidade | Cânticos CCB',
@@ -1654,7 +1654,7 @@ function handleStaticPage(path: string): PageMeta | null {
     },
     '/baixar-cds-ccb': {
       title: 'Baixar CDs CCB | Como Ouvir CDs e Coletâneas | Cânticos CCB',
-      desc: 'Guia para quem procura baixar CDs CCB. Veja como ouvir coletâneas, playlists e álbuns da Congregação Cristã no Brasil.',
+      desc: 'Guia para quem procura baixar CDs CCB. Veja como ouvir coletâneas, playlists e álbuns do repertório CCB.',
       h1: 'Baixar CDs CCB',
       body: '<p>Esta página atende a busca por baixar CDs CCB com orientação honesta. O foco da plataforma é navegar por álbuns, coletâneas, playlists e páginas canônicas do repertório publicado.</p><p><a href="https://canticosccb.com.br/albuns">Ver Álbuns</a> · <a href="https://canticosccb.com.br/baixar-albuns-ccb">Baixar Álbuns</a> · <a href="https://canticosccb.com.br/playlists">Playlists</a></p>',
     },
@@ -1666,7 +1666,7 @@ function handleStaticPage(path: string): PageMeta | null {
     },
     '/instrumentais': {
       title: 'Hinos Instrumentais CCB | Hinos Tocados e Cifras | Cânticos CCB',
-      desc: 'Hub de hinos instrumentais CCB com links para hinos tocados, cifras por instrumento e repertorio relacionado da Congregação Cristã no Brasil.',
+      desc: 'Hub de hinos instrumentais CCB com links para hinos tocados, cifras por instrumento e repertorio relacionado do repertório CCB.',
       h1: 'Hinos Instrumentais CCB',
       body: '<p>Esta página reúne o cluster de instrumentais da plataforma, ligando o usuário aos hinos tocados, às cifras por instrumento e às páginas individuais do repertório publicado.</p><p><a href="https://canticosccb.com.br/hinos-tocados-ccb">Hinos Tocados</a> · <a href="https://canticosccb.com.br/cifras-violao-ccb">Cifras de Violão</a> · <a href="https://canticosccb.com.br/cifras-teclado-ccb">Cifras de Teclado</a></p>',
     },
@@ -1694,7 +1694,7 @@ function handleStaticPage(path: string): PageMeta | null {
       <nav><a href="${SITE_URL}">Início</a> &rsaquo; ${esc(page.h1)}</nav>
       <h1>${esc(page.h1)}</h1>
       ${page.body}
-      <footer><p><a href="${SITE_URL}">Cânticos CCB</a> — Plataforma de hinos da Congregação Cristã no Brasil</p></footer>`,
+      <footer><p><a href="${SITE_URL}">Cânticos CCB</a> — Plataforma de hinos do repertório CCB</p></footer>`,
   };
 }
 
@@ -1771,13 +1771,13 @@ export default async function handler(req: Request): Promise<Response> {
   // If no page meta found, return a basic page
   if (!pageMeta) {
     pageMeta = {
-      title: 'Cânticos CCB — Hinos da Congregação Cristã no Brasil',
+      title: 'Cânticos CCB — Hinos do repertório CCB',
       description: 'Ouça hinos da CCB online grátis. Hinário 5 completo, cifras, compositores e playlists.',
       canonical: `${SITE_URL}${pathname}`,
       schemas: [],
       bodyHtml: `
         <h1>Cânticos CCB</h1>
-        <p>Plataforma de hinos da Congregação Cristã no Brasil.</p>
+        <p>Plataforma de hinos do repertório CCB.</p>
         <nav>
           <ul>
             <li><a href="${SITE_URL}/">Início</a></li>

@@ -2,7 +2,7 @@ import { chromium } from '@playwright/test';
 
 const browser = await chromium.launch({ headless: true });
 const page = await browser.newPage({ viewport: { width: 1440, height: 1000 } });
-const url = 'http://127.0.0.1:5173/hinario/1';
+const url = 'http://127.0.0.1:5173/hinario/hino-1-ccb-cristo-meu-mestre';
 await page.goto(url, { waitUntil: 'commit', timeout: 15000 });
 await page.waitForSelector('h1', { timeout: 15000 });
 await page.waitForTimeout(3000);

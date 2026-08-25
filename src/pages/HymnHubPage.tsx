@@ -8,6 +8,7 @@ import { buildAlbumCoverUrl } from '@/lib/media-helper';
 import { supabaseFetch } from '@/lib/supabaseRest';
 import { generateBreadcrumbSchema, generateFAQSchema, generateItemListSchema } from '@/utils/schemaGenerator';
 import { buildHinoUrl } from '@/utils/slugUrl';
+import { buildHinarioUrl } from '@/utils/hinarioSeo';
 
 type HymnHubType = 'cantados' | 'tocados' | 'avulsos';
 
@@ -411,7 +412,7 @@ const HymnHubPage: React.FC<HymnHubPageProps> = ({ hub }) => {
                           </Link>
                           {item.numero > 0 && (
                             <Link
-                              to={`/hinario/${item.numero}`}
+                              to={buildHinarioUrl(item.numero, item.titulo)}
                               className="px-3 py-2 rounded-full border border-white/15 text-white text-sm hover:border-primary-500/40 hover:text-primary-300 transition-colors"
                             >
                               Ver letra

@@ -2,6 +2,8 @@
 // For a Vite SPA, this is the correct way to do SSR on Vercel
 // Deployed at /api/ssr and called via vercel.json rewrites for bot user-agents
 
+import { bibleBooks, buildBibleChapterPath, getBibleBook, getBibleChapterTitle } from '../src/data/bibleCatalog';
+
 export const config = { runtime: 'edge' };
 
 // ─── Bot Detection ───────────────────────────────────────────────────────────
@@ -32,7 +34,7 @@ function fixtureRows(table: string, params: Record<string, string>): any[] {
   if (isMissing) return [];
   const hymn = { id: FIXTURE_HYMN_ID, numero: 1, titulo: "Cristo Meu Mestre", compositor_nome: "Elias Brandão", categoria: "Hinos CCB", letra: "Cristo meu Mestre, meu Salvador", duracao: "PT3M", cover_url: null };
   if (table === "hinos") return [hymn];
-  if (table === "hinario") return [{ numero: 1, titulo: "Cristo Meu Mestre", is_active: true }];
+  if (table === "hinario") return [{ numero: 1, titulo: "Cristo Meu Mestre", conteudo: "Cristo, meu Mestre e meu Senhor", is_active: true }];
   if (table === "cifra_public_catalog") return [{ version_id: "fixture-version-1", public_slug: "hino-avulso-cana-trilhada", version_title: "Cana Trilhada", instrument: "violao", arrangement_type: "principal", difficulty_level: "intermediario", original_key: "C", preferred_key: "C", capo: 0, tempo_bpm: 90, time_signature: "4/4", publication_label: "Cifra CCB", is_primary: true, published_at: "2026-01-01", song_id: "fixture-song-1", song_slug: "cana-trilhada", song_title: "Cana Trilhada", song_subtitle: null, composer_name: "Elias Brandão", hino_id: FIXTURE_HYMN_ID, hinario_numero: 1, source_type: "fixture", cover_url: null, seo_title: "Cana Trilhada — Cifra CCB", seo_description: "Cifra de Cana Trilhada", seo_keywords: "cifra, CCB", sections_count: 1, lines_count: 2, chords_index: "C,G,Am" }];
   if (table === "cifra_version_sections") return [{ section_order: 1, section_label: "Principal", plain_text: "Cana trilhada\nC G Am" }];
   if (table === "categorias") return [{ id: "fixture-category-1", slug: "hinos-ccb", nome: "Hinos CCB", titulo: "Hinos CCB", descricao: "Hinos da comunidade CCB" }];
@@ -138,6 +140,23 @@ function buildHinoUrl(id: string, titulo?: string, numero?: number | string): st
   const normalizedTitle = normalizeHymnTitle(titulo, numero);
   if (normalizedTitle) parts.push(slugifyText(normalizedTitle));
   return `/hino/${parts.join('-')}-${id}`;
+}
+
+function buildHinarioUrl(numero: number | string, titulo: string): string {
+  const normalizedTitle = normalizeHymnTitle(titulo, numero)
+    .replace(/\s*[-–—]\s*Elias Brandão\s*$/i, '')
+    .trim();
+  return `/hinario/hino-${numero}-ccb-${slugifyText(normalizedTitle)}`;
+}
+
+function extractHinarioNumber(routeParam: string): number {
+  if (/^\d+$/.test(routeParam)) return Number(routeParam);
+  const match = routeParam.match(/^hino-(\d+)-ccb(?:-|$)/i);
+  return Number(match?.[1] || 0);
+}
+
+function buildHinarioMetaDescription(numero: number, titulo: string): string {
+  return compactWhitespace(`Use o Hinário Digital CCB para acompanhar o Hino ${numero} CCB – ${titulo} pelo celular, tablet ou computador. Navegue pelo número ou nome entre os 480 hinos disponíveis.`);
 }
 
 function buildAlbumUrl(id: string, titulo?: string, artista?: string): string {
@@ -407,6 +426,7 @@ function buildFullHtml(meta: PageMeta): string {
     <meta name="robots" content="${robotsContent}">
     <meta name="googlebot" content="${robotsContent}">
     <meta name="google-adsense-account" content="ca-pub-3459130972339055">
+    <link rel="describedby" href="${SITE_URL}/llms.txt" type="text/markdown">
     ${canonicalHtml}
     <meta name="author" content="Cânticos CCB">
     <meta name="keywords" content="hinos CCB, hinário 5, comunidade CCB, cifras CCB, hinos cantados, hinos tocados, compositores CCB">
@@ -430,6 +450,45 @@ function buildFullHtml(meta: PageMeta): string {
     ${meta.bodyHtml}
 </body>
 </html>`;
+}
+
+async function buildInteractiveHtml(meta: PageMeta): Promise<string> {
+  try {
+    const indexResponse = await fetch(`${SITE_URL}/index.html`, { signal: AbortSignal.timeout(8000) });
+    if (!indexResponse.ok) throw new Error(`index.html returned HTTP ${indexResponse.status}`);
+
+    let html = await indexResponse.text();
+    const robotsContent = meta.noindex ? 'noindex, follow' : 'index, follow';
+    const schemasHtml = (meta.schemas || [])
+      .map(schema => `<script type="application/ld+json">${JSON.stringify(schema)}</script>`)
+      .join('');
+    const seoHead = `
+      <meta name="description" content="${esc(meta.description)}">
+      <meta name="robots" content="${robotsContent}">
+      <link rel="canonical" href="${esc(meta.canonical)}">
+      <meta property="og:title" content="${esc(meta.title)}">
+      <meta property="og:description" content="${esc(meta.description)}">
+      <meta property="og:url" content="${esc(meta.canonical)}">
+      <meta property="og:image" content="${esc(meta.ogImage || `${SITE_URL}/logo-canticos-ccb.png`)}">
+      <link rel="describedby" href="${SITE_URL}/llms.txt" type="text/markdown">
+      ${schemasHtml}`;
+
+    html = html.replace(/<title>[\s\S]*?<\/title>/i, `<title>${esc(meta.title)}</title>`);
+    html = html.replace(/<meta\s+name=["']description["'][^>]*>/gi, '');
+    html = html.replace(/<meta\s+name=["']robots["'][^>]*>/gi, '');
+    html = html.replace(/<link\s+rel=["']canonical["'][^>]*>/gi, '');
+    html = html.replace(/<link\s+rel=["']describedby["'][^>]*>/gi, '');
+    html = html.replace(/<meta\s+property=["']og:(?:title|description|url|image)["'][^>]*>/gi, '');
+    html = html.replace('</head>', `${seoHead}</head>`);
+    html = html.replace(
+      /<div\s+id=["']root["'][^>]*><\/div>/i,
+      `<div id="root"><main id="server-rendered-hinario" style="max-width:900px;margin:0 auto;padding:40px 20px">${meta.bodyHtml}</main></div>`,
+    );
+    return html;
+  } catch (error) {
+    console.error('[SSR] Interactive shell unavailable:', error);
+    return buildFullHtml(meta);
+  }
 }
 
 // ─── Route Handlers ──────────────────────────────────────────────────────────
@@ -488,7 +547,7 @@ async function handleHino(idParam: string): Promise<PageMeta | null> {
     ? `<section><h2>Letra do Hino ${num}</h2><div style="white-space:pre-line;">${esc(h.letra)}</div></section>`
     : '';
   const relatedLinks = [
-    relatedLyric ? `<a href="${SITE_URL}/hinario/${num}">Ler a letra no Hinário</a>` : '',
+    relatedLyric ? `<a href="${SITE_URL}${buildHinarioUrl(relatedLyric.numero, relatedLyric.titulo)}">Ler a letra no Hinário</a>` : '',
     relatedCifra ? `<a href="${SITE_URL}/cifra/${relatedCifra.slug}">Ver cifra${relatedCifra.original_key ? ` (${esc(relatedCifra.original_key)})` : ''}</a>` : '',
     `<a href="${SITE_URL}/hinos-ccb">Hinos CCB</a>`,
     `<a href="${SITE_URL}/cifras-hinos-ccb">Cifras de Hinos CCB</a>`,
@@ -625,9 +684,9 @@ async function handleAlbum(idParam: string): Promise<PageMeta | null> {
   };
 }
 
-async function handleHinarioView(numero: string): Promise<PageMeta | null> {
-  const num = parseInt(numero, 10);
-  if (isNaN(num)) return null;
+async function handleHinarioView(routeParam: string): Promise<PageMeta | null> {
+  const num = extractHinarioNumber(routeParam);
+  if (!num) return null;
   const rows = await supaFetch('hinario', {
     numero: `eq.${num}`,
     is_active: 'eq.true',
@@ -636,27 +695,78 @@ async function handleHinarioView(numero: string): Promise<PageMeta | null> {
   });
   if (!rows.length) return null;
   const h = rows[0];
-  const titulo = h.titulo || '';
-  const [relatedHymn, relatedCifra] = await Promise.all([
+  const titulo = normalizeHymnTitle(h.titulo || '', h.numero);
+  const [relatedHymn, relatedCifra, adjacentHymns] = await Promise.all([
     findRelatedHymnForSsr({ numero: num, title: titulo }),
     findRelatedCifraForSsr({ numero: num, title: titulo }),
+    supaFetch('hinario', {
+      numero: `in.(${Math.max(1, num - 1)},${Math.min(480, num + 1)})`,
+      is_active: 'eq.true',
+      select: 'numero,titulo',
+      order: 'numero.asc',
+    }),
   ]);
-  const title = `Hino ${h.numero} — ${titulo} | Letra Completa do Hinário 5 | Cânticos CCB`;
-  const desc = `Leia a letra completa do Hino ${h.numero} "${titulo}" do Hinário 5 da comunidade CCB.${relatedHymn ? ' Página de áudio relacionada disponível.' : ''}${relatedCifra ? ` Cifra relacionada${relatedCifra.original_key ? ` em ${relatedCifra.original_key}` : ''} disponível.` : ''}${h.subtitulo ? ` ${h.subtitulo}.` : ''}`;
-  const canonical = `${SITE_URL}/hinario/${h.numero}`;
+  const title = `Hino ${h.numero} CCB – ${titulo}: Letra | Cânticos CCB`;
+  const desc = buildHinarioMetaDescription(Number(h.numero), titulo);
+  const canonicalPath = buildHinarioUrl(h.numero, titulo);
+  const canonical = `${SITE_URL}${canonicalPath}`;
+  const previous = adjacentHymns.find((item: any) => Number(item.numero) === num - 1);
+  const next = adjacentHymns.find((item: any) => Number(item.numero) === num + 1);
 
-  const schema = {
-    '@context': 'https://schema.org', '@type': 'CreativeWork',
-    name: `Hino ${h.numero} — ${titulo}`, url: canonical,
-    inLanguage: 'pt-BR', genre: 'Hino Religioso',
-    isPartOf: { '@type': 'Book', name: 'Hinário 5 — Hinos de Louvores e Súplicas a Deus' },
-  };
   const breadcrumb = {
-    '@context': 'https://schema.org', '@type': 'BreadcrumbList',
+    '@type': 'BreadcrumbList', '@id': `${canonical}#breadcrumb`,
     itemListElement: [
       { '@type': 'ListItem', position: 1, name: 'Início', item: SITE_URL },
       { '@type': 'ListItem', position: 2, name: 'Hinário', item: `${SITE_URL}/hinario` },
       { '@type': 'ListItem', position: 3, name: `Hino ${h.numero}`, item: canonical },
+    ],
+  };
+  const schema = {
+    '@context': 'https://schema.org',
+    '@graph': [
+      {
+        '@type': 'WebPage',
+        '@id': `${canonical}#webpage`,
+        url: canonical,
+        name: title,
+        description: desc,
+        inLanguage: 'pt-BR',
+        isPartOf: { '@id': `${SITE_URL}/#website` },
+        breadcrumb: { '@id': `${canonical}#breadcrumb` },
+        mainEntity: { '@id': `${canonical}#hino` },
+      },
+      {
+        '@type': 'MusicComposition',
+        '@id': `${canonical}#hino`,
+        name: titulo,
+        alternateName: `Hino ${h.numero} CCB`,
+        url: canonical,
+        inLanguage: 'pt-BR',
+        position: Number(h.numero),
+        identifier: {
+          '@type': 'PropertyValue',
+          propertyID: 'Número do Hinário',
+          value: String(h.numero),
+        },
+        isPartOf: { '@id': `${SITE_URL}/hinario#hinario` },
+        mainEntityOfPage: { '@id': `${canonical}#webpage` },
+        ...(h.conteudo ? {
+          lyrics: {
+            '@type': 'CreativeWork',
+            inLanguage: 'pt-BR',
+            text: h.conteudo,
+          },
+        } : {}),
+      },
+      {
+        '@type': 'Book',
+        '@id': `${SITE_URL}/hinario#hinario`,
+        name: 'Hinário Digital CCB',
+        url: `${SITE_URL}/hinario`,
+        inLanguage: 'pt-BR',
+        numberOfItems: 480,
+      },
+      breadcrumb,
     ],
   };
 
@@ -672,7 +782,7 @@ async function handleHinarioView(numero: string): Promise<PageMeta | null> {
 
   return {
     title, description: desc, canonical,
-    schemas: [schema, breadcrumb],
+    schemas: [schema],
     bodyHtml: `
       <nav><a href="${SITE_URL}">Início</a> &rsaquo; <a href="${SITE_URL}/hinario">Hinário</a> &rsaquo; Hino ${h.numero}</nav>
       <h1>Hino ${h.numero} — ${esc(titulo)}</h1>
@@ -680,8 +790,8 @@ async function handleHinarioView(numero: string): Promise<PageMeta | null> {
       <p>${relatedLinks}</p>
       ${conteudoHtml}
       <nav style="margin-top:20px;">
-        ${num > 1 ? `<a href="${SITE_URL}/hinario/${num - 1}">&larr; Hino ${num - 1}</a> ` : ''}
-        ${num < 480 ? `<a href="${SITE_URL}/hinario/${num + 1}">Hino ${num + 1} &rarr;</a>` : ''}
+        ${previous ? `<a href="${SITE_URL}${buildHinarioUrl(previous.numero, previous.titulo)}">&larr; Hino ${previous.numero}</a> ` : ''}
+        ${next ? `<a href="${SITE_URL}${buildHinarioUrl(next.numero, next.titulo)}">Hino ${next.numero} &rarr;</a>` : ''}
       </nav>
       <footer><p><a href="${SITE_URL}">Cânticos CCB</a> — Plataforma independente com conteúdo publicado voluntariamente pela comunidade</p></footer>`,
   };
@@ -751,7 +861,7 @@ async function handleCifra(slug: string): Promise<PageMeta | null> {
 
     const relatedLinks = [
       relatedHymn ? `<a href="${SITE_URL}${buildHinoUrl(String(relatedHymn.id), relatedHymn.titulo, relatedHymn.numero)}">Página do hino</a>` : '',
-      relatedLyric ? `<a href="${SITE_URL}/hinario/${relatedLyric.numero}">Letra no Hinário</a>` : '',
+      relatedLyric ? `<a href="${SITE_URL}${buildHinarioUrl(relatedLyric.numero, relatedLyric.titulo)}">Letra no Hinário</a>` : '',
       `<a href="${SITE_URL}/cifras-hinos-ccb">Cifras de Hinos CCB</a>`,
       `<a href="${SITE_URL}/hinos-ccb">Hinos CCB</a>`,
     ].filter(Boolean).join(' · ');
@@ -830,7 +940,7 @@ async function handleCifra(slug: string): Promise<PageMeta | null> {
     : '';
   const relatedLinks = [
     relatedHymn ? `<a href="${SITE_URL}${buildHinoUrl(String(relatedHymn.id), relatedHymn.titulo, relatedHymn.numero)}">Página do hino</a>` : '',
-    relatedLyric ? `<a href="${SITE_URL}/hinario/${relatedLyric.numero}">Letra no Hinário</a>` : '',
+    relatedLyric ? `<a href="${SITE_URL}${buildHinarioUrl(relatedLyric.numero, relatedLyric.titulo)}">Letra no Hinário</a>` : '',
     `<a href="${SITE_URL}/cifras-hinos-ccb">Cifras de Hinos CCB</a>`,
     `<a href="${SITE_URL}/hinos-ccb">Hinos CCB</a>`,
   ].filter(Boolean).join(' · ');
@@ -897,7 +1007,7 @@ async function handleHinarioList(): Promise<PageMeta> {
   const desc = 'Leia as letras completas dos 480 hinos do Hinário 5 (Hinos de Louvores e Súplicas a Deus) da comunidade CCB.';
   const canonical = `${SITE_URL}/hinario`;
   const listHtml = hinos.length > 0
-    ? `<ul>${hinos.map((h: any) => `<li><a href="${SITE_URL}/hinario/${h.numero}">Hino ${h.numero}${h.titulo ? ` — ${esc(h.titulo)}` : ''}</a></li>`).join('')}</ul>`
+    ? `<ul>${hinos.map((h: any) => `<li><a href="${SITE_URL}${buildHinarioUrl(h.numero, h.titulo)}">Hino ${h.numero}${h.titulo ? ` — ${esc(h.titulo)}` : ''}</a></li>`).join('')}</ul>`
     : '';
   return {
     title, description: desc, canonical,
@@ -931,7 +1041,7 @@ async function handleBroadHinosHub(): Promise<PageMeta> {
   const canonical = `${SITE_URL}/hinos-ccb`;
 
   const hinarioHtml = hinario.length > 0
-    ? `<ul>${hinario.slice(0, 120).map((item: any) => `<li><a href="${SITE_URL}/hinario/${item.numero}">Hino ${item.numero}${item.titulo ? ` — ${esc(item.titulo)}` : ''}</a></li>`).join('')}</ul>`
+    ? `<ul>${hinario.slice(0, 120).map((item: any) => `<li><a href="${SITE_URL}${buildHinarioUrl(item.numero, item.titulo)}">Hino ${item.numero}${item.titulo ? ` — ${esc(item.titulo)}` : ''}</a></li>`).join('')}</ul>`
     : '<p>Nenhum hino do hinário foi publicado ainda.</p>';
 
   const hymnsHtml = hymns.length > 0
@@ -1310,7 +1420,7 @@ async function handleHymnHub(pathname: string): Promise<PageMeta | null> {
     ? `<ul>${songs.slice(0, 120).map((song: any) => {
       const cleanTitle = normalizeHymnTitle(song.titulo || '', song.numero);
       const href = `${SITE_URL}${buildHinoUrl(String(song.id), cleanTitle, song.numero)}`;
-      const lyricLink = song.numero ? ` <a href="${SITE_URL}/hinario/${song.numero}">Ver letra</a>` : '';
+      const lyricLink = song.numero ? ` <a href="${SITE_URL}${buildHinarioUrl(song.numero, song.titulo)}">Ver letra</a>` : '';
       return `<li><a href="${href}">Hino ${song.numero || ''}${cleanTitle ? ` - ${esc(cleanTitle)}` : ''}</a>${song.compositor_nome ? ` — ${esc(song.compositor_nome)}` : ''}${lyricLink}</li>`;
     }).join('')}</ul>`
     : '<p>Nenhum hino foi publicado neste repertório ainda.</p>';
@@ -1366,8 +1476,9 @@ async function handleHinarioRangePage(pathname: string): Promise<PageMeta | null
   const hymnListHtml = hymns.length > 0
     ? `<ul>${hymns.slice(0, 180).map((hymn: any) => {
       const numero = Number(hymn.numero || 0);
-      const title = esc(hymn.titulo || `Hino ${numero}`);
-      return `<li><a href="${SITE_URL}/hinario/${numero}">Hino ${numero} CCB - ${title}</a>${hymn.subtitulo ? ` <span>— ${esc(hymn.subtitulo)}</span>` : ''}</li>`;
+      const rawTitle = hymn.titulo || `Hino ${numero}`;
+      const title = esc(rawTitle);
+      return `<li><a href="${SITE_URL}${buildHinarioUrl(numero, rawTitle)}">Hino ${numero} CCB - ${title}</a>${hymn.subtitulo ? ` <span>— ${esc(hymn.subtitulo)}</span>` : ''}</li>`;
     }).join('')}</ul>`
     : '<p>Nenhum hino publicado foi encontrado nesta faixa.</p>';
 
@@ -1406,7 +1517,7 @@ async function handleHinarioRangePage(pathname: string): Promise<PageMeta | null
           '@type': 'ListItem',
           position: index + 1,
           name: `Hino ${hymn.numero} CCB - ${hymn.titulo || `Hino ${hymn.numero}`}`,
-          url: `${SITE_URL}/hinario/${hymn.numero}`,
+          url: `${SITE_URL}${buildHinarioUrl(hymn.numero, hymn.titulo || `Hino ${hymn.numero}`)}`,
         })),
       },
     ],
@@ -1604,6 +1715,67 @@ function handleHome(): PageMeta {
       </section>
       <footer><p><a href="${SITE_URL}">Cânticos CCB</a> — Plataforma independente com conteúdo publicado voluntariamente pela comunidade</p></footer>`,
   };
+}
+
+function handleBibleRoute(pathname: string): PageMeta | null {
+  if (pathname === '/biblia-ccb') {
+    return {
+      title: 'Bíblia Online CCB | Leia por Livro, Capítulo e Tema',
+      description: 'Leia a Bíblia Online CCB com navegação rápida por livros e capítulos, busca inteligente, recursos de leitura, temas, personagens e referência ACF.',
+      canonical: `${SITE_URL}/biblia-ccb`,
+      ogImage: `${SITE_URL}/images/bible/hero-bible-online.webp`,
+      schemas: [
+        { '@context': 'https://schema.org', '@type': 'WebPage', name: 'Bíblia Online CCB', url: `${SITE_URL}/biblia-ccb`, inLanguage: 'pt-BR' },
+        { '@context': 'https://schema.org', '@type': 'ItemList', name: 'Livros da Bíblia CCB', numberOfItems: bibleBooks.length, itemListElement: bibleBooks.map((book, index) => ({ '@type': 'ListItem', position: index + 1, name: book.name, url: `${SITE_URL}/biblia-ccb/${book.slug}` })) },
+      ],
+      bodyHtml: `<nav><a href="${SITE_URL}">Início</a> &rsaquo; Bíblia CCB</nav><h1>Bíblia Online CCB</h1><p>Navegue pelos 66 livros, capítulos, temas, personagens e recursos de leitura com tradução de referência ACF.</p><h2>Livros da Bíblia</h2><ul>${bibleBooks.map(book => `<li><a href="${SITE_URL}/biblia-ccb/${book.slug}">${esc(book.name)}</a> — ${book.chapters} capítulos</li>`).join('')}</ul>`,
+    };
+  }
+
+  const exploreMatch = pathname.match(/^\/biblia-ccb\/(busca|temas|personagens|dicionario)$/);
+  if (exploreMatch) {
+    const labels: Record<string, string> = { busca: 'Busca na Bíblia', temas: 'Temas bíblicos', personagens: 'Personagens bíblicos', dicionario: 'Dicionário bíblico' };
+    const label = labels[exploreMatch[1]];
+    return { title: `${label} | Bíblia CCB`, description: `${label} na Bíblia Online CCB com referência ACF, navegação rápida por livros e capítulos e experiência otimizada para celular.`, canonical: `${SITE_URL}${pathname}`, schemas: [{ '@context': 'https://schema.org', '@type': 'CollectionPage', name: label, url: `${SITE_URL}${pathname}`, inLanguage: 'pt-BR' }], noindex: true, bodyHtml: `<nav><a href="${SITE_URL}/biblia-ccb">Bíblia CCB</a> &rsaquo; ${esc(label)}</nav><h1>${esc(label)}</h1><p>Área de descoberta integrada à Bíblia Online CCB.</p>` };
+  }
+
+  const chapterMatch = pathname.match(/^\/biblia-ccb\/([^/]+)\/(\d+)(?:-[^/]+)?$/);
+  if (chapterMatch) {
+    const book = getBibleBook(chapterMatch[1]);
+    const chapter = Number(chapterMatch[2]);
+    if (!book || chapter < 1 || chapter > book.chapters) return null;
+    const title = getBibleChapterTitle(book.slug, chapter);
+    const canonicalPath = buildBibleChapterPath(book, chapter);
+    const readerTitle = `${book.name} ${chapter}${title ? `: ${title}` : ''}`;
+    return {
+      title: `${readerTitle} | Bíblia CCB`,
+      description: `Leia ${readerTitle} na Bíblia Online CCB, com tradução de referência ACF, navegação entre capítulos, busca por livro, modo de leitura e recursos para estudar.`,
+      canonical: `${SITE_URL}${canonicalPath}`,
+      noindex: true,
+      schemas: [
+        { '@context': 'https://schema.org', '@type': 'Chapter', name: readerTitle, position: chapter, isPartOf: { '@type': 'Book', name: book.name, url: `${SITE_URL}/biblia-ccb/${book.slug}` }, url: `${SITE_URL}${canonicalPath}`, inLanguage: 'pt-BR' },
+        { '@context': 'https://schema.org', '@type': 'BreadcrumbList', itemListElement: [{ '@type': 'ListItem', position: 1, name: 'Bíblia CCB', item: `${SITE_URL}/biblia-ccb` }, { '@type': 'ListItem', position: 2, name: book.name, item: `${SITE_URL}/biblia-ccb/${book.slug}` }, { '@type': 'ListItem', position: 3, name: readerTitle, item: `${SITE_URL}${canonicalPath}` }] },
+      ],
+      bodyHtml: `<nav><a href="${SITE_URL}/biblia-ccb">Bíblia CCB</a> &rsaquo; <a href="${SITE_URL}/biblia-ccb/${book.slug}">${esc(book.name)}</a> &rsaquo; Capítulo ${chapter}</nav><h1>${esc(readerTitle)}</h1><p>Tradução de referência ACF.</p><p>O texto integral deste capítulo será disponibilizado após validação editorial e de licença.</p>`,
+    };
+  }
+
+  const bookMatch = pathname.match(/^\/biblia-ccb\/([^/]+)$/);
+  if (bookMatch) {
+    const book = getBibleBook(bookMatch[1]);
+    if (!book) return null;
+    return {
+      title: `${book.name}: Todos os Capítulos | Bíblia CCB`,
+      description: `Leia ${book.name} na Bíblia Online CCB. Encontre todos os ${book.chapters} capítulos, navegue com rapidez, use a busca por referência e consulte a tradução ACF.`,
+      canonical: `${SITE_URL}/biblia-ccb/${book.slug}`,
+      schemas: [
+        { '@context': 'https://schema.org', '@type': 'Book', name: book.name, inLanguage: 'pt-BR', url: `${SITE_URL}/biblia-ccb/${book.slug}` },
+        { '@context': 'https://schema.org', '@type': 'ItemList', name: `Capítulos de ${book.name}`, numberOfItems: book.chapters, itemListElement: Array.from({ length: book.chapters }, (_, index) => ({ '@type': 'ListItem', position: index + 1, name: `${book.name} ${index + 1}`, url: `${SITE_URL}${buildBibleChapterPath(book, index + 1)}` })) },
+      ],
+      bodyHtml: `<nav><a href="${SITE_URL}/biblia-ccb">Bíblia CCB</a> &rsaquo; ${esc(book.name)}</nav><h1>${esc(book.name)}</h1><p>${book.testament} · ${book.chapters} capítulos · Tradução de referência ACF.</p><ol>${Array.from({ length: book.chapters }, (_, index) => `<li><a href="${SITE_URL}${buildBibleChapterPath(book, index + 1)}">${esc(book.name)} ${index + 1}</a></li>`).join('')}</ol>`,
+    };
+  }
+  return null;
 }
 function handleStaticPage(path: string): PageMeta | null {
   const pages: Record<string, { title: string; desc: string; h1: string; body: string; noindex?: boolean }> = {
@@ -1803,11 +1975,39 @@ export default async function handler(req: Request): Promise<Response> {
 
   // The "path" query param is set by vercel.json rewrite
   const pathname = url.searchParams.get('path') || url.pathname.replace(/^\/api\/ssr/, '') || '/';
+  const isUniversalHinarioRoute = pathname === '/hinario'
+    || /^\/hinario\/(?:hino-\d+-ccb(?:-[^/]+)?|\d+)$/i.test(pathname);
+  const isUniversalBibleRoute = pathname === '/biblia-ccb' || pathname.startsWith('/biblia-ccb/');
+  const isUniversalContentRoute = isUniversalHinarioRoute || isUniversalBibleRoute;
 
-  // If a rewrite routes a normal browser here, always return the full React app.
-  // Only known crawlers/social preview agents should receive the lightweight SEO HTML.
-  if (!isBot(ua)) {
+  // Hinário pages expose the same initial content to people and crawlers. Other
+  // legacy rewrites keep their existing crawler-only behavior.
+  if (!isBot(ua) && !isUniversalContentRoute) {
     return serveSpaIndex();
+  }
+
+  const legacyHinarioMatch = pathname.match(/^\/hinario\/(\d+)$/);
+  if (legacyHinarioMatch) {
+    try {
+      const numero = Number(legacyHinarioMatch[1]);
+      const rows = await supaFetch('hinario', {
+        numero: `eq.${numero}`,
+        is_active: 'eq.true',
+        select: 'numero,titulo',
+        limit: '1',
+      });
+      if (rows.length) {
+        return new Response(null, {
+          status: 301,
+          headers: {
+            Location: `${SITE_URL}${buildHinarioUrl(rows[0].numero, rows[0].titulo)}`,
+            'Cache-Control': 'public, max-age=3600, s-maxage=86400',
+          },
+        });
+      }
+    } catch (error) {
+      console.error('[SSR] Unable to resolve legacy Hinário URL:', error);
+    }
   }
 
   // Playlists are private SPA routes. Never make them depend on Supabase SSR.
@@ -1825,7 +2025,7 @@ export default async function handler(req: Request): Promise<Response> {
     const hinoMatch = pathname.match(/^\/hino\/(.+)$/);
     const compositorMatch = pathname.match(/^\/compositor\/(.+)$/);
     const albumMatch = pathname.match(/^\/album\/(.+)$/);
-    const hinarioNumMatch = pathname.match(/^\/hinario\/(\d+)$/);
+    const hinarioNumMatch = pathname.match(/^\/hinario\/(hino-\d+-ccb(?:-[^/]+)?|\d+)$/i);
     const cifraMatch = pathname.match(/^\/cifra\/(.+)$/);
     const categoriaMatch = pathname.match(/^\/categoria\/([^/]+)$/);
     const playlistMatch = pathname.match(/^\/playlist\/([^/]+)$/);
@@ -1835,7 +2035,9 @@ export default async function handler(req: Request): Promise<Response> {
     const hymnHubMatch = pathname.match(/^\/hinos-(cantados|tocados|avulsos)-ccb$/);
     const cifraHubMatch = pathname.match(/^\/cifras-(violao|ukulele|teclado)-ccb$/);
 
-    if (hinoMatch) {
+    if (isUniversalBibleRoute) {
+      pageMeta = handleBibleRoute(pathname);
+    } else if (hinoMatch) {
       pageMeta = await handleHino(hinoMatch[1]);
     } else if (compositorMatch) {
       pageMeta = await handleCompositor(compositorMatch[1]);
@@ -1916,13 +2118,16 @@ export default async function handler(req: Request): Promise<Response> {
     };
   }
 
-  const html = buildFullHtml(pageMeta);
+  const html = isUniversalContentRoute
+    ? await buildInteractiveHtml(pageMeta)
+    : buildFullHtml(pageMeta);
   return new Response(html, {
     status: pageMeta.status || 200,
     headers: {
       'Content-Type': 'text/html; charset=utf-8',
       'Cache-Control': 'public, s-maxage=86400, stale-while-revalidate=604800',
       'Vary': 'User-Agent',
+      'Link': `</llms.txt>; rel="describedby"; type="text/markdown"`,
       'X-Robots-Tag': pageMeta.noindex ? 'noindex, follow' : 'index, follow',
     },
   });

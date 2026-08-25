@@ -5,6 +5,7 @@ import SEOHead from '@/components/SEO/SEOHead';
 import { fetchHinarioList, HinarioHymn } from '@/api/hinario';
 import { HINARIO_RANGES, filterItemsByHinarioRange } from '@/lib/hinarioRanges';
 import { generateBreadcrumbSchema, generateFAQSchema, generateItemListSchema } from '@/utils/schemaGenerator';
+import { buildHinarioUrl } from '@/utils/hinarioSeo';
 
 type HinarioTopic = 'hinario5' | 'letras';
 
@@ -112,7 +113,7 @@ const HinarioTopicPage: React.FC<HinarioTopicPageProps> = ({ topic }) => {
       url: config.path,
       items: hymns.slice(0, 180).map((hymn, index) => ({
         name: `Hino ${hymn.numero} CCB - ${hymn.titulo}`,
-        url: `/hinario/${hymn.numero}`,
+        url: buildHinarioUrl(hymn.numero, hymn.titulo),
         position: index + 1,
       })),
     }),
@@ -217,7 +218,7 @@ const HinarioTopicPage: React.FC<HinarioTopicPageProps> = ({ topic }) => {
                   {hymns.map((hymn) => (
                     <Link
                       key={hymn.id}
-                      to={`/hinario/${hymn.numero}`}
+                      to={buildHinarioUrl(hymn.numero, hymn.titulo)}
                       className="rounded-xl border border-white/10 bg-background-primary px-3 py-3 text-center text-sm font-semibold text-white transition-colors hover:border-primary-500/40 hover:text-primary-300"
                     >
                       {hymn.numero}
@@ -254,7 +255,7 @@ const HinarioTopicPage: React.FC<HinarioTopicPageProps> = ({ topic }) => {
               {hymns.slice(0, 36).map((hymn) => (
                 <Link
                   key={hymn.id}
-                  to={`/hinario/${hymn.numero}`}
+                  to={buildHinarioUrl(hymn.numero, hymn.titulo)}
                   className="rounded-2xl border border-white/10 bg-background-primary p-4 transition-colors hover:border-primary-500/40"
                 >
                   <p className="text-primary-400 text-sm font-semibold">Hino {hymn.numero}</p>

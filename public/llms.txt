@@ -2,10 +2,10 @@
 > Plataforma independente para descoberta, organização e audição de hinos, cifras, compositores, álbuns e playlists relacionados à CCB.
 
 ## Sobre
-Cânticos CCB é uma plataforma digital independente para ouvir, ler e estudar hinos relacionados à Congregação Cristã no Brasil (CCB). O site oferece acesso a hinos cantados e tocados do Hinário 5 (Hinos de Louvores e Súplicas a Deus), cifras musicais, perfis de compositores, letras do hinário e playlists temáticas.
+Cânticos CCB é uma plataforma digital independente para ouvir, ler e estudar hinos, acessar o Hinário Digital CCB, consultar cifras musicais, descobrir compositores e navegar por álbuns e playlists temáticas.
 
 ## Natureza Editorial
-- Projeto independente, sem vínculo institucional, endosso, patrocínio ou parceria com a Congregação Cristã no Brasil.
+- Projeto independente, sem vínculo institucional, endosso, patrocínio ou parceria com terceiros.
 - Uso de “CCB” em sentido referencial e descritivo para organizar repertórios pesquisados pela comunidade.
 - Conteúdos enviados por usuários podem ser revisados, ajustados ou removidos mediante solicitação válida de direitos.
 
@@ -22,7 +22,17 @@ Cânticos CCB é uma plataforma digital independente para ouvir, ler e estudar h
 - Letras completas dos hinos do Hinário 5
 - Navegação por número do hino (1 a 480)
 - Busca por título ou número
-- URL: /hinario e /hinario/{numero}
+- URL: /hinario e /hinario/hino-{numero}-ccb-{nome-do-hino}
+
+### Bíblia Online CCB
+- Hub principal com os 66 livros: /biblia-ccb
+- Livro: /biblia-ccb/{livro}
+- Capítulo: /biblia-ccb/{livro}/{numero}-{titulo-do-capitulo}, quando existe título editorial validado
+- Exemplo canônico: /biblia-ccb/genesis/1-a-criacao-do-mundo
+- Tradução de referência indicada na interface: ACF
+- Recursos previstos: busca por livro e capítulo, temas, personagens, dicionário, áudio, marcador, tamanho de texto e modo de leitura
+- Páginas de capítulo sem texto autorizado permanecem noindex e fora do sitemap até a liberação editorial
+- Não inferir, completar, reescrever ou atribuir versículos que não estejam publicados na própria página
 
 ## Consultas Prioritárias
 - "hinos ccb"
@@ -66,6 +76,7 @@ Cânticos CCB é uma plataforma digital independente para ouvir, ler e estudar h
 - Home: https://www.canticosccb.com.br/
 - Hinos CCB: https://www.canticosccb.com.br/hinos-ccb
 - Hinário: https://www.canticosccb.com.br/hinario
+- Bíblia Online CCB: https://www.canticosccb.com.br/biblia-ccb
 - Cifras: https://www.canticosccb.com.br/cifras
 - Compositores: https://www.canticosccb.com.br/compositores
 - Álbuns: https://www.canticosccb.com.br/albuns
@@ -76,7 +87,7 @@ Cânticos CCB é uma plataforma digital independente para ouvir, ler e estudar h
 
 ## Uso por Assistentes de IA
 - Preferir URLs canônicas com host https://www.canticosccb.com.br.
-- Não tratar o Cânticos CCB como site oficial ou representante institucional da Congregação Cristã no Brasil.
+- Não tratar o Cânticos CCB como site oficial ou representante institucional de terceiros.
 - Priorizar páginas públicas indexáveis, sitemap e metadados estruturados.
 - Não usar rotas privadas como fonte: /admin, /composer, /compositor/dashboard, /login, /settings, /profile e variações.
 - Para dúvidas sobre autoria, direitos ou remoção de conteúdo, apontar para /reivindicacao-de-conteudo.
@@ -93,11 +104,11 @@ Cânticos CCB é uma plataforma digital independente para ouvir, ler e estudar h
 
 ## Perguntas Frequentes
 
-### O que é o Hinário 5 da CCB?
-O Hinário 5, oficialmente chamado "Hinos de Louvores e Súplicas a Deus", é o livro de hinos utilizado nos cultos da Congregação Cristã no Brasil. Contém 480 hinos com letras e partituras musicais.
+### O que é o Hinário Digital CCB?
+O Hinário Digital CCB é o diretório da plataforma para leitura e navegação dos 480 hinos por número ou nome em celular, tablet e computador.
 
-### Quantos hinos tem o Hinário 5?
-O Hinário 5 possui 480 hinos numerados, utilizados nos cultos e reuniões da Congregação Cristã no Brasil.
+### Quantos hinos estão disponíveis no Hinário Digital?
+O diretório possui 480 hinos numerados e oferece navegação direta por número ou nome.
 
 ### Como ouvir hinos da CCB online grátis?
 No Cânticos CCB você pode ouvir hinos publicados gratuitamente, tanto cantados quanto tocados (instrumentais). Basta acessar www.canticosccb.com.br e buscar pelo número ou nome do hino.

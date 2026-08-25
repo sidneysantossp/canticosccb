@@ -8,6 +8,7 @@ import { generateCifraSchema, generateBreadcrumbSchema } from '@/utils/schemaGen
 import { fetchCifraByLegacyHinarioSlug, fetchCifraBySlug, fetchCifras, incrementCifraViews, type Cifra, INSTRUMENTS, ALL_KEYS } from '@/api/cifras';
 import { buildHinoUrl } from '@/utils/slugUrl';
 import { buildCifraUrl } from '@/utils/cifraUrl';
+import { buildHinarioUrl } from '@/utils/hinarioSeo';
 import {
   addCifraFavorite,
   fetchCifraChordShapeVariants,
@@ -1585,7 +1586,7 @@ const CifraPage: React.FC = () => {
             </>
           ) : null}
           {relatedHymn ? <Link to={buildHinoUrl(relatedHymn.id, relatedHymn.titulo, relatedHymn.numero)} title="Ouvir este hino" className={`flex w-full items-center gap-2 rounded-xl border border-primary-500/40 bg-primary-500/10 px-3 py-2 text-sm text-primary-300 transition-colors hover:bg-primary-500/20 ${isSidebarCollapsed ? 'lg:justify-center lg:px-2' : ''}`}><Play className="h-4 w-4" /> <span className={isSidebarCollapsed ? 'lg:hidden' : ''}>Ouvir este hino</span></Link> : null}
-          {relatedLyric ? <Link to={`/hinario/${relatedLyric.numero}`} title="Letra no Hinário" className={`flex w-full items-center gap-2 rounded-xl border border-primary-500/40 bg-primary-500/10 px-3 py-2 text-sm text-primary-300 transition-colors hover:bg-primary-500/20 ${isSidebarCollapsed ? 'lg:justify-center lg:px-2' : ''}`}><Music className="h-4 w-4" /> <span className={isSidebarCollapsed ? 'lg:hidden' : ''}>Letra no Hinário</span></Link> : null}
+          {relatedLyric ? <Link to={buildHinarioUrl(relatedLyric.numero, relatedLyric.titulo)} title="Letra no Hinário" className={`flex w-full items-center gap-2 rounded-xl border border-primary-500/40 bg-primary-500/10 px-3 py-2 text-sm text-primary-300 transition-colors hover:bg-primary-500/20 ${isSidebarCollapsed ? 'lg:justify-center lg:px-2' : ''}`}><Music className="h-4 w-4" /> <span className={isSidebarCollapsed ? 'lg:hidden' : ''}>Letra no Hinário</span></Link> : null}
           <Link to={instrumentHubUrl} title={`Mais cifras de ${instrumentLabel}`} className={`flex w-full items-center gap-2 rounded-xl border border-primary-500/40 bg-primary-500/10 px-3 py-2 text-sm text-primary-300 transition-colors hover:bg-primary-500/20 ${isSidebarCollapsed ? 'lg:justify-center lg:px-2' : ''}`}><Music className="h-4 w-4" /> <span className={isSidebarCollapsed ? 'lg:hidden' : ''}>Mais cifras de {instrumentLabel}</span></Link>
           <Link to="/cifras" title="Todas as cifras" className={`flex w-full items-center gap-2 rounded-xl border border-gray-700 bg-gray-800 px-3 py-2 text-sm text-gray-200 transition-colors hover:border-primary-500/40 hover:text-white ${isSidebarCollapsed ? 'lg:justify-center lg:px-2' : ''}`}><ListMusic className="h-4 w-4" /> <span className={isSidebarCollapsed ? 'lg:hidden' : ''}>Todas as cifras</span></Link>
           <Link to="/hinario" title="Letras do Hinário" className={`flex w-full items-center gap-2 rounded-xl border border-gray-700 bg-gray-800 px-3 py-2 text-sm text-gray-200 transition-colors hover:border-primary-500/40 hover:text-white ${isSidebarCollapsed ? 'lg:justify-center lg:px-2' : ''}`}><BookOpen className="h-4 w-4" /> <span className={isSidebarCollapsed ? 'lg:hidden' : ''}>Letras do Hinário</span></Link>

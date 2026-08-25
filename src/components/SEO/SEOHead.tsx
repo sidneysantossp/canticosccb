@@ -5,6 +5,7 @@ import { DEFAULT_SITE_URL, normalizeAssetUrl, normalizeSiteUrl } from '@/utils/s
 
 interface SEOProps {
   title: string;
+  exactTitle?: boolean;
   description: string;
   keywords?: string;
   canonical?: string;
@@ -19,6 +20,7 @@ interface SEOProps {
 
 const SEOHead: React.FC<SEOProps> = ({
   title,
+  exactTitle = false,
   description,
   keywords,
   canonical,
@@ -54,7 +56,7 @@ const SEOHead: React.FC<SEOProps> = ({
   }, []);
 
   const siteName = runtimeSeo?.site_title || 'Cânticos CCB';
-  const fullTitle = title.includes(siteName) ? title : `${title} | ${siteName}`;
+  const fullTitle = exactTitle || title.includes(siteName) ? title : `${title} | ${siteName}`;
   const baseUrl = normalizeSiteUrl(
     runtimeSeo?.site_url || import.meta.env.VITE_APP_URL || DEFAULT_SITE_URL,
     DEFAULT_SITE_URL

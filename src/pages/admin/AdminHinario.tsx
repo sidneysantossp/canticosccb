@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { Plus, Edit, Trash2, Eye, EyeOff, Search, BookOpen } from 'lucide-react';
 import { fetchHinarioList, HinarioHymn, HINARIO_CATEGORIES } from '@/api/hinario';
 import { supabaseDelete, supabaseUpdate } from '@/lib/supabaseRest';
+import { buildHinarioUrl } from '@/utils/hinarioSeo';
 
 const AdminHinario: React.FC = () => {
   const [hymns, setHymns] = useState<HinarioHymn[]>([]);
@@ -197,7 +198,7 @@ const AdminHinario: React.FC = () => {
                     <td className="px-6 py-4">
                       <div className="flex items-center justify-end gap-2">
                         <Link
-                          to={`/hinario/${hymn.numero}`}
+                          to={buildHinarioUrl(hymn.numero, hymn.titulo)}
                           className="p-2 hover:bg-gray-700 rounded-lg transition-colors text-gray-400 hover:text-white"
                           title="Visualizar"
                           target="_blank"

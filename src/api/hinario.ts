@@ -175,6 +175,7 @@ export async function fetchHinario5NumberMap(): Promise<Record<string, number>> 
 
 export interface HinarioVerse {
   number: number | null;
+  label?: string;
   lines: string[];
 }
 
@@ -190,6 +191,18 @@ export function parseVerses(conteudo: string): HinarioVerse[] {
   return blocks.map(block => {
     const lines = block.split('\n').map(l => l.trimEnd());
     const firstLine = lines[0]?.trim() || '';
+
+    // Refrões são exibidos em seu próprio bloco, mesmo quando a origem os
+    // identifica somente pelo marcador "CORO:".
+    const chorusMatch = firstLine.match(/^(?:coro|refr[aã]o)\s*:\s*(.*)$/i);
+    if (chorusMatch) {
+      const firstLyric = chorusMatch[1].trim();
+      return {
+        number: null,
+        label: 'Coro',
+        lines: (firstLyric ? [firstLyric, ...lines.slice(1)] : lines.slice(1)).map(l => l.trim()),
+      };
+    }
 
     // Check if first line starts with a number (verse number)
     const match = firstLine.match(/^(\d+)\s*(?:\.|-|\u2013|\))\s*(.*)/);

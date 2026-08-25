@@ -7,6 +7,7 @@ import { supabaseFetch } from '@/lib/supabaseRest';
 import { HINARIO_RANGES, filterItemsByHinarioRange } from '@/lib/hinarioRanges';
 import { generateBreadcrumbSchema, generateFAQSchema, generateItemListSchema } from '@/utils/schemaGenerator';
 import { buildHinoUrl } from '@/utils/slugUrl';
+import { buildHinarioUrl } from '@/utils/hinarioSeo';
 
 type PublicHymn = {
   id: string;
@@ -110,7 +111,7 @@ const HinosHubPage: React.FC = () => {
       url: '/hinos-ccb',
       items: hinarioItems.slice(0, 180).map((item, index) => ({
         name: `Hino ${item.numero} CCB - ${item.titulo}`,
-        url: `/hinario/${item.numero}`,
+        url: buildHinarioUrl(item.numero, item.titulo),
         position: index + 1,
       })),
     }),
@@ -207,7 +208,7 @@ const HinosHubPage: React.FC = () => {
                   {hinarioItems.slice(0, 120).map((item) => (
                     <Link
                       key={item.id}
-                      to={`/hinario/${item.numero}`}
+                      to={buildHinarioUrl(item.numero, item.titulo)}
                       className="rounded-xl border border-white/10 bg-background-primary px-3 py-3 text-center text-sm font-semibold text-white transition-colors hover:border-primary-500/40 hover:text-primary-300"
                     >
                       {item.numero}
@@ -300,7 +301,7 @@ const HinosHubPage: React.FC = () => {
                     </Link>
                     {item.numero > 0 ? (
                       <Link
-                        to={`/hinario/${item.numero}`}
+                        to={buildHinarioUrl(item.numero, item.titulo)}
                         className="inline-flex items-center rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs font-medium text-white/80 transition-colors hover:border-primary-500/30 hover:text-white"
                       >
                         Ver letra

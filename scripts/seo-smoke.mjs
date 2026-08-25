@@ -7,7 +7,7 @@ const cases = [
   ["hino cifrado", "/cifra/hino-avulso-cana-trilhada", 200, null, false],
   ["categoria/listagem", "/hinos-ccb", 200, null, false],
   ["URL com parâmetros", "/hinos-ccb?utm_source=smoke-test&utm_medium=qa#fragmento", 200, "/hinos-ccb", false],
-  ["rota interna estática", "/hinario/1", 200, "/hinario/1", false],
+  ["rota interna estática", "/hinario/hino-1-ccb-cristo-meu-mestre", 200, "/hinario/hino-1-ccb-cristo-meu-mestre", false],
   ["404", "/rota-smoke-404-inexistente-2026", 404, null, true]
 ];
 const results = [];

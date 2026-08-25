@@ -5,6 +5,7 @@ import SEOHead from '@/components/SEO/SEOHead';
 import { fetchHinarioList, type HinarioHymn } from '@/api/hinario';
 import { generateBreadcrumbSchema, generateFAQSchema, generateItemListSchema } from '@/utils/schemaGenerator';
 import { HINARIO_RANGES, filterItemsByHinarioRange, getHinarioRangeByKey, type HinarioRangeKey } from '@/lib/hinarioRanges';
+import { buildHinarioUrl } from '@/utils/hinarioSeo';
 
 interface HinarioRangePageProps {
   rangeKey: HinarioRangeKey;
@@ -66,7 +67,7 @@ const HinarioRangePage: React.FC<HinarioRangePageProps> = ({ rangeKey }) => {
       url: range.path,
       items: items.slice(0, 180).map((item, index) => ({
         name: `Hino ${item.numero} CCB - ${item.titulo}`,
-        url: `/hinario/${item.numero}`,
+        url: buildHinarioUrl(item.numero, item.titulo),
         position: index + 1,
       })),
     }),
@@ -160,7 +161,7 @@ const HinarioRangePage: React.FC<HinarioRangePageProps> = ({ rangeKey }) => {
                   {items.map((item) => (
                     <Link
                       key={item.id}
-                      to={`/hinario/${item.numero}`}
+                      to={buildHinarioUrl(item.numero, item.titulo)}
                       className="rounded-xl border border-white/10 bg-background-primary px-3 py-3 text-center text-sm font-semibold text-white transition-colors hover:border-primary-500/40 hover:text-primary-300"
                     >
                       {item.numero}
@@ -171,7 +172,7 @@ const HinarioRangePage: React.FC<HinarioRangePageProps> = ({ rangeKey }) => {
                   {items.slice(0, 18).map((item) => (
                     <Link
                       key={`featured-${item.id}`}
-                      to={`/hinario/${item.numero}`}
+                      to={buildHinarioUrl(item.numero, item.titulo)}
                       className="rounded-2xl border border-white/10 bg-background-primary p-4 transition-colors hover:border-primary-500/40"
                     >
                       <p className="text-primary-400 text-sm font-semibold">Hino {item.numero}</p>
