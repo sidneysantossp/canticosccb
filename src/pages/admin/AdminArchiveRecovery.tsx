@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { AlertTriangle, FileAudio, Link2, LoaderCircle, Search } from 'lucide-react';
+import { AlertTriangle, FileAudio, Link2, Loader2, Search } from 'lucide-react';
 import { supabase } from '@/lib/supabase-auth';
 
 type MediaFile = { name: string; extension: string; mimeType: string; replayUrl: string };
@@ -42,7 +42,7 @@ export default function AdminArchiveRecovery() {
       <label className="mb-2 block text-sm font-medium text-gray-200">URL arquivada</label>
       <div className="flex flex-col gap-3 sm:flex-row">
         <div className="relative flex-1"><Link2 className="absolute left-3 top-3.5 h-4 w-4 text-gray-500" /><input value={sourceUrl} onChange={(event) => setSourceUrl(event.target.value)} placeholder="https://web.archive.org/web/..." className="w-full rounded-lg border border-gray-700 bg-gray-950 py-3 pl-10 pr-4 text-white outline-none focus:border-green-500" /></div>
-        <button onClick={() => void discover()} disabled={loading || !sourceUrl.trim()} className="inline-flex items-center justify-center gap-2 rounded-lg bg-green-600 px-5 py-3 font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50"><>{loading ? <LoaderCircle className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />} Buscar arquivos</></button>
+        <button onClick={() => void discover()} disabled={loading || !sourceUrl.trim()} className="inline-flex items-center justify-center gap-2 rounded-lg bg-green-600 px-5 py-3 font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50"><>{loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />} Buscar arquivos</></button>
       </div>
       <p className="mt-3 text-sm text-gray-500">A pesquisa apenas lista arquivos encontrados; ela não baixa, publica nem altera registros.</p>
     </div>
