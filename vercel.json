@@ -1,4 +1,9 @@
 {
+  "functions": {
+    "api/archive-discovery.js": {
+      "maxDuration": 120
+    }
+  },
   "redirects": [
     { "source": "/hinos", "destination": "/hinos-ccb", "permanent": true },
     { "source": "/hinos/", "destination": "/hinos-ccb", "permanent": true },
