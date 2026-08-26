@@ -159,18 +159,17 @@ const InstrumentaisPage: React.FC = () => {
         schemaData={schemaData}
       />
 
-      <div className="bg-gradient-to-b from-primary-700/25 to-transparent px-4 pt-16 pb-8 sm:px-6 sm:pt-20">
+      <div className="-mx-4 bg-gradient-to-b from-primary-600/35 via-primary-950/25 to-background-primary px-4 pt-16 pb-8 sm:-mx-6 sm:px-6 sm:pt-20">
         <div className="max-w-6xl mx-auto">
           <Link to="/" className="inline-flex items-center gap-2 text-white/80 hover:text-white transition-colors mb-6">
             <ArrowLeft className="w-4 h-4" />
             Voltar
           </Link>
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-start">
-            <div className="w-12 h-12 rounded-2xl bg-white/10 border border-white/15 flex items-center justify-center sm:w-14 sm:h-14">
-              <Music className="w-7 h-7 text-primary-300" />
-            </div>
+          <div className="sm:flex sm:items-center sm:gap-8">
+            <div className="mb-6 h-40 w-40 shrink-0 rounded-2xl bg-gradient-to-br from-primary-400/30 via-primary-900/70 to-background-secondary shadow-xl sm:mb-0" aria-hidden="true" />
             <div className="max-w-3xl">
-              <h1 className="text-3xl md:text-5xl font-bold text-white leading-tight">Instrumentais CCB</h1>
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-primary-200">Playlist pública</p>
+              <h1 className="mt-2 text-3xl md:text-5xl font-bold text-white leading-tight">Instrumentais CCB</h1>
               <p className="text-white/85 text-base md:text-lg mt-3">
                 Hub publico para buscas por hinos instrumentais, hinos tocados e cifras da comunidade CCB.
               </p>
