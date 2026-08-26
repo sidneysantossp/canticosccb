@@ -635,7 +635,7 @@ const CategoryPage: React.FC = () => {
       />
 
       <div className="min-h-screen bg-background-primary">
-        <div className="text-white bg-gradient-to-b from-green-700 to-transparent pt-20 pb-8 px-6">
+        <div className="-mx-6 text-white bg-gradient-to-b from-primary-600/35 via-primary-950/25 to-background-primary pt-20 pb-10 px-6 sm:-mx-8 sm:px-8">
           <div className="max-w-7xl mx-auto">
             <button
               onClick={() => navigate(-1)}
@@ -644,15 +644,16 @@ const CategoryPage: React.FC = () => {
               <ArrowLeft className="w-5 h-5" />
               <span>Voltar</span>
             </button>
-            <div className="flex flex-col md:flex-row gap-6 items-center md:items-start">
+            <div className="flex flex-col gap-6 items-center md:flex-row md:items-center md:gap-8">
               <img
                 src={categoryImage}
                 alt={category.name}
-                className="w-56 h-56 md:w-56 md:h-56 object-cover ring-4 ring-primary-500/30 rounded-md mx-auto md:mx-0"
+                className="h-40 w-40 object-cover ring-4 ring-primary-500/30 rounded-2xl mx-auto md:mx-0"
                 onError={(e) => { (e.currentTarget as HTMLImageElement).src = `https://picsum.photos/seed/category-fallback-${category.id}/400/400`; }}
               />
               <div className="flex-1">
-                <h1 className="text-3xl md:text-4xl font-bold text-white leading-tight text-center md:text-left">{category.name}</h1>
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-primary-200 text-center md:text-left">Playlist pública</p>
+                <h1 className="mt-2 text-3xl md:text-5xl font-bold text-white leading-tight text-center md:text-left">{category.name}</h1>
                 {category.description && (
                   <p className="text-white/90 mt-1 max-w-2xl text-base text-center md:text-left">{category.description}</p>
                 )}
