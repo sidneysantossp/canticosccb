@@ -166,7 +166,7 @@ const InstrumentaisPage: React.FC = () => {
             Voltar
           </Link>
           <div className="sm:flex sm:items-center sm:gap-8">
-            <div className="mb-6 h-40 w-40 shrink-0 rounded-2xl bg-gradient-to-br from-primary-400/30 via-primary-900/70 to-background-secondary shadow-xl sm:mb-0" aria-hidden="true" />
+            <div className="mb-6 flex h-40 w-40 shrink-0 items-center justify-center rounded-2xl bg-black/35 shadow-xl sm:mb-0" aria-hidden="true"><div className="h-28 w-28 rounded-full border-4 border-white/10 bg-[radial-gradient(circle_at_center,#19c463_0_13%,#0b1710_14%_20%,#303735_21%_42%,#101513_43%_60%,#343b38_61%_63%,#111514_64%_100%)] shadow-2xl" /></div>
             <div className="max-w-3xl">
               <p className="text-xs font-semibold uppercase tracking-[0.18em] text-primary-200">Playlist pública</p>
               <h1 className="mt-2 text-3xl md:text-5xl font-bold text-white leading-tight">Instrumentais CCB</h1>
