@@ -21,9 +21,13 @@ function resolveOriginalUrl(value) {
   const snapshot = parsed.pathname.match(/^\/web\/(?:\*|\d+(?:[a-z_]+)?)\/(https?:\/\/.*)$/i);
   const original = snapshot ? decodeURIComponent(snapshot[1]) : '';
   if (!original) throw new Error('Informe uma URL de captura de um arquivo ou página original.');
-  const originalUrl = new URL(original);
+  // O Wayback aceita o curinga no final do host/path do prefixo. Remova-o
+  // apenas durante a validação do host e preserve-o para a consulta CDX.
+  const hasPrefixWildcard = /\*+$/.test(original);
+  const originalUrl = new URL(original.replace(/\*+$/, ''));
   if (!ALLOWED_ORIGINAL_HOSTS.has(originalUrl.hostname.toLowerCase())) throw new Error('A origem informada não pertence ao acervo autorizado.');
-  return originalUrl.toString();
+  const normalizedOriginal = originalUrl.toString();
+  return hasPrefixWildcard ? `${normalizedOriginal}*` : normalizedOriginal;
 }
 
 function extensionOf(url) {
