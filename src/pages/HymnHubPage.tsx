@@ -351,7 +351,17 @@ const HymnHubPage: React.FC<HymnHubPageProps> = ({ hub }) => {
             <ArrowLeft className="w-4 h-4" />
             Voltar
           </Link>
-          <div className="flex items-start gap-4">
+          {hub === 'avulsos' ? (
+            <div className="overflow-hidden rounded-3xl border border-primary-400/20 bg-gradient-to-br from-primary-500/35 via-primary-950/70 to-background-secondary p-6 shadow-2xl shadow-primary-950/30 sm:flex sm:items-center sm:gap-8 sm:p-8">
+              <div className="mb-6 h-40 w-40 shrink-0 rounded-2xl bg-primary-900/50 bg-cover bg-center shadow-xl sm:mb-0" style={albums[0]?.coverUrl ? { backgroundImage: `url(${albums[0].coverUrl})` } : undefined} aria-hidden="true" />
+              <div className="max-w-3xl">
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-primary-200">Playlist pública</p>
+                <h1 className="mt-2 text-3xl font-bold leading-tight text-white md:text-5xl">{config.heading}</h1>
+                <p className="mt-3 text-base text-white/80 md:text-lg">{config.intro}</p>
+                <p className="mt-5 text-sm text-white/70">{items.length} faixas · Repertório avulso</p>
+              </div>
+            </div>
+          ) : <div className="flex items-start gap-4">
             <div className="max-w-3xl">
               <h1 className="text-3xl md:text-5xl font-bold text-primary-400 leading-tight">{config.heading}</h1>
               <p className="text-white/85 text-base md:text-lg mt-3">{config.intro}</p>
@@ -361,7 +371,7 @@ const HymnHubPage: React.FC<HymnHubPageProps> = ({ hub }) => {
                 <span>Foco em intencao especifica de busca</span>
               </div>
             </div>
-          </div>
+          </div>}
         </div>
       </div>
 
@@ -369,13 +379,13 @@ const HymnHubPage: React.FC<HymnHubPageProps> = ({ hub }) => {
         <div className={`grid gap-6 ${hub === 'avulsos' ? '' : 'lg:grid-cols-[1.5fr,0.9fr]'}`}>
           <div className="space-y-8">
             <section className={`rounded-2xl border border-white/10 bg-background-secondary p-6 ${hub === 'avulsos' ? 'lg:p-8' : ''}`}>
-              {hub === 'avulsos' && <div className="flex items-center gap-4 border-b border-white/10 pb-6 mb-5"><button type="button" className="flex h-12 w-12 items-center justify-center rounded-full bg-primary-500 text-black hover:bg-primary-400" aria-label="Ouvir hinos"><Headphones className="h-5 w-5" /></button><span className="text-sm text-text-muted">Repertório público · {items.length} faixas</span></div>}
+              {hub === 'avulsos' && <div className="mb-5 border-b border-white/10 pb-4 text-sm text-text-muted">Faixas do repertório</div>}
               <div className="flex items-center justify-between gap-4 mb-5">
                 <div>
                   <h2 className="text-2xl font-semibold text-white">Repertorio indexavel</h2>
                   <p className="text-text-muted mt-1">Selecao navegavel com links para paginas individuais e letras do hinario quando houver numero.</p>
                 </div>
-                <Headphones className="w-6 h-6 text-primary-400" />
+                {hub !== 'avulsos' && <Headphones className="w-6 h-6 text-primary-400" />}
               </div>
 
               {isLoading ? (
