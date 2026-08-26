@@ -86,12 +86,16 @@ function originVariants(originalUrl) {
   const clean = originalUrl.replace(/\*+$/, '');
   try {
     const parsed = new URL(clean);
-    const variants = [originalUrl];
+    const variants = [`${parsed.hostname}${parsed.pathname || '/'}*`, originalUrl];
+    // O CDX index também aceita o padrão sem esquema e, para domínios
+    // antigos, essa forma costuma retornar capturas que não aparecem na
+    // consulta com http://.
     const alternateHost = parsed.hostname.toLowerCase().startsWith('www.')
       ? parsed.hostname.slice(4)
       : `www.${parsed.hostname}`;
     parsed.hostname = alternateHost;
     variants.push(`${parsed.toString()}*`);
+    variants.push(`${alternateHost}${parsed.pathname || '/'}*`);
     return [...new Set(variants)];
   } catch { return [originalUrl]; }
 }
