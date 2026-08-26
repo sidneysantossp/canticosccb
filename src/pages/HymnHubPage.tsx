@@ -345,7 +345,7 @@ const HymnHubPage: React.FC<HymnHubPageProps> = ({ hub }) => {
         noindex={!isLoading && items.length === 0}
       />
 
-      <div className={`bg-gradient-to-b ${config.accentClass} pt-20 pb-8 px-6`}>
+      <div className={`bg-gradient-to-b ${hub === 'avulsos' ? 'from-primary-600/35 via-primary-950/25 to-background-primary' : config.accentClass} pt-20 pb-8 px-6`}>
         <div className="max-w-6xl mx-auto">
           <Link to="/" className="inline-flex items-center gap-2 text-white/80 hover:text-white transition-colors mb-6">
             <ArrowLeft className="w-4 h-4" />
@@ -366,9 +366,10 @@ const HymnHubPage: React.FC<HymnHubPageProps> = ({ hub }) => {
       </div>
 
       <div className="max-w-6xl mx-auto px-6 py-8">
-        <div className="grid gap-6 lg:grid-cols-[1.5fr,0.9fr]">
+        <div className={`grid gap-6 ${hub === 'avulsos' ? '' : 'lg:grid-cols-[1.5fr,0.9fr]'}`}>
           <div className="space-y-8">
-            <section className="rounded-2xl border border-white/10 bg-background-secondary p-6">
+            <section className={`rounded-2xl border border-white/10 bg-background-secondary p-6 ${hub === 'avulsos' ? 'lg:p-8' : ''}`}>
+              {hub === 'avulsos' && <div className="flex items-center gap-4 border-b border-white/10 pb-6 mb-5"><button type="button" className="flex h-12 w-12 items-center justify-center rounded-full bg-primary-500 text-black hover:bg-primary-400" aria-label="Ouvir hinos"><Headphones className="h-5 w-5" /></button><span className="text-sm text-text-muted">Repertório público · {items.length} faixas</span></div>}
               <div className="flex items-center justify-between gap-4 mb-5">
                 <div>
                   <h2 className="text-2xl font-semibold text-white">Repertorio indexavel</h2>
@@ -388,11 +389,13 @@ const HymnHubPage: React.FC<HymnHubPageProps> = ({ hub }) => {
                   Nenhum hino publicado foi encontrado para este hub ainda.
                 </div>
               ) : (
-                <div className="space-y-3">
-                  {items.map((item) => (
-                    <article key={item.id} className="border-b border-white/10 px-2 py-4 hover:bg-white/5 transition-colors last:border-b-0">
+                <div className="space-y-1">
+                  {items.map((item, index) => (
+                    <article key={item.id} className={`group border-b border-white/10 px-2 py-4 transition-colors last:border-b-0 ${hub === 'avulsos' ? 'hover:bg-primary-500/10' : 'hover:bg-white/5'}`}>
                       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
-                        <div>
+                        <div className="flex items-center gap-4">
+                          {hub === 'avulsos' && <span className="w-7 shrink-0 text-center text-sm text-text-muted">{index + 1}</span>}
+                          <div>
                           <h3 className="text-white font-semibold">
                             <Link to={buildHinoUrl(item.id, item.titulo, item.numero)} className="hover:text-primary-400 transition-colors">
                               {item.numero > 0 ? `Hino ${item.numero} - ${item.titulo}` : item.titulo}
