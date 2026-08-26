@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowLeft, Disc3, Music, Music2, Music4 } from 'lucide-react';
+import { ArrowLeft, Disc3, Music2, Music4 } from 'lucide-react';
 import SEOHead from '@/components/SEO/SEOHead';
 import { type Cifra } from '@/api/cifras';
 import { fetchMergedPublicCifrasList, type PublicCifraPageData } from '@/lib/cifras-v2';
