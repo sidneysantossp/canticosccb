@@ -54,11 +54,13 @@ export default function AdminArchiveRecovery() {
       let knownImports: Record<string, RecoveryImport> = {};
       let statusWarning = '';
       try { knownImports = await loadImportStatus(token); } catch (cause) { statusWarning = cause instanceof Error ? cause.message : 'O histórico de importações não pôde ser consultado.'; }
-      const response = await fetch('/api/archive-discovery', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify({ sourceUrl }) });
-      const payload = await response.json();
-      if (!response.ok) throw new Error(payload?.error || 'Não foi possível pesquisar a origem.');
-      const discoveredFiles = (payload.files || []) as MediaFile[];
-      setFiles(discoveredFiles); setResultSource(payload.sourceUrl || ''); setWarning([payload.warning, statusWarning].filter(Boolean).join(' '));
+      setResultSource(sourceUrl);
+      const response = await fetch('/api/archive-discovery', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify({ sourceUrl, stream: true }) });
+      if (!response.ok || !response.body) { const payload = await response.json().catch(() => ({})); throw new Error(payload?.error || 'Não foi possível pesquisar a origem.'); }
+      const reader = response.body.getReader(); const decoder = new TextDecoder(); let buffer = ''; let discoveredFiles: MediaFile[] = [];
+      const consume = (line: string) => { if (!line.trim()) return; const event = JSON.parse(line); if (event.type === 'file') { discoveredFiles = [...discoveredFiles, event.file as MediaFile]; setFiles(discoveredFiles); } else if (event.type === 'error') throw new Error(event.error); else if (event.type === 'done') setResultSource(event.sourceUrl || sourceUrl); };
+      while (true) { const { value, done } = await reader.read(); buffer += decoder.decode(value || new Uint8Array(), { stream: !done }); const lines = buffer.split('\n'); buffer = lines.pop() || ''; lines.forEach(consume); if (done) break; }
+      if (buffer.trim()) consume(buffer); setResultSource((current) => current || sourceUrl); setWarning(statusWarning);
       const available = [...new Set(discoveredFiles.map((file) => file.segmentId).filter(Boolean) as string[])].filter((id) => !knownImports[sourceKeyFor(id)]);
       setSelected(new Set(available.slice(0, 20)));
     } catch (cause) { setError(cause instanceof Error ? cause.message : 'Não foi possível pesquisar a origem.'); } finally { setLoading(false); }

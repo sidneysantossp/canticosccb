@@ -111,6 +111,35 @@ async function fetchArchiveRows(cdxUrl) {
   throw new Error(`O Wayback não concluiu a consulta (${detail}). Tente novamente em alguns instantes.`);
 }
 
+async function streamArchiveRows(cdxUrl, res) {
+  const response = await fetch(cdxUrl, { headers: { 'User-Agent': 'Mozilla/5.0 (compatible; CanticosCCB/1.0)', Accept: 'application/json,text/plain;q=0.9,*/*;q=0.8', 'Accept-Encoding': 'identity' }, redirect: 'follow' });
+  if (!response.ok || !response.body) throw new Error(`HTTP ${response.status}`);
+  const reader = response.body.getReader();
+  const decoder = new TextDecoder();
+  let buffer = '';
+  const emit = (line) => {
+    if (!line.trim()) return;
+    const split = line.indexOf(' ');
+    if (split < 1) return;
+    try {
+      const original = line.slice(0, split);
+      const meta = JSON.parse(line.slice(split + 1));
+      const extension = extensionOf(original);
+      if (!MEDIA_EXTENSIONS.has(extension)) return;
+      const item = { name: decodeURIComponent(original.split('/').pop() || original), extension, mimeType: meta.mimetype || 'desconhecido', replayUrl: `https://web.archive.org/web/${meta.timestamp}id_/${original}`, ...externalGrouping(original, meta.timestamp) };
+      res.write(`${JSON.stringify({ type: 'file', file: item })}\n`);
+    } catch { /* ignora linhas inválidas do CDXJ */ }
+  };
+  while (true) {
+    const { value, done } = await reader.read();
+    buffer += decoder.decode(value || new Uint8Array(), { stream: !done });
+    const lines = buffer.split('\n'); buffer = lines.pop() || '';
+    lines.forEach(emit);
+    if (done) break;
+  }
+  emit(buffer);
+}
+
 async function requireAdmin(req) {
   const token = String(req.headers.authorization || '').replace(/^Bearer\s+/i, '').trim();
   const supabaseUrl = String(process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || '').replace(/\/+$/, '');
@@ -131,6 +160,14 @@ export default async function handler(req, res) {
     const originalUrl = resolveOriginalUrl(req.body?.sourceUrl);
     const baseUrl = originalUrl.endsWith('*') ? originalUrl : `${originalUrl}*`;
     const cdxUrl = `https://web.archive.org/cdx/search/cdx?url=${encodeURIComponent(baseUrl)}&output=json&fl=timestamp,original,statuscode,mimetype&filter=statuscode:200&collapse=urlkey&limit=10000`;
+    if (req.body?.stream === true) {
+      res.statusCode = 200;
+      res.setHeader('Content-Type', 'application/x-ndjson; charset=utf-8');
+      res.setHeader('Cache-Control', 'no-store');
+      const streamUrl = cdxUrl.replace('output=json', 'output=cdxj');
+      try { await streamArchiveRows(streamUrl, res); res.write(`${JSON.stringify({ type: 'done', sourceUrl: originalUrl })}\n`); } catch (error) { res.write(`${JSON.stringify({ type: 'error', error: String(error?.message || 'Consulta externa indisponível.') })}\n`); }
+      return res.end();
+    }
     let rows = [];
     let externalError = '';
     try {
