@@ -165,7 +165,15 @@ export default async function handler(req, res) {
       res.setHeader('Content-Type', 'application/x-ndjson; charset=utf-8');
       res.setHeader('Cache-Control', 'no-store');
       const streamUrl = cdxUrl.replace('output=json', 'output=cdxj');
-      try { await streamArchiveRows(streamUrl, res); res.write(`${JSON.stringify({ type: 'done', sourceUrl: originalUrl })}\n`); } catch (error) { res.write(`${JSON.stringify({ type: 'error', error: String(error?.message || 'Consulta externa indisponível.') })}\n`); }
+      try {
+        await streamArchiveRows(streamUrl, res);
+        res.write(`${JSON.stringify({ type: 'done', sourceUrl: originalUrl })}\n`);
+      } catch (error) {
+        const fallbackFiles = filesFromRecoveryCatalog();
+        fallbackFiles.forEach((file) => res.write(`${JSON.stringify({ type: 'file', file })}\n`));
+        res.write(`${JSON.stringify({ type: 'warning', warning: `A consulta externa não respondeu. Exibindo ${fallbackFiles.length} arquivos do catálogo de recuperação já validado.` })}\n`);
+        res.write(`${JSON.stringify({ type: 'done', sourceUrl: originalUrl })}\n`);
+      }
       return res.end();
     }
     let rows = [];
