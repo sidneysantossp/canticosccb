@@ -77,7 +77,9 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   const isImmersiveCifraPage = location.pathname.startsWith('/cifra/') || /^\/cifras\/(violao|ukulele|teclado)\/[^/]+/.test(location.pathname);
   // A página inicial da Bíblia faz parte da navegação pública padrão. Somente
   // livro, capítulo e explorações usam a experiência imersiva própria.
-  const isImmersiveBiblePage = location.pathname.startsWith('/biblia-ccb/');
+  // A listagem de livros usa a navegação pública padrão; somente capítulos
+  // (livro + segundo segmento da URL) usam a experiência imersiva.
+  const isImmersiveBiblePage = /^\/biblia-ccb\/[^/]+\/.+/.test(location.pathname);
   const isImmersiveContentPage = isImmersiveCifraPage || isImmersiveBiblePage;
   
   // Área pública = home, search, library, etc (usa sidebar apropriada ao tipo de usuário)

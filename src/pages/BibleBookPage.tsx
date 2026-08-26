@@ -3,7 +3,6 @@ import { Link, Navigate, useParams } from 'react-router-dom';
 import { ArrowLeft, ArrowRight, BookOpen } from 'lucide-react';
 import SEOHead from '@/components/SEO/SEOHead';
 import BibleSearchBox from '@/components/bible/BibleSearchBox';
-import BibleTopNav from '@/components/bible/BibleTopNav';
 import { buildBibleChapterPath, getBibleBook, getBibleChapterTitle } from '@/data/bibleCatalog';
 import { generateBreadcrumbSchema, generateItemListSchema } from '@/utils/schemaGenerator';
 
@@ -15,7 +14,6 @@ const BibleBookPage: React.FC = () => {
 
   return <div className="min-h-screen bg-[#0d0f0e] text-white">
     <SEOHead exactTitle title={`${book.name}: Todos os Capítulos | Bíblia CCB`} description={`Leia ${book.name} na Bíblia Online CCB. Encontre todos os ${book.chapters} capítulos, navegue com rapidez, use a busca por referência e consulte a tradução ACF.`} canonical={`/biblia-ccb/${book.slug}`} schemaData={schemaData} />
-    <BibleTopNav />
     <main className="mx-auto max-w-6xl px-5 py-10 sm:px-8 sm:py-14">
       <Link to="/biblia-ccb" className="inline-flex items-center gap-2 text-sm text-primary-300 hover:text-primary-200"><ArrowLeft className="h-4 w-4" /> Voltar para todos os livros</Link>
       <div className="mt-9 grid gap-8 lg:grid-cols-[1fr,360px] lg:items-end"><div><div className="flex items-center gap-3"><span className="flex h-12 w-12 items-center justify-center rounded-2xl border border-primary-500/30 bg-primary-500/10"><BookOpen className="h-6 w-6 text-primary-400" /></span><span className="rounded-full border border-white/10 px-3 py-1 text-xs text-gray-400">{book.testament}</span></div><h1 className="mt-6 text-5xl font-black tracking-[-0.05em] sm:text-6xl">{book.name}</h1><p className="mt-3 text-gray-400">{book.chapters} capítulos · Tradução de referência ACF</p></div><BibleSearchBox compact /></div>
