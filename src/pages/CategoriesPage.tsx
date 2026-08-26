@@ -21,9 +21,7 @@ const CategoriesPage: React.FC = () => {
     return () => { mounted = false; };
   }, []);
 
-  const [search, setSearch] = useState('');
   const [activeFilter, setActiveFilter] = useState<'all' | 'cantados' | 'avulsos' | 'tocados'>('all');
-  const [sortBy, setSortBy] = useState<'name' | 'recent'>('name');
 
   const filtered = useMemo(() => {
     let list = allCategories.slice();
@@ -38,17 +36,9 @@ const CategoriesPage: React.FC = () => {
         return true;
       });
     }
-    if (search.trim()) {
-      const q = search.toLowerCase();
-      list = list.filter((c) => c.name.toLowerCase().includes(q) || (c.description || '').toLowerCase().includes(q));
-    }
-    if (sortBy === 'name') {
-      list.sort((a, b) => a.name.localeCompare(b.name));
-    } else {
-      list.sort((a, b) => a.name.localeCompare(b.name));
-    }
+    list.sort((a, b) => a.name.localeCompare(b.name));
     return list;
-  }, [allCategories, activeFilter, search, sortBy]);
+  }, [allCategories, activeFilter]);
 
   return (
     <div className="min-h-screen bg-background-primary">
@@ -60,7 +50,7 @@ const CategoriesPage: React.FC = () => {
       />
 
       {/* Hero em formato de playlist */}
-      <div className="-mx-0 bg-gradient-to-b from-primary-600/35 via-primary-950/25 to-background-primary px-6 pt-16 pb-10 text-white sm:px-8">
+      <div className="-mx-6 bg-gradient-to-b from-primary-600/35 via-primary-950/25 to-background-primary px-6 pt-16 pb-10 text-white sm:-mx-8 sm:px-8">
         <div className="max-w-7xl mx-auto">
           <Link to="/" className="mb-7 inline-flex items-center gap-2 text-white/80 transition-colors hover:text-white">← Voltar</Link>
           <div className="sm:flex sm:items-center sm:gap-8">
@@ -77,29 +67,8 @@ const CategoriesPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Controls */}
+      {/* Filtros por categoria */}
       <div className="max-w-7xl mx-auto px-6 py-6 flex flex-col gap-4">
-        <div className="flex flex-col md:flex-row items-start md:items-center gap-3">
-          <div className="relative w-full md:max-w-md">
-            <input
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Buscar nas categorias"
-              className="w-full px-4 py-2 rounded-full bg-background-secondary border border-gray-700 text-white placeholder-text-muted focus:outline-none focus:ring-2 focus:ring-primary-600"
-            />
-          </div>
-          <div className="ml-auto hidden md:flex items-center gap-2">
-            <label className="text-sm text-text-muted">Ordenar</label>
-            <select
-              value={sortBy}
-              onChange={(e) => setSortBy(e.target.value as any)}
-              className="px-3 py-2 rounded-lg bg-background-secondary border border-gray-700 text-white"
-            >
-              <option value="name">Nome</option>
-              <option value="recent">Recentes</option>
-            </select>
-          </div>
-        </div>
         <div
           className="flex gap-2 overflow-x-auto scrollbar-hide -mx-6 px-6 md:overflow-visible md:flex-wrap"
           style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
