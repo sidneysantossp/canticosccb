@@ -82,6 +82,20 @@ function filesFromRecoveryCatalog() {
   });
 }
 
+function originVariants(originalUrl) {
+  const clean = originalUrl.replace(/\*+$/, '');
+  try {
+    const parsed = new URL(clean);
+    const variants = [originalUrl];
+    const alternateHost = parsed.hostname.toLowerCase().startsWith('www.')
+      ? parsed.hostname.slice(4)
+      : `www.${parsed.hostname}`;
+    parsed.hostname = alternateHost;
+    variants.push(`${parsed.toString()}*`);
+    return [...new Set(variants)];
+  } catch { return [originalUrl]; }
+}
+
 async function fetchArchiveRows(cdxUrl) {
   let lastError;
   for (let attempt = 1; attempt <= 2; attempt += 1) {
@@ -164,23 +178,27 @@ export default async function handler(req, res) {
   try {
     await requireAdmin(req);
     const originalUrl = resolveOriginalUrl(req.body?.sourceUrl);
-    const baseUrl = originalUrl.endsWith('*') ? originalUrl : `${originalUrl}*`;
-    const cdxUrl = `https://web.archive.org/cdx/search/cdx?url=${encodeURIComponent(baseUrl)}&output=json&fl=timestamp,original,statuscode,mimetype&filter=statuscode:200&collapse=urlkey&limit=10000`;
+    const cdxUrls = originVariants(originalUrl).map((variant) => {
+      const baseUrl = variant.endsWith('*') ? variant : `${variant}*`;
+      return `https://web.archive.org/cdx/search/cdx?url=${encodeURIComponent(baseUrl)}&output=json&fl=timestamp,original,statuscode,mimetype&filter=statuscode:200&collapse=urlkey&limit=10000`;
+    });
     if (req.body?.stream === true) {
       res.statusCode = 200;
       res.setHeader('Content-Type', 'application/x-ndjson; charset=utf-8');
       res.setHeader('Cache-Control', 'no-store');
-      const streamUrl = cdxUrl.replace('output=json', 'output=cdxj');
       try {
-        await streamArchiveRows(streamUrl, res);
+        for (const queryUrl of cdxUrls) {
+          await streamArchiveRows(queryUrl.replace('output=json', 'output=cdxj'), res);
+        }
         res.write(`${JSON.stringify({ type: 'done', sourceUrl: originalUrl })}\n`);
       } catch (error) {
         // Alguns prefixos não aceitam CDXJ; tenta novamente no JSON padrão
         // antes de recorrer ao catálogo local.
         let fallbackFiles = [];
         try {
-          const rows = await fetchArchiveRows(cdxUrl);
-          fallbackFiles = rows.slice(1).map(([timestamp, original, status, mimeType]) => ({ timestamp, original, status, mimeType, extension: extensionOf(original) }))
+          const rowSets = await Promise.all(cdxUrls.map((queryUrl) => fetchArchiveRows(queryUrl)));
+          const rows = rowSets.flatMap((set) => set.slice(1));
+          fallbackFiles = rows.map(([timestamp, original, status, mimeType]) => ({ timestamp, original, status, mimeType, extension: extensionOf(original) }))
             .filter((item) => MEDIA_EXTENSIONS.has(item.extension))
             .map((item) => ({ name: decodeURIComponent(item.original.split('/').pop() || item.original), extension: item.extension, mimeType: item.mimeType || 'desconhecido', replayUrl: `https://web.archive.org/web/${item.timestamp}id_/${item.original}`, ...externalGrouping(item.original, item.timestamp) }));
         } catch { fallbackFiles = filesFromRecoveryCatalog(); }
@@ -193,11 +211,12 @@ export default async function handler(req, res) {
     let rows = [];
     let externalError = '';
     try {
-      rows = await fetchArchiveRows(cdxUrl);
+      const rowSets = await Promise.all(cdxUrls.map((queryUrl) => fetchArchiveRows(queryUrl)));
+      rows = rowSets.flatMap((set) => set.slice(1));
     } catch (error) {
       externalError = String(error?.message || 'Consulta externa indisponível.');
     }
-    const dataRows = Array.isArray(rows) ? rows.slice(1) : [];
+    const dataRows = Array.isArray(rows) ? rows : [];
     let files = dataRows
       .map(([timestamp, original, status, mimeType]) => ({ timestamp, original, status, mimeType, extension: extensionOf(original) }))
       .filter((item) => MEDIA_EXTENSIONS.has(item.extension))
