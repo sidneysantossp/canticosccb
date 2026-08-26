@@ -59,13 +59,21 @@ const CategoriesPage: React.FC = () => {
         canonical="/categorias"
       />
 
-      {/* Hero Gradient (álbum-like) */}
-      <div className="text-white bg-gradient-to-b from-green-700 to-transparent pt-16 pb-6 px-6">
+      {/* Hero em formato de playlist */}
+      <div className="-mx-0 bg-gradient-to-b from-primary-600/35 via-primary-950/25 to-background-primary px-6 pt-16 pb-10 text-white sm:px-8">
         <div className="max-w-7xl mx-auto">
-          <h1 className="text-4xl font-bold mb-4">Categorias</h1>
-          <p className="text-xl text-primary-100">
-            Explore nosso conteúdo organizado por categorias
-          </p>
+          <Link to="/" className="mb-7 inline-flex items-center gap-2 text-white/80 transition-colors hover:text-white">← Voltar</Link>
+          <div className="sm:flex sm:items-center sm:gap-8">
+            <div className="mb-6 flex h-40 w-40 shrink-0 items-center justify-center rounded-2xl bg-black/35 shadow-xl sm:mb-0" aria-hidden="true">
+              <div className="h-28 w-28 rounded-full border-4 border-white/10 bg-[radial-gradient(circle_at_center,#19c463_0_13%,#0b1710_14%_20%,#303735_21%_42%,#101513_43%_60%,#343b38_61%_63%,#111514_64%_100%)] shadow-2xl" />
+            </div>
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-primary-200">Explorar</p>
+              <h1 className="mt-2 text-3xl font-bold leading-tight md:text-5xl">Categorias</h1>
+              <p className="mt-3 text-base text-white/80 md:text-lg">Explore nosso conteúdo organizado por categorias</p>
+              <p className="mt-5 text-sm text-white/70">{allCategories.length} categorias disponíveis</p>
+            </div>
+          </div>
         </div>
       </div>
 
