@@ -352,7 +352,7 @@ const HymnHubPage: React.FC<HymnHubPageProps> = ({ hub }) => {
             Voltar
           </Link>
           {hub === 'avulsos' ? (
-            <div className="overflow-hidden rounded-3xl border border-primary-400/20 bg-gradient-to-br from-primary-500/35 via-primary-950/70 to-background-secondary p-6 shadow-2xl shadow-primary-950/30 sm:flex sm:items-center sm:gap-8 sm:p-8">
+            <div className="sm:flex sm:items-center sm:gap-8">
               <div className="mb-6 h-40 w-40 shrink-0 rounded-2xl bg-primary-900/50 bg-cover bg-center shadow-xl sm:mb-0" style={albums[0]?.coverUrl ? { backgroundImage: `url(${albums[0].coverUrl})` } : undefined} aria-hidden="true" />
               <div className="max-w-3xl">
                 <p className="text-xs font-semibold uppercase tracking-[0.18em] text-primary-200">Playlist pública</p>
