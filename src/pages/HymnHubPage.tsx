@@ -380,7 +380,6 @@ const HymnHubPage: React.FC<HymnHubPageProps> = ({ hub }) => {
         <div className={`grid gap-6 ${hub === 'avulsos' ? '' : 'lg:grid-cols-[1.5fr,0.9fr]'}`}>
           <div className="space-y-8">
             <section className={`rounded-2xl border border-white/10 bg-background-secondary p-6 ${hub === 'avulsos' ? 'lg:p-8' : ''}`}>
-              {hub === 'avulsos' && <div className="mb-5 border-b border-white/10 pb-4 text-sm text-text-muted">Faixas do repertório</div>}
               <div className="flex items-center justify-between gap-4 mb-5">
                 <div>
                   <h2 className="text-2xl font-semibold text-white">Repertorio indexavel</h2>
