@@ -129,7 +129,7 @@ async function fetchArchiveRows(cdxUrl) {
   throw new Error(`O Wayback não concluiu a consulta (${detail}). Tente novamente em alguns instantes.`);
 }
 
-async function streamArchiveRows(cdxUrl, res) {
+async function streamArchiveRows(cdxUrl, res, maxFiles = 10) {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 120_000);
   const response = await fetch(cdxUrl, { headers: { 'User-Agent': 'Mozilla/5.0 (compatible; CanticosCCB/1.0)', Accept: 'application/json,text/plain;q=0.9,*/*;q=0.8' }, redirect: 'follow', signal: controller.signal });
@@ -137,6 +137,7 @@ async function streamArchiveRows(cdxUrl, res) {
   const reader = response.body.getReader();
   const decoder = new TextDecoder();
   let buffer = '';
+  let emitted = 0;
   const emit = (line) => {
     if (!line.trim()) return;
     const split = line.search(/\s/);
@@ -151,6 +152,7 @@ async function streamArchiveRows(cdxUrl, res) {
       if (!MEDIA_EXTENSIONS.has(extension)) return;
       const item = { name: decodeURIComponent(original.split('/').pop() || original), extension, mimeType: meta.mimetype || meta.mime || 'desconhecido', replayUrl: `https://web.archive.org/web/${meta.timestamp}id_/${original}`, ...externalGrouping(original, meta.timestamp) };
       res.write(`${JSON.stringify({ type: 'file', file: item })}\n`);
+      emitted += 1;
     } catch { /* ignora linhas inválidas do CDXJ */ }
   };
   while (true) {
@@ -158,10 +160,11 @@ async function streamArchiveRows(cdxUrl, res) {
     buffer += decoder.decode(value || new Uint8Array(), { stream: !done });
     const lines = buffer.split('\n'); buffer = lines.pop() || '';
     lines.forEach(emit);
-    if (done) break;
+    if (done || emitted >= maxFiles) { if (!done) await reader.cancel(); break; }
   }
   emit(buffer);
   clearTimeout(timeout);
+  return emitted;
 }
 
 async function requireAdmin(req) {
@@ -182,6 +185,7 @@ export default async function handler(req, res) {
   try {
     await requireAdmin(req);
     const originalUrl = resolveOriginalUrl(req.body?.sourceUrl);
+    const maxFiles = Math.max(1, Math.min(100, Number(req.body?.maxFiles) || 10));
     const cdxUrls = originVariants(originalUrl).map((variant) => {
       const baseUrl = variant.endsWith('*') ? variant : `${variant}*`;
       return `https://web.archive.org/cdx/search/cdx?url=${encodeURIComponent(baseUrl)}&output=json&fl=timestamp,original,statuscode,mimetype&filter=statuscode:200&collapse=urlkey&limit=10000`;
@@ -191,8 +195,10 @@ export default async function handler(req, res) {
       res.setHeader('Content-Type', 'application/x-ndjson; charset=utf-8');
       res.setHeader('Cache-Control', 'no-store');
       try {
+        let streamedFiles = 0;
         for (const queryUrl of cdxUrls) {
-          await streamArchiveRows(queryUrl.replace('output=json', 'output=cdxj'), res);
+          if (streamedFiles >= maxFiles) break;
+          streamedFiles += await streamArchiveRows(queryUrl.replace('output=json', 'output=cdxj'), res, maxFiles - streamedFiles);
         }
         res.write(`${JSON.stringify({ type: 'done', sourceUrl: originalUrl })}\n`);
       } catch (error) {
@@ -204,7 +210,7 @@ export default async function handler(req, res) {
           const rows = rowSets.flatMap((set) => set.slice(1));
           fallbackFiles = rows.map(([timestamp, original, status, mimeType]) => ({ timestamp, original, status, mimeType, extension: extensionOf(original) }))
             .filter((item) => MEDIA_EXTENSIONS.has(item.extension))
-            .map((item) => ({ name: decodeURIComponent(item.original.split('/').pop() || item.original), extension: item.extension, mimeType: item.mimeType || 'desconhecido', replayUrl: `https://web.archive.org/web/${item.timestamp}id_/${item.original}`, ...externalGrouping(item.original, item.timestamp) }));
+            .map((item) => ({ name: decodeURIComponent(item.original.split('/').pop() || item.original), extension: item.extension, mimeType: item.mimeType || 'desconhecido', replayUrl: `https://web.archive.org/web/${item.timestamp}id_/${item.original}`, ...externalGrouping(item.original, item.timestamp) })).slice(0, maxFiles);
         } catch { fallbackFiles = filesFromRecoveryCatalog(); }
         fallbackFiles.forEach((file) => res.write(`${JSON.stringify({ type: 'file', file })}\n`));
         res.write(`${JSON.stringify({ type: 'warning', warning: `A consulta externa não respondeu. Exibindo ${fallbackFiles.length} arquivos do catálogo de recuperação já validado.` })}\n`);
@@ -230,7 +236,7 @@ export default async function handler(req, res) {
         mimeType: item.mimeType || 'desconhecido',
         replayUrl: `https://web.archive.org/web/${item.timestamp}id_/${item.original}`,
         ...externalGrouping(item.original, item.timestamp),
-      }));
+      })).slice(0, maxFiles);
     const catalogFallback = files.length === 0 && Boolean(externalError);
     if (catalogFallback) files = filesFromRecoveryCatalog();
     return json(res, 200, {

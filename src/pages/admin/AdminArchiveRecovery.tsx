@@ -21,6 +21,7 @@ export default function AdminArchiveRecovery() {
   const [success, setSuccess] = useState('');
   const [resultSource, setResultSource] = useState('');
   const [activeTab, setActiveTab] = useState<'new' | 'downloaded'>('new');
+  const [searchLimit, setSearchLimit] = useState(10);
 
   const albums = useMemo<AlbumGroup[]>(() => {
     const grouped = new Map<string, AlbumGroup>();
@@ -66,7 +67,7 @@ export default function AdminArchiveRecovery() {
       let statusWarning = '';
       try { knownImports = await loadImportStatus(token); } catch (cause) { statusWarning = cause instanceof Error ? cause.message : 'O histórico de importações não pôde ser consultado.'; }
       setResultSource(sourceUrl);
-      const response = await fetch('/api/archive-discovery', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify({ sourceUrl, stream: true }) });
+      const response = await fetch('/api/archive-discovery', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify({ sourceUrl, stream: true, maxFiles: searchLimit }) });
       if (!response.ok || !response.body) { const payload = await response.json().catch(() => ({})); throw new Error(payload?.error || 'Não foi possível pesquisar a origem.'); }
       const reader = response.body.getReader(); const decoder = new TextDecoder(); let buffer = ''; let discoveredFiles: MediaFile[] = [];
       const consume = (line: string) => { if (!line.trim()) return; const event = JSON.parse(line); if (event.type === 'file') { discoveredFiles = [...discoveredFiles, event.file as MediaFile]; setFiles(discoveredFiles); } else if (event.type === 'warning') setWarning([event.warning, statusWarning].filter(Boolean).join(' ')); else if (event.type === 'error') throw new Error(event.error); else if (event.type === 'done') setResultSource(event.sourceUrl || sourceUrl); };
@@ -119,7 +120,7 @@ export default function AdminArchiveRecovery() {
     <div><h1 className="text-3xl font-bold text-white">Recuperação de mídias</h1><p className="mt-2 text-gray-400">Localize, exporte e envie álbuns recuperados para a fila de aprovação.</p></div>
     <div className="max-w-5xl rounded-xl border border-gray-800 bg-gray-900/50 p-6">
       <label className="mb-2 block text-sm font-medium text-gray-200">URL de origem ou arquivada</label>
-      <div className="flex flex-col gap-3 sm:flex-row"><div className="relative flex-1"><Link2 className="absolute left-3 top-3.5 h-4 w-4 text-gray-500" /><input value={sourceUrl} onChange={(event) => setSourceUrl(event.target.value)} placeholder="https://exemplo.com/pasta ou web.archive.org/web/..." className="w-full rounded-lg border border-gray-700 bg-gray-950 py-3 pl-10 pr-4 text-white outline-none focus:border-green-500" /></div><button onClick={() => void discover()} disabled={loading || !sourceUrl.trim()} className="inline-flex items-center justify-center gap-2 rounded-lg bg-green-600 px-5 py-3 font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50">{loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />} Buscar arquivos</button></div>
+      <div className="flex flex-col gap-3 sm:flex-row"><div className="relative flex-1"><Link2 className="absolute left-3 top-3.5 h-4 w-4 text-gray-500" /><input value={sourceUrl} onChange={(event) => setSourceUrl(event.target.value)} placeholder="https://exemplo.com/pasta ou web.archive.org/web/..." className="w-full rounded-lg border border-gray-700 bg-gray-950 py-3 pl-10 pr-4 text-white outline-none focus:border-green-500" /></div><select value={searchLimit} onChange={(event) => setSearchLimit(Number(event.target.value))} className="rounded-lg border border-gray-700 bg-gray-950 px-3 py-3 text-sm text-white"><option value={10}>10 arquivos</option><option value={25}>25 arquivos</option><option value={50}>50 arquivos</option><option value={100}>100 arquivos</option></select><button onClick={() => void discover()} disabled={loading || !sourceUrl.trim()} className="inline-flex items-center justify-center gap-2 rounded-lg bg-green-600 px-5 py-3 font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50">{loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />} Buscar arquivos</button></div>
       <p className="mt-3 text-sm text-gray-500">Antes de cada busca, a ferramenta consulta o histórico e bloqueia álbuns já cadastrados. O cadastro cria rascunhos; nada é publicado automaticamente.</p>
     </div>
     {error && <div className="flex max-w-5xl gap-3 rounded-xl border border-amber-500/30 bg-amber-500/10 p-4 text-amber-100"><AlertTriangle className="mt-0.5 h-5 w-5 shrink-0" />{error}</div>}
