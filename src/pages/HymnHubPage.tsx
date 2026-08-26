@@ -420,6 +420,7 @@ const HymnHubPage: React.FC<HymnHubPageProps> = ({ hub }) => {
                           )}
                         </div>
                       </div>
+                      </div>
                     </article>
                   ))}
                 </div>
