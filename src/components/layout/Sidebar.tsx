@@ -1,6 +1,7 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Home, Search, Library, User, Music, Mic, Grid, FileText, BookOpen } from 'lucide-react';
+import { Home, Search, Library, User, Music, Mic, Grid, FileText, Book } from 'lucide-react';
+import { GiGuitar } from 'react-icons/gi';
 
 const Sidebar: React.FC = () => {
   const location = useLocation();
@@ -14,12 +15,12 @@ const Sidebar: React.FC = () => {
     { path: '/search', icon: Search, label: 'Buscar' },
     { path: '/library', icon: Library, label: 'Biblioteca' },
     { path: '/categorias', icon: Grid, label: 'Categorias' },
-    { path: '/hinos-avulsos-ccb', icon: Music, label: 'Avulsos' },
+    { path: '/hinos-avulsos-ccb', icon: GiGuitar, label: 'Avulsos' },
     { path: '/hinos-cantados-ccb', icon: Mic, label: 'Cantados' },
     { path: '/instrumentais', icon: Music, label: 'Instrumentais' },
     { path: '/cifras', icon: FileText, label: 'Cifras' },
-    { path: '/hinario', icon: BookOpen, label: 'Hinário' },
-    { path: '/biblia-ccb', icon: BookOpen, label: 'Bíblia Digital' },
+    { path: '/hinario', icon: Book, label: 'Hinário' },
+    { path: '/biblia-ccb', icon: Book, label: 'Bíblia Digital' },
   ];
 
   // Sidebar pública (guest): sem itens pessoais
