@@ -2,7 +2,6 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { fetchActiveCategories, type CategoryRecord } from '@/lib/categoriesApi';
 import { buildCategoryImageUrl } from '@/lib/media-helper';
-import { DEFAULT_COVER_URL } from '@/lib/config';
 import SEOHead from '@/components/SEO/SEOHead';
 
 const CategoriesPage: React.FC = () => {
@@ -100,16 +99,16 @@ const CategoriesPage: React.FC = () => {
           {filtered.map((category) => (
             <Link
               key={category.id}
-              to={`/categoria/${category.slug}`}
+              to={category.slug === 'avulsos' || category.slug === 'hinos-avulsos' ? '/hinos-avulsos-ccb' : category.slug === 'cantados' || category.slug === 'hinos-cantados' ? '/hinos-cantados-ccb' : category.slug === 'tocados' || category.slug === 'hinos-tocados' || category.slug === 'instrumentais' ? '/instrumentais' : `/categoria/${category.slug}`}
               className="group flex items-center gap-4 bg-background-secondary hover:bg-background-tertiary p-4 rounded-lg transition-all duration-300 hover:scale-[1.02]"
             >
-              <div className="relative flex-shrink-0">
+              <div className="relative flex h-12 w-12 flex-shrink-0 items-center justify-center overflow-hidden rounded bg-gradient-to-br from-primary-900/80 to-background-tertiary">
                 <img
                   src={buildCategoryImageUrl({ id: String(category.id), image_url: category.image_url })}
                   alt={category.name}
-                  className="w-12 h-12 rounded object-cover"
+                  className="h-12 w-12 rounded object-cover"
                   loading="lazy"
-                  onError={(e) => { (e.currentTarget as HTMLImageElement).src = DEFAULT_COVER_URL; }}
+                  onError={(e) => { e.currentTarget.style.display = 'none'; }}
                 />
               </div>
               <div className="flex-1 min-w-0">
