@@ -122,11 +122,14 @@ async function streamArchiveRows(cdxUrl, res) {
     const split = line.indexOf(' ');
     if (split < 1) return;
     try {
-      const original = line.slice(0, split);
+      const key = line.slice(0, split);
       const meta = JSON.parse(line.slice(split + 1));
+      // O CDXJ usa a chave urlkey na primeira coluna; a URL original fica
+      // no campo `url` (ou `original`, dependendo da versão do Wayback).
+      const original = String(meta.original || meta.url || key).trim();
       const extension = extensionOf(original);
       if (!MEDIA_EXTENSIONS.has(extension)) return;
-      const item = { name: decodeURIComponent(original.split('/').pop() || original), extension, mimeType: meta.mimetype || 'desconhecido', replayUrl: `https://web.archive.org/web/${meta.timestamp}id_/${original}`, ...externalGrouping(original, meta.timestamp) };
+      const item = { name: decodeURIComponent(original.split('/').pop() || original), extension, mimeType: meta.mimetype || meta.mime || 'desconhecido', replayUrl: `https://web.archive.org/web/${meta.timestamp}id_/${original}`, ...externalGrouping(original, meta.timestamp) };
       res.write(`${JSON.stringify({ type: 'file', file: item })}\n`);
     } catch { /* ignora linhas inválidas do CDXJ */ }
   };
