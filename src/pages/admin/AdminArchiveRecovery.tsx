@@ -69,6 +69,7 @@ export default function AdminArchiveRecovery() {
       if (buffer.trim()) consume(buffer); setResultSource((current) => current || sourceUrl); setWarning(statusWarning);
       const available = [...new Set(discoveredFiles.map((file) => file.segmentId).filter(Boolean) as string[])].filter((id) => !knownImports[sourceKeyFor(id)]);
       setSelected(new Set(available.slice(0, 20)));
+      setActiveTab(available.length ? 'new' : 'downloaded');
     } catch (cause) { setError(cause instanceof Error ? cause.message : 'Não foi possível pesquisar a origem.'); } finally { setLoading(false); }
   };
 
