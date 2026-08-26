@@ -69,7 +69,7 @@ const CategoryGrid: React.FC = () => {
         {visibleCategories.map((category) => (
           <Link
             key={category.id}
-            to={`/categoria/${category.slug}`}
+            to={category.slug === 'avulsos' || category.slug === 'hinos-avulsos' ? '/hinos-avulsos-ccb' : category.slug === 'cantados' || category.slug === 'hinos-cantados' ? '/hinos-cantados-ccb' : category.slug === 'tocados' || category.slug === 'hinos-tocados' || category.slug === 'instrumentais' ? '/instrumentais' : `/categoria/${category.slug}`}
             className="group flex items-center gap-4 bg-background-secondary hover:bg-background-tertiary p-4 rounded-lg transition-all duration-300 hover:scale-[1.02]"
           >
             <div className="relative flex-shrink-0">
