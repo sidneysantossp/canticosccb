@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { X, Home, Search, Library, Music, Mic, User, Heart, LogOut, Shield, Grid, List, FileText, Book } from 'lucide-react';
+import { X, Home, Search, Library, Music, Mic, User, Heart, LogOut, Shield, Grid, List, FileText, Book, BookOpen } from 'lucide-react';
 import { GiGuitar } from 'react-icons/gi';
 import { useAuth } from '@/contexts/AuthContext';
 import { clearAuthStorage } from '@/lib/supabase-auth';
@@ -51,7 +51,7 @@ const PublicMobileSidebar: React.FC<PublicMobileSidebarProps> = ({ isOpen, onClo
       { path: '/instrumentais', icon: Music, label: 'Instrumentais' },
       { path: '/cifras', icon: FileText, label: 'Cifras' },
       { path: '/hinario', icon: Book, label: 'Hinário' },
-      { path: '/biblia-ccb', icon: Book, label: 'Bíblia Digital' },
+      { path: '/biblia-ccb', icon: BookOpen, label: 'Bíblia Digital' },
     ];
 
     // Adicionar painel específico do usuário
