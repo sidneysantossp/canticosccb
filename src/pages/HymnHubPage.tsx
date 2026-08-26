@@ -281,7 +281,7 @@ interface HymnHubPageProps {
 const HymnHubPage: React.FC<HymnHubPageProps> = ({ hub }) => {
   const config = HUBS[hub];
   const Icon = config.icon;
-  const playlistHero = hub === 'avulsos' || hub === 'cantados';
+  const playlistHero = hub === 'avulsos' || hub === 'cantados' || hub === 'tocados';
   const [items, setItems] = useState<HubHymn[]>([]);
   const [albums, setAlbums] = useState<HubAlbum[]>([]);
   const [isLoading, setIsLoading] = useState(true);
