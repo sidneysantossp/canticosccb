@@ -50,7 +50,7 @@ RETURNS jsonb
 LANGUAGE plpgsql
 SECURITY DEFINER
 SET search_path = public
-AS $$
+AS $archive_stage$
 DECLARE
   v_import public.archive_recovery_imports%ROWTYPE;
   v_album_id uuid;
@@ -151,7 +151,7 @@ BEGIN
     'files_count', v_track_count
   );
 END;
-$$;
+$archive_stage$;
 
 REVOKE ALL ON FUNCTION public.admin_stage_archive_album(text, text, text, jsonb) FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION public.admin_stage_archive_album(text, text, text, jsonb) TO authenticated;
