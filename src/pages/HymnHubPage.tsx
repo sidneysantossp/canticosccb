@@ -345,7 +345,7 @@ const HymnHubPage: React.FC<HymnHubPageProps> = ({ hub }) => {
         noindex={!isLoading && items.length === 0}
       />
 
-      <div className={`bg-gradient-to-b ${hub === 'avulsos' ? 'from-primary-600/35 via-primary-950/25 to-background-primary' : config.accentClass} pt-20 pb-8 px-6`}>
+      <div className={`-mx-6 bg-gradient-to-b ${hub === 'avulsos' ? 'from-primary-600/35 via-primary-950/25 to-background-primary' : config.accentClass} pt-20 pb-8 px-6 sm:-mx-8 sm:px-8`}>
         <div className="max-w-6xl mx-auto">
           <Link to="/" className="inline-flex items-center gap-2 text-white/80 hover:text-white transition-colors mb-6">
             <ArrowLeft className="w-4 h-4" />
