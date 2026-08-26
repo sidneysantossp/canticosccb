@@ -379,14 +379,14 @@ const HymnHubPage: React.FC<HymnHubPageProps> = ({ hub }) => {
       <div className="max-w-6xl mx-auto px-6 py-8">
         <div className={`grid gap-6 ${hub === 'avulsos' ? '' : 'lg:grid-cols-[1.5fr,0.9fr]'}`}>
           <div className="space-y-8">
-            <section className={`rounded-2xl border border-white/10 bg-background-secondary p-6 ${hub === 'avulsos' ? 'lg:p-8' : ''}`}>
-              <div className="flex items-center justify-between gap-4 mb-5">
+            <section className={`rounded-2xl border border-white/10 bg-background-secondary p-6 ${hub === 'avulsos' ? 'border-0 bg-transparent p-0 lg:p-0' : ''}`}>
+              {hub !== 'avulsos' && <div className="flex items-center justify-between gap-4 mb-5">
                 <div>
                   <h2 className="text-2xl font-semibold text-white">Repertorio indexavel</h2>
                   <p className="text-text-muted mt-1">Selecao navegavel com links para paginas individuais e letras do hinario quando houver numero.</p>
                 </div>
                 {hub !== 'avulsos' && <Headphones className="w-6 h-6 text-primary-400" />}
-              </div>
+              </div>}
 
               {isLoading ? (
                 <div className="space-y-3">
