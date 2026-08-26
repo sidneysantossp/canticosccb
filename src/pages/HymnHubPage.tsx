@@ -402,22 +402,22 @@ const HymnHubPage: React.FC<HymnHubPageProps> = ({ hub }) => {
                 </div>
               ) : (
                 <div className="space-y-1">
-                  {hub === 'avulsos' && <div className="hidden grid-cols-[48px,minmax(0,1fr),180px,80px,40px] gap-4 border-b border-white/10 px-2 pb-3 text-xs uppercase tracking-wider text-text-muted md:grid"><span>#</span><span>Nome do hino</span><span>Categoria</span><span className="flex items-center gap-1"><Clock3 className="h-3.5 w-3.5" /> Tempo</span><span /></div>}
+                  {hub === 'avulsos' && <div className="hidden grid-cols-[32px,minmax(0,1fr),40px] gap-3 border-b border-white/10 px-2 pb-3 text-xs uppercase tracking-wider text-text-muted sm:grid lg:grid-cols-[48px,minmax(0,1fr),180px,80px,40px] lg:gap-4"><span>#</span><span>Nome do hino</span><span className="hidden lg:block">Categoria</span><span className="hidden items-center gap-1 lg:flex"><Clock3 className="h-3.5 w-3.5" /> Tempo</span><span /></div>}
                   {items.map((item, index) => (
                     <article key={item.id} className={`group border-b border-white/10 px-2 py-4 transition-colors last:border-b-0 ${hub === 'avulsos' ? 'hover:bg-primary-500/10' : 'hover:bg-white/5'}`}>
-                      <div className={hub === 'avulsos' ? 'grid items-center gap-4 md:grid-cols-[48px,minmax(0,1fr),180px,80px,40px]' : 'flex flex-col md:flex-row md:items-center md:justify-between gap-3'}>
+                      <div className={hub === 'avulsos' ? 'grid min-w-0 grid-cols-[32px,minmax(0,1fr),40px] items-center gap-3 sm:grid-cols-[32px,minmax(0,1fr),40px] lg:grid-cols-[48px,minmax(0,1fr),180px,80px,40px] lg:gap-4' : 'flex flex-col md:flex-row md:items-center md:justify-between gap-3'}>
                         <div className={hub === 'avulsos' ? 'contents' : 'flex items-center gap-4'}>
                           {hub === 'avulsos' && <span className="w-7 shrink-0 text-center text-sm text-text-muted">{index + 1}</span>}
-                          <div>
-                          <h3 className="text-white font-semibold">
+                          <div className="min-w-0">
+                          <h3 className="truncate text-white font-semibold">
                             <Link to={buildHinoUrl(item.id, item.titulo, item.numero)} className="hover:text-primary-400 transition-colors">
                               {item.numero > 0 ? `Hino ${item.numero} - ${item.titulo}` : item.titulo}
                             </Link>
                           </h3>
                           <p className="text-text-muted text-sm mt-1">{item.compositor_nome}</p>
                         </div>
-                        {hub === 'avulsos' && <><span className="hidden truncate text-sm text-text-muted md:block">{item.categoria || 'Hino Avulso'}</span><span className="hidden text-sm text-text-muted md:block">{item.duracao || '—'}</span></>}
-                        <div className="flex flex-wrap gap-2">
+                        {hub === 'avulsos' && <><span className="hidden truncate text-sm text-text-muted lg:block">{item.categoria || 'Hino Avulso'}</span><span className="hidden text-sm text-text-muted lg:block">{item.duracao || '—'}</span></>}
+                        <div className="flex shrink-0 items-center justify-end gap-2">
                           {hub === 'avulsos' ? <Link
                             to={buildHinoUrl(item.id, item.titulo, item.numero)}
                             className="flex h-9 w-9 items-center justify-center rounded-full bg-primary-500 text-black transition-colors hover:bg-primary-400"
