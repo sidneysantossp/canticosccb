@@ -338,7 +338,7 @@ const HymnHubPage: React.FC<HymnHubPageProps> = ({ hub }) => {
   ]), [config, items]);
 
   return (
-    <div className="min-h-screen bg-background-primary">
+    <div className="min-h-screen overflow-x-hidden bg-background-primary">
       <SEOHead
         title={config.title}
         description={config.description}
@@ -348,7 +348,7 @@ const HymnHubPage: React.FC<HymnHubPageProps> = ({ hub }) => {
         noindex={!isLoading && items.length === 0}
       />
 
-      <div className={`-mx-6 bg-gradient-to-b ${playlistHero ? 'from-primary-600/35 via-primary-950/25 to-background-primary' : config.accentClass} pt-20 pb-8 px-6 sm:-mx-8 sm:px-8`}>
+      <div className={`w-full bg-gradient-to-b ${playlistHero ? 'from-primary-600/35 via-primary-950/25 to-background-primary' : config.accentClass} px-6 pb-8 pt-20 sm:px-8`}>
         <div className="max-w-6xl mx-auto">
           <Link to="/" className="inline-flex items-center gap-2 text-white/80 hover:text-white transition-colors mb-6">
             <ArrowLeft className="w-4 h-4" />
@@ -379,9 +379,9 @@ const HymnHubPage: React.FC<HymnHubPageProps> = ({ hub }) => {
       </div>
 
       <div className="max-w-6xl mx-auto px-6 py-8">
-        <div className={`grid gap-6 ${hub === 'avulsos' ? '' : 'lg:grid-cols-[1.5fr,0.9fr]'}`}>
-          <div className="space-y-8">
-            <section className={`rounded-2xl border border-white/10 bg-background-secondary p-6 ${hub === 'avulsos' ? 'border-0 bg-transparent p-0 lg:p-0' : ''}`}>
+        <div className={`grid min-w-0 gap-6 ${hub === 'avulsos' ? '' : 'lg:grid-cols-[1.5fr,0.9fr]'}`}>
+          <div className="min-w-0 space-y-8">
+            <section className={`w-full min-w-0 rounded-2xl border border-white/10 bg-background-secondary p-6 ${hub === 'avulsos' ? 'border-0 bg-transparent p-0 lg:p-0' : ''}`}>
               {hub !== 'avulsos' && <div className="flex items-center justify-between gap-4 mb-5">
                 <div>
                   <h2 className="text-2xl font-semibold text-white">Repertorio indexavel</h2>
@@ -400,44 +400,69 @@ const HymnHubPage: React.FC<HymnHubPageProps> = ({ hub }) => {
                 <div className="rounded-2xl border border-white/10 bg-white/5 p-6 text-text-muted">
                   Nenhum hino publicado foi encontrado para este hub ainda.
                 </div>
-              ) : (
-                <div className="space-y-1">
-                  {hub === 'avulsos' && <div className="hidden grid-cols-[32px,minmax(0,1fr),40px] gap-3 border-b border-white/10 px-2 pb-3 text-xs uppercase tracking-wider text-text-muted sm:grid lg:grid-cols-[48px,minmax(0,1fr),180px,80px,40px] lg:gap-4"><span>#</span><span>Nome do hino</span><span className="hidden lg:block">Categoria</span><span className="hidden items-center gap-1 lg:flex"><Clock3 className="h-3.5 w-3.5" /> Tempo</span><span /></div>}
+              ) : hub === 'avulsos' ? (
+                <div className="w-full max-w-full overflow-hidden">
+                  <div className="hidden w-full grid-cols-[40px_minmax(0,1fr)_minmax(120px,180px)_72px_40px] items-center gap-4 border-b border-white/10 px-2 pb-3 text-xs uppercase tracking-wider text-text-muted lg:grid">
+                    <span>#</span>
+                    <span>Nome do hino</span>
+                    <span>Categoria</span>
+                    <span className="flex items-center gap-1"><Clock3 className="h-3.5 w-3.5" /> Tempo</span>
+                    <span />
+                  </div>
                   {items.map((item, index) => (
-                    <article key={item.id} className={`group border-b border-white/10 px-2 py-4 transition-colors last:border-b-0 ${hub === 'avulsos' ? 'hover:bg-primary-500/10' : 'hover:bg-white/5'}`}>
-                      <div className={hub === 'avulsos' ? 'grid min-w-0 grid-cols-[32px,minmax(0,1fr),40px] items-center gap-3 sm:grid-cols-[32px,minmax(0,1fr),40px] lg:grid-cols-[48px,minmax(0,1fr),180px,80px,40px] lg:gap-4' : 'flex flex-col md:flex-row md:items-center md:justify-between gap-3'}>
-                        <div className={hub === 'avulsos' ? 'contents' : 'flex items-center gap-4'}>
-                          {hub === 'avulsos' && <span className="w-7 shrink-0 text-center text-sm text-text-muted">{index + 1}</span>}
-                          <div className="min-w-0">
-                          <h3 className="truncate text-white font-semibold">
-                            <Link to={buildHinoUrl(item.id, item.titulo, item.numero)} className="hover:text-primary-400 transition-colors">
+                    <article key={item.id} className="group w-full min-w-0 border-b border-white/10 px-2 py-4 transition-colors last:border-b-0 hover:bg-primary-500/10">
+                      <div className="grid w-full min-w-0 grid-cols-[32px_minmax(0,1fr)_40px] items-center gap-3 lg:grid-cols-[40px_minmax(0,1fr)_minmax(120px,180px)_72px_40px] lg:gap-4">
+                        <span className="text-center text-sm text-text-muted">{index + 1}</span>
+                        <div className="min-w-0 overflow-hidden">
+                          <h3 className="truncate font-semibold text-white">
+                            <Link to={buildHinoUrl(item.id, item.titulo, item.numero)} className="transition-colors hover:text-primary-400">
                               {item.numero > 0 ? `Hino ${item.numero} - ${item.titulo}` : item.titulo}
                             </Link>
                           </h3>
-                          <p className="text-text-muted text-sm mt-1">{item.compositor_nome}</p>
+                          <p className="mt-1 truncate text-sm text-text-muted">{item.compositor_nome}</p>
                         </div>
-                        {hub === 'avulsos' && <><span className="hidden truncate text-sm text-text-muted lg:block">{item.categoria || 'Hino Avulso'}</span><span className="hidden text-sm text-text-muted lg:block">{item.duracao || '—'}</span></>}
-                        <div className="flex shrink-0 items-center justify-end gap-2">
-                          {hub === 'avulsos' ? <Link
+                        <span className="hidden min-w-0 truncate text-sm text-text-muted lg:block">{item.categoria || 'Hinos Avulsos'}</span>
+                        <span className="hidden text-sm text-text-muted lg:block">{item.duracao || '—'}</span>
+                        <Link
+                          to={buildHinoUrl(item.id, item.titulo, item.numero)}
+                          className="flex h-9 w-9 items-center justify-center rounded-full bg-primary-500 text-black transition-colors hover:bg-primary-400"
+                          aria-label={`Ouvir ${item.titulo}`}
+                        >
+                          <Play className="h-4 w-4 fill-current" />
+                        </Link>
+                      </div>
+                    </article>
+                  ))}
+                </div>
+              ) : (
+                <div className="space-y-1">
+                  {items.map((item) => (
+                    <article key={item.id} className="group border-b border-white/10 px-2 py-4 transition-colors last:border-b-0 hover:bg-white/5">
+                      <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+                        <div className="flex min-w-0 items-center gap-4">
+                          <div className="min-w-0">
+                            <h3 className="truncate font-semibold text-white">
+                              <Link to={buildHinoUrl(item.id, item.titulo, item.numero)} className="transition-colors hover:text-primary-400">
+                                {item.numero > 0 ? `Hino ${item.numero} - ${item.titulo}` : item.titulo}
+                              </Link>
+                            </h3>
+                            <p className="mt-1 truncate text-sm text-text-muted">{item.compositor_nome}</p>
+                          </div>
+                        </div>
+                        <div className="flex shrink-0 items-center gap-2">
+                          <Link
                             to={buildHinoUrl(item.id, item.titulo, item.numero)}
-                            className="flex h-9 w-9 items-center justify-center rounded-full bg-primary-500 text-black transition-colors hover:bg-primary-400"
-                            aria-label={`Ouvir ${item.titulo}`}
-                          >
-                            <Play className="h-4 w-4 fill-current" />
-                          </Link> : <Link
-                            to={buildHinoUrl(item.id, item.titulo, item.numero)}
-                            className="px-3 py-2 rounded-full bg-primary-500 text-black text-sm font-semibold hover:bg-primary-400 transition-colors"
-                          >Ouvir hino</Link>}
-                          {hub !== 'avulsos' && item.numero > 0 && (
+                            className="rounded-full bg-primary-500 px-3 py-2 text-sm font-semibold text-black transition-colors hover:bg-primary-400"
+                          >Ouvir hino</Link>
+                          {item.numero > 0 && (
                             <Link
                               to={buildHinarioUrl(item.numero, item.titulo)}
-                              className="px-3 py-2 rounded-full border border-white/15 text-white text-sm hover:border-primary-500/40 hover:text-primary-300 transition-colors"
+                              className="rounded-full border border-white/15 px-3 py-2 text-sm text-white transition-colors hover:border-primary-500/40 hover:text-primary-300"
                             >
                               Ver letra
                             </Link>
                           )}
                         </div>
-                      </div>
                       </div>
                     </article>
                   ))}
