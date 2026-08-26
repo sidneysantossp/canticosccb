@@ -23,7 +23,7 @@ function resolveOriginalUrl(value) {
     if (!directUrl.hostname || directUrl.username || directUrl.password) throw new Error('A origem informada é inválida.');
     return hasWildcard ? `${directUrl.toString()}*` : `${directUrl.toString()}*`;
   }
-  const snapshot = parsed.pathname.match(/^\/web\/(?:\*|\d+(?:[a-z_]+)?)\/(https?:\/\/.*)$/i);
+  const snapshot = parsed.pathname.match(/^\/web\/(?:\*|\d+(?:[a-z_]+)?\*?)\/(https?:\/\/.*)$/i);
   const original = snapshot ? decodeURIComponent(snapshot[1]) : '';
   if (!original) throw new Error('Informe uma URL de captura de um arquivo ou página original.');
   // O Wayback aceita o curinga no final do host/path do prefixo. Remova-o
