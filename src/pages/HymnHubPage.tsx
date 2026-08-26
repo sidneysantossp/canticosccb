@@ -352,11 +352,8 @@ const HymnHubPage: React.FC<HymnHubPageProps> = ({ hub }) => {
             Voltar
           </Link>
           <div className="flex items-start gap-4">
-            <div className="w-14 h-14 rounded-2xl bg-white/10 border border-white/15 flex items-center justify-center">
-              <Icon className="w-7 h-7 text-primary-300" />
-            </div>
             <div className="max-w-3xl">
-              <h1 className="text-3xl md:text-5xl font-bold text-white leading-tight">{config.heading}</h1>
+              <h1 className="text-3xl md:text-5xl font-bold text-primary-400 leading-tight">{config.heading}</h1>
               <p className="text-white/85 text-base md:text-lg mt-3">{config.intro}</p>
               <div className="flex flex-wrap gap-4 mt-5 text-sm text-white/75">
                 <span>{items.length} hinos encontrados</span>
@@ -371,7 +368,7 @@ const HymnHubPage: React.FC<HymnHubPageProps> = ({ hub }) => {
       <div className="max-w-6xl mx-auto px-6 py-8">
         <div className="grid gap-6 lg:grid-cols-[1.5fr,0.9fr]">
           <div className="space-y-8">
-            <section className="rounded-3xl border border-white/10 bg-background-secondary p-6">
+            <section className="rounded-2xl border border-white/10 bg-background-secondary p-6">
               <div className="flex items-center justify-between gap-4 mb-5">
                 <div>
                   <h2 className="text-2xl font-semibold text-white">Repertorio indexavel</h2>
@@ -393,7 +390,7 @@ const HymnHubPage: React.FC<HymnHubPageProps> = ({ hub }) => {
               ) : (
                 <div className="space-y-3">
                   {items.map((item) => (
-                    <article key={item.id} className="rounded-2xl border border-white/10 bg-white/5 p-4 hover:border-primary-500/30 transition-colors">
+                    <article key={item.id} className="border-b border-white/10 px-2 py-4 hover:bg-white/5 transition-colors last:border-b-0">
                       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
                         <div>
                           <h3 className="text-white font-semibold">
