@@ -135,7 +135,7 @@ async function streamArchiveRows(cdxUrl, res) {
   let buffer = '';
   const emit = (line) => {
     if (!line.trim()) return;
-    const split = line.indexOf(' ');
+    const split = line.search(/\s/);
     if (split < 1) return;
     try {
       const key = line.slice(0, split);
