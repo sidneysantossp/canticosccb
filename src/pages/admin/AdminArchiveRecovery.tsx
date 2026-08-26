@@ -33,10 +33,15 @@ export default function AdminArchiveRecovery() {
     return [...grouped.values()];
   }, [files]);
 
-  const visibleAlbums = useMemo(() => albums.filter((album) => {
+  const visibleAlbums = useMemo(() => {
+    const filtered = albums.filter((album) => {
     const imported = Boolean(imports[sourceKeyFor(album.id)]);
     return activeTab === 'downloaded' ? imported : !imported;
-  }), [albums, imports, activeTab]);
+    });
+    // Durante a atualização dos status, os arquivos podem chegar antes do
+    // mapa de importações. Não esconda os resultados já encontrados.
+    return activeTab === 'downloaded' && filtered.length === 0 && albums.length > 0 ? albums : filtered;
+  }, [albums, imports, activeTab]);
 
   const getSessionToken = async () => {
     const { data: { session } } = await supabase.auth.getSession();
