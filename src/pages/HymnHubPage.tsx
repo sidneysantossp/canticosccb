@@ -281,6 +281,7 @@ interface HymnHubPageProps {
 const HymnHubPage: React.FC<HymnHubPageProps> = ({ hub }) => {
   const config = HUBS[hub];
   const Icon = config.icon;
+  const playlistHero = hub === 'avulsos' || hub === 'cantados';
   const [items, setItems] = useState<HubHymn[]>([]);
   const [albums, setAlbums] = useState<HubAlbum[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -345,13 +346,13 @@ const HymnHubPage: React.FC<HymnHubPageProps> = ({ hub }) => {
         noindex={!isLoading && items.length === 0}
       />
 
-      <div className={`-mx-6 bg-gradient-to-b ${hub === 'avulsos' ? 'from-primary-600/35 via-primary-950/25 to-background-primary' : config.accentClass} pt-20 pb-8 px-6 sm:-mx-8 sm:px-8`}>
+      <div className={`-mx-6 bg-gradient-to-b ${playlistHero ? 'from-primary-600/35 via-primary-950/25 to-background-primary' : config.accentClass} pt-20 pb-8 px-6 sm:-mx-8 sm:px-8`}>
         <div className="max-w-6xl mx-auto">
           <Link to="/" className="inline-flex items-center gap-2 text-white/80 hover:text-white transition-colors mb-6">
             <ArrowLeft className="w-4 h-4" />
             Voltar
           </Link>
-          {hub === 'avulsos' ? (
+          {playlistHero ? (
             <div className="sm:flex sm:items-center sm:gap-8">
               <div className="mb-6 h-40 w-40 shrink-0 rounded-2xl bg-primary-900/50 bg-cover bg-center shadow-xl sm:mb-0" style={albums[0]?.coverUrl ? { backgroundImage: `url(${albums[0].coverUrl})` } : undefined} aria-hidden="true" />
               <div className="max-w-3xl">
