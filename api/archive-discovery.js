@@ -172,7 +172,15 @@ export default async function handler(req, res) {
         await streamArchiveRows(streamUrl, res);
         res.write(`${JSON.stringify({ type: 'done', sourceUrl: originalUrl })}\n`);
       } catch (error) {
-        const fallbackFiles = filesFromRecoveryCatalog();
+        // Alguns prefixos não aceitam CDXJ; tenta novamente no JSON padrão
+        // antes de recorrer ao catálogo local.
+        let fallbackFiles = [];
+        try {
+          const rows = await fetchArchiveRows(cdxUrl);
+          fallbackFiles = rows.slice(1).map(([timestamp, original, status, mimeType]) => ({ timestamp, original, status, mimeType, extension: extensionOf(original) }))
+            .filter((item) => MEDIA_EXTENSIONS.has(item.extension))
+            .map((item) => ({ name: decodeURIComponent(item.original.split('/').pop() || item.original), extension: item.extension, mimeType: item.mimeType || 'desconhecido', replayUrl: `https://web.archive.org/web/${item.timestamp}id_/${item.original}`, ...externalGrouping(item.original, item.timestamp) }));
+        } catch { fallbackFiles = filesFromRecoveryCatalog(); }
         fallbackFiles.forEach((file) => res.write(`${JSON.stringify({ type: 'file', file })}\n`));
         res.write(`${JSON.stringify({ type: 'warning', warning: `A consulta externa não respondeu. Exibindo ${fallbackFiles.length} arquivos do catálogo de recuperação já validado.` })}\n`);
         res.write(`${JSON.stringify({ type: 'done', sourceUrl: originalUrl })}\n`);
