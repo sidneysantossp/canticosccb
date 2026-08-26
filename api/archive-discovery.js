@@ -1,6 +1,5 @@
 import { EMERGENCY_AUDIO_INDEX } from './_emergencyAudioIndex.js';
 
-const ALLOWED_ORIGINAL_HOSTS = new Set(['canticosccb.com.br', 'www.canticosccb.com.br', 'ccbhinos.kit.net', 'www.ccbhinos.kit.net']);
 const MEDIA_EXTENSIONS = new Set(['mp3', 'wma', 'wav', 'ogg', 'aac', 'm4a', 'mid', 'midi', 'zip', 'mp4']);
 
 export const config = { maxDuration: 120 };
@@ -17,7 +16,13 @@ function resolveOriginalUrl(value) {
   if (!rawValue) throw new Error('Informe uma URL do arquivo histórico.');
   const normalizedValue = /^https?:\/\//i.test(rawValue) ? rawValue : `https://${rawValue}`;
   const parsed = new URL(normalizedValue);
-  if (parsed.hostname.toLowerCase() !== 'web.archive.org') throw new Error('Informe uma URL do arquivo histórico.');
+  // Aceita tanto uma URL do Wayback quanto a URL original do site.
+  if (parsed.hostname.toLowerCase() !== 'web.archive.org') {
+    const hasWildcard = /\*+$/.test(normalizedValue);
+    const directUrl = new URL(normalizedValue.replace(/\*+$/, ''));
+    if (!directUrl.hostname || directUrl.username || directUrl.password) throw new Error('A origem informada é inválida.');
+    return hasWildcard ? `${directUrl.toString()}*` : `${directUrl.toString()}*`;
+  }
   const snapshot = parsed.pathname.match(/^\/web\/(?:\*|\d+(?:[a-z_]+)?)\/(https?:\/\/.*)$/i);
   const original = snapshot ? decodeURIComponent(snapshot[1]) : '';
   if (!original) throw new Error('Informe uma URL de captura de um arquivo ou página original.');
@@ -25,7 +30,9 @@ function resolveOriginalUrl(value) {
   // apenas durante a validação do host e preserve-o para a consulta CDX.
   const hasPrefixWildcard = /\*+$/.test(original);
   const originalUrl = new URL(original.replace(/\*+$/, ''));
-  if (!ALLOWED_ORIGINAL_HOSTS.has(originalUrl.hostname.toLowerCase())) throw new Error('A origem informada não pertence ao acervo autorizado.');
+  // A consulta é restrita ao painel autenticado; administradores podem
+  // pesquisar qualquer domínio público arquivado no Wayback.
+  if (!originalUrl.hostname || originalUrl.hostname.includes('..')) throw new Error('A origem informada é inválida.');
   const normalizedOriginal = originalUrl.toString();
   return hasPrefixWildcard ? `${normalizedOriginal}*` : normalizedOriginal;
 }
