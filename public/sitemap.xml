@@ -8418,12 +8418,6 @@
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.canticosccb.com.br/cifras/teclado/hino-7-ccb-granjeai-granjeai-os-talentos-teclado</loc>
-    <lastmod>2026-08-24</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
     <loc>https://www.canticosccb.com.br/cifras/teclado/hino-33-ccb-jesus-e-o-nosso-guia-teclado</loc>
     <lastmod>2026-08-24</lastmod>
     <changefreq>monthly</changefreq>
@@ -8444,6 +8438,12 @@
   <url>
     <loc>https://www.canticosccb.com.br/cifras/teclado/hino-16-ccb-promessa-excelente-teclado</loc>
     <lastmod>2026-08-24</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://www.canticosccb.com.br/cifras/teclado/hino-7-ccb-granjeai-granjeai-os-talentos-teclado</loc>
+    <lastmod>2026-08-26</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
@@ -8923,7 +8923,7 @@
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/cifras/teclado/hino-2-ccb-de-deus-tu-es-eleita-teclado</loc>
-    <lastmod>2026-08-25</lastmod>
+    <lastmod>2026-08-26</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
@@ -9901,7 +9901,7 @@
   </url>
   <url>
     <loc>https://www.canticosccb.com.br/cifras/teclado/hino-5-ccb-a-rocha-celestial-teclado</loc>
-    <lastmod>2026-08-24</lastmod>
+    <lastmod>2026-08-26</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>

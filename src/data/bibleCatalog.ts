@@ -58,11 +58,18 @@ const chapterTitles: Record<string, Record<number, string>> = {
 
 export const getBibleBook = (slug?: string) => slug ? bibleBooksBySlug.get(slug) : undefined;
 
-export const getBibleChapterTitle = (bookSlug: string, chapter: number) => chapterTitles[bookSlug]?.[chapter];
+/**
+ * Every chapter needs a stable human-readable label. Imported chapter metadata
+ * overrides the fallback when available; the fallback keeps older records
+ * canonical and avoids leaking numeric-only URLs to search engines.
+ */
+export const getBibleChapterTitle = (bookSlug: string, chapter: number) =>
+  chapterTitles[bookSlug]?.[chapter] || `Capítulo ${chapter}`;
 
 export const buildBibleChapterPath = (book: BibleBook, chapter: number) => {
   const title = getBibleChapterTitle(book.slug, chapter);
-  return `/biblia-ccb/${book.slug}/${chapter}${title ? `-${title.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')}` : ''}`;
+  const normalizedTitle = title.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+  return `/biblia-ccb/${book.slug}/${chapter}-${normalizedTitle}`;
 };
 
 export const normalizeBibleSearch = (value: string) => value

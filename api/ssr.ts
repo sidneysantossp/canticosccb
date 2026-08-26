@@ -1792,7 +1792,9 @@ function handleBibleRoute(pathname: string): PageMeta | null {
       title: `${readerTitle} | Bíblia CCB`,
       description: `Leia ${readerTitle} na Bíblia Online CCB, com tradução de referência ACF, navegação entre capítulos, busca por livro, modo de leitura e recursos para estudar.`,
       canonical: `${SITE_URL}${canonicalPath}`,
-      noindex: true,
+      // Chapter pages are canonical, indexable Bible content. Keep the
+      // discovery/exploration routes noindex, but never suppress chapters.
+      noindex: false,
       schemas: [
         { '@context': 'https://schema.org', '@type': 'Chapter', name: readerTitle, position: chapter, isPartOf: { '@type': 'Book', name: book.name, url: `${SITE_URL}/biblia-ccb/${book.slug}` }, url: `${SITE_URL}${canonicalPath}`, inLanguage: 'pt-BR' },
         { '@context': 'https://schema.org', '@type': 'BreadcrumbList', itemListElement: [{ '@type': 'ListItem', position: 1, name: 'Bíblia CCB', item: `${SITE_URL}/biblia-ccb` }, { '@type': 'ListItem', position: 2, name: book.name, item: `${SITE_URL}/biblia-ccb/${book.slug}` }, { '@type': 'ListItem', position: 3, name: readerTitle, item: `${SITE_URL}${canonicalPath}` }] },
