@@ -2,7 +2,7 @@ import { EMERGENCY_AUDIO_INDEX } from './_emergencyAudioIndex.js';
 
 const MEDIA_EXTENSIONS = new Set(['mp3', 'wma', 'wav', 'ogg', 'aac', 'm4a', 'mid', 'midi', 'zip', 'mp4']);
 
-export const config = { maxDuration: 120 };
+export const config = { maxDuration: 300 };
 
 function json(res, status, body) {
   res.statusCode = status;
@@ -86,7 +86,7 @@ async function fetchArchiveRows(cdxUrl) {
   let lastError;
   for (let attempt = 1; attempt <= 2; attempt += 1) {
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 50_000);
+    const timeout = setTimeout(() => controller.abort(), 120_000);
     try {
       const response = await fetch(cdxUrl, {
         headers: {
@@ -112,7 +112,9 @@ async function fetchArchiveRows(cdxUrl) {
 }
 
 async function streamArchiveRows(cdxUrl, res) {
-  const response = await fetch(cdxUrl, { headers: { 'User-Agent': 'Mozilla/5.0 (compatible; CanticosCCB/1.0)', Accept: 'application/json,text/plain;q=0.9,*/*;q=0.8', 'Accept-Encoding': 'identity' }, redirect: 'follow' });
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 120_000);
+  const response = await fetch(cdxUrl, { headers: { 'User-Agent': 'Mozilla/5.0 (compatible; CanticosCCB/1.0)', Accept: 'application/json,text/plain;q=0.9,*/*;q=0.8' }, redirect: 'follow', signal: controller.signal });
   if (!response.ok || !response.body) throw new Error(`HTTP ${response.status}`);
   const reader = response.body.getReader();
   const decoder = new TextDecoder();
@@ -141,6 +143,7 @@ async function streamArchiveRows(cdxUrl, res) {
     if (done) break;
   }
   emit(buffer);
+  clearTimeout(timeout);
 }
 
 async function requireAdmin(req) {
