@@ -447,7 +447,7 @@ const HymnHubPage: React.FC<HymnHubPageProps> = ({ hub }) => {
             )}
           </div>
 
-          <aside className="space-y-6">
+          {hub !== 'avulsos' && <aside className="space-y-6">
             <section className="rounded-3xl border border-white/10 bg-background-secondary p-6">
               <h2 className="text-xl font-semibold text-white mb-3">Como esta pagina ajuda no Google</h2>
               <ul className="space-y-3 text-sm text-text-muted">
@@ -468,7 +468,7 @@ const HymnHubPage: React.FC<HymnHubPageProps> = ({ hub }) => {
                 ))}
               </div>
             </section>
-          </aside>
+          </aside>}
         </div>
       </div>
     </div>
