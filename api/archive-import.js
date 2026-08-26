@@ -106,7 +106,8 @@ export default async function handler(req, res) {
     }
 
     const segmentIds = [...new Set((Array.isArray(req.body?.segmentIds) ? req.body.segmentIds : []).map(String))];
-    if (segmentIds.length === 0 || segmentIds.length > 20) {
+    const requestedAlbums = Array.isArray(req.body?.albums) ? req.body.albums : [];
+    if (segmentIds.length + requestedAlbums.length === 0 || segmentIds.length + requestedAlbums.length > 20) {
       return json(res, 400, { error: 'Selecione entre 1 e 20 álbuns por operação.' });
     }
 
@@ -128,6 +129,34 @@ export default async function handler(req, res) {
         }),
       });
       results.push({ source_key: segmentId, success: true, ...payload });
+    }
+
+    for (const album of requestedAlbums) {
+      const sourceKey = String(album?.sourceKey || '').trim();
+      const title = String(album?.title || '').trim();
+      const sourceUrl = String(album?.sourceUrl || '').trim();
+      const tracks = Array.isArray(album?.tracks) ? album.tracks : [];
+      if (!sourceKey || !title || !sourceUrl || tracks.length === 0 || tracks.length > 500) {
+        results.push({ source_key: sourceKey, success: false, error: 'Álbum externo inválido.' });
+        continue;
+      }
+      const payload = await supabaseJson(`${supabaseUrl}/rest/v1/rpc/admin_stage_archive_album`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({
+          p_source_key: `archive-catalog:${sourceKey}`,
+          p_source_url: sourceUrl,
+          p_album_title: title,
+          // Endereços externos não são publicados: a mídia fica pendente de
+          // transferência para o armazenamento atual.
+          p_tracks: tracks.map((track, index) => ({
+            title: String(track?.title || track?.name || '').trim(),
+            number: Number(track?.number) || index + 1,
+            audio_url: '',
+          })),
+        }),
+      });
+      results.push({ source_key: sourceKey, success: true, ...payload });
     }
     return json(res, 200, { results });
   } catch (error) {

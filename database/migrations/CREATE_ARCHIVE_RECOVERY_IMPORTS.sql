@@ -120,9 +120,8 @@ BEGIN
   LOOP
     v_position := v_position + 1;
 
-    IF nullif(trim(v_track->>'title'), '') IS NULL
-       OR nullif(trim(v_track->>'audio_url'), '') IS NULL THEN
-      RAISE EXCEPTION 'Faixa % sem título ou endereço de áudio', v_position;
+    IF nullif(trim(v_track->>'title'), '') IS NULL THEN
+      RAISE EXCEPTION 'Faixa % sem título', v_position;
     END IF;
 
     INSERT INTO public.hinos (
@@ -130,7 +129,7 @@ BEGIN
     ) VALUES (
       trim(v_track->>'title'),
       CASE WHEN (v_track->>'number') ~ '^\d+$' THEN (v_track->>'number')::integer ELSE NULL END,
-      '', 'draft', false, trim(v_track->>'audio_url'), now(), now()
+      '', 'draft', false, NULLIF(trim(COALESCE(v_track->>'audio_url', '')), ''), now(), now()
     ) RETURNING id INTO v_hino_id;
 
     INSERT INTO public.album_hinos (album_id, hino_id, position, track_number)
@@ -158,4 +157,3 @@ REVOKE ALL ON FUNCTION public.admin_stage_archive_album(text, text, text, jsonb)
 GRANT EXECUTE ON FUNCTION public.admin_stage_archive_album(text, text, text, jsonb) TO authenticated;
 
 COMMIT;
-

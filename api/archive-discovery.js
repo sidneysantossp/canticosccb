@@ -1,6 +1,6 @@
 import { EMERGENCY_AUDIO_INDEX } from './_emergencyAudioIndex.js';
 
-const ALLOWED_ORIGINAL_HOSTS = new Set(['canticosccb.com.br', 'www.canticosccb.com.br']);
+const ALLOWED_ORIGINAL_HOSTS = new Set(['canticosccb.com.br', 'www.canticosccb.com.br', 'ccbhinos.kit.net', 'www.ccbhinos.kit.net']);
 const MEDIA_EXTENSIONS = new Set(['mp3', 'wma', 'wav', 'ogg', 'aac', 'm4a', 'mid', 'midi', 'zip', 'mp4']);
 
 export const config = { maxDuration: 120 };
@@ -28,6 +28,23 @@ function resolveOriginalUrl(value) {
 
 function extensionOf(url) {
   try { return new URL(url).pathname.split('.').pop().toLowerCase(); } catch { return ''; }
+}
+
+function externalGrouping(original, timestamp) {
+  try {
+    const parsed = new URL(original);
+    const parts = parsed.pathname.split('/').filter(Boolean).map((part) => decodeURIComponent(part));
+    const fileName = parts.pop() || original;
+    const parent = parts.at(-1) || parsed.hostname;
+    const parentPath = `/${parts.join('/')}` || '/';
+    const numberMatch = fileName.match(/(?:^|[_\-\s])0*(\d{1,4})(?:[_\-\s.]|$)/);
+    return {
+      segmentId: `archive:${parsed.hostname.toLowerCase()}:${parentPath.toLowerCase()}`,
+      trackNumber: numberMatch ? Number(numberMatch[1]) : undefined,
+      container: parent.replace(/[_]+/g, ' ').replace(/\s{2,}/g, ' ').trim() || parsed.hostname,
+      sourceUrl: `https://web.archive.org/web/${timestamp}id_/${original}`,
+    };
+  } catch { return {}; }
 }
 
 function filesFromRecoveryCatalog() {
@@ -102,7 +119,7 @@ export default async function handler(req, res) {
     await requireAdmin(req);
     const originalUrl = resolveOriginalUrl(req.body?.sourceUrl);
     const baseUrl = originalUrl.endsWith('*') ? originalUrl : `${originalUrl}*`;
-    const cdxUrl = `https://web.archive.org/cdx/search/cdx?url=${encodeURIComponent(baseUrl)}&output=json&fl=timestamp,original,statuscode,mimetype&filter=statuscode:200&collapse=urlkey&limit=3000`;
+    const cdxUrl = `https://web.archive.org/cdx/search/cdx?url=${encodeURIComponent(baseUrl)}&output=json&fl=timestamp,original,statuscode,mimetype&filter=statuscode:200&collapse=urlkey&limit=10000`;
     let rows = [];
     let externalError = '';
     try {
@@ -119,6 +136,7 @@ export default async function handler(req, res) {
         extension: item.extension,
         mimeType: item.mimeType || 'desconhecido',
         replayUrl: `https://web.archive.org/web/${item.timestamp}id_/${item.original}`,
+        ...externalGrouping(item.original, item.timestamp),
       }));
     const catalogFallback = files.length === 0 && Boolean(externalError);
     if (catalogFallback) files = filesFromRecoveryCatalog();

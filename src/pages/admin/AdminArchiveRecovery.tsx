@@ -83,7 +83,17 @@ export default function AdminArchiveRecovery() {
       const knownImports = await loadImportStatus(token);
       const segmentIds = [...selected].filter((id) => !knownImports[sourceKeyFor(id)]);
       if (segmentIds.length === 0) { setSelected(new Set()); setSuccess('Os álbuns selecionados já estavam cadastrados; nenhum registro foi duplicado.'); return; }
-      const response = await fetch('/api/archive-import', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify({ segmentIds }) });
+      const localSegmentIds = segmentIds.filter((id) => !id.startsWith('archive:'));
+      const externalAlbums = segmentIds.filter((id) => id.startsWith('archive:')).map((id) => {
+        const album = albums.find((item) => item.id === id);
+        return album ? {
+          sourceKey: album.id,
+          title: album.title,
+          sourceUrl: album.sourceUrl,
+          tracks: album.files.map((file, index) => ({ title: file.name, number: file.trackNumber || index + 1 })),
+        } : null;
+      }).filter(Boolean);
+      const response = await fetch('/api/archive-import', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify({ segmentIds: localSegmentIds, albums: externalAlbums }) });
       const payload = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(payload?.error || 'Não foi possível cadastrar os álbuns.');
       const completed = (payload.results || []).filter((item: { success?: boolean }) => item.success).length;
