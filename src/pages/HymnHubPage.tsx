@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowLeft, Headphones, Music2, Music4, Mic2 } from 'lucide-react';
+import { ArrowLeft, Clock3, Headphones, Music2, Music4, Mic2, Play } from 'lucide-react';
 import SEOHead from '@/components/SEO/SEOHead';
 import AlbumsSection from '@/components/home/AlbumsSection';
 import { getAll as getAllCategories } from '@/lib/categoriesApi';
@@ -30,6 +30,7 @@ type HubHymn = {
   titulo: string;
   compositor_nome: string;
   categoria?: string;
+  duracao?: string;
 };
 
 type HubSongCandidate = {
@@ -209,6 +210,7 @@ async function fetchHubHymns(hub: HymnHubType): Promise<HubHymn[]> {
       titulo: String(song.titulo || 'Hino'),
       compositor_nome: String(song.compositor_nome || 'Compositor CCB'),
       categoria: song.categoria || undefined,
+      duracao: song.duracao || song.duration || song.duracao_formatada || undefined,
     }))
     .sort((a, b) => {
       if (a.numero > 0 && b.numero > 0) return a.numero - b.numero;
@@ -400,10 +402,11 @@ const HymnHubPage: React.FC<HymnHubPageProps> = ({ hub }) => {
                 </div>
               ) : (
                 <div className="space-y-1">
+                  {hub === 'avulsos' && <div className="hidden grid-cols-[48px,minmax(0,1fr),180px,80px,40px] gap-4 border-b border-white/10 px-2 pb-3 text-xs uppercase tracking-wider text-text-muted md:grid"><span>#</span><span>Nome do hino</span><span>Categoria</span><span className="flex items-center gap-1"><Clock3 className="h-3.5 w-3.5" /> Tempo</span><span /></div>}
                   {items.map((item, index) => (
                     <article key={item.id} className={`group border-b border-white/10 px-2 py-4 transition-colors last:border-b-0 ${hub === 'avulsos' ? 'hover:bg-primary-500/10' : 'hover:bg-white/5'}`}>
-                      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
-                        <div className="flex items-center gap-4">
+                      <div className={hub === 'avulsos' ? 'grid items-center gap-4 md:grid-cols-[48px,minmax(0,1fr),180px,80px,40px]' : 'flex flex-col md:flex-row md:items-center md:justify-between gap-3'}>
+                        <div className={hub === 'avulsos' ? 'contents' : 'flex items-center gap-4'}>
                           {hub === 'avulsos' && <span className="w-7 shrink-0 text-center text-sm text-text-muted">{index + 1}</span>}
                           <div>
                           <h3 className="text-white font-semibold">
@@ -413,14 +416,19 @@ const HymnHubPage: React.FC<HymnHubPageProps> = ({ hub }) => {
                           </h3>
                           <p className="text-text-muted text-sm mt-1">{item.compositor_nome}</p>
                         </div>
+                        {hub === 'avulsos' && <><span className="hidden truncate text-sm text-text-muted md:block">{item.categoria || 'Hino Avulso'}</span><span className="hidden text-sm text-text-muted md:block">{item.duracao || '—'}</span></>}
                         <div className="flex flex-wrap gap-2">
-                          <Link
+                          {hub === 'avulsos' ? <Link
+                            to={buildHinoUrl(item.id, item.titulo, item.numero)}
+                            className="flex h-9 w-9 items-center justify-center rounded-full bg-primary-500 text-black transition-colors hover:bg-primary-400"
+                            aria-label={`Ouvir ${item.titulo}`}
+                          >
+                            <Play className="h-4 w-4 fill-current" />
+                          </Link> : <Link
                             to={buildHinoUrl(item.id, item.titulo, item.numero)}
                             className="px-3 py-2 rounded-full bg-primary-500 text-black text-sm font-semibold hover:bg-primary-400 transition-colors"
-                          >
-                            Ouvir hino
-                          </Link>
-                          {item.numero > 0 && (
+                          >Ouvir hino</Link>}
+                          {hub !== 'avulsos' && item.numero > 0 && (
                             <Link
                               to={buildHinarioUrl(item.numero, item.titulo)}
                               className="px-3 py-2 rounded-full border border-white/15 text-white text-sm hover:border-primary-500/40 hover:text-primary-300 transition-colors"
