@@ -4,6 +4,11 @@ import { useLocation } from 'react-router-dom';
 const PageLoader: React.FC = () => {
   const { pathname } = useLocation();
   const normalizedPath = pathname.toLowerCase();
+
+  // A home deve abrir diretamente, sem o splash animado global.
+  // O conteúdo da página possui seus próprios estados de carregamento quando necessário.
+  if (normalizedPath === '/' || normalizedPath === '/home') return null;
+
   const isAdminRoute = normalizedPath === '/admin' || normalizedPath.startsWith('/admin/');
   const isComposerRoute =
     normalizedPath === '/composer' ||
