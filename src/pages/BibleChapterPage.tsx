@@ -8,6 +8,8 @@ import { fetchBibleChapter, type BibleVerse } from '@/api/bible';
 import { fetchBibleChapterAudio, type BibleChapterAudio } from '@/api/bibleAudio';
 import BibleChapterAudioPlayer from '@/components/bible/BibleChapterAudioPlayer';
 import { buildBibleChapterPath, getBibleBook, getBibleChapterTitle } from '@/data/bibleCatalog';
+import { fetchBibleCrossReferences } from '@/api/bibleCrossReferences';
+import { getBibleCrossReferences as getStaticBibleCrossReferences, type BibleCrossReference } from '@/data/bibleCrossReferences';
 import { generateBreadcrumbSchema } from '@/utils/schemaGenerator';
 
 const BibleChapterPage: React.FC = () => {
@@ -28,6 +30,7 @@ const BibleChapterPage: React.FC = () => {
   const [isLoadingContent, setIsLoadingContent] = useState(true);
   const [contentError, setContentError] = useState(false);
   const [chapterAudio, setChapterAudio] = useState<Omit<BibleChapterAudio, 'chapter_id' | 'is_active'> | null>(null);
+  const [chapterCrossReferences, setChapterCrossReferences] = useState<BibleCrossReference[]>([]);
   const [isAudioPlayerOpen, setIsAudioPlayerOpen] = useState(false);
   const scrollTimer = useRef<number | null>(null);
 
@@ -56,6 +59,17 @@ const BibleChapterPage: React.FC = () => {
         }
       })
       .finally(() => { if (!cancelled) setIsLoadingContent(false); });
+    return () => { cancelled = true; };
+  }, [book, chapter]);
+
+  useEffect(() => {
+    if (!book || !Number.isInteger(chapter)) return;
+    let cancelled = false;
+    const fallback = getStaticBibleCrossReferences(book.slug, chapter);
+    setChapterCrossReferences(fallback);
+    fetchBibleCrossReferences(book.slug, chapter)
+      .then((references) => { if (!cancelled && references.length > 0) setChapterCrossReferences(references); })
+      .catch(() => { /* O piloto local permanece utilizavel antes da primeira carga no banco. */ });
     return () => { cancelled = true; };
   }, [book, chapter]);
 
@@ -107,6 +121,22 @@ const BibleChapterPage: React.FC = () => {
   const resolvedTitle = chapterTitle || title;
   const readerTitle = `${book.name} ${chapter}${resolvedTitle ? `: ${resolvedTitle}` : ''}`;
   const description = `Leia ${readerTitle} na Bíblia Online CCB, com tradução de referência ACF, navegação entre capítulos, busca por livro, modo de leitura e recursos para estudar.`;
+  const getReferencePath = (reference: BibleCrossReference['targets'][number]) => {
+    const targetBook = getBibleBook(reference.bookSlug);
+    if (!targetBook) return undefined;
+    const path = buildBibleChapterPath(targetBook, reference.chapter);
+    return reference.verse ? `${path}#versiculo-${reference.verse}` : path;
+  };
+  const renderVerseText = (verse: BibleVerse) => {
+    const reference = chapterCrossReferences.find((item) => item.sourceVerse === verse.verse_number && item.anchorText && verse.verse_text.includes(item.anchorText));
+    const primaryTarget = reference?.targets[0];
+    const targetPath = primaryTarget ? getReferencePath(primaryTarget) : undefined;
+
+    if (!reference?.anchorText || !primaryTarget || !targetPath) return verse.verse_text;
+
+    const [before, after] = verse.verse_text.split(reference.anchorText, 2);
+    return <>{before}<Link to={targetPath} title={`Ver passagem relacionada: ${primaryTarget.label}`} className="font-normal text-white no-underline transition-colors hover:text-white">{reference.anchorText}</Link>{after}</>;
+  };
 
   return (
     <div className={`min-h-screen transition-colors ${theme === 'sepia' ? 'bg-[#19150f] text-[#f3ead7]' : 'bg-[#0d0f0e] text-white'}`}>
@@ -133,7 +163,7 @@ const BibleChapterPage: React.FC = () => {
           <header className="mt-7 border-b border-white/10 pb-8">
             <div className="flex flex-wrap items-center gap-2"><span className="rounded-full border border-primary-500/35 bg-primary-500/10 px-3 py-1 text-[11px] font-black uppercase tracking-[0.14em] text-primary-300">ACF</span><span className="rounded-full border border-white/10 px-3 py-1 text-[11px] font-semibold text-gray-400">{book.testament}</span></div>
             <p className="mt-7 text-sm font-bold uppercase tracking-[0.2em] text-primary-400">{book.name}</p>
-            <h1 className="mt-2 text-[28px] font-black leading-[1.14] tracking-[-0.04em] sm:text-5xl sm:leading-[1.06] lg:text-6xl">{resolvedTitle || `Capítulo ${chapter}`}</h1>
+            <h1 className="mt-2 text-3xl font-black leading-[1.14] tracking-[-0.04em] sm:text-4xl sm:leading-[1.08] lg:text-5xl">{resolvedTitle || `Capítulo ${chapter}`}</h1>
           </header>
 
           <section aria-label={`Texto de ${book.name} ${chapter}`} className="mx-auto max-w-3xl py-6 sm:py-14">
@@ -141,10 +171,21 @@ const BibleChapterPage: React.FC = () => {
             <div style={{ fontSize: `${fontSize}px` }} className="space-y-5 leading-[1.78] tracking-[-0.01em]">
               {isLoadingContent ? <div aria-label="Carregando versículos" className="space-y-5 opacity-45">{[92, 78, 96, 71, 88, 64, 94, 76].map((width, index) => <div key={index} className="flex items-start gap-4"><span className="w-6 shrink-0 pt-1 text-right font-mono text-[11px] font-bold text-primary-400">{index + 1}</span><span className="h-4 rounded-full bg-white/10" style={{ width: `${width}%` }} /></div>)}</div> : null}
               {!isLoadingContent && contentError ? <div className="rounded-3xl border border-red-500/20 bg-red-500/[0.05] p-6 text-base text-gray-300">Não foi possível carregar este capítulo agora. Atualize a página e tente novamente.</div> : null}
-              {!isLoadingContent && !contentError && verses.map((verse, index) => <React.Fragment key={verse.verse_number}>{verse.section_title && (index === 0 || verse.section_title !== verses[index - 1]?.section_title) ? <h2 className="pt-6 text-[0.82em] font-bold uppercase tracking-[0.14em] text-primary-300">{verse.section_title}</h2> : null}<p id={`versiculo-${verse.verse_number}`} className={`text-justify ${verse.is_red_letter ? 'text-red-300' : ''}`}><span className="relative top-[0.18em] mr-2 select-none align-baseline font-mono text-[0.55em] font-bold text-primary-400">{verse.verse_number}</span>{verse.verse_text}</p></React.Fragment>)}
+              {!isLoadingContent && !contentError && verses.map((verse, index) => <React.Fragment key={verse.verse_number}>{verse.section_title && (index === 0 || verse.section_title !== verses[index - 1]?.section_title) ? <h2 className="pt-6 text-[0.82em] font-bold uppercase tracking-[0.14em] text-primary-300">{verse.section_title}</h2> : null}<p id={`versiculo-${verse.verse_number}`} className={`text-justify ${verse.is_red_letter ? 'text-red-300' : ''}`}><span className="relative top-[0.18em] mr-2 select-none align-baseline font-mono text-[0.55em] font-bold text-primary-400">{verse.verse_number}</span>{renderVerseText(verse)}</p></React.Fragment>)}
               {!isLoadingContent && !contentError && verses.length === 0 ? <div className="rounded-3xl border border-white/10 bg-white/[0.03] p-6 text-base text-gray-400">Este capítulo ainda não possui versículos publicados.</div> : null}
             </div>
           </section>
+
+          {!isLoadingContent && !contentError && chapterCrossReferences.length > 0 ? <section aria-labelledby="passagens-relacionadas" className="mx-auto max-w-3xl border-t border-white/10 py-8 sm:py-10">
+            <div className="mb-5"><p className="text-xs font-black uppercase tracking-[0.16em] text-primary-400">Estudo complementar</p><h2 id="passagens-relacionadas" className="mt-1 text-xl font-bold">Passagens relacionadas</h2><p className="mt-1 text-sm text-gray-500">Referências cruzadas deste capítulo para aprofundar a leitura.</p></div>
+            <div className="grid gap-3 sm:grid-cols-2">
+              {chapterCrossReferences.flatMap((reference) => reference.targets.map((target) => ({ reference, target }))).map(({ reference, target }) => {
+                const targetPath = getReferencePath(target);
+                const sourceBook = getBibleBook(reference.sourceBookSlug);
+                return targetPath ? <Link key={`${reference.sourceBookSlug}-${reference.sourceChapter}-${reference.sourceVerse}-${target.label}`} to={targetPath} className="group rounded-2xl border border-white/10 bg-white/[0.025] p-4 transition-colors hover:border-primary-500/45 hover:bg-primary-500/[0.05]"><span className="text-xs font-bold text-primary-400">{sourceBook?.name || reference.sourceBookSlug} {reference.sourceChapter}:{reference.sourceVerse}</span><span className="mt-1 block font-bold text-gray-100 group-hover:text-primary-200">{target.label}</span><span className="mt-1 block text-xs text-gray-500">{target.relation === 'paralela' ? 'Passagem paralela' : target.relation === 'tema' ? 'Tema relacionado' : 'Contexto relacionado'}</span></Link> : null;
+              })}
+            </div>
+          </section> : null}
 
           <nav aria-label="Navegação entre capítulos" className="mx-auto grid w-full max-w-3xl gap-3 border-t border-white/10 py-8 sm:grid-cols-2">
             {previousPath ? <Link to={previousPath} className="group flex items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.03] p-4 transition-colors hover:border-primary-500/40"><span className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/[0.05]"><ChevronLeft className="h-5 w-5 text-primary-300" /></span><span><span className="block text-xs text-gray-500">Capítulo anterior</span><span className="font-bold">{book.name} {chapter - 1}</span></span></Link> : <span />}
