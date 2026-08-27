@@ -87,14 +87,14 @@ const PublicMobileSidebar: React.FC<PublicMobileSidebarProps> = ({ isOpen, onClo
       {/* Backdrop com efeito verde desfocado */}
       {isOpen && (
         <div
-          className="fixed inset-0 bg-gradient-to-b from-green-900/80 via-green-800/60 to-green-900/80 backdrop-blur-md z-[60] lg:hidden"
+          className="fixed inset-0 bg-black/70 backdrop-blur-md z-[60] lg:hidden"
           onClick={onClose}
         />
       )}
 
       {/* Menu deslizante de baixo para cima */}
       <div
-        className={`fixed bottom-0 left-0 right-0 bg-gradient-to-b from-green-700 via-green-800 to-gray-950 rounded-t-3xl z-[60] transform transition-transform duration-300 ease-in-out lg:hidden h-[90vh] overflow-hidden ${
+        className={`fixed bottom-0 left-0 right-0 bg-gradient-to-b from-green-700 from-0% via-green-800 via-48% to-gray-950 to-68% rounded-t-3xl z-[60] transform transition-transform duration-300 ease-in-out lg:hidden h-[90vh] overflow-hidden ${
           isOpen ? 'translate-y-0' : 'translate-y-full'
         }`}
       >
@@ -219,7 +219,7 @@ const PublicMobileSidebar: React.FC<PublicMobileSidebarProps> = ({ isOpen, onClo
         </div>
 
         {/* Footer */}
-        <div className="p-4 pb-24 border-t border-white/20">
+        <div className="p-4 pb-48">
           {user ? (
             <button
               onClick={handleLogout}
@@ -229,18 +229,18 @@ const PublicMobileSidebar: React.FC<PublicMobileSidebarProps> = ({ isOpen, onClo
               <span className="font-medium">Sair</span>
             </button>
           ) : (
-            <div className="space-y-2">
+            <div className="relative -top-8 flex gap-3">
               <Link
                 to="/login"
                 onClick={onClose}
-                className="flex items-center justify-center w-full rounded-lg bg-white text-green-800 px-4 py-2.5 font-semibold hover:bg-green-50 transition-colors"
+                className="flex flex-1 items-center justify-center rounded-lg bg-white px-4 py-2.5 font-semibold text-green-800 transition-colors hover:bg-green-50"
               >
                 Entrar
               </Link>
               <Link
                 to="/register"
                 onClick={onClose}
-                className="flex items-center justify-center w-full rounded-lg border-2 border-white text-white px-4 py-2.5 font-semibold hover:bg-white/10 transition-colors"
+                className="flex flex-1 items-center justify-center rounded-lg border-2 border-white px-4 py-2.5 font-semibold text-white transition-colors hover:bg-white/10"
               >
                 Registrar
               </Link>

@@ -4,6 +4,8 @@ import HeroSection from '@/components/home/HeroSection';
 import CategoryGrid from '@/components/home/CategoryGrid';
 import ComposersSection from '@/components/home/ComposersSection';
 import CifrasHomeSection from '@/components/home/CifrasHomeSection';
+import BibleOnlineHomeSection from '@/components/home/BibleOnlineHomeSection';
+import HinarioDigitalHomeSection from '@/components/home/HinarioDigitalHomeSection';
 import BannerCTA from '@/components/home/BannerCTA';
 import BibleSection from '@/components/home/BibleSection';
 import { getBibleNarratedSectionEnabled } from '@/api/bibleNarrated';
@@ -914,6 +916,9 @@ const HomePage: React.FC = () => {
       <div className="px-6">
         <BannerCTA />
       </div>
+
+      <BibleOnlineHomeSection />
+      <HinarioDigitalHomeSection />
       </div>
 
       {/* Modal de Login Necessário */}
