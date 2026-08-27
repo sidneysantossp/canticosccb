@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { X, Home, Search, Library, Music, Mic, User, Heart, LogOut, Shield, Grid, List, FileText, Book, BookOpen } from 'lucide-react';
-import { GiGuitar } from 'react-icons/gi';
+import { X, Music, User, Heart, LogOut, Shield, List } from 'lucide-react';
+import { AvulsosIcon, BibleIcon, CategoriesIcon, ChordsIcon, HomeIcon, HymnalIcon, InstrumentalIcon, LibraryIcon, SearchIcon, VocalsIcon } from '@/components/icons';
 import { useAuth } from '@/contexts/AuthContext';
 import { clearAuthStorage } from '@/lib/supabase-auth';
 
@@ -41,17 +41,12 @@ const PublicMobileSidebar: React.FC<PublicMobileSidebarProps> = ({ isOpen, onClo
 
   // Menu items baseado no tipo de usuário
   const getNavigationItems = () => {
-    const baseItems = [
-      { path: '/', icon: Home, label: 'Início' },
-      { path: '/search', icon: Search, label: 'Pesquisar' },
-      { path: '/library', icon: Library, label: 'Biblioteca' },
-      { path: '/categorias', icon: Grid, label: 'Categorias' },
-      { path: '/hinos-avulsos-ccb', icon: GiGuitar, label: 'Avulsos' },
-      { path: '/hinos-cantados-ccb', icon: Mic, label: 'Cantados' },
-      { path: '/instrumentais', icon: Music, label: 'Instrumentais' },
-      { path: '/cifras', icon: FileText, label: 'Cifras' },
-      { path: '/hinario', icon: Book, label: 'Hinário' },
-      { path: '/biblia-ccb', icon: BookOpen, label: 'Bíblia Digital' },
+    const baseItems: Array<{ path: string; icon: React.ComponentType<any>; label: string }> = [
+      { path: '/', icon: HomeIcon, label: 'Início' }, { path: '/search', icon: SearchIcon, label: 'Pesquisar' },
+      { path: '/library', icon: LibraryIcon, label: 'Biblioteca' }, { path: '/categorias', icon: CategoriesIcon, label: 'Categorias' },
+      { path: '/hinos-avulsos-ccb', icon: AvulsosIcon, label: 'Avulsos' }, { path: '/hinos-cantados-ccb', icon: VocalsIcon, label: 'Cantados' },
+      { path: '/instrumentais', icon: InstrumentalIcon, label: 'Instrumentais' }, { path: '/cifras', icon: ChordsIcon, label: 'Cifras' },
+      { path: '/hinario', icon: HymnalIcon, label: 'Hinário' }, { path: '/biblia-ccb', icon: BibleIcon, label: 'Bíblia Digital' },
     ];
 
     // Adicionar painel específico do usuário

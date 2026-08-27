@@ -49,13 +49,6 @@ export const bibleBooks: BibleBook[] = [
 
 export const bibleBooksBySlug = new Map(bibleBooks.map((book) => [book.slug, book]));
 
-const chapterTitles: Record<string, Record<number, string>> = {
-  genesis: {
-    1: 'A Criação do Mundo',
-    2: 'A Criação do Homem e da Mulher',
-  },
-};
-
 export const getBibleBook = (slug?: string) => slug ? bibleBooksBySlug.get(slug) : undefined;
 
 /**
@@ -64,7 +57,7 @@ export const getBibleBook = (slug?: string) => slug ? bibleBooksBySlug.get(slug)
  * canonical and avoids leaking numeric-only URLs to search engines.
  */
 export const getBibleChapterTitle = (bookSlug: string, chapter: number) =>
-  chapterTitles[bookSlug]?.[chapter] || `Capítulo ${chapter}`;
+  bibleChapterTitles[bookSlug]?.[chapter] || `Capítulo ${chapter}`;
 
 export const buildBibleChapterPath = (book: BibleBook, chapter: number) => {
   const title = getBibleChapterTitle(book.slug, chapter);
@@ -86,3 +79,4 @@ export const searchBibleBooks = (query: string) => {
     return haystack.includes(normalized) || normalized.includes(normalizeBibleSearch(book.name));
   });
 };
+import { bibleChapterTitles } from './bibleChapterTitles';

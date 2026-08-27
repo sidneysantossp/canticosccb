@@ -14,6 +14,7 @@ import {
   FileText,
   BookOpen
 } from 'lucide-react';
+import { AvulsosIcon, BibleIcon, CategoriesIcon, ChordsIcon, HomeIcon, HymnalIcon, InstrumentalIcon, LibraryIcon, SearchIcon, VocalsIcon } from '@/components/icons';
 import { useAuth } from '@/contexts/AuthContext';
 import { compositorGerentesApi } from '@/lib/api-client';
 import { getSupportInboxStats } from '@/lib/supportChatApi';
@@ -79,16 +80,11 @@ const UserSidebar: React.FC = () => {
     {
       category: 'Navegar',
       items: [
-        { icon: Home, label: 'Início', path: '/' },
-        { icon: Search, label: 'Buscar', path: '/search' },
-        { icon: Library, label: 'Biblioteca', path: '/library' },
-        { icon: Grid, label: 'Categorias', path: '/categorias' },
-        { icon: Music, label: 'Avulsos', path: '/hinos-avulsos-ccb' },
-        { icon: Mic, label: 'Cantados', path: '/hinos-cantados-ccb' },
-        { icon: Music, label: 'Instrumentais', path: '/instrumentais' },
-        { icon: FileText, label: 'Cifras', path: '/cifras' },
-        { icon: BookOpen, label: 'Hinário', path: '/hinario' },
-        { icon: BookOpen, label: 'Bíblia Digital', path: '/biblia-ccb' }
+        { icon: HomeIcon, label: 'Início', path: '/' }, { icon: SearchIcon, label: 'Buscar', path: '/search' },
+        { icon: LibraryIcon, label: 'Biblioteca', path: '/library' }, { icon: CategoriesIcon, label: 'Categorias', path: '/categorias' },
+        { icon: AvulsosIcon, label: 'Avulsos', path: '/hinos-avulsos-ccb' }, { icon: VocalsIcon, label: 'Cantados', path: '/hinos-cantados-ccb' },
+        { icon: InstrumentalIcon, label: 'Instrumentais', path: '/instrumentais' }, { icon: ChordsIcon, label: 'Cifras', path: '/cifras' },
+        { icon: HymnalIcon, label: 'Hinário', path: '/hinario' }, { icon: BibleIcon, label: 'Bíblia Digital', path: '/biblia-ccb' }
       ]
     },
     ...(isManager ? [{
@@ -146,7 +142,7 @@ const UserSidebar: React.FC = () => {
                       }`}
                   >
                     <Icon
-                      className={`w-5 h-5 ${active ? 'text-primary-500' : 'text-gray-400 group-hover:text-white'
+                      className={`w-6 h-6 ${active ? 'text-primary-500' : 'text-gray-400 group-hover:text-white'
                         }`}
                     />
                     <span className="text-sm font-medium">{item.label}</span>

@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Home, Search, BookOpen, Book, Music } from 'lucide-react';
-import { GiGuitar } from 'react-icons/gi';
+import { Music } from 'lucide-react';
+import { AvulsosIcon, BibleIcon, HomeIcon, HymnalIcon, SearchIcon } from '@/components/icons';
 import { usePlayerContext } from '@/contexts/PlayerContext';
 
 const MobileNav: React.FC = () => {
@@ -20,12 +20,12 @@ const MobileNav: React.FC = () => {
   };
 
   const navItems = [
-    { path: '/', icon: Home, label: 'Home' },
+    { path: '/', icon: HomeIcon, label: 'Home' },
     { path: '/recem-chegados', icon: Music, label: 'Hinos' },
-    { path: '/cifras', icon: GiGuitar, label: 'Cifras' },
-    { path: '/search', icon: Search, label: 'Pesquisar' },
-    { path: '/biblia-ccb', icon: BookOpen, label: 'Bíblia' },
-    { path: '/hinario', icon: Book, label: 'Hinário' }
+    { path: '/cifras', icon: AvulsosIcon, label: 'Cifras' },
+    { path: '/search', icon: SearchIcon, label: 'Pesquisar' },
+    { path: '/biblia-ccb', icon: BibleIcon, label: 'Bíblia' },
+    { path: '/hinario', icon: HymnalIcon, label: 'Hinário' }
   ];
 
   return (
@@ -50,7 +50,7 @@ const MobileNav: React.FC = () => {
                 : 'text-text-muted hover:text-primary-500'
             }`}
           >
-            <Icon className="w-5 h-5" />
+            <Icon className="w-6 h-6" />
             <span className="text-xs font-medium">{label}</span>
           </Link>
         ))}

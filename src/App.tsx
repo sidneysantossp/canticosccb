@@ -8,6 +8,7 @@ import { MobileMenuProvider } from '@/contexts/MobileMenuContext';
 import ErrorBoundary from '@/components/ErrorBoundary';
 import ScrollToTop from '@/components/ScrollToTop';
 import '@/styles/globals.css';
+import DevIconLabPage from '@/pages/DevIconLabPage';
 import {
   AboutPage,
   AjudaPage,
@@ -301,6 +302,7 @@ const AppContent: React.FC = () => {
 
         {/* Public Routes - With Layout */}
         <Route path="/" element={<Layout />}>
+          <Route path="dev/icons" element={<DevIconLabPage />} />
           {/* Home */}
           <Route index element={<HomePage />} />
           <Route path="home-alt" element={<HomeAlternativePage />} />

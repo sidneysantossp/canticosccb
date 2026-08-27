@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Home, Search, Library, User, Music, Mic, Grid, FileText, Book, BookOpen } from 'lucide-react';
-import { GiGuitar } from 'react-icons/gi';
+import { User } from 'lucide-react';
+import { AvulsosIcon, BibleIcon, CategoriesIcon, ChordsIcon, HomeIcon, HymnalIcon, InstrumentalIcon, LibraryIcon, SearchIcon, VocalsIcon } from '@/components/icons';
 
 const Sidebar: React.FC = () => {
   const location = useLocation();
@@ -11,16 +11,11 @@ const Sidebar: React.FC = () => {
   };
 
   const navItems = [
-    { path: '/', icon: Home, label: 'Início' },
-    { path: '/search', icon: Search, label: 'Buscar' },
-    { path: '/library', icon: Library, label: 'Biblioteca' },
-    { path: '/categorias', icon: Grid, label: 'Categorias' },
-    { path: '/hinos-avulsos-ccb', icon: GiGuitar, label: 'Avulsos' },
-    { path: '/hinos-cantados-ccb', icon: Mic, label: 'Cantados' },
-    { path: '/instrumentais', icon: Music, label: 'Instrumentais' },
-    { path: '/cifras', icon: FileText, label: 'Cifras' },
-    { path: '/hinario', icon: Book, label: 'Hinário' },
-    { path: '/biblia-ccb', icon: BookOpen, label: 'Bíblia Digital' },
+    { path: '/', icon: HomeIcon, label: 'Início' }, { path: '/search', icon: SearchIcon, label: 'Buscar' },
+    { path: '/library', icon: LibraryIcon, label: 'Biblioteca' }, { path: '/categorias', icon: CategoriesIcon, label: 'Categorias' },
+    { path: '/hinos-avulsos-ccb', icon: AvulsosIcon, label: 'Avulsos' }, { path: '/hinos-cantados-ccb', icon: VocalsIcon, label: 'Cantados' },
+    { path: '/instrumentais', icon: InstrumentalIcon, label: 'Instrumentais' }, { path: '/cifras', icon: ChordsIcon, label: 'Cifras' },
+    { path: '/hinario', icon: HymnalIcon, label: 'Hinário' }, { path: '/biblia-ccb', icon: BibleIcon, label: 'Bíblia Digital' },
   ];
 
   // Sidebar pública (guest): sem itens pessoais
@@ -54,7 +49,7 @@ const Sidebar: React.FC = () => {
                 }`}
               >
                 <Icon
-                  className={`w-5 h-5 ${
+                  className={`w-6 h-6 ${
                     active ? 'text-primary-500' : 'text-gray-400 group-hover:text-white'
                   }`}
                 />
