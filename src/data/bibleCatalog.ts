@@ -56,8 +56,31 @@ export const getBibleBook = (slug?: string) => slug ? bibleBooksBySlug.get(slug)
  * overrides the fallback when available; the fallback keeps older records
  * canonical and avoids leaking numeric-only URLs to search engines.
  */
+// Compatibilidade com o catálogo legado, que foi gerado com os nomes dos
+// livros truncados durante a normalização do PDF. Mantemos a correção aqui
+// para que URLs canônicas nunca voltem ao título numérico.
+const legacyTitleKeys: Record<string, string> = {
+  genesis: 'e-nesis', exodo: 'xodo', levitico: 'evi-tico', numeros: 'meros',
+  deuteronomio: 'eterono-mio', josue: 'ose', juizes: 'i-zes', rute: 'te',
+  '1-samuel': 'amel', '2-samuel': 'amel', '1-reis': 'eis', '2-reis': 'eis',
+  '1-cronicas': 'ro-nicas', '2-cronicas': 'ro-nicas', esdras: 'sdras', neemias: 'eemias',
+  ester: 'ster', jo: 'o', salmos: 'o', proverbios: 'rove-rbios', eclesiastes: 'clesiastes',
+  cantares: 'antares', isaias: 'sai-as', jeremias: 'eremias', lamentacoes: 'amentac-o-es',
+  ezequiel: 'zeqiel', daniel: 'aniel', oseias: 'oseias', joel: 'oel', amos: 'mo-s',
+  obadias: 'abam', jonas: 'onas', miqueias: 'i-queias', naum: 'am',
+  habacuque: 'abacqe', sofonias: 'oonias', ageu: 'ge', zacarias: 'acarias', malaquias: 'alaqias',
+  mateus: 'ateus', marcos: 'arcos', lucas: 'cas', joao: 'oa-o', atos: 'tos', romanos: 'omanos',
+  '1-corintios': 'ori-ntios', '2-corintios': 'ori-ntios', galatas: 'a-latas', efesios: 'e-sios',
+  filipenses: 'ilipenses', colossenses: 'olossenses', '1-tessalonicenses': 'essalonicenses',
+  '2-tessalonicenses': 'essalonicenses', '1-timoteo': 'imo-teo', '2-timoteo': 'imo-teo',
+  tito: 'ito', filemom: 'ilemom', hebreus: 'ebres', tiago: 'iago', '1-pedro': 'edro', '2-pedro': 'edro',
+  '1-joao': 'oao', '2-joao': 'oao', '3-joao': 'oao', judas: 'udas', apocalipse: 'pocalipse',
+};
+
 export const getBibleChapterTitle = (bookSlug: string, chapter: number) =>
-  bibleChapterTitles[bookSlug]?.[chapter] || `Capítulo ${chapter}`;
+  bibleChapterTitles[bookSlug]?.[chapter]
+  || bibleChapterTitles[legacyTitleKeys[bookSlug]]?.[chapter]
+  || `Capítulo ${chapter}`;
 
 export const buildBibleChapterPath = (book: BibleBook, chapter: number) => {
   const title = getBibleChapterTitle(book.slug, chapter);
