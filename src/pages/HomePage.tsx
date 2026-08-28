@@ -17,6 +17,7 @@ import { generateWebsiteSchema, generateOrganizationSchema, generateFAQSchema } 
 import { getHomePageData, type HomePageData } from '@/lib/homeApi';
 import { getPersonalizedHomeData, type PersonalizedData, type RecTrack } from '@/lib/recommendations';
 import LoginRequiredModal from '@/components/modals/LoginRequiredModal';
+import AddToPlaylistModal from '@/components/modals/AddToPlaylistModal';
 import { useAuth } from '@/contexts/AuthContext';
 import PersonalizedSection from '@/components/home/PersonalizedSection';
 import TrendsSection from '@/components/home/TrendsSection';
@@ -357,6 +358,8 @@ const HomePage: React.FC = () => {
   const [homeData, setHomeData] = useState<HomePageData>(EMPTY_HOME_DATA);
   const [isLoading, setIsLoading] = useState(true);
   const [showLoginModal, setShowLoginModal] = useState(false);
+  const [playlistTrack, setPlaylistTrack] = useState<PopularHino | null>(null);
+  const [likedTracks, setLikedTracks] = useState<Set<string>>(new Set());
   const [showBibleNarrated, setShowBibleNarrated] = useState(true);
   
   const [homepageTrends, setHomepageTrends] = useState<PopularHino[]>([]);
@@ -854,6 +857,13 @@ const HomePage: React.FC = () => {
         onTogglePlay={handleTogglePlay}
         isFavorited={isFavorited}
         onToggleFavorite={(hymnId: string) => toggleFavorite(hymnId, () => setShowLoginModal(true))}
+        onAddToPlaylist={(item) => setPlaylistTrack(item as PopularHino)}
+        isLiked={(id) => likedTracks.has(id)}
+        onToggleLike={(id) => setLikedTracks((current) => {
+          const next = new Set(current);
+          if (next.has(id)) next.delete(id); else next.add(id);
+          return next;
+        })}
       />
 
       {/* Albums Section */}
@@ -927,6 +937,22 @@ const HomePage: React.FC = () => {
         onClose={() => setShowLoginModal(false)}
         title="Login Necessário"
         message="Você precisa estar logado para adicionar favoritos"
+      />
+
+      <AddToPlaylistModal
+        isOpen={Boolean(playlistTrack)}
+        onClose={() => setPlaylistTrack(null)}
+        track={playlistTrack ? {
+          id: playlistTrack.id,
+          title: playlistTrack.title,
+          artist: playlistTrack.artist,
+          duration: playlistTrack.duration,
+          coverUrl: playlistTrack.coverUrl,
+          audioUrl: playlistTrack.audioUrl,
+          youtubeSource: playlistTrack.youtubeSource,
+          number: playlistTrack.number,
+          category: playlistTrack.category,
+        } : null}
       />
 
       {/* Debug Panel - REMOVIDO TEMPORARIAMENTE PARA DEBUG */}

@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { TrendingUp, Play, Pause, Heart, Music } from 'lucide-react';
+import { TrendingUp, Play, Pause, Heart, Music, ListPlus, ThumbsUp } from 'lucide-react';
 import { buildHinoUrl } from '@/utils/slugUrl';
 import { hasPlayableTrackSource } from '@/lib/playerFeedback';
 
@@ -21,6 +21,9 @@ type Props = {
   onTogglePlay: (item: TrendItem) => void;
   isFavorited: (id: string) => boolean;
   onToggleFavorite: (id: string) => void;
+  onAddToPlaylist?: (item: TrendItem) => void;
+  isLiked?: (id: string) => boolean;
+  onToggleLike?: (id: string) => void;
 };
 
 const TrendsSection: React.FC<Props> = ({
@@ -31,6 +34,9 @@ const TrendsSection: React.FC<Props> = ({
   onTogglePlay,
   isFavorited,
   onToggleFavorite,
+  onAddToPlaylist,
+  isLiked,
+  onToggleLike,
 }) => {
   if (!items || items.length === 0) return null;
 
@@ -116,21 +122,36 @@ const TrendsSection: React.FC<Props> = ({
                       {hino.duration}
                     </span>
 
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onToggleFavorite(hino.id);
-                      }}
-                      className={`p-1.5 sm:p-2 rounded-full transition-all duration-300 ${
-                        isFavorited(hino.id)
-                          ? 'text-red-500 hover:bg-red-500/10 scale-110'
-                          : 'text-gray-400 hover:text-red-400 hover:bg-background-primary'
-                      }`}
-                      aria-label={isFavorited(hino.id) ? 'Remover dos favoritos' : 'Adicionar aos favoritos'}
-                      title={isFavorited(hino.id) ? 'Remover dos favoritos' : 'Adicionar aos favoritos'}
-                    >
-                      <Heart className={`w-3 h-3 sm:w-4 sm:h-4 transition-transform ${isFavorited(hino.id) ? 'fill-current' : ''}`} />
-                    </button>
+                    <div className="flex items-center gap-0.5">
+                      {onAddToPlaylist && (
+                        <button
+                          onClick={(e) => { e.stopPropagation(); onAddToPlaylist(hino); }}
+                          className="p-1.5 sm:p-2 rounded-full text-gray-400 hover:text-primary-400 hover:bg-background-primary transition-colors"
+                          aria-label="Adicionar à lista"
+                          title="Adicionar à lista"
+                        >
+                          <ListPlus className="w-3 h-3 sm:w-4 sm:h-4" />
+                        </button>
+                      )}
+                      {onToggleLike && (
+                        <button
+                          onClick={(e) => { e.stopPropagation(); onToggleLike(hino.id); }}
+                          className={`p-1.5 sm:p-2 rounded-full transition-colors ${isLiked?.(hino.id) ? 'text-primary-400' : 'text-gray-400 hover:text-primary-400 hover:bg-background-primary'}`}
+                          aria-label={isLiked?.(hino.id) ? 'Remover curtida' : 'Curtir hino'}
+                          title={isLiked?.(hino.id) ? 'Remover curtida' : 'Curtir hino'}
+                        >
+                          <ThumbsUp className={`w-3 h-3 sm:w-4 sm:h-4 ${isLiked?.(hino.id) ? 'fill-current' : ''}`} />
+                        </button>
+                      )}
+                      <button
+                        onClick={(e) => { e.stopPropagation(); onToggleFavorite(hino.id); }}
+                        className={`p-1.5 sm:p-2 rounded-full transition-all duration-300 ${isFavorited(hino.id) ? 'text-red-500 hover:bg-red-500/10 scale-110' : 'text-gray-400 hover:text-red-400 hover:bg-background-primary'}`}
+                        aria-label={isFavorited(hino.id) ? 'Remover dos favoritos' : 'Adicionar aos favoritos'}
+                        title={isFavorited(hino.id) ? 'Remover dos favoritos' : 'Adicionar aos favoritos'}
+                      >
+                        <Heart className={`w-3 h-3 sm:w-4 sm:h-4 transition-transform ${isFavorited(hino.id) ? 'fill-current' : ''}`} />
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>
