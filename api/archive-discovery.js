@@ -186,9 +186,16 @@ export default async function handler(req, res) {
     await requireAdmin(req);
     const originalUrl = resolveOriginalUrl(req.body?.sourceUrl);
     const maxFiles = Math.max(1, Math.min(100, Number(req.body?.maxFiles) || 10));
-    const cdxUrls = originVariants(originalUrl).map((variant) => {
+    const cdxUrls = originVariants(originalUrl).flatMap((variant) => {
       const baseUrl = variant.endsWith('*') ? variant : `${variant}*`;
-      return `https://web.archive.org/cdx/search/cdx?url=${encodeURIComponent(baseUrl)}&output=json&fl=timestamp,original,statuscode,mimetype&filter=statuscode:200&collapse=urlkey&limit=10000`;
+      const encoded = encodeURIComponent(baseUrl);
+      const common = `&output=json&fl=timestamp,original,statuscode,mimetype&filter=statuscode:200&collapse=urlkey&limit=10000`;
+      // Keep the wildcard query and also issue an explicit prefix query. The
+      // latter is required by some Wayback CDX shards for legacy hosts.
+      return [
+        `https://web.archive.org/cdx/search/cdx?url=${encoded}${common}`,
+        `https://web.archive.org/cdx/search/cdx?url=${encodeURIComponent(baseUrl.replace(/\*+$/, ''))}&matchType=prefix${common}`,
+      ];
     });
     if (req.body?.stream === true) {
       res.statusCode = 200;
