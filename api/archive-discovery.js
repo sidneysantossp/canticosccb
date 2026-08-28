@@ -86,7 +86,14 @@ function originVariants(originalUrl) {
   const clean = originalUrl.replace(/\*+$/, '');
   try {
     const parsed = new URL(clean);
-    const variants = [`${parsed.hostname}${parsed.pathname || '/'}*`, originalUrl];
+    const pathname = parsed.pathname && parsed.pathname !== '/' ? parsed.pathname.replace(/\/+$/, '') : '';
+    const variants = [
+      originalUrl,
+      `${parsed.protocol}//${parsed.hostname}${pathname}*`,
+      `${parsed.protocol}//${parsed.hostname}${pathname || '/'}*`,
+      `${parsed.hostname}${pathname}*`,
+      `${parsed.hostname}${pathname || '/'}*`,
+    ];
     // O CDX index também aceita o padrão sem esquema e, para domínios
     // antigos, essa forma costuma retornar capturas que não aparecem na
     // consulta com http://.
@@ -94,10 +101,24 @@ function originVariants(originalUrl) {
       ? parsed.hostname.slice(4)
       : `www.${parsed.hostname}`;
     parsed.hostname = alternateHost;
-    variants.push(`${parsed.toString()}*`);
-    variants.push(`${alternateHost}${parsed.pathname || '/'}*`);
+    variants.push(`${parsed.protocol}//${alternateHost}${pathname}*`);
+    variants.push(`${parsed.protocol}//${alternateHost}${pathname || '/'}*`);
+    variants.push(`${alternateHost}${pathname}*`);
+    variants.push(`${alternateHost}${pathname || '/'}*`);
     return [...new Set(variants)];
   } catch { return [originalUrl]; }
+}
+
+async function fetchArchiveRowSets(cdxUrls) {
+  const settled = await Promise.allSettled(cdxUrls.map((queryUrl) => fetchArchiveRows(queryUrl)));
+  const rowSets = settled
+    .filter((result) => result.status === 'fulfilled' && Array.isArray(result.value))
+    .map((result) => result.value);
+  if (rowSets.length === 0) {
+    const firstFailure = settled.find((result) => result.status === 'rejected');
+    throw firstFailure?.reason || new Error('Nenhuma consulta do Wayback respondeu.');
+  }
+  return rowSets;
 }
 
 async function fetchArchiveRows(cdxUrl) {
@@ -213,7 +234,7 @@ export default async function handler(req, res) {
         // antes de recorrer ao catálogo local.
         let fallbackFiles = [];
         try {
-          const rowSets = await Promise.all(cdxUrls.map((queryUrl) => fetchArchiveRows(queryUrl)));
+          const rowSets = await fetchArchiveRowSets(cdxUrls);
           const rows = rowSets.flatMap((set) => set.slice(1));
           fallbackFiles = rows.map(([timestamp, original, status, mimeType]) => ({ timestamp, original, status, mimeType, extension: extensionOf(original) }))
             .filter((item) => MEDIA_EXTENSIONS.has(item.extension))
@@ -228,7 +249,7 @@ export default async function handler(req, res) {
     let rows = [];
     let externalError = '';
     try {
-      const rowSets = await Promise.all(cdxUrls.map((queryUrl) => fetchArchiveRows(queryUrl)));
+      const rowSets = await fetchArchiveRowSets(cdxUrls);
       rows = rowSets.flatMap((set) => set.slice(1));
     } catch (error) {
       externalError = String(error?.message || 'Consulta externa indisponível.');

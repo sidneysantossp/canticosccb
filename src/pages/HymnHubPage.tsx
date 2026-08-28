@@ -387,7 +387,7 @@ const HymnHubPage: React.FC<HymnHubPageProps> = ({ hub }) => {
                   <h2 className="text-2xl font-semibold text-white">Repertorio indexavel</h2>
                   <p className="text-text-muted mt-1">Selecao navegavel com links para paginas individuais e letras do hinario quando houver numero.</p>
                 </div>
-                {hub !== 'avulsos' && <Headphones className="w-6 h-6 text-primary-400" />}
+                <Headphones className="w-6 h-6 text-primary-400" />
               </div>}
 
               {isLoading ? (
