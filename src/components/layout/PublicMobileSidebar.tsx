@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { X, Music, User, Heart, LogOut, Shield, List } from 'lucide-react';
+import { X, Music, User, Heart, LogOut, Shield, List, Radio } from 'lucide-react';
 import { AvulsosIcon, BibleIcon, CategoriesIcon, ChordsIcon, HomeIcon, HymnalIcon, InstrumentalIcon, LibraryIcon, SearchIcon, VocalsIcon } from '@/components/icons';
 import { useAuth } from '@/contexts/AuthContext';
 import { clearAuthStorage } from '@/lib/supabase-auth';
@@ -47,6 +47,7 @@ const PublicMobileSidebar: React.FC<PublicMobileSidebarProps> = ({ isOpen, onClo
       { path: '/hinos-avulsos-ccb', icon: AvulsosIcon, label: 'Avulsos' }, { path: '/hinos-cantados-ccb', icon: VocalsIcon, label: 'Cantados' },
       { path: '/instrumentais', icon: InstrumentalIcon, label: 'Instrumentais' }, { path: '/cifras', icon: ChordsIcon, label: 'Cifras' },
       { path: '/hinario', icon: HymnalIcon, label: 'Hinário' }, { path: '/biblia-ccb', icon: BibleIcon, label: 'Bíblia Digital' },
+      { path: '/radio', icon: Radio, label: 'Rádio' },
     ];
 
     // Adicionar painel específico do usuário

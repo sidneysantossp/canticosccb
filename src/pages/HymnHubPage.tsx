@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowLeft, Clock3, Headphones, Music2, Music4, Mic2, Play } from 'lucide-react';
+import { ArrowLeft, Clock3, Download, Headphones, Heart, List, Mic2, MoreHorizontal, Music2, Music4, Play, Shuffle } from 'lucide-react';
 import SEOHead from '@/components/SEO/SEOHead';
 import AlbumsSection from '@/components/home/AlbumsSection';
 import { getAll as getAllCategories } from '@/lib/categoriesApi';
@@ -356,7 +356,17 @@ const HymnHubPage: React.FC<HymnHubPageProps> = ({ hub }) => {
           </Link>
           {playlistHero ? (
             <div className="sm:flex sm:items-center sm:gap-8">
-              <div className="mb-6 flex h-40 w-40 shrink-0 items-center justify-center rounded-2xl bg-black/35 shadow-xl sm:mb-0" style={albums[0]?.coverUrl ? { backgroundImage: `url(${albums[0].coverUrl})`, backgroundSize: 'cover', backgroundPosition: 'center' } : undefined} aria-hidden="true"><div className="h-28 w-28 rounded-full border-4 border-white/10 bg-[radial-gradient(circle_at_center,#19c463_0_13%,#0b1710_14%_20%,#303735_21%_42%,#101513_43%_60%,#343b38_61%_63%,#111514_64%_100%)] shadow-2xl" /></div>
+              {hub === 'cantados' ? (
+                <div className="mb-6 h-40 w-40 shrink-0 overflow-hidden rounded-2xl bg-black/35 shadow-xl sm:mb-0">
+                  <img
+                    src="/images/cantados/hero-cantora-podcast.png"
+                    alt="Cantora usando fones de estúdio diante de um microfone"
+                    className="h-full w-full object-cover object-center"
+                  />
+                </div>
+              ) : (
+                <div className="mb-6 flex h-40 w-40 shrink-0 items-center justify-center rounded-2xl bg-black/35 shadow-xl sm:mb-0" style={albums[0]?.coverUrl ? { backgroundImage: `url(${albums[0].coverUrl})`, backgroundSize: 'cover', backgroundPosition: 'center' } : undefined} aria-hidden="true"><div className="h-28 w-28 rounded-full border-4 border-white/10 bg-[radial-gradient(circle_at_center,#19c463_0_13%,#0b1710_14%_20%,#303735_21%_42%,#101513_43%_60%,#343b38_61%_63%,#111514_64%_100%)] shadow-2xl" /></div>
+              )}
               <div className="max-w-3xl">
                 <p className="text-xs font-semibold uppercase tracking-[0.18em] text-primary-200">Playlist pública</p>
                 <h1 className="mt-2 text-3xl font-bold leading-tight text-white md:text-5xl">{config.heading}</h1>
@@ -379,10 +389,10 @@ const HymnHubPage: React.FC<HymnHubPageProps> = ({ hub }) => {
       </div>
 
       <div className="max-w-6xl mx-auto px-6 py-8">
-        <div className={`grid min-w-0 gap-6 ${hub === 'avulsos' ? '' : 'lg:grid-cols-[1.5fr,0.9fr]'}`}>
+        <div className={`grid min-w-0 gap-6 ${playlistHero ? '' : 'lg:grid-cols-[1.5fr,0.9fr]'}`}>
           <div className="min-w-0 space-y-8">
-            <section className={`w-full min-w-0 rounded-2xl border border-white/10 bg-background-secondary p-6 ${hub === 'avulsos' ? 'border-0 bg-transparent p-0 lg:p-0' : ''}`}>
-              {hub !== 'avulsos' && <div className="flex items-center justify-between gap-4 mb-5">
+            <section className={`w-full min-w-0 rounded-2xl border border-white/10 bg-background-secondary p-6 ${playlistHero ? 'border-0 bg-transparent p-0 lg:p-0' : ''}`}>
+              {!playlistHero && <div className="flex items-center justify-between gap-4 mb-5">
                 <div>
                   <h2 className="text-2xl font-semibold text-white">Repertorio indexavel</h2>
                   <p className="text-text-muted mt-1">Selecao navegavel com links para paginas individuais e letras do hinario quando houver numero.</p>
@@ -400,8 +410,18 @@ const HymnHubPage: React.FC<HymnHubPageProps> = ({ hub }) => {
                 <div className="rounded-2xl border border-white/10 bg-white/5 p-6 text-text-muted">
                   Nenhum hino publicado foi encontrado para este hub ainda.
                 </div>
-              ) : hub === 'avulsos' ? (
+              ) : playlistHero ? (
                 <div className="w-full max-w-full overflow-hidden">
+                  <div className="flex min-w-0 items-center gap-5 py-4 text-gray-300">
+                    <Link to={items[0] ? buildHinoUrl(items[0].id, items[0].titulo, items[0].numero) : '#'} aria-label="Reproduzir hinos cantados" className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-primary-500 text-black transition-transform hover:scale-105">
+                      <Play className="ml-0.5 h-5 w-5 fill-current" />
+                    </Link>
+                    <button type="button" aria-label="Embaralhar repertório" className="transition-colors hover:text-primary-300"><Shuffle className="h-6 w-6" /></button>
+                    <button type="button" aria-label="Baixar repertório" className="transition-colors hover:text-primary-300"><Download className="h-6 w-6" /></button>
+                    <button type="button" aria-label="Favoritar repertório" className="transition-colors hover:text-primary-300"><Heart className="h-6 w-6" /></button>
+                    <button type="button" aria-label="Mais opções" className="transition-colors hover:text-primary-300"><MoreHorizontal className="h-6 w-6" /></button>
+                    <div className="ml-auto hidden items-center gap-2 text-xs text-gray-400 sm:flex"><List className="h-4 w-4" /> Lista</div>
+                  </div>
                   <div className="hidden w-full grid-cols-[40px_minmax(0,1fr)_minmax(120px,180px)_72px_40px] items-center gap-4 border-b border-white/10 px-2 pb-3 text-xs uppercase tracking-wider text-text-muted lg:grid">
                     <span>#</span>
                     <span>Nome do hino</span>
@@ -480,7 +500,7 @@ const HymnHubPage: React.FC<HymnHubPageProps> = ({ hub }) => {
             )}
           </div>
 
-          {hub !== 'avulsos' && <aside className="space-y-6">
+          {!playlistHero && <aside className="space-y-6">
             <section className="rounded-3xl border border-white/10 bg-background-secondary p-6">
               <h2 className="text-xl font-semibold text-white mb-3">Como esta pagina ajuda no Google</h2>
               <ul className="space-y-3 text-sm text-text-muted">

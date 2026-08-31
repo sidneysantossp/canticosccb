@@ -17,7 +17,6 @@ const CifrasFeatureBanner: React.FC = () => {
             src="/images/banners/cifras-ccb-desktop.png"
             alt="Nova experiência de Cifras CCB com transposição, rolagem, acordes e ajustes rápidos"
             loading="eager"
-            fetchPriority="high"
             width={2048}
             height={1264}
             className="block aspect-[16/6] min-h-[180px] w-full object-cover transition-transform duration-500 group-hover:scale-[1.015]"

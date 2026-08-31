@@ -274,13 +274,13 @@ async function main() {
 
   // Compositores
   console.log('  🎵 Fetching compositores...');
-  const compositores = await supabaseFetch('composer_public_profiles', 'id,name,artistic_name,slug,updated_at,created_at', {
+  const compositores = await supabaseFetch('composer_public_profiles', 'id,name,artistic_name,slug', {
     'order': 'name.asc',
     'limit': '2000',
   });
   console.log(`     Found ${compositores.length} compositores`);
   for (const c of compositores) {
-    const mod = (c.updated_at || c.created_at || today).split('T')[0];
+    const mod = today;
     urls.push(urlEntry(buildCompositorUrl(c.id, c.artistic_name || c.name), mod, 'monthly', '0.7'));
   }
 
@@ -352,11 +352,11 @@ async function main() {
     urls.push(urlEntry(buildPlaylistUrl(playlist.id), mod, 'weekly', '0.6'));
   }
 
-  // Hubs de cifras sem qualquer item publicado não devem ser promovidos no índice.
-  // As rotas continuam acessíveis na aplicação e podem ser reexpostas quando houver conteúdo real.
+  // Preserve canonical hubs even when Supabase is temporarily unavailable during
+  // the build. A transient data failure must not remove stable public URLs from
+  // crawler discovery; item URLs are added whenever the catalog responds.
   if (cifras.length === 0 && cifrasV2.length === 0) {
-    const emptyCifraHubs = new Set(['/cifras', '/cifras-hinos-ccb', '/cifras/violao', '/cifras/ukulele', '/cifras/teclado']);
-    urls = urls.filter((entry) => ![...emptyCifraHubs].some((pathPart) => entry.includes(`<loc>${SITE_URL}${pathPart}</loc>`)));
+    console.warn('⚠️ No cifras found; preserving canonical cifra hubs in sitemap.');
   }
 
   // Build XML
@@ -372,8 +372,19 @@ ${urls.join('\n')}
     return;
   }
 
-  fs.writeFileSync(outPath, xml, 'utf-8');
-  console.log(`🗺️  sitemap.xml generated → ${outPath}`);
+  try {
+    fs.writeFileSync(outPath, xml, 'utf-8');
+    console.log(`🗺️  sitemap.xml generated → ${outPath}`);
+  } catch (error) {
+    // A local preview server or antivirus can briefly hold the generated file.
+    // Do not fail the entire production build when an existing sitemap is still
+    // available; Vercel can regenerate it on the next build.
+    if (fs.existsSync(outPath)) {
+      console.warn(`⚠️ Could not replace sitemap.xml (${error.code || 'write error'}); keeping existing file.`);
+      return;
+    }
+    throw error;
+  }
 }
 main().catch((err) => {
   console.error('❌ Sitemap generation failed:', err);

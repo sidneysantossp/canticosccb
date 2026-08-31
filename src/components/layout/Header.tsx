@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { Search, Menu, User, Heart, LogOut, ChevronDown, Mic, Shield, Music, Bell, Megaphone } from 'lucide-react';
+import { Search, Menu, User, Heart, LogOut, ChevronDown, Mic, Shield, Music, Bell, Radio } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useMobileMenu } from '@/contexts/MobileMenuContext';
 import { useNotifications } from '@/contexts/NotificationsContext';
@@ -284,7 +284,7 @@ const Header: React.FC = () => {
         </Link>
 
         {/* Search Bar - Desktop */}
-        <div className="hidden md:block flex-1 max-w-xl ml-0 lg:ml-4 relative">
+        <div className="relative ml-0 mr-4 hidden max-w-lg flex-1 md:block lg:ml-4">
           <form onSubmit={handleSearchSubmit}>
             <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-text-muted w-4 h-4" />
@@ -366,14 +366,17 @@ const Header: React.FC = () => {
 
         {/* Right Side */}
         <div className="flex items-center space-x-1 md:space-x-4 lg:ml-auto">
-          {/* Avisos Button - Desktop */}
           <Link
-            to="/avisos"
-            className="hidden md:inline-flex items-center gap-1.5 px-3 py-2 rounded-full hover:bg-green-500/10 transition-colors group"
-            title="Avisos"
+            to="/radio"
+            className="hidden md:inline-flex items-center gap-2 rounded-full border border-green-500/25 bg-green-500/[0.06] px-3 py-2 transition-colors hover:border-green-500/45 hover:bg-green-500/10"
+            title="Ouvir Rádio Cânticos ao vivo"
+            aria-label="Ouvir Rádio Cânticos ao vivo"
           >
-            <Megaphone className="w-4.5 h-4.5 text-green-500 group-hover:text-green-400 transition-colors stroke-[2]" />
-            <span className="text-sm font-medium text-green-500 group-hover:text-green-400 transition-colors">Avisos</span>
+            <Radio className="h-[18px] w-[18px] text-green-500" aria-hidden="true" />
+            <span className="header-radio-live-label inline-flex items-center gap-1.5 text-[10px] font-extrabold tracking-[0.12em] text-green-400">
+              <span className="h-1.5 w-1.5 rounded-full bg-green-400 shadow-[0_0_8px_rgba(74,222,128,0.9)]" aria-hidden="true" />
+              AO VIVO
+            </span>
           </Link>
 
           {/* Notification Bell - Desktop */}
@@ -534,13 +537,15 @@ const Header: React.FC = () => {
             </Link>
           )}
 
-          {/* Avisos - Mobile */}
+          {/* Rádio - Mobile */}
           <Link
-            to="/avisos"
-            className="lg:hidden relative p-2 rounded-full hover:bg-green-500/10 transition-colors group"
-            title="Avisos"
+            to="/radio"
+            className="inline-flex items-center gap-1.5 rounded-full border border-green-500/25 bg-green-500/[0.06] px-2.5 py-2 md:hidden"
+            title="Ouvir Rádio Cânticos ao vivo"
+            aria-label="Ouvir Rádio Cânticos ao vivo"
           >
-            <Megaphone className="w-5 h-5 text-green-500 group-hover:text-green-400 transition-colors" />
+            <Radio className="h-5 w-5 text-green-500" aria-hidden="true" />
+            <span className="header-radio-live-label text-[9px] font-extrabold tracking-[0.08em] text-green-400">AO VIVO</span>
           </Link>
 
           {/* Notification Bell - Mobile */}

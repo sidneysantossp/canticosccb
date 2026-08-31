@@ -6,6 +6,7 @@ import { DEFAULT_SITE_URL, normalizeAssetUrl, normalizeSiteUrl } from '@/utils/s
 interface SEOProps {
   title: string;
   exactTitle?: boolean;
+  preferPageMetadata?: boolean;
   description: string;
   keywords?: string;
   canonical?: string;
@@ -21,6 +22,7 @@ interface SEOProps {
 const SEOHead: React.FC<SEOProps> = ({
   title,
   exactTitle = false,
+  preferPageMetadata = false,
   description,
   keywords,
   canonical,
@@ -63,13 +65,13 @@ const SEOHead: React.FC<SEOProps> = ({
   );
   const cleanPath = window.location.pathname;
   const isHomePage = canonical === '/' || cleanPath === '/';
-  const resolvedTitle = isHomePage ? (runtimeSeo?.site_title || fullTitle) : fullTitle;
+  const resolvedTitle = isHomePage && !preferPageMetadata ? (runtimeSeo?.site_title || fullTitle) : fullTitle;
   const defaultUrl = normalizeSiteUrl(`${baseUrl}${cleanPath}`, baseUrl);
   const canonicalUrl = canonical
     ? normalizeSiteUrl(canonical.startsWith('http') ? canonical : `${baseUrl}${canonical}`, baseUrl)
     : defaultUrl;
   const resolvedDescription = isHomePage
-    ? (runtimeSeo?.site_description || description || '')
+    ? (preferPageMetadata ? description : (runtimeSeo?.site_description || description || ''))
     : (description || runtimeSeo?.site_description || '');
   const resolvedKeywords = isHomePage
     ? (runtimeSeo?.site_keywords || keywords || undefined)
@@ -78,10 +80,10 @@ const SEOHead: React.FC<SEOProps> = ({
     ? (runtimeSeo?.og_image || ogImage || '/logo-canticos-ccb.png')
     : (ogImage || runtimeSeo?.og_image || '/logo-canticos-ccb.png');
   const resolvedOgTitle = isHomePage
-    ? (runtimeSeo?.og_title || resolvedTitle)
+    ? (preferPageMetadata ? resolvedTitle : (runtimeSeo?.og_title || resolvedTitle))
     : resolvedTitle;
   const resolvedOgDescription = isHomePage
-    ? (runtimeSeo?.og_description || resolvedDescription)
+    ? (preferPageMetadata ? resolvedDescription : (runtimeSeo?.og_description || resolvedDescription))
     : resolvedDescription;
   const imageUrl = normalizeAssetUrl(
     resolvedImage.startsWith('http') ? resolvedImage : `${baseUrl}${resolvedImage}`

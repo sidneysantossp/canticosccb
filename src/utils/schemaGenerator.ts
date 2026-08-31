@@ -394,19 +394,28 @@ export const generateItemListSchema = (list: {
   items: Array<{ name: string; url: string; position?: number }>;
 }) => {
   const BASE_URL = getBaseUrl();
+  const toAbsoluteUrl = (value: unknown): string | null => {
+    if (typeof value !== 'string' || !value.trim()) return null;
+    const normalized = value.trim();
+    return normalized.startsWith('http') ? normalized : `${BASE_URL}${normalized.startsWith('/') ? normalized : `/${normalized}`}`;
+  };
+  const listUrl = toAbsoluteUrl(list.url) || BASE_URL;
+  const validItems = (Array.isArray(list.items) ? list.items : []).filter(
+    (item) => item && typeof item.name === 'string' && item.name.trim() && toAbsoluteUrl(item.url)
+  );
   return {
     '@context': 'https://schema.org',
     '@type': 'ItemList',
     name: list.name,
     description: list.description,
-    url: list.url.startsWith('http') ? list.url : `${BASE_URL}${list.url}`,
+    url: listUrl,
     inLanguage: 'pt-BR',
-    numberOfItems: list.items.length,
-    itemListElement: list.items.map((item, index) => ({
+    numberOfItems: validItems.length,
+    itemListElement: validItems.map((item, index) => ({
       '@type': 'ListItem',
       position: item.position ?? index + 1,
       name: item.name,
-      url: item.url.startsWith('http') ? item.url : `${BASE_URL}${item.url}`,
+      url: toAbsoluteUrl(item.url),
     })),
   };
 };

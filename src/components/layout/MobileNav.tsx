@@ -30,9 +30,9 @@ const MobileNav: React.FC = () => {
 
   return (
     <nav
-      className="fixed bottom-2 left-2 right-2 z-[9999] overflow-hidden rounded-xl border border-gray-800 shadow-[0_-8px_24px_rgba(0,0,0,0.4)] lg:hidden"
+      className="fixed bottom-0 left-0 right-0 z-[9999] w-full overflow-hidden border-t border-gray-800 shadow-[0_-8px_24px_rgba(0,0,0,0.4)] lg:hidden"
       style={{ 
-        paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 4px)',
+        paddingBottom: 'env(safe-area-inset-bottom, 0px)',
         backgroundColor: 'rgba(18, 18, 18, 0.58)',
         backdropFilter: 'blur(18px)',
         WebkitBackdropFilter: 'blur(18px)',

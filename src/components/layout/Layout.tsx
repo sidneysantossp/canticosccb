@@ -57,6 +57,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   // Detectar tipo de área
   const isAdminPanel = location.pathname.startsWith('/admin');
   const isComposerPanel = location.pathname.startsWith('/composer');
+  const isRadioPage = location.pathname === '/radio';
   
   // Rotas do dashboard do usuário (usam UserSidebar)
   const userDashboardBaseRoutes = [
@@ -116,7 +117,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
         </main>
         
         {/* Footer Global - Ocultar apenas em páginas de autenticação */}
-        {!isAuthPage && <Footer />}
+        {!isAuthPage && !isRadioPage && <Footer />}
       </div>
       
       {/* Mobile Navigation - Mobile Only */}

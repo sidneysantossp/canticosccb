@@ -9,6 +9,9 @@ interface AlertModalProps {
   type?: 'success' | 'error' | 'info' | 'warning';
   buttonText?: string;
   buttonColor?: 'blue' | 'green' | 'amber' | 'red';
+  secondaryButtonText?: string;
+  secondaryButtonColor?: 'blue' | 'green' | 'amber' | 'red';
+  primaryHref?: string;
   imageUrl?: string;
   imageName?: string;
 }
@@ -21,6 +24,9 @@ export default function AlertModal({
   type: _type = 'info',
   buttonText = 'Fechar',
   buttonColor = 'green',
+  secondaryButtonText,
+  secondaryButtonColor = 'red',
+  primaryHref,
   imageUrl,
   imageName
 }: AlertModalProps) {
@@ -85,12 +91,34 @@ export default function AlertModal({
             </div>
 
             {/* Button */}
-            <button
-              onClick={onClose}
-              className={`w-full px-4 py-3 rounded-lg ${colorClasses[buttonColor]} text-white font-semibold transition-colors`}
-            >
-              {buttonText}
-            </button>
+            <div className={secondaryButtonText ? 'flex gap-3' : undefined}>
+              {secondaryButtonText && (
+                <button
+                  type="button"
+                  onClick={onClose}
+                  className={`flex-1 px-4 py-3 rounded-lg ${colorClasses[secondaryButtonColor]} text-white font-semibold transition-colors`}
+                >
+                  {secondaryButtonText}
+                </button>
+              )}
+              {primaryHref ? (
+                <a
+                  href={primaryHref}
+                  onClick={onClose}
+                  className={`flex-1 px-4 py-3 rounded-lg ${colorClasses[buttonColor]} text-white font-semibold transition-colors text-center`}
+                >
+                  {buttonText}
+                </a>
+              ) : (
+                <button
+                  type="button"
+                  onClick={onClose}
+                  className={`${secondaryButtonText ? 'flex-1' : 'w-full'} px-4 py-3 rounded-lg ${colorClasses[buttonColor]} text-white font-semibold transition-colors`}
+                >
+                  {buttonText}
+                </button>
+              )}
+            </div>
           </motion.div>
         </motion.div>
       )}

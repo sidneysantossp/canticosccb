@@ -179,6 +179,11 @@ const Footer: React.FC = () => {
                   Contato
                 </Link>
               </li>
+              <li>
+                <Link to="/avisos" className="text-text-muted hover:text-white transition-colors text-sm">
+                  Avisos
+                </Link>
+              </li>
             </ul>
           </div>
 

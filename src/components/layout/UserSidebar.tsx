@@ -12,7 +12,8 @@ import {
   Music,
   Mic,
   FileText,
-  BookOpen
+  BookOpen,
+  Radio
 } from 'lucide-react';
 import { AvulsosIcon, BibleIcon, CategoriesIcon, ChordsIcon, HomeIcon, HymnalIcon, InstrumentalIcon, LibraryIcon, SearchIcon, VocalsIcon } from '@/components/icons';
 import { useAuth } from '@/contexts/AuthContext';
@@ -84,7 +85,8 @@ const UserSidebar: React.FC = () => {
         { icon: LibraryIcon, label: 'Biblioteca', path: '/library' }, { icon: CategoriesIcon, label: 'Categorias', path: '/categorias' },
         { icon: AvulsosIcon, label: 'Avulsos', path: '/hinos-avulsos-ccb' }, { icon: VocalsIcon, label: 'Cantados', path: '/hinos-cantados-ccb' },
         { icon: InstrumentalIcon, label: 'Instrumentais', path: '/instrumentais' }, { icon: ChordsIcon, label: 'Cifras', path: '/cifras' },
-        { icon: HymnalIcon, label: 'Hinário', path: '/hinario' }, { icon: BibleIcon, label: 'Bíblia Digital', path: '/biblia-ccb' }
+        { icon: HymnalIcon, label: 'Hinário', path: '/hinario' }, { icon: BibleIcon, label: 'Bíblia Digital', path: '/biblia-ccb' },
+        { icon: Radio, label: 'Rádio', path: '/radio' }
       ]
     },
     ...(isManager ? [{

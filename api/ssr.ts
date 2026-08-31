@@ -411,19 +411,13 @@ interface PageMeta {
 
 async function applyHomeRuntimeSeo(meta: PageMeta, isHome = true): Promise<PageMeta> {
   try {
-    const [configRows, logoRows] = await Promise.all([
-      supaFetch('site_config', { select: 'config_key,config_value', config_key: 'in.(site_title,site_description,site_keywords,site_url,og_title,og_description,og_image,robots_index,robots_follow,google_search_console_id,schema_name,schema_type)' }),
-      supaFetch('site_logos', { select: 'url', type: 'eq.favicon', limit: '1' }),
-    ]);
+    const configRows = await supaFetch('site_config', { select: 'config_key,config_value', config_key: 'in.(site_title,site_description,site_keywords,site_url,og_title,og_description,og_image,robots_index,robots_follow,google_search_console_id,schema_name,schema_type)' });
     const config = configRows.reduce<Record<string, string>>((acc, row) => { acc[row.config_key] = String(row.config_value || ''); return acc; }, {});
     const bool = (value: string | undefined, fallback: boolean) => value == null || value === '' ? fallback : ['true', '1', 'yes', 'on'].includes(value.toLowerCase());
     const siteTitle = config.site_title?.trim() || meta.title;
-    const description = config.site_description?.trim() || meta.description;
-    const ogTitle = config.og_title?.trim() || siteTitle;
-    const ogDescription = config.og_description?.trim() || description;
     const canonical = config.site_url?.trim().replace(/\/+$/, '') || meta.canonical;
-    const favicon = String(logoRows[0]?.url || '').trim() || undefined;
-    return { ...meta, ...(isHome ? { title: ogTitle, description: ogDescription, canonical, ogImage: config.og_image?.trim() || meta.ogImage, keywords: config.site_keywords?.trim() || undefined, schemas: [{ '@context': 'https://schema.org', '@type': config.schema_type?.trim() || 'Organization', name: config.schema_name?.trim() || siteTitle, url: canonical, logo: favicon || `${SITE_URL}/favicon-96x96.png` }, ...(meta.schemas || [])] } : {}), favicon, googleVerification: config.google_search_console_id?.trim() || undefined, robotsIndex: bool(config.robots_index, true), robotsFollow: bool(config.robots_follow, true) };
+    const favicon = `${SITE_URL}/favicon.png`;
+    return { ...meta, ...(isHome ? { title: meta.title, description: meta.description, canonical, ogImage: config.og_image?.trim() || meta.ogImage, keywords: config.site_keywords?.trim() || undefined, schemas: [{ '@context': 'https://schema.org', '@type': config.schema_type?.trim() || 'Organization', name: config.schema_name?.trim() || siteTitle, url: canonical, logo: favicon }, ...(meta.schemas || [])] } : {}), favicon, googleVerification: config.google_search_console_id?.trim() || undefined, robotsIndex: bool(config.robots_index, true), robotsFollow: bool(config.robots_follow, true) };
   } catch { return meta; }
 }
 
@@ -1737,8 +1731,8 @@ async function handlePlaylistDetail(idParam: string): Promise<PageMeta | null> {
 }
 
 function handleHome(): PageMeta {
-  const title = 'Cânticos CCB — Hinos, Cifras e Repertório Publicado pela Comunidade';
-  const description = 'Explore hinos, cifras, letras, álbuns e playlists no Cânticos CCB. Todo o conteúdo é publicado voluntariamente pelos membros da comunidade.';
+  const title = 'Hinos CCB - Hinos Avulsos, Tocadas, Cifras, Hinário - Cânticos CCB';
+  const description = 'Ouça os mais Belos Hinos CCB, Hinos Cantados, Hinos Avulsos, Tocatas, Cifras Violão, Ukulele e Teclado, Biblia CCB, Hinário 5 e muito mais. Acesse!';
   return {
     title,
     description,

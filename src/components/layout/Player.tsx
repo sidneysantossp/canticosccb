@@ -197,7 +197,7 @@ const Player: React.FC<PlayerProps> = ({ isHidden = false }) => {
 
       {/* Audio Player Bar - Fixed at bottom - Hidden when FullScreen is open */}
       {!isFullScreenOpen && (
-        <div className={`fixed bottom-16 lg:bottom-0 left-0 right-0 bg-background-tertiary border-t border-gray-700 z-50 transition-transform duration-300 ${isHidden ? 'translate-y-full' : 'translate-y-0'
+        <div className={`global-player-bar fixed left-0 right-0 bg-background-tertiary border-t border-gray-700 z-50 transition-transform duration-300 ${isHidden ? 'translate-y-full' : 'translate-y-0'
           }`}>
           <div className="flex items-center justify-between px-4 md:px-6 py-3 gap-3 md:gap-6">
             {/* Track Info - Left Side */}

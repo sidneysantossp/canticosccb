@@ -254,8 +254,7 @@ export async function fetchPublicCifraCatalog(params: {
     select: [
       'version_id', 'public_slug', 'version_title', 'instrument',
       'arrangement_type', 'difficulty_level', 'original_key', 'preferred_key',
-      'capo', 'tempo_bpm', 'time_signature', 'default_study_section_order',
-      'default_study_sync_audio', 'default_study_loop_section', 'publication_label',
+      'capo', 'tempo_bpm', 'time_signature', 'publication_label',
       'is_primary', 'published_at', 'song_id', 'song_slug', 'song_title',
       'song_subtitle', 'composer_name', 'hino_id', 'hinario_numero', 'source_type',
       'cover_url', 'seo_title', 'seo_description', 'seo_keywords', 'views_count',

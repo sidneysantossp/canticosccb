@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { User } from 'lucide-react';
+import { Radio, User } from 'lucide-react';
 import { AvulsosIcon, BibleIcon, CategoriesIcon, ChordsIcon, HomeIcon, HymnalIcon, InstrumentalIcon, LibraryIcon, SearchIcon, VocalsIcon } from '@/components/icons';
 
 const Sidebar: React.FC = () => {
@@ -16,6 +16,7 @@ const Sidebar: React.FC = () => {
     { path: '/hinos-avulsos-ccb', icon: AvulsosIcon, label: 'Avulsos' }, { path: '/hinos-cantados-ccb', icon: VocalsIcon, label: 'Cantados' },
     { path: '/instrumentais', icon: InstrumentalIcon, label: 'Instrumentais' }, { path: '/cifras', icon: ChordsIcon, label: 'Cifras' },
     { path: '/hinario', icon: HymnalIcon, label: 'Hinário' }, { path: '/biblia-ccb', icon: BibleIcon, label: 'Bíblia Digital' },
+    { path: '/radio', icon: Radio, label: 'Rádio' },
   ];
 
   // Sidebar pública (guest): sem itens pessoais

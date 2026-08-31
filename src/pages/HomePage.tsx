@@ -817,8 +817,10 @@ const HomePage: React.FC = () => {
   return (
     <>
       <SEOHead
-        title="Cânticos CCB — Hinos, Cifras e Repertório Publicado pela Comunidade"
-        description="Explore hinos, cifras, letras, álbuns e playlists no Cânticos CCB. Todo o conteúdo é publicado voluntariamente pelos membros da comunidade."
+        title="Hinos CCB - Hinos Avulsos, Tocadas, Cifras, Hinário - Cânticos CCB"
+        exactTitle
+        preferPageMetadata
+        description="Ouça os mais Belos Hinos CCB, Hinos Cantados, Hinos Avulsos, Tocatas, Cifras Violão, Ukulele e Teclado, Biblia CCB, Hinário 5 e muito mais. Acesse!"
         keywords="hinos CCB, cifras CCB, letras de hinos, hinos cantados, hinos tocados, compositores, playlists, comunidade musical"
         canonical="/"
         ogImage="/logo-canticos-ccb.png"
