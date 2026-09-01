@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { handleOAuthCallback } from '@/lib/supabase-auth';
 import { supabase } from '@/lib/supabase-auth';
 import { consumeAuthReturnTo } from '@/lib/authReturnTo';
 
@@ -78,39 +77,38 @@ const AuthCallbackPage: React.FC = () => {
           return '/onboarding';
         };
 
-        // Supabase email confirmation links use hash fragments with access_token
-        // The Supabase client auto-exchanges these tokens on page load
-        // Wait for the session to be established
-        let { data: { session } } = await supabase.auth.getSession();
+        const callbackError = searchParams.get('error_description') || searchParams.get('error');
+        if (callbackError) throw new Error(callbackError);
 
-        const authorizationCode = searchParams.get('code');
-        if (!session && authorizationCode) {
-          const { data, error: exchangeError } = await supabase.auth.exchangeCodeForSession(authorizationCode);
-          if (exchangeError) throw exchangeError;
-          session = data.session;
-        }
-        
-        if (!session) {
-          // Wait a bit for Supabase to process the hash token
-          await new Promise(resolve => setTimeout(resolve, 1500));
-          const { data: { session: retrySession } } = await supabase.auth.getSession();
-          session = retrySession;
-          
-          if (!session) {
-            // Try OAuth callback as fallback
-            const result = await handleOAuthCallback();
-            if (result.success) {
-              await new Promise(resolve => setTimeout(resolve, 500));
-              if (result.usuario.tipo === 'compositor') {
-                navigateAfterAuth('/composer');
-              } else if (result.usuario.tipo === 'admin') {
-                navigateAfterAuth('/admin');
-              } else {
-                navigateAfterAuth('/profile');
-              }
-              return;
-            }
+        // Novos acessos usam PKCE. initialize() aguarda a troca do code pela
+        // sessão antes de permitir que a página decida o redirecionamento.
+        const { error: initializationError } = await supabase.auth.initialize();
+
+        let { data: { session }, error: sessionError } = await supabase.auth.getSession();
+
+        // Compatibilidade com links/tentativas iniciados antes da migração para
+        // PKCE, que ainda podem voltar com os tokens no fragmento da URL.
+        if (!session && typeof window !== 'undefined' && window.location.hash) {
+          const hashParams = new URLSearchParams(window.location.hash.slice(1));
+          const accessToken = hashParams.get('access_token');
+          const refreshToken = hashParams.get('refresh_token');
+          const legacyError = hashParams.get('error_description') || hashParams.get('error');
+
+          if (legacyError) throw new Error(legacyError);
+
+          if (accessToken && refreshToken) {
+            const { data, error: setSessionError } = await supabase.auth.setSession({
+              access_token: accessToken,
+              refresh_token: refreshToken,
+            });
+            if (setSessionError) throw setSessionError;
+            session = data.session;
+            window.history.replaceState(window.history.state, '', `${window.location.pathname}${window.location.search}`);
           }
+        }
+
+        if (!session) {
+          throw initializationError || sessionError || new Error('Não foi possível concluir o login. Inicie novamente pelo botão do Google.');
         }
 
         if (isPasswordRecovery && session) {
@@ -133,20 +131,6 @@ const AuthCallbackPage: React.FC = () => {
           return;
         }
 
-        // Fallback: try OAuth callback
-        const result = await handleOAuthCallback();
-        
-        if (result.success) {
-          await new Promise(resolve => setTimeout(resolve, 500));
-          
-          if (result.usuario.tipo === 'compositor') {
-            navigateAfterAuth('/composer');
-          } else if (result.usuario.tipo === 'admin') {
-            navigateAfterAuth('/admin');
-          } else {
-            navigateAfterAuth('/profile');
-          }
-        }
       } catch (err: any) {
         console.error('Erro ao processar callback:', err);
         setError(err.message || 'Erro ao processar autenticação');

@@ -20,7 +20,14 @@ const createSupabaseClient = (options?: Parameters<typeof createClient>[2]) => (
     : createClient('https://placeholder.supabase.co', 'placeholder', options)
 );
 
-export const supabase = createSupabaseClient();
+export const supabase = createSupabaseClient({
+  auth: {
+    flowType: 'pkce',
+    detectSessionInUrl: true,
+    persistSession: true,
+    autoRefreshToken: true,
+  },
+});
 
 // Cliente público sem sessão do usuário, para buscas e listagens abertas.
 export const publicSupabase = createSupabaseClient({
