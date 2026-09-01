@@ -1,12 +1,13 @@
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Music } from 'lucide-react';
+import { Music, Radio } from 'lucide-react';
 import { AvulsosIcon, BibleIcon, HomeIcon, HymnalIcon, SearchIcon } from '@/components/icons';
 import { usePlayerContext } from '@/contexts/PlayerContext';
 
 const MobileNav: React.FC = () => {
   const location = useLocation();
   const { closeFullScreen } = usePlayerContext();
+  const navRef = useRef<HTMLDivElement | null>(null);
 
   const isActive = (path: string) => {
     return location.pathname === path;
@@ -25,8 +26,14 @@ const MobileNav: React.FC = () => {
     { path: '/cifras', icon: AvulsosIcon, label: 'Cifras' },
     { path: '/search', icon: SearchIcon, label: 'Pesquisar' },
     { path: '/biblia-ccb', icon: BibleIcon, label: 'Bíblia' },
-    { path: '/hinario', icon: HymnalIcon, label: 'Hinário' }
+    { path: '/hinario', icon: HymnalIcon, label: 'Hinário' },
+    { path: '/radio', icon: Radio, label: 'Rádio' },
   ];
+
+  useEffect(() => {
+    const activeItem = navRef.current?.querySelector<HTMLElement>('[aria-current="page"]');
+    activeItem?.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+  }, [location.pathname]);
 
   return (
     <nav
@@ -38,16 +45,21 @@ const MobileNav: React.FC = () => {
         WebkitBackdropFilter: 'blur(18px)',
       }}
     >
-      <div className="flex h-16 items-stretch justify-around px-1">
+      <div
+        ref={navRef}
+        className="scrollbar-hide flex h-16 snap-x snap-mandatory items-stretch gap-1 overflow-x-auto overscroll-x-contain scroll-smooth px-2 touch-pan-x"
+        aria-label="Navegação principal mobile"
+      >
         {navItems.map(({ path, icon: Icon, label }) => (
           <Link
             key={path}
             to={path}
             onClick={handleNavClick}
-            className={`flex flex-col items-center justify-center space-y-1 px-2 transition-colors ${
+            aria-current={isActive(path) ? 'page' : undefined}
+            className={`flex w-[72px] shrink-0 snap-center flex-col items-center justify-center space-y-1 rounded-xl px-2 transition-colors ${
               isActive(path)
-                ? 'text-primary-500'
-                : 'text-text-muted hover:text-primary-500'
+                ? 'bg-primary-500/10 text-primary-500'
+                : 'text-text-muted hover:bg-white/5 hover:text-primary-500'
             }`}
           >
             <Icon className="w-6 h-6" />
