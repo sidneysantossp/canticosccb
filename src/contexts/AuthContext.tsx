@@ -139,10 +139,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           const sessionName = session.user.user_metadata?.name || session.user.user_metadata?.full_name;
           const sessionAvatar = session.user.user_metadata?.avatar_url || session.user.user_metadata?.picture;
 
-          if (session.user.email_confirmed_at && !user.email_verified) {
-            updates.email_verified = true;
-          }
-
           if (!user.name && sessionName) {
             updates.name = sessionName;
           }
@@ -194,21 +190,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           });
           return true;
         } else {
-          // Usar upsert para evitar erro de duplicate key
+          // O perfil pode ainda não existir em cadastros antigos. Criamos apenas
+          // os campos que o próprio usuário pode definir; papéis, plano, bloqueio
+          // e verificação são controlados exclusivamente pelo servidor.
           const { data: newUser, error } = await authClient.supabase
             .from('users')
-            .upsert({
+            .insert({
               id: session.user.id, // UUID do auth.users
               email: session.user.email!,
               name: session.user.user_metadata?.name || session.user.email?.split('@')[0] || 'Usuário',
-              avatar_url: session.user.user_metadata?.avatar_url,
-              plan: 'free',
-              status: 'active',
-              is_admin: false,
-              is_composer: false,
-              is_blocked: false,
-              email_verified: !!session.user.email_confirmed_at,
-            }, { onConflict: 'id' })
+              avatar_url: session.user.user_metadata?.avatar_url || session.user.user_metadata?.picture,
+            })
             .select(profileColumns)
             .single();
 

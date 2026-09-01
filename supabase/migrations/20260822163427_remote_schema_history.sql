@@ -1,0 +1,2 @@
+-- Placeholder for the production migration already recorded in Supabase before
+-- this repository began tracking migrations in supabase/migrations.

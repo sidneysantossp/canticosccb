@@ -58,19 +58,6 @@ const AuthCallbackPage: React.FC = () => {
           }
 
           if (composer || dbUser?.is_composer) {
-            await supabase
-              .from('users')
-              .upsert({
-                id: sessionUser.id,
-                email: sessionUser.email || dbUser?.email || '',
-                name: dbUser?.name || sessionUser.user_metadata?.name || sessionUser.email?.split('@')[0] || 'Usuário',
-                plan: 'free',
-                status: 'active',
-                is_admin: dbUser?.is_admin || false,
-                is_composer: true,
-                is_blocked: false,
-              }, { onConflict: 'id' });
-
             return '/composer/dashboard';
           }
 
