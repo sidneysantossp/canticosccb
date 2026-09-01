@@ -68,7 +68,8 @@ export const useFavorites = () => {
       if (showModalCallback) {
         showModalCallback();
       } else {
-        navigate('/login', { state: { from: window.location.pathname } });
+        const from = `${window.location.pathname}${window.location.search}${window.location.hash}`;
+        navigate('/login', { state: { from, reason: 'favorite' } });
       }
       return;
     }

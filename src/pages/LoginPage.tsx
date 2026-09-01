@@ -5,6 +5,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useMobileMenu } from '@/contexts/MobileMenuContext';
 import { googleOAuthLogin, isGoogleAuthEnabled } from '@/lib/supabase-auth';
 import { useActiveComposer } from '@/hooks/useActiveComposer';
+import { consumeAuthReturnTo, normalizeAuthReturnTo, peekAuthReturnTo, rememberAuthReturnTo } from '@/lib/authReturnTo';
 
 const LoginPage: React.FC = () => {
   const navigate = useNavigate();
@@ -23,6 +24,12 @@ const LoginPage: React.FC = () => {
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const googleAuthEnabled = isGoogleAuthEnabled();
   const cameFromGate = (location.state as any)?.reason === 'continue-listening';
+
+  useEffect(() => {
+    const stateDestination = normalizeAuthReturnTo((location.state as { from?: unknown } | null)?.from);
+    const queryDestination = normalizeAuthReturnTo(new URLSearchParams(location.search).get('redirect'));
+    rememberAuthReturnTo(stateDestination || queryDestination);
+  }, [location.search, location.state]);
 
   // Redirecionar quando o perfil carregar após login
   useEffect(() => {
@@ -43,7 +50,10 @@ const LoginPage: React.FC = () => {
           || composerRecord.verified === true
           || ['approved', 'active', 'ativo'].includes(String(composerRecord.status || '').toLowerCase())
       ));
-      if (profile.is_composer || approvedComposer) {
+      const returnTo = consumeAuthReturnTo();
+      if (returnTo) {
+        navigate(returnTo, { replace: true });
+      } else if (profile.is_composer || approvedComposer) {
         navigate('/composer');
       } else if (profile.is_admin) {
         navigate('/admin');
@@ -60,7 +70,7 @@ const LoginPage: React.FC = () => {
     try {
       setIsGoogleLoading(true);
       setError('');
-      await googleOAuthLogin();
+      await googleOAuthLogin(peekAuthReturnTo());
       // O redirecionamento será feito automaticamente pelo Supabase
     } catch (err: any) {
       console.error('Erro no Google Login:', err);

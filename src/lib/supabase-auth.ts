@@ -4,6 +4,7 @@
  */
 import { createClient } from '@supabase/supabase-js';
 import { DEFAULT_SITE_URL, normalizeSiteUrl } from '@/utils/siteUrl';
+import { rememberAuthReturnTo } from '@/lib/authReturnTo';
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || '';
 const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
@@ -384,18 +385,22 @@ export async function googleLogin(idToken: string): Promise<void> {
 /**
  * Login com Google usando OAuth do Supabase (Redirect)
  */
-export async function googleOAuthLogin(): Promise<void> {
+export async function googleOAuthLogin(returnTo?: string | null): Promise<void> {
   if (!isGoogleAuthEnabled()) {
     throw new Error('Login com Google temporariamente indisponível.');
   }
 
   try {
+    const currentPage = typeof window !== 'undefined'
+      ? `${window.location.pathname}${window.location.search}${window.location.hash}`
+      : null;
+    rememberAuthReturnTo(returnTo || currentPage);
+    const redirectBase = getAuthRedirectBase();
+
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        // O AuthContext processa a sessão OAuth ao carregar a rota pública de login.
-        // Evita depender de uma rota server-side que pode cair no 404 do Vercel.
-        redirectTo: `${window.location.origin}/login`,
+        redirectTo: `${redirectBase}/auth/callback`,
         queryParams: {
           access_type: 'offline',
           prompt: 'consent',

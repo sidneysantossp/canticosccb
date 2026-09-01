@@ -21,8 +21,9 @@ const LoginRequiredModal: React.FC<LoginRequiredModalProps> = ({
   if (!isOpen) return null;
 
   const handleLogin = () => {
+    const from = `${window.location.pathname}${window.location.search}${window.location.hash}`;
     onClose();
-    navigate('/login', { state: { from: window.location.pathname } });
+    navigate('/login', { state: { from, reason: 'favorite' } });
   };
 
   const modalContent = (

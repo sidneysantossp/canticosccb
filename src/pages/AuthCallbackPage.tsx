@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { handleOAuthCallback } from '@/lib/supabase-auth';
 import { supabase } from '@/lib/supabase-auth';
+import { consumeAuthReturnTo } from '@/lib/authReturnTo';
 
 const AuthCallbackPage: React.FC = () => {
   const navigate = useNavigate();
@@ -14,6 +15,10 @@ const AuthCallbackPage: React.FC = () => {
         const callbackType = searchParams.get('type');
         const isEmailVerification = callbackType === 'email_verification';
         const isPasswordRecovery = callbackType === 'recovery';
+
+        const navigateAfterAuth = (fallback: string) => {
+          navigate(consumeAuthReturnTo() || fallback, { replace: true });
+        };
 
         const resolvePostAuthDestination = async (sessionUser: { id: string; email?: string | null; user_metadata?: Record<string, any> }) => {
           const { data: dbUser } = await supabase
@@ -77,6 +82,13 @@ const AuthCallbackPage: React.FC = () => {
         // The Supabase client auto-exchanges these tokens on page load
         // Wait for the session to be established
         let { data: { session } } = await supabase.auth.getSession();
+
+        const authorizationCode = searchParams.get('code');
+        if (!session && authorizationCode) {
+          const { data, error: exchangeError } = await supabase.auth.exchangeCodeForSession(authorizationCode);
+          if (exchangeError) throw exchangeError;
+          session = data.session;
+        }
         
         if (!session) {
           // Wait a bit for Supabase to process the hash token
@@ -90,11 +102,11 @@ const AuthCallbackPage: React.FC = () => {
             if (result.success) {
               await new Promise(resolve => setTimeout(resolve, 500));
               if (result.usuario.tipo === 'compositor') {
-                navigate('/composer', { replace: true });
+                navigateAfterAuth('/composer');
               } else if (result.usuario.tipo === 'admin') {
-                navigate('/admin', { replace: true });
+                navigateAfterAuth('/admin');
               } else {
-                navigate('/onboarding', { replace: true });
+                navigateAfterAuth('/profile');
               }
               return;
             }
@@ -117,7 +129,7 @@ const AuthCallbackPage: React.FC = () => {
             ? await resolvePostAuthDestination(session.user)
             : '/onboarding';
           await new Promise(resolve => setTimeout(resolve, 500));
-          navigate(destination, { replace: true });
+          navigateAfterAuth(isEmailVerification ? '/onboarding' : destination);
           return;
         }
 
@@ -128,11 +140,11 @@ const AuthCallbackPage: React.FC = () => {
           await new Promise(resolve => setTimeout(resolve, 500));
           
           if (result.usuario.tipo === 'compositor') {
-            navigate('/composer', { replace: true });
+            navigateAfterAuth('/composer');
           } else if (result.usuario.tipo === 'admin') {
-            navigate('/admin', { replace: true });
+            navigateAfterAuth('/admin');
           } else {
-            navigate('/onboarding', { replace: true });
+            navigateAfterAuth('/profile');
           }
         }
       } catch (err: any) {
