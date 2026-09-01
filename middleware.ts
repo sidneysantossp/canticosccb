@@ -24,7 +24,7 @@ const PUBLIC_PREFIXES = [
   /^\/cifras\/(?:violao|ukulele|teclado)\//,
   /^\/biblia-ccb\//,
 ];
-const PRIVATE_PREFIXES = ['/admin', '/composer', '/compositor/cadastro', '/perfil', '/profile', '/biblioteca', '/library', '/favoritos', '/liked', '/historico', '/history', '/downloads', '/notifications', '/notificacoes', '/chat', '/suporte', '/support', '/configuracoes', '/settings', '/login', '/register', '/onboarding', '/subscription', '/edit-profile'];
+const PRIVATE_PREFIXES = ['/admin', '/composer', '/compositor/cadastro', '/perfil', '/profile', '/biblioteca', '/library', '/favoritos', '/liked', '/historico', '/history', '/downloads', '/notifications', '/notificacoes', '/chat', '/suporte', '/support', '/configuracoes', '/settings', '/login', '/register', '/cadastro', '/verify-email', '/auth/callback', '/forgot-password', '/reset-password', '/onboarding', '/subscription', '/edit-profile'];
 
 export const config = { matcher: '/:path*' };
 
