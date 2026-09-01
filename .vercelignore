@@ -6,6 +6,11 @@ dist/
 build/
 *.tsbuildinfo
 .output
+outputs/
+.pnpm-store/
+
+# Local runtime logs
+*.log
 
 # Environment
 .env
