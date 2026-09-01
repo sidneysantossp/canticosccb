@@ -183,8 +183,11 @@ function mapPublicCifraPageData(
   };
 }
 
-export async function fetchPublicCifraPageBySlug(publicSlug: string): Promise<PublicCifraPageData | null> {
-  const catalog = await fetchPublicCifraCatalogBySlug(publicSlug);
+export async function fetchPublicCifraPageBySlug(
+  publicSlug: string,
+  instrument?: CifraInstrument,
+): Promise<PublicCifraPageData | null> {
+  const catalog = await fetchPublicCifraCatalogBySlug(publicSlug, instrument);
   if (!catalog) {
     return null;
   }
@@ -203,8 +206,11 @@ export async function fetchPublicCifraPageBySlug(publicSlug: string): Promise<Pu
   return mapPublicCifraPageData(catalog, version, sections, chordOverrides, siblings);
 }
 
-export async function fetchAdminPreviewCifraPageBySlug(publicSlug: string): Promise<PublicCifraPageData | null> {
-  const version = await fetchCifraVersionByPublicSlug(publicSlug, { authenticated: true });
+export async function fetchAdminPreviewCifraPageBySlug(
+  publicSlug: string,
+  instrument?: CifraInstrument,
+): Promise<PublicCifraPageData | null> {
+  const version = await fetchCifraVersionByPublicSlug(publicSlug, { authenticated: true, instrument });
   if (!version) {
     return null;
   }

@@ -229,14 +229,20 @@ export async function fetchCifraVersionById(
 
 export async function fetchCifraVersionByPublicSlug(
   publicSlug: string,
-  options: FetchCifraVersionsOptions = {},
+  options: FetchCifraVersionsOptions & { instrument?: CifraInstrument } = {},
 ): Promise<CifraVersion | null> {
   const fetcher = options.authenticated ? supabaseAuthFetch : supabaseFetch;
-  const rows = await fetcher<any>('cifra_versions', {
+  const filters: Record<string, string> = {
     public_slug: `eq.${generateSlug(publicSlug)}`,
     select: '*',
     limit: '1',
-  });
+  };
+
+  if (options.instrument) {
+    filters.instrument = `eq.${options.instrument}`;
+  }
+
+  const rows = await fetcher<any>('cifra_versions', filters);
 
   return rows[0] ? mapCifraVersionRow(rows[0]) : null;
 }
@@ -324,12 +330,21 @@ export async function fetchAllPublicCifraCatalog(
   return allItems;
 }
 
-export async function fetchPublicCifraCatalogBySlug(publicSlug: string): Promise<CifraPublicCatalogItem | null> {
-  const rows = await supabaseFetch<any>('cifra_public_catalog', {
+export async function fetchPublicCifraCatalogBySlug(
+  publicSlug: string,
+  instrument?: CifraInstrument,
+): Promise<CifraPublicCatalogItem | null> {
+  const filters: Record<string, string> = {
     public_slug: `eq.${generateSlug(publicSlug)}`,
     select: '*',
     limit: '1',
-  });
+  };
+
+  if (instrument) {
+    filters.instrument = `eq.${instrument}`;
+  }
+
+  const rows = await supabaseFetch<any>('cifra_public_catalog', filters);
 
   return rows[0] ? mapCifraPublicCatalogRow(rows[0]) : null;
 }

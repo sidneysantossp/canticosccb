@@ -867,9 +867,10 @@ const CifraPage: React.FC = () => {
       }
 
       const isAdminPreview = searchParams.get('preview') === 'admin';
+      const requestedInstrument = routeInstrument as CifraInstrument | undefined;
       const publicData = isAdminPreview
-        ? await fetchAdminPreviewCifraPageBySlug(slug)
-        : await fetchPublicCifraPageBySlug(slug);
+        ? await fetchAdminPreviewCifraPageBySlug(slug, requestedInstrument)
+        : await fetchPublicCifraPageBySlug(slug, requestedInstrument);
       if (publicData) {
         const defaultStudySectionIndex = resolveDefaultStudySectionIndex(
           publicData.sections,
@@ -1894,7 +1895,7 @@ const CifraPage: React.FC = () => {
             <Link to={instrumentHubUrl} className="text-gray-300 transition-colors hover:text-primary-300">{instrumentLabel}</Link>
           </nav>
         </header>
-        {renderChordDiagrams('mb-5 hidden sm:block')}
+        {renderChordDiagrams('mb-5')}
       {/* Cifra Content */}
       <div
         ref={contentRef}
