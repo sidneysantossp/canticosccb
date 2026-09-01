@@ -89,7 +89,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   return (
     <ToastProvider>
     <PlayerFeedbackBridge />
-    <div className="min-h-screen bg-background-primary flex flex-col">
+    <div className="flex min-h-screen flex-col overflow-x-hidden bg-background-primary">
       {/* Header - Ocultar em páginas de auth */}
       {!isAuthPage && !isImmersiveContentPage && <Header />}
       

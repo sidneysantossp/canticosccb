@@ -272,19 +272,19 @@ const Header: React.FC = () => {
 
   return (
     <header ref={headerRef} className="sticky top-0 z-50 bg-background-primary shadow-lg" style={{ boxShadow: '0 6px 25px -2px rgba(0, 0, 0, 0.6)' }}>
-      <div className="flex items-center justify-between lg:justify-start pl-3 pr-6 lg:pl-6 py-4">
+      <div className="flex min-w-0 items-center justify-between px-2 py-4 sm:px-4 lg:justify-start lg:px-6">
         {/* Logo */}
-        <Link to="/" className="flex items-center lg:w-[240px] lg:shrink-0">
+        <Link to="/" className="flex shrink-0 items-center lg:w-[240px]">
           <img
             src="/logo-canticos-ccb.png"
             alt="Cânticos CCB"
-            className="h-10 md:h-10 w-auto object-contain"
+            className="h-8 w-auto max-w-[132px] object-contain min-[380px]:h-9 min-[380px]:max-w-[165px] sm:h-10 sm:max-w-none"
             referrerPolicy="no-referrer"
           />
         </Link>
 
         {/* Search Bar - Desktop */}
-        <div className="relative ml-0 mr-4 hidden max-w-lg flex-1 md:block lg:ml-4">
+        <div className="relative ml-0 mr-4 hidden max-w-lg flex-1 lg:ml-4 lg:block">
           <form onSubmit={handleSearchSubmit}>
             <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-text-muted w-4 h-4" />
@@ -365,10 +365,10 @@ const Header: React.FC = () => {
         </div>
 
         {/* Right Side */}
-        <div className="flex items-center space-x-1 md:space-x-4 lg:ml-auto">
+        <div className="ml-1 flex min-w-0 items-center gap-1 sm:gap-2 lg:ml-auto lg:gap-4">
           <Link
             to="/radio"
-            className="hidden md:inline-flex items-center gap-2 rounded-full border border-green-500/25 bg-green-500/[0.06] px-3 py-2 transition-colors hover:border-green-500/45 hover:bg-green-500/10"
+            className="hidden items-center gap-2 rounded-full border border-green-500/25 bg-green-500/[0.06] px-3 py-2 transition-colors hover:border-green-500/45 hover:bg-green-500/10 lg:inline-flex"
             title="Ouvir Rádio Cânticos ao vivo"
             aria-label="Ouvir Rádio Cânticos ao vivo"
           >
@@ -383,7 +383,7 @@ const Header: React.FC = () => {
           {user && (
             <Link
               to={isComposerPanel ? "/composer/notifications" : "/notifications"}
-              className="hidden md:inline-flex items-center justify-center relative p-2.5 rounded-full hover:bg-green-500/10 transition-colors group"
+              className="relative hidden items-center justify-center rounded-full p-2.5 transition-colors hover:bg-green-500/10 lg:inline-flex"
               title="Notificações"
             >
               <Bell className="w-5 h-5 text-green-500 group-hover:text-green-400 transition-colors stroke-[2]" />
@@ -408,7 +408,7 @@ const Header: React.FC = () => {
           {/* User Menu - Desktop Only */}
           {user ? (
             <div
-              className="relative hidden md:flex items-center gap-3"
+              className="relative hidden items-center gap-3 lg:flex"
             >
               <button
                 onClick={() => setShowUserMenu(!showUserMenu)}
@@ -531,7 +531,7 @@ const Header: React.FC = () => {
           ) : (
             <Link
               to="/login"
-              className="hidden md:inline-flex items-center rounded-full bg-white border-2 border-white text-black px-6 py-2 font-semibold hover:bg-gray-100 transition-colors"
+              className="hidden items-center rounded-full border-2 border-white bg-white px-6 py-2 font-semibold text-black transition-colors hover:bg-gray-100 lg:inline-flex"
             >
               Entrar
             </Link>
@@ -540,12 +540,12 @@ const Header: React.FC = () => {
           {/* Rádio - Mobile */}
           <Link
             to="/radio"
-            className="inline-flex items-center gap-1.5 rounded-full border border-green-500/25 bg-green-500/[0.06] px-2.5 py-2 md:hidden"
+            className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-green-500/25 bg-green-500/[0.06] px-2 py-2 lg:hidden min-[390px]:px-2.5"
             title="Ouvir Rádio Cânticos ao vivo"
             aria-label="Ouvir Rádio Cânticos ao vivo"
           >
             <Radio className="h-5 w-5 text-green-500" aria-hidden="true" />
-            <span className="header-radio-live-label text-[9px] font-extrabold tracking-[0.08em] text-green-400">AO VIVO</span>
+            <span className="header-radio-live-label hidden text-[9px] font-extrabold tracking-[0.08em] text-green-400 min-[390px]:inline">AO VIVO</span>
           </Link>
 
           {/* Notification Bell - Mobile */}
@@ -568,7 +568,7 @@ const Header: React.FC = () => {
           {!user && (
             <Link
               to="/register"
-              className="lg:hidden inline-flex items-center px-4 py-2 rounded-full bg-green-500 text-black text-sm font-semibold hover:bg-green-400 transition-colors"
+              className="hidden shrink-0 items-center rounded-full bg-green-500 px-3 py-2 text-sm font-semibold text-black transition-colors hover:bg-green-400 min-[370px]:inline-flex sm:px-4 lg:hidden"
               aria-label="Registrar"
             >
               Registrar
@@ -578,7 +578,7 @@ const Header: React.FC = () => {
           {/* Mobile Menu Button - Abre Sidebar */}
           <button
             onClick={openMenu}
-            className="lg:hidden p-3 rounded-full hover:bg-background-hover transition-colors"
+            className="shrink-0 rounded-full p-2 transition-colors hover:bg-background-hover sm:p-3 lg:hidden"
             aria-label="Abrir menu"
           >
             <Menu className="w-7 h-7 text-text-primary" />

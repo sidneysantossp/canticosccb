@@ -47,7 +47,7 @@ const PublicMobileSidebar: React.FC<PublicMobileSidebarProps> = ({ isOpen, onClo
       { path: '/hinos-avulsos-ccb', icon: AvulsosIcon, label: 'Avulsos' }, { path: '/hinos-cantados-ccb', icon: VocalsIcon, label: 'Cantados' },
       { path: '/instrumentais', icon: InstrumentalIcon, label: 'Instrumentais' }, { path: '/cifras', icon: ChordsIcon, label: 'Cifras' },
       { path: '/hinario', icon: HymnalIcon, label: 'Hinário' }, { path: '/biblia-ccb', icon: BibleIcon, label: 'Bíblia Digital' },
-      { path: '/radio', icon: Radio, label: 'Rádio' },
+      { path: '/radio', icon: Radio, label: 'Rádio Online' },
     ];
 
     // Adicionar painel específico do usuário
@@ -230,18 +230,18 @@ const PublicMobileSidebar: React.FC<PublicMobileSidebarProps> = ({ isOpen, onClo
               <span className="font-medium">Sair</span>
             </button>
           ) : (
-            <div className="relative -top-8 flex gap-3">
+            <div className="relative -top-8 flex min-w-0 gap-2 sm:gap-3">
               <Link
                 to="/login"
                 onClick={onClose}
-                className="flex flex-1 items-center justify-center rounded-lg bg-white px-4 py-2.5 font-semibold text-green-800 transition-colors hover:bg-green-50"
+                className="flex min-w-0 flex-1 items-center justify-center rounded-lg bg-white px-2 py-2.5 text-sm font-semibold text-green-800 transition-colors hover:bg-green-50 sm:px-4 sm:text-base"
               >
                 Entrar
               </Link>
               <Link
                 to="/register"
                 onClick={onClose}
-                className="flex flex-1 items-center justify-center rounded-lg border-2 border-white px-4 py-2.5 font-semibold text-white transition-colors hover:bg-white/10"
+                className="flex min-w-0 flex-1 items-center justify-center rounded-lg border-2 border-white px-2 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-white/10 sm:px-4 sm:text-base"
               >
                 Registrar
               </Link>
