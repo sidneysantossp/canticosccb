@@ -15,12 +15,11 @@ const emptyHomeData: HomePageData = {
   newReleases: [], trending: [], composers: [], playlists: [], categories: [],
 };
 
-const schedule: RadioProgram[] = [
-  { time: '00:00', hour: 0, title: 'Seleção Instrumental' },
-  { time: '06:00', hour: 6, title: 'Manhã de Inspiração' },
-  { time: '12:00', hour: 12, title: 'Momento de Reflexão' },
-  { time: '18:00', hour: 18, title: 'Clássicos que Inspiram' },
-  { time: '22:00', hour: 22, title: 'Paz e Descanso' },
+const shifts: Array<Omit<RadioProgram, 'tracks'>> = [
+  { id: 'morning', label: 'Manhã', timeRange: '06:00 — 11:59' },
+  { id: 'afternoon', label: 'Tarde', timeRange: '12:00 — 17:59' },
+  { id: 'night', label: 'Noite', timeRange: '18:00 — 23:59' },
+  { id: 'dawn', label: 'Madrugada', timeRange: '00:00 — 05:59' },
 ];
 
 const toTrack = (hymn: HomeHymn): Hino => ({
@@ -77,7 +76,7 @@ const RadioPage: React.FC = () => {
   useEffect(() => {
     const updateActiveProgram = () => {
       const currentHour = new Date().getHours();
-      setActiveScheduleIndex(schedule.reduce((match, item, index) => (currentHour >= item.hour ? index : match), 0));
+      setActiveScheduleIndex(currentHour < 6 ? 3 : currentHour < 12 ? 0 : currentHour < 18 ? 1 : 2);
     };
     updateActiveProgram();
     const interval = window.setInterval(updateActiveProgram, 60_000);
@@ -101,6 +100,15 @@ const RadioPage: React.FC = () => {
 
   const isRadioActive = playbackContext?.id === 'radio-canticos' && Boolean(currentTrack);
   const isRadioPlaying = isRadioActive && isPlaying;
+  const schedule = useMemo<RadioProgram[]>(() => shifts.map((shift, index) => ({
+    ...shift,
+    tracks: lineup.slice(index * 6, index * 6 + 6).map((hymn) => ({
+      artist: hymn.composer_name || 'Cânticos CCB',
+      duration: hymn.duration || '—',
+      id: String(hymn.id),
+      title: hymn.title,
+    })),
+  })), [lineup]);
 
   const startRadio = (startAtIndex = 0) => {
     const tracks = lineup.map(toTrack);
@@ -124,14 +132,14 @@ const RadioPage: React.FC = () => {
 
   const schemaData = generateBreadcrumbSchema([
     { name: 'Início', url: '/' },
-    { name: 'Rádio Cânticos', url: '/radio' },
+    { name: 'Rádio Cânticos CCB', url: '/radio' },
   ]);
 
   return (
     <div className="radio-page mx-auto min-h-[calc(100vh-5rem)] w-full max-w-[1440px] pb-28 pt-4 sm:pt-6 lg:pb-16">
       <SEOHead
-        title="Rádio Cânticos — programação musical online"
-        description="Ouça a Rádio Cânticos e acompanhe uma programação contínua de seleções instrumentais e momentos de inspiração."
+        title="Rádio Cânticos CCB — programação musical online"
+        description="Ouça a Rádio Cânticos CCB e acompanhe a sequência de hinos organizada por manhã, tarde, noite e madrugada."
         canonical="/radio"
         schemaData={schemaData}
       />
@@ -144,11 +152,15 @@ const RadioPage: React.FC = () => {
         isPlaying={isRadioPlaying}
         onPlayPause={handlePlayPause}
         onVolumeChange={setVolume}
-        trackName={isRadioActive && currentTrack ? currentTrack.title : 'Rádio Cânticos — programação ao vivo'}
+        trackName={isRadioActive && currentTrack ? currentTrack.title : 'Rádio Cânticos CCB — programação ao vivo'}
         volume={volume}
       />
       {!loading && lineup.length === 0 ? <p className="radio-unavailable">Programação temporariamente indisponível.</p> : null}
-      <RadioSchedule programs={schedule} activeIndex={activeScheduleIndex} />
+      <RadioSchedule
+        programs={schedule}
+        activeIndex={activeScheduleIndex}
+        currentTrackId={isRadioActive && currentTrack ? String(currentTrack.id) : undefined}
+      />
     </div>
   );
 };

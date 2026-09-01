@@ -24,7 +24,7 @@ const RadioPlayer: React.FC<RadioPlayerProps> = ({
   <section className="radio-player-shell" aria-labelledby="radio-title">
     <div className="radio-player-ambient" aria-hidden="true" />
     <div className="radio-player-content">
-      <h1 id="radio-title">Rádio Cânticos</h1>
+      <h1 id="radio-title">Rádio Cânticos CCB</h1>
       <RadioNowPlayingDisplay trackName={trackName} />
       <RadioLiveStatus />
       <div className="radio-player-stage">

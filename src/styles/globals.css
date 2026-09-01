@@ -813,7 +813,13 @@ html::-webkit-scrollbar-thumb:hover {
   letter-spacing: -0.025em;
 }
 
-.radio-schedule-list {
+.radio-schedule-shifts {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.radio-schedule-shift {
   overflow: hidden;
   border: 1px solid rgba(255, 255, 255, 0.075);
   border-radius: 1rem;
@@ -821,46 +827,56 @@ html::-webkit-scrollbar-thumb:hover {
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.02);
 }
 
+.radio-schedule-shift.is-active {
+  border-color: rgba(50, 213, 131, 0.34);
+  box-shadow: 0 0 0 1px rgba(50, 213, 131, 0.08), 0 18px 45px rgba(0, 0, 0, 0.24);
+}
+
+.radio-schedule-shift-header {
+  display: flex;
+  min-height: 76px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.065);
+  padding: 1rem 1.15rem;
+  background: linear-gradient(115deg, rgba(34, 197, 94, 0.08), transparent 62%);
+}
+
+.radio-schedule-shift-header h3 { margin: 0; color: #f5f7f6; font-size: 1.08rem; font-weight: 750; }
+.radio-schedule-shift-header time { color: #78817d; font-size: 0.72rem; font-variant-numeric: tabular-nums; }
+.radio-schedule-turn-live { flex: none; border-radius: 9999px; background: rgba(34, 197, 94, 0.12); padding: 0.32rem 0.58rem; color: #67ec96; font-size: 0.6rem; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; }
+.radio-schedule-list { margin: 0; padding: 0; list-style: none; }
+
 .radio-schedule-item {
   position: relative;
   display: grid;
-  min-height: 68px;
-  grid-template-columns: 110px minmax(0, 1fr) auto;
+  min-height: 66px;
+  grid-template-columns: 26px minmax(0, 1fr) auto auto;
   align-items: center;
-  gap: 1rem;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.055);
-  padding: 0.85rem 1.4rem;
-  color: #9ca3af;
+  gap: 0.75rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  padding: 0.7rem 1rem;
+  color: #858e89;
   transition: background 180ms ease, color 180ms ease;
 }
 
 .radio-schedule-item:last-child { border-bottom: 0; }
-.radio-schedule-item time { font-size: 0.86rem; font-variant-numeric: tabular-nums; }
+.radio-schedule-item > time { font-size: 0.72rem; font-variant-numeric: tabular-nums; }
+.radio-schedule-position { color: #56605b; font-size: 0.7rem; font-variant-numeric: tabular-nums; }
+.radio-schedule-track-copy { min-width: 0; }
+.radio-schedule-track-copy strong,
+.radio-schedule-track-copy small { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.radio-schedule-track-copy strong { color: #d9dfdc; font-size: 0.86rem; font-weight: 650; }
+.radio-schedule-track-copy small { margin-top: 0.18rem; color: #69736e; font-size: 0.7rem; }
 
-.radio-schedule-title {
-  overflow: hidden;
-  color: #d9dfdc;
-  font-size: 0.98rem;
-  font-weight: 600;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.radio-schedule-item.is-active {
-  background: linear-gradient(90deg, rgba(34, 197, 94, 0.095), rgba(34, 197, 94, 0.025) 55%, transparent);
+.radio-schedule-item.is-on-air {
+  background: linear-gradient(90deg, rgba(34, 197, 94, 0.105), rgba(34, 197, 94, 0.025) 62%, transparent);
   color: #67ec96;
 }
 
-.radio-schedule-item.is-active::before {
-  position: absolute;
-  inset: 0 auto 0 0;
-  width: 3px;
-  content: '';
-  background: #32d583;
-  box-shadow: 0 0 13px rgba(50, 213, 131, 0.55);
-}
-
-.radio-schedule-item.is-active .radio-schedule-title { color: #f5f7f6; }
+.radio-schedule-item.is-on-air::before { position: absolute; inset: 0 auto 0 0; width: 3px; content: ''; background: #32d583; box-shadow: 0 0 13px rgba(50, 213, 131, 0.55); }
+.radio-schedule-item.is-on-air .radio-schedule-track-copy strong { color: #f5f7f6; }
 
 .radio-schedule-live {
   display: inline-flex;
@@ -930,10 +946,12 @@ html::-webkit-scrollbar-thumb:hover {
 
   .radio-schedule { margin-top: 1.8rem; }
   .radio-schedule h2 { margin-bottom: 0.8rem; font-size: 1.25rem; }
-  .radio-schedule-list { border-radius: 0.9rem; }
-  .radio-schedule-item { min-height: 64px; grid-template-columns: 54px minmax(0, 1fr) auto; gap: 0.7rem; padding: 0.7rem 0.85rem; }
-  .radio-schedule-item time { font-size: 0.74rem; }
-  .radio-schedule-title { font-size: 0.86rem; }
+  .radio-schedule-shifts { grid-template-columns: minmax(0, 1fr); gap: 0.85rem; }
+  .radio-schedule-shift-header { min-height: 68px; padding: 0.85rem 1rem; }
+  .radio-schedule-item { min-height: 62px; grid-template-columns: 22px minmax(0, 1fr) auto; gap: 0.6rem; padding: 0.65rem 0.8rem; }
+  .radio-schedule-item > time { font-size: 0.68rem; }
+  .radio-schedule-item .radio-schedule-live { grid-column: 2 / -1; justify-self: start; margin-top: -0.15rem; }
+  .radio-schedule-track-copy strong { font-size: 0.82rem; }
   .radio-schedule-live { gap: 0.35rem; padding: 0.29rem 0.48rem; font-size: 0.56rem; }
 }
 
