@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { Suspense } from 'react';
 import { Outlet, useLocation } from 'react-router-dom';
 import Header from './Header';
 import Sidebar from './Sidebar';
@@ -113,7 +113,11 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
         {!isAuthPage && isComposerPanel && <ManagingComposerBanner />}
 
         <main className={isImmersiveContentPage ? 'bg-background-primary' : 'bg-background-primary px-4 sm:px-6 lg:px-8'}>
-          {children || <Outlet />}
+          {children || (
+            <Suspense fallback={null}>
+              <Outlet />
+            </Suspense>
+          )}
         </main>
         
         {/* Footer Global - Ocultar apenas em páginas de autenticação */}

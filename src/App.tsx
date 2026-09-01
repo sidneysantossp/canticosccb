@@ -182,7 +182,6 @@ import {
   AdminYoutubeImport,
 } from '@/pages/admin/lazyPages';
 import SiteConfigRuntime from '@/components/SiteConfigRuntime';
-import PageLoader from '@/components/ui/PageLoader';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import ProtectedComposerRoute from '@/components/ProtectedComposerRoute';
 import { Navigate, useLocation, useParams as useRouteParams } from 'react-router-dom';
@@ -285,7 +284,7 @@ const RouteRobots: React.FC = () => {
 
 const AppContent: React.FC = () => {
   return (
-    <Suspense fallback={<PageLoader />}>
+    <Suspense fallback={null}>
       <ScrollToTop />
       <RouteRobots />
       <Routes>

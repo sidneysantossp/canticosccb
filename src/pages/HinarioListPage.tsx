@@ -152,7 +152,7 @@ const HinarioListPage: React.FC = () => {
           </section>
 
           <section ref={resultsRef} className="scroll-mt-6 pt-16 sm:pt-20" aria-live="polite">
-            {isLoading ? <div className="flex justify-center py-20"><div className="h-8 w-8 animate-spin rounded-full border-4 border-primary-500 border-t-transparent" /></div> : visibleHymns.length === 0 ? <div className="rounded-2xl border border-white/10 bg-background-secondary px-6 py-16 text-center"><BookOpen className="mx-auto h-10 w-10 text-gray-600" /><h3 className="mt-4 text-lg font-medium text-white">Nenhum hino encontrado</h3><p className="mt-1 text-sm text-text-muted">Tente outro número ou trecho do título.</p></div> : <div className="w-full space-y-1">
+            {isLoading ? null : visibleHymns.length === 0 ? <div className="rounded-2xl border border-white/10 bg-background-secondary px-6 py-16 text-center"><BookOpen className="mx-auto h-10 w-10 text-gray-600" /><h3 className="mt-4 text-lg font-medium text-white">Nenhum hino encontrado</h3><p className="mt-1 text-sm text-text-muted">Tente outro número ou trecho do título.</p></div> : <div className="w-full space-y-1">
               {visibleHymns.map((hymn) => <Link key={hymn.id} to={buildHinarioUrl(hymn.numero, hymn.titulo)} className="group flex w-full items-center gap-4 rounded-lg px-3 py-3 transition-colors hover:bg-primary-500/10 sm:px-4">
                 <span className="w-10 shrink-0 font-mono text-sm font-semibold text-primary-400 transition-colors group-hover:text-primary-300">{formatHymnNumber(hymn.numero)}</span>
                 <span className="min-w-0 flex-1 truncate text-[15px] font-medium text-white transition-colors group-hover:text-primary-400">{getHymnTitle(hymn.titulo, hymn.numero)}</span>
