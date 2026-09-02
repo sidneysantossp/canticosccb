@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ArrowLeft } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import RadioPlayer from '@/components/radio/RadioPlayer';
@@ -9,6 +9,10 @@ import { hasPlayableTrackSource } from '@/lib/playerFeedback';
 import { usePlayerStore } from '@/stores/playerStore';
 import type { Hino } from '@/types';
 import { generateBreadcrumbSchema } from '@/utils/schemaGenerator';
+import { useAuth } from '@/contexts/AuthContext';
+import LoginRequiredModal from '@/components/modals/LoginRequiredModal';
+
+const RADIO_AUTOPLAY_INTENT_KEY = 'canticosccb:radio-autoplay-after-login';
 
 const emptyHomeData: HomePageData = {
   banners: [], featured: [], albums: [], hymnsCantados: [], hymnsTocados: [], hymnsAvulsos: [],
@@ -51,6 +55,9 @@ const RadioPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [homeData, setHomeData] = useState<HomePageData>(emptyHomeData);
   const [activeScheduleIndex, setActiveScheduleIndex] = useState(0);
+  const [showLoginModal, setShowLoginModal] = useState(false);
+  const autoplayAttemptedRef = useRef(false);
+  const { user, loading: authLoading } = useAuth();
   const {
     currentTrack, isPlaying, volume, playbackContext, play, pause, resume,
     setVolume, clearQueue, addToQueue, setPlaybackContext,
@@ -110,18 +117,34 @@ const RadioPage: React.FC = () => {
     })),
   })), [lineup]);
 
-  const startRadio = (startAtIndex = 0) => {
+  const startRadio = useCallback((startAtIndex = 0) => {
     const tracks = lineup.map(toTrack);
-    if (!tracks.length) return;
+    if (!tracks.length) return false;
     const normalizedIndex = Math.max(0, Math.min(startAtIndex, tracks.length - 1));
     const started = play(tracks[normalizedIndex]);
-    if (started === false) return;
+    if (started === false) return false;
     clearQueue();
     [...tracks.slice(normalizedIndex + 1), ...tracks.slice(0, normalizedIndex)].forEach(addToQueue);
     setPlaybackContext({ type: 'playlist', id: 'radio-canticos' });
-  };
+    return true;
+  }, [addToQueue, clearQueue, lineup, play, setPlaybackContext]);
+
+  useEffect(() => {
+    if (authLoading || !user || loading || lineup.length === 0 || isRadioActive) return;
+    if (autoplayAttemptedRef.current) return;
+    if (window.sessionStorage.getItem(RADIO_AUTOPLAY_INTENT_KEY) !== 'true') return;
+
+    autoplayAttemptedRef.current = true;
+    window.sessionStorage.removeItem(RADIO_AUTOPLAY_INTENT_KEY);
+    startRadio(activeScheduleIndex * 3);
+  }, [activeScheduleIndex, authLoading, isRadioActive, lineup.length, loading, startRadio, user]);
 
   const handlePlayPause = () => {
+    if (authLoading) return;
+    if (!user) {
+      setShowLoginModal(true);
+      return;
+    }
     if (!isRadioActive) {
       startRadio(activeScheduleIndex * 3);
       return;
@@ -148,7 +171,7 @@ const RadioPage: React.FC = () => {
         Voltar
       </Link>
       <RadioPlayer
-        disabled={loading || lineup.length === 0}
+        disabled={authLoading || loading || lineup.length === 0}
         isPlaying={isRadioPlaying}
         onPlayPause={handlePlayPause}
         onVolumeChange={setVolume}
@@ -160,6 +183,14 @@ const RadioPage: React.FC = () => {
         programs={schedule}
         activeIndex={activeScheduleIndex}
         currentTrackId={isRadioActive && currentTrack ? String(currentTrack.id) : undefined}
+      />
+      <LoginRequiredModal
+        isOpen={showLoginModal}
+        onClose={() => setShowLoginModal(false)}
+        onLogin={() => window.sessionStorage.setItem(RADIO_AUTOPLAY_INTENT_KEY, 'true')}
+        title="Login necessário"
+        message="Faça login ou crie sua conta para ouvir a Rádio Cânticos CCB. Ao retornar, a reprodução será iniciada automaticamente."
+        context="radio"
       />
     </div>
   );

@@ -28,17 +28,24 @@ const Player: React.FC<PlayerProps> = ({ isHidden = false }) => {
     setCurrentTime,
     repeat,
     setRepeat,
-    stop
+    stop,
+    playbackContext,
   } = usePlayerStore();
 
   const { isFullScreenOpen, openFullScreen, closeFullScreen } = usePlayerContext();
   const { isFavorite, addFavorite, removeFavorite } = useFavoritesStore();
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
 
   const [shuffle, setShuffle] = React.useState(false);
   const [isQueueOpen, setIsQueueOpen] = React.useState(false);
   const [showVolumeSlider, setShowVolumeSlider] = React.useState(false);
   const [showLoginModal, setShowLoginModal] = React.useState(false);
+
+  React.useEffect(() => {
+    if (!authLoading && !user && playbackContext?.id === 'radio-canticos') {
+      stop();
+    }
+  }, [authLoading, playbackContext?.id, stop, user]);
 
   // Fechar volume slider quando clicar fora
   React.useEffect(() => {
