@@ -2249,9 +2249,20 @@ const CifraPage: React.FC = () => {
         <button
           type="button"
           onClick={() => setAutoScrollSpeed(prev => prev === 0 ? 1 : prev === 1 ? 2 : prev === 2 ? 3 : 0)}
+          aria-label={autoScrollSpeed > 0 ? `Rolagem automática, velocidade ${autoScrollSpeed}` : 'Ativar rolagem automática'}
           className={`flex flex-col items-center gap-1.5 text-[11px] font-medium ${autoScrollSpeed > 0 ? 'text-primary-400' : 'text-gray-400'}`}
         >
-          <ScrollText className="h-5 w-5" />
+          <span className="relative">
+            <ScrollText className="h-5 w-5" />
+            {autoScrollSpeed > 0 ? (
+              <span
+                aria-hidden="true"
+                className="absolute -right-3 -top-2 flex h-4 min-w-4 items-center justify-center rounded-full border border-[#111313] bg-primary-500 px-1 text-[9px] font-extrabold leading-none text-black shadow-[0_0_10px_rgba(34,197,94,0.4)]"
+              >
+                {autoScrollSpeed}
+              </span>
+            ) : null}
+          </span>
           Rolagem
         </button>
         <button
