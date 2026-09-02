@@ -1008,3 +1008,22 @@ body.hide-sidebar > div > div {
 body.hide-sidebar .lg\:pl-64 {
   padding-left: 0 !important;
 }
+
+/* Proteção contra seleção e cópia casual nas áreas editoriais. Campos de
+   formulário continuam selecionáveis para manter busca e navegação acessíveis. */
+.protected-content,
+.protected-content img {
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+}
+
+.protected-content input,
+.protected-content textarea,
+.protected-content select,
+.protected-content [contenteditable="true"],
+.protected-content [data-copy-allowed="true"] {
+  -webkit-user-select: text;
+  user-select: text;
+  -webkit-touch-callout: default;
+}
