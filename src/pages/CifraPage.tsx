@@ -2259,7 +2259,7 @@ const CifraPage: React.FC = () => {
                 aria-hidden="true"
                 className="absolute -right-3 -top-2 flex h-4 min-w-4 items-center justify-center rounded-full border border-[#111313] bg-primary-500 px-1 text-[9px] font-extrabold leading-none text-black shadow-[0_0_10px_rgba(34,197,94,0.4)]"
               >
-                {autoScrollSpeed}
+                {autoScrollSpeed}x
               </span>
             ) : null}
           </span>
