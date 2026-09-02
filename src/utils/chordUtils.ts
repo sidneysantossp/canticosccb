@@ -173,9 +173,23 @@ export function simplifyCifraContent(content: string, key: string): string {
     return `${root}${minor ? 'm' : seventh ? '7' : ''}`;
   };
 
+  const chordTokenPattern = /(?<![A-Za-z0-9#b])([A-G][#b]?(?:m|M|maj|min|dim|aug|sus|add)?[0-9]?(?:\/[A-G][#b]?)?)(?![A-Za-z0-9#b])/g;
+
   return content.split('\n').map((line) => {
     if (!isChordLine(line)) return line;
-    return line.replace(/(?<![A-Za-z0-9#b])([A-G][#b]?(?:m|M|maj|min|dim|aug|sus|add)?[0-9]?(?:\/[A-G][#b]?)?)(?![A-Za-z0-9#b])/g, simplifyChord);
+
+    const simplifiedLine = line.replace(chordTokenPattern, simplifyChord);
+    let previousChord: string | null = null;
+
+    return simplifiedLine.replace(chordTokenPattern, (match, chord: string) => {
+      if (chord === previousChord) {
+        // Keep the original columns intact so the next chord remains over its lyric.
+        return ' '.repeat(match.length);
+      }
+
+      previousChord = chord;
+      return match;
+    });
   }).join('\n');
 }
 
