@@ -1,5 +1,10 @@
 import { publicSupabase } from '@/lib/supabase-auth';
 import { DEFAULT_SITE_URL, normalizeAssetUrl, normalizeSiteUrl } from '@/utils/siteUrl';
+import {
+  CONTENT_PROTECTION_CONFIG_KEYS,
+  DEFAULT_CONTENT_PROTECTION_SETTINGS,
+  type ContentProtectionSettings,
+} from '@/lib/contentProtectionConfig';
 
 export interface RuntimeThemeColors {
   primary: string;
@@ -80,6 +85,7 @@ export interface SiteRuntimeConfig {
   promotions: PublicPromotion[];
   tags: PublicTag[];
   editorialPlaylistMeta: Record<string, EditorialPlaylistMetadata>;
+  contentProtection: ContentProtectionSettings;
 }
 
 export const EDITORIAL_PLAYLISTS_CONFIG_KEY = 'admin_editorial_playlists';
@@ -102,6 +108,7 @@ const SITE_CONFIG_KEYS = [
   'admin_promotions',
   'admin_tags',
   EDITORIAL_PLAYLISTS_CONFIG_KEY,
+  ...Object.values(CONTENT_PROTECTION_CONFIG_KEYS),
 ] as const;
 
 const CACHE_TTL_MS = 5 * 60 * 1000;
@@ -370,6 +377,20 @@ export async function getSiteRuntimeConfig(force = false): Promise<SiteRuntimeCo
         editorialPlaylistMeta: parseEditorialPlaylistMetadataMap(
           config[EDITORIAL_PLAYLISTS_CONFIG_KEY]
         ),
+        contentProtection: {
+          hinario: parseBoolean(
+            config[CONTENT_PROTECTION_CONFIG_KEYS.hinario],
+            DEFAULT_CONTENT_PROTECTION_SETTINGS.hinario
+          ),
+          cifras: parseBoolean(
+            config[CONTENT_PROTECTION_CONFIG_KEYS.cifras],
+            DEFAULT_CONTENT_PROTECTION_SETTINGS.cifras
+          ),
+          biblia: parseBoolean(
+            config[CONTENT_PROTECTION_CONFIG_KEYS.biblia],
+            DEFAULT_CONTENT_PROTECTION_SETTINGS.biblia
+          ),
+        },
       };
 
       runtimeConfigCache = { value, timestamp: Date.now() };
@@ -382,6 +403,7 @@ export async function getSiteRuntimeConfig(force = false): Promise<SiteRuntimeCo
         promotions: [],
         tags: [],
         editorialPlaylistMeta: {},
+        contentProtection: DEFAULT_CONTENT_PROTECTION_SETTINGS,
       };
       runtimeConfigCache = { value: fallback, timestamp: Date.now() };
       persistRuntimeConfig(runtimeConfigCache);

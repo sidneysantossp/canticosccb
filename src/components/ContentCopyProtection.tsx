@@ -1,7 +1,10 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { getSiteRuntimeConfig } from '@/lib/publicSiteConfig';
+import type { ContentProtectionDirectory } from '@/lib/contentProtectionConfig';
 
 interface ContentCopyProtectionProps {
   children: React.ReactNode;
+  directory: ContentProtectionDirectory;
 }
 
 const BLOCKED_CLIPBOARD_KEYS = new Set(['c', 'x', 'v']);
@@ -11,7 +14,8 @@ const isEditableTarget = (target: EventTarget | null) => {
   return Boolean(target.closest('input, textarea, select, [contenteditable="true"], [data-copy-allowed="true"]'));
 };
 
-const ContentCopyProtection: React.FC<ContentCopyProtectionProps> = ({ children }) => {
+const ContentCopyProtection: React.FC<ContentCopyProtectionProps> = ({ children, directory }) => {
+  const [isEnabled, setIsEnabled] = useState(true);
   const [showNotice, setShowNotice] = useState(false);
   const noticeTimer = useRef<number | null>(null);
 
@@ -22,15 +26,29 @@ const ContentCopyProtection: React.FC<ContentCopyProtectionProps> = ({ children 
   }, []);
 
   const blockClipboardAction = useCallback((event: React.SyntheticEvent) => {
+    if (!isEnabled) return;
     if (isEditableTarget(event.target)) return;
     event.preventDefault();
     event.stopPropagation();
     window.getSelection()?.removeAllRanges();
     notifyBlockedAction();
-  }, [notifyBlockedAction]);
+  }, [isEnabled, notifyBlockedAction]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    void getSiteRuntimeConfig(true).then((config) => {
+      if (!cancelled) setIsEnabled(config.contentProtection[directory]);
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [directory]);
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
+      if (!isEnabled) return;
       if (!(event.ctrlKey || event.metaKey) || isEditableTarget(event.target)) return;
       if (!BLOCKED_CLIPBOARD_KEYS.has(event.key.toLowerCase())) return;
 
@@ -45,7 +63,9 @@ const ContentCopyProtection: React.FC<ContentCopyProtectionProps> = ({ children 
       document.removeEventListener('keydown', handleKeyDown, true);
       if (noticeTimer.current) window.clearTimeout(noticeTimer.current);
     };
-  }, [notifyBlockedAction]);
+  }, [isEnabled, notifyBlockedAction]);
+
+  if (!isEnabled) return <>{children}</>;
 
   return (
     <div

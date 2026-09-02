@@ -248,6 +248,7 @@ const AdminMobileSidebar: React.FC<AdminMobileSidebarProps> = ({ isOpen, onClose
         { path: '/admin/recuperacao-midias', label: 'Recuperação de mídias', icon: Search },
         { path: '/admin/export', label: 'Exportação', icon: Database },
         { path: '/admin/backup', label: 'Backup', icon: Shield },
+        { path: '/admin/protecao-conteudo', label: 'Proteção de conteúdo', icon: Shield },
         { path: '/admin/api', label: 'API', icon: Wrench }
       ]
     }

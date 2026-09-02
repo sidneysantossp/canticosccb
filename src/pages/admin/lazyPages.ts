@@ -77,6 +77,7 @@ export const AdminExport = lazyWithChunkRecovery(() => import('./AdminExport'));
 export const AdminExportForm = lazyWithChunkRecovery(() => import('./AdminExportForm'));
 export const AdminAPI = lazyWithChunkRecovery(() => import('./api/AdminAPI'));
 export const AdminAPIForm = lazyWithChunkRecovery(() => import('./AdminAPIForm'));
+export const AdminContentProtection = lazyWithChunkRecovery(() => import('./AdminContentProtection'));
 export const AdminNotices = lazyWithChunkRecovery(() => import('./AdminNotices'));
 export const AdminNoticeForm = lazyWithChunkRecovery(() => import('./AdminNoticeForm'));
 export const AdminBibleNarrated = lazyWithChunkRecovery(() => import('./AdminBibleNarrated'));

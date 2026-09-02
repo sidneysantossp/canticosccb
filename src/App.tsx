@@ -130,6 +130,7 @@ import {
   AdminComposersPending,
   AdminComposersVerified,
   AdminCopyrightClaims,
+  AdminContentProtection,
   AdminCouponForm,
   AdminCoupons,
   AdminCustomReports,
@@ -190,12 +191,13 @@ import CifraContributionPage from '@/pages/CifraContributionPage';
 import CifraContributionsDashboard from '@/pages/CifraContributionsDashboard';
 import AdminCifraContributions from '@/pages/admin/AdminCifraContributions';
 import ContentCopyProtection from '@/components/ContentCopyProtection';
+import type { ContentProtectionDirectory } from '@/lib/contentProtectionConfig';
 
 const AppRuntime = lazyWithChunkRecovery(() => import('@/components/app/AppRuntime'));
 const Layout = lazyWithChunkRecovery(() => import('@/components/layout/Layout'));
 
-const protectContent = (content: React.ReactNode) => (
-  <ContentCopyProtection>{content}</ContentCopyProtection>
+const protectContent = (content: React.ReactNode, directory: ContentProtectionDirectory) => (
+  <ContentCopyProtection directory={directory}>{content}</ContentCopyProtection>
 );
 
 const RedirectToCategoria: React.FC = () => {
@@ -316,24 +318,24 @@ const AppContent: React.FC = () => {
           <Route path="search" element={<SearchPage />} />
           <Route path="hino/:id" element={<HymnDetailPage />} />
           <Route path="hymn/:id" element={<HymnDetailPage />} />
-          <Route path="cifras" element={protectContent(<CifrasLandingPage />)} />
-          <Route path="cifras/:instrument" element={protectContent(<CifraInstrumentRoute />)} />
-          <Route path="cifras-hinos-ccb" element={protectContent(<CifrasHubPage />)} />
-          <Route path="cifras-violao-ccb" element={protectContent(<CifraInstrumentHubPage instrument="violao" />)} />
-          <Route path="cifras-ukulele-ccb" element={protectContent(<CifraInstrumentHubPage instrument="ukulele" />)} />
-          <Route path="cifras-teclado-ccb" element={protectContent(<CifraInstrumentHubPage instrument="teclado" />)} />
-          <Route path="cifras/:instrument/:slug" element={protectContent(<CifraPage />)} />
-          <Route path="cifra/:slug" element={protectContent(<CifraPage />)} />
+          <Route path="cifras" element={protectContent(<CifrasLandingPage />, 'cifras')} />
+          <Route path="cifras/:instrument" element={protectContent(<CifraInstrumentRoute />, 'cifras')} />
+          <Route path="cifras-hinos-ccb" element={protectContent(<CifrasHubPage />, 'cifras')} />
+          <Route path="cifras-violao-ccb" element={protectContent(<CifraInstrumentHubPage instrument="violao" />, 'cifras')} />
+          <Route path="cifras-ukulele-ccb" element={protectContent(<CifraInstrumentHubPage instrument="ukulele" />, 'cifras')} />
+          <Route path="cifras-teclado-ccb" element={protectContent(<CifraInstrumentHubPage instrument="teclado" />, 'cifras')} />
+          <Route path="cifras/:instrument/:slug" element={protectContent(<CifraPage />, 'cifras')} />
+          <Route path="cifra/:slug" element={protectContent(<CifraPage />, 'cifras')} />
           <Route path="profile/cifras/contribuir" element={<ProtectedRoute><CifraContributionPage /></ProtectedRoute>} />
-          <Route path="hinario" element={protectContent(<HinarioListPage />)} />
+          <Route path="hinario" element={protectContent(<HinarioListPage />, 'hinario')} />
           <Route path="hinos-ccb" element={<HinosHubPage />} />
-          <Route path="hinos-1-a-120-ccb" element={protectContent(<HinarioRangePage rangeKey="1-120" />)} />
-          <Route path="hinos-121-a-240-ccb" element={protectContent(<HinarioRangePage rangeKey="121-240" />)} />
-          <Route path="hinos-241-a-360-ccb" element={protectContent(<HinarioRangePage rangeKey="241-360" />)} />
-          <Route path="hinos-361-a-480-ccb" element={protectContent(<HinarioRangePage rangeKey="361-480" />)} />
-          <Route path="hinario-5-ccb" element={protectContent(<HinarioTopicPage topic="hinario5" />)} />
-          <Route path="hinario/:slug" element={protectContent(<HinarioViewPage />)} />
-          <Route path="letras-hinos-ccb" element={protectContent(<HinarioTopicPage topic="letras" />)} />
+          <Route path="hinos-1-a-120-ccb" element={protectContent(<HinarioRangePage rangeKey="1-120" />, 'hinario')} />
+          <Route path="hinos-121-a-240-ccb" element={protectContent(<HinarioRangePage rangeKey="121-240" />, 'hinario')} />
+          <Route path="hinos-241-a-360-ccb" element={protectContent(<HinarioRangePage rangeKey="241-360" />, 'hinario')} />
+          <Route path="hinos-361-a-480-ccb" element={protectContent(<HinarioRangePage rangeKey="361-480" />, 'hinario')} />
+          <Route path="hinario-5-ccb" element={protectContent(<HinarioTopicPage topic="hinario5" />, 'hinario')} />
+          <Route path="hinario/:slug" element={protectContent(<HinarioViewPage />, 'hinario')} />
+          <Route path="letras-hinos-ccb" element={protectContent(<HinarioTopicPage topic="letras" />, 'hinario')} />
           <Route path="hinos-cantados-ccb" element={<HymnHubPage hub="cantados" />} />
           <Route path="hinos-tocados-ccb" element={<HymnHubPage hub="tocados" />} />
           <Route path="hinos-avulsos-ccb" element={<HymnHubPage hub="avulsos" />} />
@@ -368,14 +370,14 @@ const AppContent: React.FC = () => {
           <Route path="lgpd" element={<LGPDPage />} />
           <Route path="premium" element={<Navigate to="/cadastro" replace />} />
           <Route path="instrumentais" element={<InstrumentaisPage />} />
-          <Route path="biblia-ccb" element={protectContent(<BibleHubPage />)} />
-          <Route path="biblia-ccb/busca" element={protectContent(<BibleExplorePage section="busca" />)} />
-          <Route path="biblia-ccb/temas" element={protectContent(<BibleExplorePage section="temas" />)} />
-          <Route path="biblia-ccb/personagens" element={protectContent(<BibleExplorePage section="personagens" />)} />
-          <Route path="biblia-ccb/dicionario" element={protectContent(<BibleExplorePage section="dicionario" />)} />
-          <Route path="biblia-ccb/:bookSlug/:chapterSlug" element={protectContent(<BibleChapterPage />)} />
-          <Route path="biblia-ccb/:bookSlug" element={protectContent(<BibleBookPage />)} />
-          <Route path="biblia-narrada" element={protectContent(<BibliaNarradaPage />)} />
+          <Route path="biblia-ccb" element={protectContent(<BibleHubPage />, 'biblia')} />
+          <Route path="biblia-ccb/busca" element={protectContent(<BibleExplorePage section="busca" />, 'biblia')} />
+          <Route path="biblia-ccb/temas" element={protectContent(<BibleExplorePage section="temas" />, 'biblia')} />
+          <Route path="biblia-ccb/personagens" element={protectContent(<BibleExplorePage section="personagens" />, 'biblia')} />
+          <Route path="biblia-ccb/dicionario" element={protectContent(<BibleExplorePage section="dicionario" />, 'biblia')} />
+          <Route path="biblia-ccb/:bookSlug/:chapterSlug" element={protectContent(<BibleChapterPage />, 'biblia')} />
+          <Route path="biblia-ccb/:bookSlug" element={protectContent(<BibleBookPage />, 'biblia')} />
+          <Route path="biblia-narrada" element={protectContent(<BibliaNarradaPage />, 'biblia')} />
           <Route path="baixar-hinos-ccb" element={<DownloadIntentPage topic="hinos" />} />
           <Route path="baixar-albuns-ccb" element={<DownloadIntentPage topic="albuns" />} />
           <Route path="baixar-cds-ccb" element={<DownloadIntentPage topic="cds" />} />
@@ -629,6 +631,7 @@ const AppContent: React.FC = () => {
           <Route path="admin/export" element={<ProtectedRoute requireAdmin><AdminExport /></ProtectedRoute>} />
           <Route path="admin/export/criar" element={<ProtectedRoute requireAdmin><AdminExportForm /></ProtectedRoute>} />
           <Route path="admin/export/create" element={<ProtectedRoute requireAdmin><AdminExportForm /></ProtectedRoute>} />
+          <Route path="admin/protecao-conteudo" element={<ProtectedRoute requireAdmin><AdminContentProtection /></ProtectedRoute>} />
           <Route path="admin/api" element={<ProtectedRoute requireAdmin><AdminAPI /></ProtectedRoute>} />
           <Route path="admin/api/criar" element={<ProtectedRoute requireAdmin><AdminAPIForm /></ProtectedRoute>} />
           <Route path="admin/api/create" element={<ProtectedRoute requireAdmin><AdminAPIForm /></ProtectedRoute>} />
