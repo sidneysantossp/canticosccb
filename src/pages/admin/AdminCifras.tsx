@@ -96,7 +96,10 @@ const AdminCifras: React.FC = () => {
   };
 
   const isPromotableStatus = (status: LegacyCifraMigrationStatus | undefined) =>
-    Boolean(status?.versionId) && !status?.publicCatalogVisible && (status?.sectionsCount ?? 0) > 0;
+    Boolean(status?.versionId) &&
+    !status?.publicCatalogVisible &&
+    (status?.sectionsCount ?? 0) > 0 &&
+    (status?.versionStatus === 'approved' || status?.versionStatus === 'published');
   const canRebuildSections = (status: LegacyCifraMigrationStatus | undefined) =>
     Boolean(status?.versionId) && (status?.sectionsCount ?? 0) <= 0;
   const canApplyStudyDefaults = (status: LegacyCifraMigrationStatus | undefined) =>
@@ -216,7 +219,7 @@ const AdminCifras: React.FC = () => {
       for (const legacyId of targetIds) {
         try {
           await migrateLegacyCifraById(legacyId, {
-            publishActive: true,
+            publishActive: false,
             markAsPrimary: true,
           });
           migratedCount += 1;
@@ -1368,7 +1371,7 @@ const AdminCifras: React.FC = () => {
         title="Migrar cifras pendentes para o V2?"
         message={
           pendingBatch.length > 0
-            ? `${pendingBatch.length} cifras legadas${hasActiveFilters ? ' do filtro atual' : ''} serão convertidas neste lote para o módulo novo de cifras, preservando slugs e publicando as ativas.${pendingCifras.length > pendingBatch.length ? ` Restarão ${pendingCifras.length - pendingBatch.length} pendentes após este lote.` : ''}`
+            ? `${pendingBatch.length} cifras legadas${hasActiveFilters ? ' do filtro atual' : ''} serão normalizadas e convertidas em rascunhos para revisão. Nenhuma será publicada automaticamente.${pendingCifras.length > pendingBatch.length ? ` Restarão ${pendingCifras.length - pendingBatch.length} pendentes após este lote.` : ''}`
             : hasActiveFilters && totalPending > 0
               ? 'Não há cifras pendentes dentro do filtro atual. Limpe os filtros para migrar o restante do legado.'
               : 'Não há cifras pendentes para migrar neste momento.'

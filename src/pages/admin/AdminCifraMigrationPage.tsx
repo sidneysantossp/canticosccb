@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, CheckCircle2, Eye, Music, PenSquare, Sparkles, Wand2 } from 'lucide-react';
+import { AlertTriangle, ArrowLeft, CheckCircle2, Eye, Music, PenSquare, ShieldCheck, Sparkles, Wand2 } from 'lucide-react';
 
 import ConfirmModal from '@/components/ConfirmModal';
 import AlertModal from '@/components/ui/AlertModal';
@@ -71,7 +71,7 @@ const AdminCifraMigrationPage: React.FC = () => {
     try {
       setIsMigrating(true);
       const result = await migrateLegacyCifraById(legacyId, {
-        publishActive: true,
+        publishActive: false,
         markAsPrimary: true,
       });
 
@@ -84,7 +84,7 @@ const AdminCifraMigrationPage: React.FC = () => {
       setAlert({
         isOpen: true,
         title: 'Migração concluída',
-        message: `A cifra legada #${legacyId} foi migrada para o módulo v2 com status ${result.status}.`,
+        message: `A cifra legada #${legacyId} foi preparada como rascunho para revisão editorial.`,
         type: 'success',
       });
     } catch (migrationError: any) {
@@ -173,7 +173,7 @@ const AdminCifraMigrationPage: React.FC = () => {
               className="inline-flex items-center gap-2 px-4 py-3 bg-primary-500 hover:bg-primary-600 disabled:opacity-60 text-black font-semibold rounded-xl transition-colors"
             >
               <Wand2 className="w-4 h-4" />
-              {isMigrating ? 'Migrando...' : 'Migrar agora'}
+              {isMigrating ? 'Preparando...' : 'Gerar rascunho'}
             </button>
           )}
         </div>
@@ -261,6 +261,66 @@ const AdminCifraMigrationPage: React.FC = () => {
 
         <div className="space-y-4">
           <div className="bg-gray-800/30 border border-gray-700 rounded-xl p-6">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <h2 className="text-xl font-semibold text-white">Diagnóstico de qualidade</h2>
+                <p className="mt-1 text-sm text-gray-400">Triagem automática; a aprovação musical continua sendo humana.</p>
+              </div>
+              <span className={`shrink-0 rounded-full px-3 py-1 text-sm font-bold ${
+                preview.quality.status === 'ready'
+                  ? 'bg-emerald-500/15 text-emerald-300'
+                  : preview.quality.status === 'blocked'
+                    ? 'bg-red-500/15 text-red-300'
+                    : 'bg-amber-500/15 text-amber-300'
+              }`}>
+                {preview.quality.score}/100
+              </span>
+            </div>
+
+            <div className="mt-4 grid grid-cols-3 gap-2 text-center text-xs">
+              <div className="rounded-lg bg-black/20 p-2 text-gray-300">
+                <strong className="block text-base text-white">{preview.quality.stats.automaticFixes}</strong>
+                ajustes seguros
+              </div>
+              <div className="rounded-lg bg-black/20 p-2 text-gray-300">
+                <strong className="block text-base text-amber-300">{preview.quality.stats.warnings}</strong>
+                alertas
+              </div>
+              <div className="rounded-lg bg-black/20 p-2 text-gray-300">
+                <strong className="block text-base text-red-300">{preview.quality.stats.blockers}</strong>
+                bloqueios
+              </div>
+            </div>
+
+            <div className="mt-4 space-y-2">
+              {preview.quality.issues.length === 0 ? (
+                <div className="flex items-center gap-2 text-sm text-emerald-300">
+                  <ShieldCheck className="h-4 w-4" />
+                  Formatação pronta para revisão musical.
+                </div>
+              ) : (
+                preview.quality.issues.map((issue, index) => (
+                  <div
+                    key={`${issue.code}-${issue.line ?? index}`}
+                    className={`flex items-start gap-2 rounded-lg border p-3 text-sm ${
+                      issue.severity === 'blocker'
+                        ? 'border-red-500/25 bg-red-500/10 text-red-200'
+                        : issue.severity === 'warning'
+                          ? 'border-amber-500/25 bg-amber-500/10 text-amber-100'
+                          : 'border-sky-500/20 bg-sky-500/10 text-sky-100'
+                    }`}
+                  >
+                    {issue.severity === 'info'
+                      ? <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0" />
+                      : <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />}
+                    <span>{issue.message}{issue.line ? ` (linha ${issue.line})` : ''}</span>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+
+          <div className="bg-gray-800/30 border border-gray-700 rounded-xl p-6">
             <h2 className="text-xl font-semibold text-white">Acordes detectados</h2>
             <div className="flex flex-wrap gap-2 mt-4">
               {preview.inferred.chordsIndex.length > 0 ? (
@@ -280,7 +340,7 @@ const AdminCifraMigrationPage: React.FC = () => {
             <ul className="mt-4 space-y-3 text-sm text-gray-300">
               <li>A migração preserva a cifra legada em `metadata` para auditoria.</li>
               <li>O conteúdo é convertido em seções e pode ser refinado no editor V2.</li>
-              <li>Se a cifra legada estiver ativa, a migração publica a versão V2 por padrão.</li>
+              <li>A migração cria um rascunho e nunca publica uma correção musical sem aprovação.</li>
             </ul>
           </div>
         </div>
@@ -290,9 +350,9 @@ const AdminCifraMigrationPage: React.FC = () => {
         isOpen={showConfirm}
         onClose={() => setShowConfirm(false)}
         onConfirm={handleMigrate}
-        title="Migrar cifra para V2?"
-        message={`A cifra legada #${legacyId} será convertida para o módulo novo de cifras, com publicação estruturada e histórico de revisão.`}
-        confirmText="Migrar"
+        title="Gerar rascunho para revisão?"
+        message={`A cifra legada #${legacyId} será normalizada com ajustes seguros e enviada como rascunho. Nada será publicado automaticamente.`}
+        confirmText="Gerar rascunho"
         cancelText="Cancelar"
         type="info"
       />

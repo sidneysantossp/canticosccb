@@ -359,7 +359,9 @@ const CifraPage: React.FC = () => {
   const [selectedInstrument, setSelectedInstrument] = useState('violao');
   const [fontSize, setFontSize] = useState(16);
   const [showChords, setShowChords] = useState(true);
-  const [useSimplifiedChords, setUseSimplifiedChords] = useState(true);
+  // A cifra editorial precisa ser a leitura padrão. O modo simplificado é
+  // opcional porque pode substituir acordes de passagem importantes.
+  const [useSimplifiedChords, setUseSimplifiedChords] = useState(false);
   const [autoScrollSpeed, setAutoScrollSpeed] = useState(0); // 0 = off
   const [showOptions, setShowOptions] = useState(false);
   const [showKeySelector, setShowKeySelector] = useState(false);

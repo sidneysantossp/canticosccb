@@ -78,6 +78,11 @@ export {
   type CifraVersionSectionDraft,
 } from '@/lib/cifras-v2/cifraPublicationService';
 export { parsePlainTextSectionLines, serializeSectionLines } from '@/lib/cifras-v2/legacyCifraParser';
+export {
+  auditLegacyCifraContent,
+  type LegacyCifraQualityIssue,
+  type LegacyCifraQualityReport,
+} from '@/lib/cifras-v2/legacyCifraQuality';
 import { parseLegacyCifraContent } from '@/lib/cifras-v2/legacyCifraParser';
 
 export { createCifraSong, createCifraVersion, type FetchCifraVersionChordOverridesOptions };

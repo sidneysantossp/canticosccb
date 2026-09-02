@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
+  AlertTriangle,
   CheckCircle2,
   ChevronLeft,
   ExternalLink,
@@ -11,6 +12,7 @@ import {
   RefreshCw,
   Rocket,
   Search,
+  ShieldCheck,
 } from 'lucide-react';
 
 import AlertModal from '@/components/ui/AlertModal';
@@ -19,6 +21,7 @@ import {
   fetchAllCifraVersions,
   fetchCifraVersionSections,
   prepareCifraVersionForCatalog,
+  auditLegacyCifraContent,
 } from '@/lib/admin/cifrasV2AdminApi';
 import type { CifraSong, CifraVersion, CifraVersionSection } from '@/types/cifras-v2';
 
@@ -64,6 +67,7 @@ const AdminCifraReview: React.FC = () => {
   const [selectedVersionId, setSelectedVersionId] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [batchSize, setBatchSize] = useState<number>(25);
+  const [pilotOnly, setPilotOnly] = useState(true);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadingSections, setLoadingSections] = useState(false);
@@ -83,10 +87,20 @@ const AdminCifraReview: React.FC = () => {
     [items, selectedVersionId],
   );
 
+  const qualityByVersion = useMemo(
+    () => new Map(items.map((item) => [item.version.id, auditLegacyCifraContent(item.version.body_text)])),
+    [items],
+  );
+
+  const selectedQuality = selectedItem ? qualityByVersion.get(selectedItem.version.id) : null;
+
   const filteredItems = useMemo(() => {
+    const pilotItems = pilotOnly
+      ? items.filter(({ song }) => Boolean(song.hinario_numero && song.hinario_numero >= 1 && song.hinario_numero <= 10))
+      : items;
     const search = searchTerm.trim().toLowerCase();
-    if (!search) return items;
-    return items.filter(({ song, version }) => {
+    if (!search) return pilotItems;
+    return pilotItems.filter(({ song, version }) => {
       const searchable = [
         song.title,
         song.composer_name,
@@ -100,7 +114,7 @@ const AdminCifraReview: React.FC = () => {
         .toLowerCase();
       return searchable.includes(search);
     });
-  }, [items, searchTerm]);
+  }, [items, pilotOnly, searchTerm]);
 
   const selectedVisibleCount = filteredItems.filter((item) => selectedIds.includes(item.version.id)).length;
   const visibleBatch = filteredItems.slice(0, batchSize);
@@ -210,6 +224,17 @@ const AdminCifraReview: React.FC = () => {
   };
 
   const handlePublish = async (versionId: string) => {
+    const quality = qualityByVersion.get(versionId);
+    if (quality?.status === 'blocked') {
+      setAlert({
+        isOpen: true,
+        title: 'Revisão obrigatória',
+        message: 'Esta cifra tem bloqueios de formatação. Corrija os itens indicados antes de publicar.',
+        type: 'warning',
+      });
+      return;
+    }
+
     try {
       setPublishingId(versionId);
       await prepareCifraVersionForCatalog(versionId);
@@ -233,7 +258,17 @@ const AdminCifraReview: React.FC = () => {
   };
 
   const handleBatchPublish = async () => {
-    const targets = selectedIds.length > 0 ? selectedIds : visibleBatch.map((item) => item.version.id);
+    const requestedTargets = selectedIds.length > 0 ? selectedIds : visibleBatch.map((item) => item.version.id);
+    const blockedTargets = requestedTargets.filter((id) => qualityByVersion.get(id)?.status === 'blocked');
+    const targets = requestedTargets.filter((id) => !blockedTargets.includes(id));
+    if (blockedTargets.length > 0) {
+      setAlert({
+        isOpen: true,
+        title: 'Cifras bloqueadas removidas do lote',
+        message: `${blockedTargets.length} cifra(s) exigem correção de formatação e não serão publicadas neste lote.`,
+        type: 'warning',
+      });
+    }
     if (targets.length === 0) return;
 
     const confirmed = window.confirm(
@@ -350,6 +385,19 @@ const AdminCifraReview: React.FC = () => {
               />
             </label>
 
+            <button
+              type="button"
+              onClick={() => setPilotOnly((current) => !current)}
+              aria-pressed={pilotOnly}
+              className={`w-full rounded-xl border px-4 py-2.5 text-sm font-semibold transition-colors ${
+                pilotOnly
+                  ? 'border-primary-500/40 bg-primary-500/10 text-primary-300'
+                  : 'border-gray-700 bg-gray-950 text-gray-400 hover:text-white'
+              }`}
+            >
+              {pilotOnly ? 'Piloto ativo: Hinos 1 a 10' : 'Mostrar apenas o piloto 1 a 10'}
+            </button>
+
             <div className="flex items-center justify-between gap-3">
               <div className="flex flex-wrap gap-3">
                 <button
@@ -433,6 +481,13 @@ const AdminCifraReview: React.FC = () => {
                           <span>{version.original_key}</span>
                           <span>{version.lines_count} linhas</span>
                           <span>{version.sections_count} seção</span>
+                          {qualityByVersion.get(version.id)?.status === 'blocked' ? (
+                            <span className="rounded-full bg-red-500/10 px-2 py-0.5 text-red-300">Bloqueada</span>
+                          ) : qualityByVersion.get(version.id)?.status === 'review_required' ? (
+                            <span className="rounded-full bg-amber-500/10 px-2 py-0.5 text-amber-300">Conferir</span>
+                          ) : (
+                            <span className="rounded-full bg-emerald-500/10 px-2 py-0.5 text-emerald-300">Formatada</span>
+                          )}
                         </div>
                         <h2 className="font-semibold text-white truncate">{song.title}</h2>
                         <p className="text-sm text-gray-400 truncate">{song.composer_name || version.title}</p>
@@ -493,7 +548,7 @@ const AdminCifraReview: React.FC = () => {
                     <button
                       type="button"
                       onClick={() => void handlePublish(selectedItem.version.id)}
-                      disabled={publishingId === selectedItem.version.id || batchPublishing}
+                      disabled={publishingId === selectedItem.version.id || batchPublishing || selectedQuality?.status === 'blocked'}
                       className="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-primary-500 hover:bg-primary-400 disabled:opacity-60 disabled:cursor-not-allowed text-black font-semibold transition-colors"
                     >
                       {publishingId === selectedItem.version.id ? (
@@ -528,6 +583,42 @@ const AdminCifraReview: React.FC = () => {
                     <p className="text-lg font-semibold text-white">Hinário PDF</p>
                   </div>
                 </div>
+
+                {selectedQuality ? (
+                  <div className={`mb-6 rounded-2xl border p-5 ${
+                    selectedQuality.status === 'blocked'
+                      ? 'border-red-500/30 bg-red-500/10'
+                      : selectedQuality.status === 'review_required'
+                        ? 'border-amber-500/30 bg-amber-500/10'
+                        : 'border-emerald-500/30 bg-emerald-500/10'
+                  }`}>
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="flex items-center gap-2">
+                        {selectedQuality.status === 'ready'
+                          ? <ShieldCheck className="h-5 w-5 text-emerald-300" />
+                          : <AlertTriangle className={`h-5 w-5 ${selectedQuality.status === 'blocked' ? 'text-red-300' : 'text-amber-300'}`} />}
+                        <h3 className="font-semibold text-white">Controle de qualidade</h3>
+                      </div>
+                      <span className="rounded-full bg-black/20 px-3 py-1 text-sm font-bold text-white">
+                        {selectedQuality.score}/100
+                      </span>
+                    </div>
+                    <p className="mt-2 text-sm text-gray-300">
+                      {selectedQuality.status === 'blocked'
+                        ? 'A publicação está bloqueada até corrigir os problemas abaixo.'
+                        : 'A formatação foi triada. Confirme visualmente os acordes e suas transições antes de publicar.'}
+                    </p>
+                    {selectedQuality.issues.length > 0 ? (
+                      <ul className="mt-3 space-y-1 text-sm text-gray-200">
+                        {selectedQuality.issues.slice(0, 6).map((issue, index) => (
+                          <li key={`${issue.code}-${issue.line ?? index}`}>
+                            • {issue.message}{issue.line ? ` (linha ${issue.line})` : ''}
+                          </li>
+                        ))}
+                      </ul>
+                    ) : null}
+                  </div>
+                ) : null}
 
                 <div className="rounded-2xl bg-black/40 border border-gray-800 p-5">
                   <div className="flex items-center gap-2 mb-4">

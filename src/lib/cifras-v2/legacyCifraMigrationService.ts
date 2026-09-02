@@ -35,6 +35,10 @@ import {
   fetchCifraVersions,
 } from './cifraVersionsRepository';
 import { parseLegacyCifraContent } from './legacyCifraParser';
+import {
+  auditLegacyCifraContent,
+  type LegacyCifraQualityReport,
+} from './legacyCifraQuality';
 
 export interface LegacyCifraMigrationPreview {
   legacy: LegacyCifra;
@@ -50,6 +54,7 @@ export interface LegacyCifraMigrationPreview {
     chordsIndex: string[];
   };
   sections: CifraVersionSectionDraft[];
+  quality: LegacyCifraQualityReport;
 }
 
 export interface LegacyCifraMigrationOptions {
@@ -57,6 +62,7 @@ export interface LegacyCifraMigrationOptions {
   publishActive?: boolean;
   forceSongRefresh?: boolean;
   markAsPrimary?: boolean;
+  qualityApproved?: boolean;
 }
 
 export interface LegacyCifraMigrationResult {
@@ -342,6 +348,7 @@ async function ensureVersionFromLegacy(
   options: LegacyCifraMigrationOptions,
 ): Promise<{ version: CifraVersion; created: boolean; arrangementType: CifraArrangementType }> {
   const arrangementType = inferArrangementType(legacy);
+  const shouldPublish = legacy.is_active && options.publishActive === true && options.qualityApproved === true;
   const publicSlug = buildVersionPublicSlug(
     song.canonical_slug,
     legacy.instrument as CifraInstrument,
@@ -374,12 +381,12 @@ async function ensureVersionFromLegacy(
     chordsIndex: [],
     sectionsCount: 0,
     linesCount: 0,
-    status: legacy.is_active && (options.publishActive ?? true) ? 'published' : 'draft',
+    status: shouldPublish ? 'published' : 'draft',
     publicationLabel: inferPublicationLabel(),
     isPrimary: options.markAsPrimary ?? true,
     isActive: legacy.is_active,
-    isSearchable: legacy.is_active,
-    publishedAt: legacy.is_active ? new Date().toISOString() : null,
+    isSearchable: shouldPublish,
+    publishedAt: shouldPublish ? new Date().toISOString() : null,
     createdBy: options.actorId ?? null,
     updatedBy: options.actorId ?? null,
   });
@@ -397,7 +404,8 @@ export function buildLegacyCifraMigrationPreview(legacy: LegacyCifra): LegacyCif
   const arrangementType = inferArrangementType(legacy);
   const canonicalSlug = buildSongCanonicalSlug(legacy, hinarioNumero);
   const publicSlug = buildVersionPublicSlug(canonicalSlug, legacy.instrument as CifraInstrument, arrangementType);
-  const sections = parseLegacyCifraContent(legacy.content);
+  const quality = auditLegacyCifraContent(legacy.content);
+  const sections = parseLegacyCifraContent(quality.normalizedContent);
   const snapshot = buildCifraPublicationSnapshot(sections);
 
   return {
@@ -414,6 +422,7 @@ export function buildLegacyCifraMigrationPreview(legacy: LegacyCifra): LegacyCif
       chordsIndex: snapshot.chordsIndex,
     },
     sections,
+    quality,
   };
 }
 
@@ -427,7 +436,7 @@ export async function migrateLegacyCifra(legacy: LegacyCifra, options: LegacyCif
   const { song, created: wasSongCreated } = await ensureSongFromLegacy(legacy, options);
   const { version, created: wasVersionCreated } = await ensureVersionFromLegacy(legacy, song, options);
 
-  const publish = legacy.is_active && (options.publishActive ?? true);
+  const publish = legacy.is_active && options.publishActive === true && options.qualityApproved === true;
   const persistedVersion = publish
     ? await publishCifraVersion({
         versionId: version.id,
