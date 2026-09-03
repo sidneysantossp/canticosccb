@@ -1,6 +1,5 @@
 import { supabase } from '@/lib/supabase-auth';
 import { getOpenReportsCount } from '@/lib/admin/reportsApi';
-import { supabaseFetchWithOptions } from '@/lib/supabaseRest';
 
 export type AdminStats = {
   totalUsers: number;
@@ -22,35 +21,34 @@ export const getAdminStats = async (): Promise<AdminStats> => {
       usersRes,
       composersRes,
       songsRes,
-      pendingAlbumsRows,
+      pendingSongsRes,
+      pendingAlbumsRes,
       openReports
     ] = await Promise.all([
       supabase.from('users').select('id,created_at'),
       supabase.from('composers').select('id,status,verified'),
       supabase.from('hinos').select('id,plays_count,plays,views_count,likes_count,likes,status'),
-      supabaseFetchWithOptions<any>('albums', {
-        select: 'id,is_published,active',
-        or: '(is_published.eq.false,active.eq.false)',
-        limit: '5000',
-      }, {
-        bypassCache: true,
-      }),
+      supabase.from('hinos').select('id', { count: 'exact', head: true }).eq('status', 'pending'),
+      supabase.from('albums').select('id', { count: 'exact', head: true }).or('is_published.eq.false,active.eq.false'),
       getOpenReportsCount()
     ]);
 
     if (usersRes.error) throw usersRes.error;
     if (composersRes.error) throw composersRes.error;
     if (songsRes.error) throw songsRes.error;
+    if (pendingSongsRes.error) throw pendingSongsRes.error;
+    if (pendingAlbumsRes.error) throw pendingAlbumsRes.error;
     const allUsers = usersRes.data || [];
     const allComposers = composersRes.data || [];
     const allSongs = songsRes.data || [];
-    const allAlbums = pendingAlbumsRows || [];
 
     const totalPlays = allSongs.reduce((sum, song: any) => sum + Number(song.plays_count || song.plays || song.views_count || 0), 0);
     const totalLikes = allSongs.reduce((sum, song: any) => sum + Number(song.likes_count || song.likes || 0), 0);
     const publishedSongs = allSongs.filter((song: any) => song.status === 'published').length;
-    const pendingSongs = allSongs.filter((song: any) => ['draft', 'pending'].includes(song.status)).length;
-    const pendingAlbums = allAlbums.length;
+    // Use the same filters as the approval pages. Exact server-side counts
+    // avoid both stale draft totals and Supabase's default 1,000-row limit.
+    const pendingSongs = Number(pendingSongsRes.count || 0);
+    const pendingAlbums = Number(pendingAlbumsRes.count || 0);
     // O badge deve usar o mesmo critério da página de aprovação: somente
     // compositores explicitamente não verificados. O status legado "pending"
     // pode permanecer em perfis já verificados e não representa uma pendência.
