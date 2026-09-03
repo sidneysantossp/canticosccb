@@ -1,17 +1,34 @@
-import React, { useState, useEffect } from 'react';
-import { Search, Music, Plus, X, GripVertical } from 'lucide-react';
+import React, { useEffect, useRef, useState } from 'react';
+import { Search, Music, Plus, X, GripVertical, Play, Pause, Loader2 } from 'lucide-react';
 import { hinosApi, Hino } from '@/lib/api-client';
+import { resolveTrackAudioUrl } from '@/lib/playableAudio';
 
 interface HinoSelectorProps {
   selectedHinos: Hino[];
   onSelectionChange: (hinos: Hino[]) => void;
+  enableAudioPreview?: boolean;
 }
 
-const HinoSelector: React.FC<HinoSelectorProps> = ({ selectedHinos, onSelectionChange }) => {
+const HinoSelector: React.FC<HinoSelectorProps> = ({
+  selectedHinos,
+  onSelectionChange,
+  enableAudioPreview = false,
+}) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [availableHinos, setAvailableHinos] = useState<Hino[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [showDropdown, setShowDropdown] = useState(false);
+  const [playingHinoId, setPlayingHinoId] = useState<string | null>(null);
+  const [loadingHinoId, setLoadingHinoId] = useState<string | null>(null);
+  const [audioErrorHinoId, setAudioErrorHinoId] = useState<string | null>(null);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+
+  useEffect(() => {
+    return () => {
+      audioRef.current?.pause();
+      audioRef.current = null;
+    };
+  }, []);
 
   // Carregar hinos disponíveis
   useEffect(() => {
@@ -51,7 +68,73 @@ const HinoSelector: React.FC<HinoSelectorProps> = ({ selectedHinos, onSelectionC
   };
 
   const handleRemoveHino = (hinoId: string | number) => {
+    if (playingHinoId === String(hinoId)) {
+      audioRef.current?.pause();
+      audioRef.current = null;
+      setPlayingHinoId(null);
+      setLoadingHinoId(null);
+    }
     onSelectionChange(selectedHinos.filter(h => String(h.id) !== String(hinoId)));
+  };
+
+  const handleAudioPreview = async (hino: Hino) => {
+    const hinoId = String(hino.id);
+
+    if (playingHinoId === hinoId && audioRef.current) {
+      audioRef.current.pause();
+      setPlayingHinoId(null);
+      return;
+    }
+
+    audioRef.current?.pause();
+    audioRef.current = null;
+    setPlayingHinoId(null);
+    setAudioErrorHinoId(null);
+    setLoadingHinoId(hinoId);
+
+    const audioUrl = resolveTrackAudioUrl({
+      id: hino.id,
+      title: hino.titulo,
+      number: hino.numero,
+      audioUrl: hino.audio_url,
+      youtubeSource: hino.youtube_source,
+    });
+
+    if (!audioUrl) {
+      setLoadingHinoId(null);
+      setAudioErrorHinoId(hinoId);
+      return;
+    }
+
+    const audio = new Audio(audioUrl);
+    audio.preload = 'metadata';
+    audioRef.current = audio;
+    audio.onplaying = () => {
+      setLoadingHinoId(null);
+      setPlayingHinoId(hinoId);
+    };
+    audio.onpause = () => {
+      if (!audio.ended) setPlayingHinoId(null);
+    };
+    audio.onended = () => {
+      setPlayingHinoId(null);
+      audioRef.current = null;
+    };
+    audio.onerror = () => {
+      setLoadingHinoId(null);
+      setPlayingHinoId(null);
+      setAudioErrorHinoId(hinoId);
+      audioRef.current = null;
+    };
+
+    try {
+      await audio.play();
+    } catch {
+      setLoadingHinoId(null);
+      setPlayingHinoId(null);
+      setAudioErrorHinoId(hinoId);
+      audioRef.current = null;
+    }
   };
 
   const handleMoveUp = (index: number) => {
@@ -104,6 +187,7 @@ const HinoSelector: React.FC<HinoSelectorProps> = ({ selectedHinos, onSelectionC
               <div className="p-2">
                 {availableHinos.map((hino) => (
                   <button
+                    type="button"
                     key={hino.id}
                     onClick={() => handleAddHino(hino)}
                     className="w-full flex items-center gap-3 p-3 rounded-lg hover:bg-gray-700 transition-colors text-left"
@@ -142,6 +226,7 @@ const HinoSelector: React.FC<HinoSelectorProps> = ({ selectedHinos, onSelectionC
               {/* Drag handle */}
               <div className="flex flex-col gap-1">
                 <button
+                  type="button"
                   onClick={() => handleMoveUp(index)}
                   disabled={index === 0}
                   className="text-gray-400 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed"
@@ -151,6 +236,7 @@ const HinoSelector: React.FC<HinoSelectorProps> = ({ selectedHinos, onSelectionC
                 </button>
                 <GripVertical className="w-4 h-4 text-gray-500" />
                 <button
+                  type="button"
                   onClick={() => handleMoveDown(index)}
                   disabled={index === selectedHinos.length - 1}
                   className="text-gray-400 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed"
@@ -182,8 +268,37 @@ const HinoSelector: React.FC<HinoSelectorProps> = ({ selectedHinos, onSelectionC
                 </span>
               )}
 
+              {enableAudioPreview && (
+                <div className="flex flex-col items-end gap-1 flex-shrink-0">
+                  <button
+                    type="button"
+                    onClick={() => void handleAudioPreview(hino)}
+                    disabled={loadingHinoId !== null}
+                    className={`p-2.5 rounded-full border transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${
+                      playingHinoId === String(hino.id)
+                        ? 'bg-green-500 text-gray-950 border-green-400 hover:bg-green-400'
+                        : 'bg-green-500/10 text-green-400 border-green-500/30 hover:bg-green-500/20'
+                    }`}
+                    aria-label={playingHinoId === String(hino.id) ? `Pausar ${hino.titulo}` : `Ouvir ${hino.titulo}`}
+                    title={playingHinoId === String(hino.id) ? 'Pausar prévia' : 'Ouvir prévia'}
+                  >
+                    {loadingHinoId === String(hino.id) ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : playingHinoId === String(hino.id) ? (
+                      <Pause className="w-4 h-4 fill-current" />
+                    ) : (
+                      <Play className="w-4 h-4 fill-current" />
+                    )}
+                  </button>
+                  {audioErrorHinoId === String(hino.id) && (
+                    <span className="text-red-400 text-[11px] whitespace-nowrap">Áudio indisponível</span>
+                  )}
+                </div>
+              )}
+
               {/* Botão remover */}
               <button
+                type="button"
                 onClick={() => handleRemoveHino(hino.id)}
                 className="p-2 rounded-lg bg-red-500/10 text-red-500 hover:bg-red-500/20 transition-colors opacity-0 group-hover:opacity-100"
                 title="Remover do álbum"

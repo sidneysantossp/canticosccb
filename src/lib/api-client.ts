@@ -50,7 +50,7 @@ export const hinosApi = {
 
     try {
       const filters: Record<string, string> = {
-        select: 'id,numero,titulo,compositor_nome,compositor_id,categoria,cover_url,audio_url,duracao,status,ativo,created_at',
+        select: 'id,numero,titulo,compositor_nome,compositor_id,categoria,cover_url,audio_url,youtube_source,duracao,status,ativo,created_at',
         order: 'created_at.desc',
       };
 
@@ -1884,6 +1884,7 @@ export interface Hino {
   categoria?: string;
   cover_url?: string;
   audio_url?: string;
+  youtube_source?: string;
   duracao?: string;
   letra?: string;
   status?: string;

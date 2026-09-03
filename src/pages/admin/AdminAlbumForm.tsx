@@ -109,7 +109,7 @@ const AdminAlbumForm: React.FC = () => {
             const hinoIds = albumHinos.map((ah: any) => ah.hino_id);
             const hinos = await supabaseFetch<any>('hinos', {
               id: `in.(${hinoIds.join(',')})`,
-              select: 'id,numero,titulo,compositor_nome,compositor_id,duracao',
+              select: 'id,numero,titulo,compositor_nome,compositor_id,duracao,audio_url,youtube_source',
             });
             // Ordenar conforme a ordem do album_hinos e mapear compositor
             const ordered = hinoIds
@@ -511,6 +511,7 @@ const AdminAlbumForm: React.FC = () => {
             <HinoSelector
               selectedHinos={selectedHinos}
               onSelectionChange={setSelectedHinos}
+              enableAudioPreview
             />
           </div>
 
