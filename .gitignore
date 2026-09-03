@@ -91,6 +91,7 @@ wayback-zip-urls.txt
 !/api/emergency-audio-archive.ts
 !/api/hino-audio-fallback.ts
 !/api/media-stream.ts
+!/api/admin-album-delete.js
 vendor/
 media/
 media_protegida/
