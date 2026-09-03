@@ -38,6 +38,7 @@ vendor/
 !/api/emergency-audio-track.ts
 !/api/emergency-audio-archive.ts
 !/api/hino-audio-fallback.ts
+!/api/media-stream.ts
 
 # Media e uploads
 media/

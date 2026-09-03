@@ -571,4 +571,4 @@ export default async function vercelHandler(request: Request): Promise<Response>
   return handler(request);
 }
 
-export const onRequest: PagesFunction = async ({ request }) => handler(request);
+export const onRequest = async ({ request }: { request: Request }): Promise<Response> => handler(request);
