@@ -1,6 +1,7 @@
 // Cloudflare Pages Function — extrai MP3 de ZIP do archive.org
 // Requer nodejs_compat flag para node:stream e node:zlib
 import { Readable } from 'node:stream';
+import type { IncomingMessage, ServerResponse } from 'node:http';
 import { createInflateRaw, inflateRawSync } from 'node:zlib';
 import { getEmergencyArchiveZipSegmentById } from './_emergencyAudioArchives.js';
 import { getEmergencyAudioIndexBySegment } from './_emergencyAudioIndex.js';
@@ -567,8 +568,27 @@ async function handler(req: Request) {
 // Vercel Functions expects the module's default export to be the request
 // handler. Keep the named export as well because the Cloudflare Pages build
 // consumes the same implementation.
-export default async function vercelHandler(request: Request): Promise<Response> {
-  return handler(request);
+export default async function vercelHandler(req: IncomingMessage, res: ServerResponse): Promise<void> {
+  const forwardedProtocol = String(req.headers['x-forwarded-proto'] || 'https').split(',')[0].trim();
+  const forwardedHost = String(req.headers['x-forwarded-host'] || req.headers.host || 'www.canticosccb.com.br').split(',')[0].trim();
+  const requestUrl = new URL(req.url || '/', `${forwardedProtocol}://${forwardedHost}`);
+  const response = await handler(new Request(requestUrl, { method: req.method || 'GET' }));
+
+  res.statusCode = response.status;
+  response.headers.forEach((value, name) => res.setHeader(name, value));
+
+  if (req.method === 'HEAD' || !response.body) {
+    res.end();
+    return;
+  }
+
+  const body = Readable.fromWeb(response.body as any);
+  await new Promise<void>((resolve, reject) => {
+    body.once('error', reject);
+    res.once('finish', resolve);
+    res.once('error', reject);
+    body.pipe(res);
+  });
 }
 
 export const onRequest = async ({ request }: { request: Request }): Promise<Response> => handler(request);
