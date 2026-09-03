@@ -977,11 +977,26 @@ export const albunsApi = {
     }
   },
   delete: async (id: number | string) => {
-
     try {
-      await supabaseAuthDelete('albums', { id: `eq.${id}` });
+      const { data: sessionData } = await supabase.auth.getSession();
+      const accessToken = sessionData.session?.access_token;
+      if (!accessToken) {
+        return { data: null, error: 'Sua sessão expirou. Entre novamente para excluir o álbum.' };
+      }
+
+      const response = await fetch(`/api/admin-album-delete?id=${encodeURIComponent(String(id))}`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${accessToken}` },
+      });
+      const payload = await response.json().catch(() => null);
+      if (!response.ok || payload?.success !== true) {
+        throw new Error(payload?.error || 'Não foi possível excluir o álbum.');
+      }
+
+      return { data: true, error: null };
     } catch (error: any) {
       console.error('❌ [albunsApi.delete] Error:', error);
+      return { data: null, error: error?.message || 'Não foi possível excluir o álbum.' };
     }
   },
   addHinos: async (albumId: string | number, hinoIds: (string | number)[]) => {

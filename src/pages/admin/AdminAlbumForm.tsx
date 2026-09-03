@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { ArrowLeft, Save, Upload, Disc, Trash2, X, Star } from 'lucide-react';
+import { ArrowLeft, Save, Upload, Disc, Trash2, X, Star, Loader2 } from 'lucide-react';
 import { albunsApi, uploadApi, compositoresApi, categoriasApi, Hino } from '@/lib/api-client';
 import { supabaseDelete, supabaseFetch } from '@/lib/supabaseRest';
 import HinoSelector from '@/components/admin/HinoSelector';
@@ -27,6 +27,7 @@ const AdminAlbumForm: React.FC = () => {
   const [selectedHinos, setSelectedHinos] = useState<Hino[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [composers, setComposers] = useState<{ id: string; name: string }[]>([]);
   const [categories, setCategories] = useState<{ id: string | number; nome: string }[]>([]);
@@ -152,6 +153,24 @@ const AdminAlbumForm: React.FC = () => {
     } catch (error) {
       console.error('Erro ao fazer upload da capa:', error);
       return null;
+    }
+  };
+
+  const handleDeleteAlbum = async () => {
+    if (!id || isDeleting) return;
+    const albumName = formData.title.trim() || 'este álbum';
+    if (!window.confirm(`Excluir definitivamente "${albumName}"? As faixas continuarão cadastradas, mas o álbum e seus vínculos serão removidos.`)) return;
+
+    try {
+      setIsDeleting(true);
+      setError(null);
+      const response = await albunsApi.delete(id);
+      if (response.error) throw new Error(response.error);
+      navigate('/admin/albuns', { replace: true });
+    } catch (err: any) {
+      console.error('Erro ao excluir álbum:', err);
+      setError(err?.message || 'Não foi possível excluir o álbum.');
+      setIsDeleting(false);
     }
   };
 
@@ -526,25 +545,17 @@ const AdminAlbumForm: React.FC = () => {
             {isEditing && id && (
               <button
                 type="button"
-                onClick={async () => {
-                  if (!window.confirm('Tem certeza que deseja excluir este álbum? Esta ação não pode ser desfeita.')) return;
-                  try {
-                    await albunsApi.delete(id);
-                    navigate('/admin/albuns');
-                  } catch (err) {
-                    console.error('Erro ao excluir álbum:', err);
-                    setError('Erro ao excluir álbum');
-                  }
-                }}
-                className="px-6 py-3 rounded-lg bg-red-600/20 hover:bg-red-600/40 text-red-400 font-semibold flex items-center gap-2 transition-colors"
+                onClick={() => void handleDeleteAlbum()}
+                disabled={isDeleting || isSaving}
+                className="px-6 py-3 rounded-lg bg-red-600/20 hover:bg-red-600/40 disabled:opacity-50 disabled:cursor-not-allowed text-red-400 font-semibold flex items-center gap-2 transition-colors"
               >
-                <Trash2 className="w-5 h-5" />
-                Excluir
+                {isDeleting ? <Loader2 className="w-5 h-5 animate-spin" /> : <Trash2 className="w-5 h-5" />}
+                {isDeleting ? 'Excluindo...' : 'Excluir'}
               </button>
             )}
             <button
               type="submit"
-              disabled={isSaving}
+              disabled={isSaving || isDeleting}
               className="flex-1 bg-green-600 hover:bg-green-700 disabled:bg-gray-700 disabled:cursor-not-allowed text-white px-6 py-3 rounded-lg font-semibold flex items-center justify-center gap-2 transition-colors"
             >
               {isSaving ? (

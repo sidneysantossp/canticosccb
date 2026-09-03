@@ -196,7 +196,8 @@ export const approveAlbum = async (id: string): Promise<{ success: boolean }> =>
 };
 
 export const deleteAlbum = async (id: string): Promise<{ success: boolean }> => {
-  await albunsApi.delete(id);
+  const response = await albunsApi.delete(id);
+  if (response.error) throw new Error(response.error);
   return { success: true };
 };
 
