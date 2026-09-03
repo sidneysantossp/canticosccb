@@ -564,4 +564,11 @@ async function handler(req: Request) {
   }
 }
 
+// Vercel Functions expects the module's default export to be the request
+// handler. Keep the named export as well because the Cloudflare Pages build
+// consumes the same implementation.
+export default async function vercelHandler(request: Request): Promise<Response> {
+  return handler(request);
+}
+
 export const onRequest: PagesFunction = async ({ request }) => handler(request);

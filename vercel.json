@@ -5,6 +5,12 @@
     },
     "api/archive-import.js": {
       "maxDuration": 120
+    },
+    "api/emergency-audio-track.ts": {
+      "maxDuration": 300
+    },
+    "api/media-stream.ts": {
+      "maxDuration": 300
     }
   },
   "redirects": [

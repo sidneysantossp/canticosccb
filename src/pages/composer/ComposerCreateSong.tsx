@@ -292,10 +292,9 @@ const ComposerCreateSong: React.FC = () => {
         return num;
       };
 
-      // 5) Montar payload compatível com tabela 'hinos'. A base de produção
-      // aceita draft/published/archived; “pending” é estado de revisão da UI,
-      // mas não é um valor válido no constraint hinos_status_check.
-      const persistedStatus = formData.status === 'pending' ? 'draft' : formData.status;
+      // 5) Montar payload compatível com tabela 'hinos'. O estado pending
+      // identifica submissões reais e evita misturá-las com rascunhos importados.
+      const persistedStatus = formData.status;
       const songData: any = {
         numero: formData.number ? parseInt(formData.number) : undefined,
         titulo: formData.title.trim(),

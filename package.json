@@ -19,6 +19,7 @@
     "preview": "vite preview",
     "type-check": "tsc --noEmit",
     "backfill:legacy-audio": "node scripts/backfill-legacy-audio-r2.mjs",
+    "backfill:audio-durations": "node scripts/backfill-zero-mp3-durations.mjs",
     "clean": "rimraf node_modules/.vite dist",
     "clean:all": "rimraf node_modules/.vite dist node_modules && npm install"
   },

@@ -76,19 +76,28 @@ export const hinosApi = {
       return { data: [], error: error.message };
     }
   },
-  listPending: async () => {
+  listPending: async (params?: { page?: number; limit?: number }) => {
 
     try {
+      const page = Math.max(1, Number(params?.page || 1));
+      const limit = Math.min(50, Math.max(1, Number(params?.limit || 12)));
       const filters: Record<string, string> = {
         select: 'id,numero,titulo,compositor_nome,compositor_id,categoria,cover_url,audio_url,duracao,status,ativo,created_at',
-        status: 'eq.draft',
+        status: 'eq.pending',
         order: 'created_at.desc',
+        limit: String(limit + 1),
+        offset: String((page - 1) * limit),
       };
 
       const rows = await supabaseFetch<any>('hinos', filters);
-      return { data: rows, error: null };
+      const hasMore = rows.length > limit;
+      const hinos = rows.slice(0, limit).map((h: any) => ({
+        ...h,
+        compositor: h.compositor_nome || '',
+      }));
+      return { data: { hinos, page, limit, hasMore }, error: null };
     } catch (error: any) {
-      return { data: [], error: error.message };
+      return { data: { hinos: [], page: 1, limit: params?.limit || 12, hasMore: false }, error: error.message };
     }
   },
   getAll: async () => {
@@ -155,9 +164,7 @@ export const hinosApi = {
 
     try {
       const requestedStatus = String(data.status || '').toLowerCase();
-      const resolvedStatus = requestedStatus === 'pending'
-        ? 'draft'
-        : (requestedStatus === 'draft' || requestedStatus === 'published' || requestedStatus === 'archived')
+      const resolvedStatus = (requestedStatus === 'draft' || requestedStatus === 'pending' || requestedStatus === 'published' || requestedStatus === 'archived' || requestedStatus === 'rejected')
           ? requestedStatus
           : (data.ativo === 1 ? 'published' : 'draft');
       // Inserir hino sem categorias primeiro
@@ -232,9 +239,7 @@ export const hinosApi = {
       if (data.ativo !== undefined) updateData.ativo = data.ativo;
       if (data.status !== undefined) {
         const requestedStatus = String(data.status || '').toLowerCase();
-        updateData.status = requestedStatus === 'pending'
-          ? 'draft'
-          : (requestedStatus === 'draft' || requestedStatus === 'published' || requestedStatus === 'archived')
+        updateData.status = (requestedStatus === 'draft' || requestedStatus === 'pending' || requestedStatus === 'published' || requestedStatus === 'archived' || requestedStatus === 'rejected')
             ? requestedStatus
             : 'draft';
       } else if (data.ativo !== undefined) {

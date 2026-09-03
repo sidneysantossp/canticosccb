@@ -13,11 +13,13 @@ import {
   User,
   Calendar,
   Tag,
-  AlertCircle
+  AlertCircle,
+  ChevronLeft,
+  ChevronRight
 } from 'lucide-react';
 
 interface PendingSong {
-  id: number;
+  id: string;
   numero?: number;
   titulo: string;
   compositor?: string;
@@ -30,7 +32,7 @@ interface PendingSong {
 }
 
 const AdminSongsPending: React.FC = () => {
-  const [selectedSong, setSelectedSong] = useState<number | null>(null);
+  const [selectedSong, setSelectedSong] = useState<string | null>(null);
   const [selectedSongData, setSelectedSongData] = useState<{ title: string; cover?: string } | null>(null);
   const [rejectionReason, setRejectionReason] = useState('');
   const [showApproveModal, setShowApproveModal] = useState(false);
@@ -40,6 +42,9 @@ const AdminSongsPending: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [toasts, setToasts] = useState<ToastProps[]>([]);
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(false);
+  const pageSize = 12;
 
 
   // Função para adicionar toast
@@ -60,20 +65,21 @@ const AdminSongsPending: React.FC = () => {
   // Carregar hinos pendentes
   useEffect(() => {
     loadPendingSongs();
-  }, []);
+  }, [page]);
 
   const loadPendingSongs = async () => {
     try {
       setIsLoading(true);
       setError(null);
-      const res = await hinosApi.listPending();
+      const res = await hinosApi.listPending({ page, limit: pageSize });
       
       if (res.error) {
         throw new Error(res.error);
       }
       
       const responseData = res.data as any;
-      setPendingSongs(responseData?.hinos || responseData?.data || responseData || []);
+      setPendingSongs(responseData?.hinos || []);
+      setHasMore(Boolean(responseData?.hasMore));
     } catch (err: any) {
       console.error('Erro ao carregar hinos pendentes:', err);
       setError(err.message || 'Erro ao carregar hinos pendentes');
@@ -84,7 +90,7 @@ const AdminSongsPending: React.FC = () => {
 
   // Mock data removido - agora usa dados reais
 
-  const handleApprove = (songId: number) => {
+  const handleApprove = (songId: string) => {
     // Encontrar o hino para pegar título e capa
     const song = pendingSongs.find(s => s.id === songId);
     
@@ -124,7 +130,7 @@ const AdminSongsPending: React.FC = () => {
         const payload: any = {
           tipo: 'hino_aprovado',
           titulo: s?.titulo || 'Hino aprovado',
-          mensagem: `Seu hino "${s?.titulo || 'Hino'}" foi aprovado e está como Rascunho para você publicar.`,
+          mensagem: `Seu hino "${s?.titulo || 'Hino'}" foi aprovado e publicado.`,
           usuario_id: usuarioId || undefined,
           dados: { hino_id: selectedSong, compositor: nomeCompositor }
         };
@@ -137,7 +143,7 @@ const AdminSongsPending: React.FC = () => {
         console.warn('Falha ao enviar notificação ao compositor');
       }
 
-      showToast('success', 'Hino Aprovado!', 'O hino foi aprovado e definido como Rascunho. O compositor/gerente poderá publicar quando desejar.');
+      showToast('success', 'Hino Aprovado!', 'O hino foi aprovado e publicado com sucesso.');
       setShowApproveModal(false);
       setSelectedSong(null);
       setSelectedSongData(null);
@@ -148,7 +154,7 @@ const AdminSongsPending: React.FC = () => {
     }
   };
 
-  const handleReject = (songId: number) => {
+  const handleReject = (songId: string) => {
     // Encontrar o hino para pegar título e capa
     const song = pendingSongs.find(s => s.id === songId);
     
@@ -223,12 +229,12 @@ const AdminSongsPending: React.FC = () => {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold text-white mb-2">Aprovação de Hinos</h1>
-          <p className="text-gray-400">{pendingSongs.length} hinos aguardando aprovação</p>
+          <p className="text-gray-400">Submissões reais aguardando aprovação</p>
         </div>
         <div className="flex items-center gap-3">
           <span className="px-4 py-2 bg-yellow-500/20 text-yellow-400 font-semibold rounded-lg flex items-center gap-2">
             <Clock className="w-5 h-5" />
-            {pendingSongs.length} Pendentes
+            {pendingSongs.length} nesta página
           </span>
         </div>
       </div>
@@ -278,8 +284,7 @@ const AdminSongsPending: React.FC = () => {
                 {/* Audio Player */}
                 <div className="bg-gray-800/50 rounded-lg p-4">
                   <p className="text-gray-400 text-sm mb-2">Preview do Áudio</p>
-                  <audio controls className="w-full">
-                    <source src={song.audio_url} type="audio/mpeg" />
+                  <audio controls preload="none" src={song.audio_url} className="w-full">
                     Seu navegador não suporta o elemento de áudio.
                   </audio>
                 </div>
@@ -339,6 +344,36 @@ const AdminSongsPending: React.FC = () => {
         ))}
       </div>
 
+      {pendingSongs.length === 0 && (
+        <div className="rounded-xl border border-gray-800 bg-gray-900/50 p-10 text-center text-gray-400">
+          Nenhum hino aguardando aprovação nesta página.
+        </div>
+      )}
+
+      {(page > 1 || hasMore) && (
+        <div className="flex items-center justify-center gap-3 pt-2">
+          <button
+            type="button"
+            onClick={() => setPage((current) => Math.max(1, current - 1))}
+            disabled={page === 1 || isLoading}
+            className="inline-flex items-center gap-2 rounded-lg bg-gray-800 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-gray-700 disabled:cursor-not-allowed disabled:opacity-40"
+          >
+            <ChevronLeft className="h-4 w-4" />
+            Anterior
+          </button>
+          <span className="text-sm text-gray-400">Página {page}</span>
+          <button
+            type="button"
+            onClick={() => setPage((current) => current + 1)}
+            disabled={!hasMore || isLoading}
+            className="inline-flex items-center gap-2 rounded-lg bg-gray-800 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-gray-700 disabled:cursor-not-allowed disabled:opacity-40"
+          >
+            Próxima
+            <ChevronRight className="h-4 w-4" />
+          </button>
+        </div>
+      )}
+
       {/* Modal de Confirmação de Aprovação */}
       <ConfirmModal
         isOpen={showApproveModal}
@@ -349,7 +384,7 @@ const AdminSongsPending: React.FC = () => {
         }}
         onConfirm={confirmApprove}
         title="Aprovar Hino"
-        message="Tem certeza que deseja aprovar este hino? Ele sairá da fila de aprovação e ficará como Rascunho para o compositor/gerente publicar."
+        message="Tem certeza que deseja aprovar este hino? Ele sairá da fila de aprovação e será publicado."
         confirmText="Aprovar"
         cancelText="Cancelar"
         confirmColor="green"
