@@ -70,7 +70,7 @@ const AdminSongForm: React.FC = () => {
 
       // Se estiver editando, carregar dados do hino
       if (isEditMode && id) {
-        const songRes = await hinosApi.get(Number(id));
+        const songRes = await hinosApi.get(id);
         if (!songRes.error && songRes.data) {
           const song: any = songRes.data;
           setFormData({
@@ -226,7 +226,7 @@ const AdminSongForm: React.FC = () => {
       } as any;
 
       if (isEditMode && id) {
-        const res = await hinosApi.update(Number(id), payload);
+        const res = await hinosApi.update(id, payload);
         if (res.error) throw new Error(res.error);
       } else {
         const res = await hinosApi.create(payload);

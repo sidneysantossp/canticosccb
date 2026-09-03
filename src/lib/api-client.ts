@@ -107,6 +107,10 @@ export const hinosApi = {
   get: async (id: string | number) => {
 
     try {
+      if (typeof id === 'number' && !Number.isFinite(id)) {
+        throw new Error('Identificador de hino inválido');
+      }
+
       const rows = await supabaseFetch<any>('hinos', {
         id: `eq.${id}`,
         select: '*',
@@ -202,6 +206,10 @@ export const hinosApi = {
   },
   update: async (id: string | number, data: any) => {
     try {
+      if (typeof id === 'number' && !Number.isFinite(id)) {
+        throw new Error('Identificador de hino inválido');
+      }
+
       const updateData: Record<string, any> = {};
 
       if (data.titulo !== undefined) updateData.titulo = String(data.titulo || '').trim();
@@ -273,6 +281,10 @@ export const hinosApi = {
   delete: async (id: string | number) => {
 
     try {
+      if (typeof id === 'number' && !Number.isFinite(id)) {
+        throw new Error('Identificador de hino inválido');
+      }
+
       await supabaseDelete('hinos', { id: `eq.${id}` });
       return { success: true, error: null };
     } catch (error: any) {

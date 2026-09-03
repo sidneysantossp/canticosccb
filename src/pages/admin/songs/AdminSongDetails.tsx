@@ -5,7 +5,7 @@ import sanitizeRichText from '@/utils/sanitizeHtml';
 import { ArrowLeft, FileAudio, Image as ImageIcon } from 'lucide-react';
 
 interface Hino {
-  id: number;
+  id: string;
   numero?: number;
   titulo: string;
   compositor?: string;
@@ -32,7 +32,7 @@ const AdminSongDetails: React.FC = () => {
       try {
         setLoading(true);
         setError(null);
-        const res = await hinosApi.get(Number(id));
+        const res = await hinosApi.get(id);
         if (res.error) throw new Error(res.error);
         setSong(res.data as any);
       } catch (e: any) {
