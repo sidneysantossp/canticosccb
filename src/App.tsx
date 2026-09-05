@@ -212,7 +212,7 @@ const RedirectToCifra: React.FC = () => {
 
 const CifraInstrumentRoute: React.FC = () => {
   const { instrument } = useRouteParams();
-  if (instrument !== 'violao' && instrument !== 'ukulele' && instrument !== 'teclado') {
+  if (!['violao', 'ukulele', 'teclado', 'cavaco', 'baixo', 'bateria', 'gaita', 'viola'].includes(instrument || '')) {
     return <Navigate to="/cifras" replace />;
   }
   return <CifraInstrumentHubPage instrument={instrument} />;

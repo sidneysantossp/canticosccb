@@ -38,6 +38,10 @@ const DEFAULT_TUNING: Record<CifraInstrument, string> = {
   ukulele: 'G C E A',
   teclado: 'C D E F G A B',
   cavaco: 'D G B D',
+  baixo: 'E A D G',
+  bateria: 'Kit padrão',
+  gaita: 'Diatônica em C',
+  viola: 'Cebolão em Mi',
   outro: '',
 };
 
@@ -130,7 +134,7 @@ const AdminCifraChordShapes: React.FC = () => {
         instrument,
         chord_name: chord,
         tuning: DEFAULT_TUNING[instrument],
-        stringCount: instrument === 'ukulele' ? '4' : instrument === 'cavaco' ? '4' : instrument === 'teclado' ? '7' : '6',
+        stringCount: instrument === 'ukulele' || instrument === 'cavaco' || instrument === 'baixo' ? '4' : instrument === 'viola' ? '10' : instrument === 'teclado' ? '7' : '6',
       });
     } else if (chord) {
       setForm((current) => ({
@@ -193,7 +197,7 @@ const AdminCifraChordShapes: React.FC = () => {
       ...EMPTY_FORM,
       instrument,
       tuning: DEFAULT_TUNING[instrument],
-      stringCount: instrument === 'ukulele' ? '4' : instrument === 'cavaco' ? '4' : instrument === 'teclado' ? '7' : '6',
+      stringCount: instrument === 'ukulele' || instrument === 'cavaco' || instrument === 'baixo' ? '4' : instrument === 'viola' ? '10' : instrument === 'teclado' ? '7' : '6',
     });
   }
 
@@ -202,7 +206,7 @@ const AdminCifraChordShapes: React.FC = () => {
       ...current,
       instrument: value,
       tuning: current.id ? current.tuning : DEFAULT_TUNING[value],
-      stringCount: current.id ? current.stringCount : (value === 'ukulele' ? '4' : value === 'cavaco' ? '4' : value === 'teclado' ? '7' : '6'),
+      stringCount: current.id ? current.stringCount : (value === 'ukulele' || value === 'cavaco' || value === 'baixo' ? '4' : value === 'viola' ? '10' : value === 'teclado' ? '7' : '6'),
     }));
   }
 

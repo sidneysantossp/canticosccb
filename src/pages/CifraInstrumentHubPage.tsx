@@ -10,7 +10,7 @@ import { buildCifraUrl } from '@/utils/cifraUrl';
 
 type DisplayCifra = Cifra | PublicCifraPageData;
 
-type InstrumentHub = 'violao' | 'ukulele' | 'teclado';
+type InstrumentHub = 'violao' | 'ukulele' | 'teclado' | 'cavaco' | 'baixo' | 'bateria' | 'gaita' | 'viola';
 
 type InstrumentConfig = {
   path: string;
@@ -80,6 +80,56 @@ const HUBS: Record<InstrumentHub, InstrumentConfig> = {
         answer: 'Sim. Cada cifra individual pode levar o usuario ao hino correspondente e ampliar a navegacao interna do repertorio.',
       },
     ],
+  },
+  cavaco: {
+    path: '/cifras/cavaco',
+    heading: 'Cifras de Cavaco CCB',
+    title: 'Cifras de Cavaco CCB | Hinos para Tocar',
+    description: 'Explore cifras de hinos da CCB preparadas para cavaco, com tom e repertório organizado para estudo.',
+    intro: 'Hub de cifras de cavaco da CCB, com repertório específico por instrumento.',
+    keywords: 'cifras cavaco ccb, cifra cavaquinho ccb, hinos ccb cavaco',
+    icon: GiBanjo,
+    faq: [{ question: 'Há cifras para cavaco?', answer: 'As cifras publicadas para cavaco aparecem nesta página, organizadas por hino.' }],
+  },
+  baixo: {
+    path: '/cifras/baixo',
+    heading: 'Cifras de Baixo CCB',
+    title: 'Cifras de Baixo CCB | Hinos para Tocar',
+    description: 'Encontre cifras de hinos da CCB preparadas para contrabaixo, com repertório organizado para estudo.',
+    intro: 'Hub de cifras de baixo da CCB, com repertório específico por instrumento.',
+    keywords: 'cifras baixo ccb, contrabaixo ccb, hinos ccb baixo',
+    icon: Music2,
+    faq: [{ question: 'Há cifras para baixo?', answer: 'As cifras publicadas para baixo aparecem nesta página, organizadas por hino.' }],
+  },
+  bateria: {
+    path: '/cifras/bateria',
+    heading: 'Cifras de Bateria CCB',
+    title: 'Cifras de Bateria CCB | Hinos para Tocar',
+    description: 'Encontre cifras de hinos da CCB preparadas para bateria, com repertório organizado para estudo.',
+    intro: 'Hub de cifras de bateria da CCB, com repertório específico por instrumento.',
+    keywords: 'cifras bateria ccb, hinos ccb bateria',
+    icon: Disc,
+    faq: [{ question: 'Há cifras para bateria?', answer: 'As cifras publicadas para bateria aparecem nesta página, organizadas por hino.' }],
+  },
+  gaita: {
+    path: '/cifras/gaita',
+    heading: 'Cifras de Gaita CCB',
+    title: 'Cifras de Gaita CCB | Hinos para Tocar',
+    description: 'Encontre cifras de hinos da CCB preparadas para gaita, com repertório organizado para estudo.',
+    intro: 'Hub de cifras de gaita da CCB, com repertório específico por instrumento.',
+    keywords: 'cifras gaita ccb, hinos ccb gaita',
+    icon: Music2,
+    faq: [{ question: 'Há cifras para gaita?', answer: 'As cifras publicadas para gaita aparecem nesta página, organizadas por hino.' }],
+  },
+  viola: {
+    path: '/cifras/viola',
+    heading: 'Cifras de Viola Caipira CCB',
+    title: 'Cifras de Viola Caipira CCB | Hinos para Tocar',
+    description: 'Encontre cifras de hinos da CCB preparadas para viola caipira, com repertório organizado para estudo.',
+    intro: 'Hub de cifras de viola caipira da CCB, com repertório específico por instrumento.',
+    keywords: 'cifras viola caipira ccb, hinos ccb viola',
+    icon: GiGuitar,
+    faq: [{ question: 'Há cifras para viola caipira?', answer: 'As cifras publicadas para viola caipira aparecem nesta página, organizadas por hino.' }],
   },
 };
 

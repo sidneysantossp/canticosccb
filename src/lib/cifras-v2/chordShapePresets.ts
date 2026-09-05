@@ -223,7 +223,7 @@ function buildNotesPresets(
   }));
 }
 
-export const CIFRA_CHORD_SHAPE_PRESETS: Record<Exclude<CifraInstrument, 'outro'>, CifraChordShapePreset[]> = {
+export const CIFRA_CHORD_SHAPE_PRESETS: Partial<Record<Exclude<CifraInstrument, 'outro'>, CifraChordShapePreset[]>> = {
   violao: buildFretPresets('violao', GUITAR_TUNING, GUITAR_FAMILY_PRESETS, 6),
   guitarra: buildFretPresets('guitarra', GUITAR_TUNING, GUITAR_FAMILY_PRESETS, 6),
   ukulele: buildFretPresets('ukulele', UKULELE_TUNING, UKULELE_PRESETS, 4),

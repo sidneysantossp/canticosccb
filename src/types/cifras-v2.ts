@@ -3,6 +3,10 @@ export type CifraInstrument =
   | 'ukulele'
   | 'teclado'
   | 'cavaco'
+  | 'baixo'
+  | 'bateria'
+  | 'gaita'
+  | 'viola'
   | 'guitarra'
   | 'outro';
 
@@ -305,6 +309,10 @@ export const CIFRA_V2_INSTRUMENTS: { value: CifraInstrument; label: string }[] =
   { value: 'ukulele', label: 'Ukulele' },
   { value: 'teclado', label: 'Teclado' },
   { value: 'cavaco', label: 'Cavaco' },
+  { value: 'baixo', label: 'Baixo' },
+  { value: 'bateria', label: 'Bateria' },
+  { value: 'gaita', label: 'Gaita' },
+  { value: 'viola', label: 'Viola caipira' },
   { value: 'guitarra', label: 'Guitarra' },
   { value: 'outro', label: 'Outro' },
 ];

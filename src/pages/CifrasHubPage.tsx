@@ -15,7 +15,7 @@ const faq = [
   },
   {
     question: 'Existem cifras por instrumento na plataforma?',
-    answer: 'Sim. O hub distribui a navegacao para cifras de violao, ukulele e teclado, alem de listar as cifras ativas ja publicadas.',
+    answer: 'Sim. O hub distribui a navegação para violão, ukulele, teclado, cavaco, baixo, bateria, gaita e viola caipira, além de listar as cifras ativas já publicadas.',
   },
   {
     question: 'As cifras se conectam aos hinos e ao Hinario?',
@@ -28,6 +28,11 @@ const relatedLinks = [
   { label: 'Cifras de Violao', href: '/cifras-violao-ccb' },
   { label: 'Cifras de Ukulele', href: '/cifras-ukulele-ccb' },
   { label: 'Cifras de Teclado', href: '/cifras-teclado-ccb' },
+  { label: 'Cifras de Cavaco', href: '/cifras/cavaco' },
+  { label: 'Cifras de Baixo', href: '/cifras/baixo' },
+  { label: 'Cifras de Bateria', href: '/cifras/bateria' },
+  { label: 'Cifras de Gaita', href: '/cifras/gaita' },
+  { label: 'Cifras de Viola Caipira', href: '/cifras/viola' },
   { label: 'Hinos CCB', href: '/hinos-ccb' },
 ];
 
@@ -35,6 +40,11 @@ const labelByInstrument: Record<string, string> = {
   violao: 'Violao',
   ukulele: 'Ukulele',
   teclado: 'Teclado',
+  cavaco: 'Cavaco',
+  baixo: 'Baixo',
+  bateria: 'Bateria',
+  gaita: 'Gaita',
+  viola: 'Viola caipira',
 };
 
 const CifrasHubPage: React.FC = () => {
@@ -91,8 +101,8 @@ const CifrasHubPage: React.FC = () => {
     <div className="min-h-screen bg-background-primary">
       <SEOHead
         title="Cifras Hinos CCB | Cifras da comunidade CCB"
-        description="Explore cifras de hinos CCB com links para violao, ukulele, teclado e paginas individuais de cifra da comunidade CCB."
-        keywords="cifras hinos ccb, cifras ccb, cifra hino ccb, cifras violao ccb, cifras teclado ccb, cifras ukulele ccb"
+        description="Explore cifras de hinos CCB para violão, ukulele, teclado, cavaco, baixo, bateria, gaita e viola caipira."
+        keywords="cifras hinos ccb, cifras ccb, cifra hino ccb, cifras violao ccb, cifras teclado ccb, cifras ukulele ccb, cifras baixo ccb, cifras bateria ccb, cifras gaita ccb, cifras viola caipira ccb"
         canonical="/cifras-hinos-ccb"
         schemaData={schemaData}
         noindex={!isLoading && items.length === 0}

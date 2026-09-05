@@ -29,7 +29,7 @@ const SECTION_KEYS: CifraSectionKey[] = [
 
 const VERSION_STATUSES = ['draft', 'in_review', 'approved', 'published', 'archived'] as const;
 const PUBLICATION_LABELS = ['official', 'reviewed', 'community'] as const;
-const INSTRUMENTS = ['violao', 'ukulele', 'teclado', 'cavaco', 'guitarra', 'outro'] as const;
+const INSTRUMENTS = ['violao', 'ukulele', 'teclado', 'cavaco', 'baixo', 'bateria', 'gaita', 'viola', 'guitarra', 'outro'] as const;
 const ARRANGEMENT_TYPES = ['simplificada', 'completa', 'culto', 'estudo', 'instrumental', 'lead_sheet', 'outro'] as const;
 const DIFFICULTY_LEVELS = ['iniciante', 'basico', 'intermediario', 'avancado'] as const;
 const SOURCE_TYPES = ['hinario', 'avulso', 'album', 'playlist', 'other'] as const;

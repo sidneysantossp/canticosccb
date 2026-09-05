@@ -242,6 +242,10 @@ export const INSTRUMENTS = [
   { value: 'ukulele', label: 'Ukulele' },
   { value: 'teclado', label: 'Teclado' },
   { value: 'cavaco', label: 'Cavaco' },
+  { value: 'baixo', label: 'Baixo' },
+  { value: 'bateria', label: 'Bateria' },
+  { value: 'gaita', label: 'Gaita' },
+  { value: 'viola', label: 'Viola caipira' },
 ] as const;
 
 export const CATEGORIES = [
